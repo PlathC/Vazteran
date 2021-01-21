@@ -151,13 +151,19 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
+        include/Vazteran/Render/Vulkan/Surface.hpp
+        include/Vazteran/Render/Vulkan/ErrorHandler.hpp
+        include/Vazteran/Render/Vulkan/DeviceManager.hpp
+        include/Vazteran/Render/Vulkan/Application.hpp
         include/Vazteran/Render/Window.hpp
-        include/Vazteran/Render/Renderer.hpp
         include/Vazteran/Render/Viewer.hpp)
 
 set(SOURCES
+        src/Vazteran/Render/Vulkan/ErrorHandler.cpp
+        src/Vazteran/Render/Vulkan/Surface.cpp
+        src/Vazteran/Render/Vulkan/DeviceManager.cpp
+        src/Vazteran/Render/Vulkan/Application.cpp
         src/Vazteran/Render/Window.cpp
-        src/Vazteran/Render/Renderer.cpp
         src/Vazteran/Render/Viewer.cpp
         src/Vazteran/main.cpp)
 

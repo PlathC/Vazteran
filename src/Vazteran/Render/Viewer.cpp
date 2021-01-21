@@ -8,7 +8,6 @@ namespace vzt
 {
     Viewer::Viewer()
     {
-        m_renderer = std::make_unique<Renderer>(m_window.Extensions());
     }
 
     void Viewer::Run()

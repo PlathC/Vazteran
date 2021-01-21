@@ -10,6 +10,10 @@
 
 #include <functional>
 #include <memory>
+#include <stdexcept>
+
+#include "Vazteran/Render/Vulkan/Application.hpp"
+#include "Vazteran/Render/Vulkan/Surface.hpp"
 
 namespace vzt
 {
@@ -18,16 +22,16 @@ namespace vzt
     public:
         Window(std::string_view windowTitle, uint32_t width, uint32_t height);
 
-        std::vector<const char*> Extensions();
-
         bool PollEvent();
 
         ~Window();
     private:
         std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>> m_handler;
-
         const uint32_t m_width;
         const uint32_t m_height;
+
+        std::unique_ptr<Application> m_application;
+        std::unique_ptr<Surface> m_surface;
     };
 
 }

@@ -17,25 +17,28 @@ namespace vzt
 
         m_handler = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>(
                 glfwCreateWindow(m_width, m_height, windowTitle.data(), nullptr, nullptr),
-                [](GLFWwindow* handler) -> void {
+                [](GLFWwindow* handler) -> void
+                {
                     glfwDestroyWindow(handler);
                 }
         );
 
-    }
-
-    std::vector<const char*> Window::Extensions()
-    {
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        auto result = std::vector<const char*>(glfwExtensionCount);
+        m_application = std::make_unique<Application>(
+                std::vector<const char*>(glfwExtensions, glfwExtensions + glfwExtensionCount),
+                [this](VkInstance instance, VkSurfaceKHR& surface)
+                {
+                    if (glfwCreateWindowSurface(instance, m_handler.get(), nullptr, &surface) != VK_SUCCESS)
+                    {
+                        throw std::runtime_error("failed to create window surface!");
+                    }
+                }
+        );
 
-        for(uint32_t i = 0; i < glfwExtensionCount; i++)
-        {
-            result[i] = glfwExtensions[i];
-        }
+        std::unique_ptr<VkSurfaceKHR> surface;
 
-        return result;
+
     }
 
     bool Window::PollEvent()
