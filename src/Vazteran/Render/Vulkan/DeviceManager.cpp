@@ -6,64 +6,74 @@
 
 namespace vzt
 {
-    DeviceManager::DeviceManager(std::shared_ptr<VkInstance> instance, Surface* surface):
+    DeviceManager::DeviceManager(std::shared_ptr<VkInstance> instance, Surface* surface,
+            const std::vector<const char*>& neededDeviceExtensions):
             m_vkInstance(std::move(instance))
     {
+        if(!neededDeviceExtensions.empty())
+        {
+            m_deviceExtensions = neededDeviceExtensions;
+        }
+        else
+        {
+            m_deviceExtensions = std::vector<const char*>(DefautlDeviceExtensions.begin(), DefautlDeviceExtensions.end());
+        }
+
         vkEnumeratePhysicalDevices(*m_vkInstance, &m_deviceCount, nullptr);
         if (m_deviceCount == 0)
         {
             throw std::runtime_error("failed to find GPUs with Vulkan support!");
         }
 
-        std::vector<VkPhysicalDevice> devices(m_deviceCount);
-        vkEnumeratePhysicalDevices(*m_vkInstance, &m_deviceCount, devices.data());
+        auto rawDevices = std::vector<VkPhysicalDevice>(m_deviceCount);
+        vkEnumeratePhysicalDevices(*m_vkInstance, &m_deviceCount, rawDevices.data());
+        auto devices = std::vector<PhysicalDevice>(m_deviceCount);
+        for(std::size_t i = 0; i < devices.size(); i++)
+        {
+            devices[i] = PhysicalDevice(rawDevices[i]);
+        }
 
         try
         {
-            m_physicalDevice = PickBestSuitableDevice(devices, surface);
+            m_physicalDevice = std::make_shared<PhysicalDevice>(PickBestSuitableDevice(devices, surface));
         }
         catch(const std::exception& e)
         {
             throw e;
         }
 
-        QueueFamilyIndices indices = FindQueueFamilies(m_physicalDevice, surface);
-
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+        QueueFamilyIndices indices = m_physicalDevice->FindQueueFamilies(surface);
         std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+        m_physicalDevice->InitializeDevice(uniqueQueueFamilies, m_deviceExtensions);
 
-        float queuePriority = 1.0f;
-        for (uint32_t queueFamily : uniqueQueueFamilies) {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
-        }
-
-        VkPhysicalDeviceFeatures deviceFeatures{};
-
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.queueCreateInfoCount = 1;
-
-        createInfo.pEnabledFeatures = &deviceFeatures;
-        createInfo.enabledExtensionCount = 0;
-
-        if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create logical device!");
-        }
-
-        vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
-        vkGetDeviceQueue(m_device, indices.presentFamily.value(), 0, &m_presentQueue);
+        m_physicalDevice->CreateQueue(indices.graphicsFamily.value(), m_graphicsQueue);
+        m_physicalDevice->CreateQueue(indices.presentFamily.value(), m_presentQueue);
     }
 
-    DeviceManager::~DeviceManager()
+    std::shared_ptr<PhysicalDevice> DeviceManager::PickedPhysicalDevice()
     {
-        vkDestroyDevice(m_device, nullptr);
+        return m_physicalDevice;
+    }
+
+    PhysicalDevice DeviceManager::PickBestSuitableDevice(const std::vector<PhysicalDevice>& devices, Surface* surface)
+    {
+        std::multimap<int, PhysicalDevice> candidates;
+
+        for (const auto& device : devices)
+        {
+            int score = device.Rate(surface, m_deviceExtensions);
+            candidates.insert(std::make_pair(score, device));
+        }
+
+        // Check if the best candidate is suitable at all
+        if (candidates.rbegin()->first > 0)
+        {
+            return candidates.rbegin()->second;
+        }
+        else
+        {
+            // TODO: Add proper logger
+            throw std::runtime_error("[ERROR] Failed to find a suitable GPU!");
+        }
     }
 }

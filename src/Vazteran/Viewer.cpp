@@ -2,7 +2,7 @@
 // Created by Cyprien Plateau--Holleville on 20/01/2021.
 //
 
-#include "Vazteran/Render/Viewer.hpp"
+#include "Vazteran/Viewer.hpp"
 
 namespace vzt
 {

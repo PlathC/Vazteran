@@ -25,6 +25,9 @@ namespace vzt
 
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        int fbWidth, fbHeight;
+        glfwGetFramebufferSize(m_handler.get(), &fbWidth, &fbHeight);
+
         m_application = std::make_unique<Application>(
                 std::vector<const char*>(glfwExtensions, glfwExtensions + glfwExtensionCount),
                 [this](VkInstance instance, VkSurfaceKHR& surface)
@@ -33,12 +36,9 @@ namespace vzt
                     {
                         throw std::runtime_error("failed to create window surface!");
                     }
-                }
+                },
+                fbWidth, fbHeight
         );
-
-        std::unique_ptr<VkSurfaceKHR> surface;
-
-
     }
 
     bool Window::PollEvent()

@@ -19,6 +19,11 @@ namespace vzt
         return presentSupport;
     }
 
+    VkSurfaceKHR& Surface::SurfaceHandler()
+    {
+        return m_surface;
+    }
+
     Surface::~Surface()
     {
         vkDestroySurfaceKHR(*m_instance, m_surface, nullptr);

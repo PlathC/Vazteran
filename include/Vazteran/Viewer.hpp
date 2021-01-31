@@ -5,7 +5,7 @@
 #ifndef VAZTERAN_VIEWER_HPP
 #define VAZTERAN_VIEWER_HPP
 
-#include "Vazteran/Render/Window.hpp"
+#include "Render/Window.hpp"
 
 namespace vzt
 {

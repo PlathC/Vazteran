@@ -151,20 +151,32 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
+        include/Vazteran/Utils/IO.hpp
+        include/Vazteran/Render/Vulkan/RenderPass.hpp
+        include/Vazteran/Render/Vulkan/GraphicPipeline.hpp
+        include/Vazteran/Render/Vulkan/ImageView.hpp
+        include/Vazteran/Render/Vulkan/SwapChain.hpp
         include/Vazteran/Render/Vulkan/Surface.hpp
         include/Vazteran/Render/Vulkan/ErrorHandler.hpp
+        include/Vazteran/Render/Vulkan/PhysicalDevice.hpp
         include/Vazteran/Render/Vulkan/DeviceManager.hpp
         include/Vazteran/Render/Vulkan/Application.hpp
         include/Vazteran/Render/Window.hpp
-        include/Vazteran/Render/Viewer.hpp)
+        include/Vazteran/Viewer.hpp)
 
 set(SOURCES
+        src/Vazteran/Utils/IO.cpp
+        src/Vazteran/Render/Vulkan/RenderPass.cpp
+        src/Vazteran/Render/Vulkan/GraphicPipeline.cpp
+        src/Vazteran/Render/Vulkan/ImageView.cpp
+        src/Vazteran/Render/Vulkan/SwapChain.cpp
         src/Vazteran/Render/Vulkan/ErrorHandler.cpp
         src/Vazteran/Render/Vulkan/Surface.cpp
+        src/Vazteran/Render/Vulkan/PhysicalDevice.cpp
         src/Vazteran/Render/Vulkan/DeviceManager.cpp
         src/Vazteran/Render/Vulkan/Application.cpp
         src/Vazteran/Render/Window.cpp
-        src/Vazteran/Render/Viewer.cpp
+        src/Vazteran/Viewer.cpp
         src/Vazteran/main.cpp)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
@@ -184,3 +196,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw
         glm::glm
         Vulkan::Vulkan)
+
+file(COPY shaders DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+if(WIN32)
+    add_custom_target(compileShader COMMAND cmd /c ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.bat )
+else()
+    add_custom_target(compileShader COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.sh )
+endif()

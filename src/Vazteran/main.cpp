@@ -6,7 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "Vazteran/Render/Viewer.hpp"
+#include "include/Vazteran/Viewer.hpp"
 
 int main()
 {

@@ -122,7 +122,7 @@ Querying Vulkan function pointers</h2>
 <p>Vulkan also provides <code>vkGetDeviceProcAddr</code> for loading device-specific versions of Vulkan function. This function can be retrieved from an instance with <a class="el" href="group__vulkan.html#gadf228fac94c5fd8f12423ec9af9ff1e9">glfwGetInstanceProcAddress</a>.</p>
 <div class="fragment"><div class="line">PFN_vkGetDeviceProcAddr pfnGetDeviceProcAddr = (PFN_vkGetDeviceProcAddr)</div>
 <div class="line">    <a class="code" href="group__vulkan.html#gadf228fac94c5fd8f12423ec9af9ff1e9">glfwGetInstanceProcAddress</a>(instance, <span class="stringliteral">&quot;vkGetDeviceProcAddr&quot;</span>);</div>
-</div><!-- fragment --><p>Device-specific functions may execute a little bit faster, due to not having to dispatch internally based on the device passed to them. For more information about <code>vkGetDeviceProcAddr</code>, see the Vulkan documentation.</p>
+</div><!-- fragment --><p>PhysicalDevice-specific functions may execute a little bit faster, due to not having to dispatch internally based on the device passed to them. For more information about <code>vkGetDeviceProcAddr</code>, see the Vulkan documentation.</p>
 <h1><a class="anchor" id="vulkan_ext"></a>
 Querying required Vulkan extensions</h1>
 <p>To do anything useful with Vulkan you need to create an instance. If you want to use Vulkan to render to a window, you must enable the instance extensions GLFW requires to create Vulkan surfaces.</p>

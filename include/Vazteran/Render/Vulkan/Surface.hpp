@@ -20,6 +20,7 @@ namespace vzt
         Surface(std::shared_ptr<VkInstance> instance, SurfaceInitializer surfaceInitializer);
 
         VkBool32 CheckSupport(VkPhysicalDevice device, uint32_t queueFamilyIndex);
+        VkSurfaceKHR& SurfaceHandler();
 
         ~Surface();
     private:

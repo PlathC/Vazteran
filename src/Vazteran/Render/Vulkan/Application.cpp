@@ -6,7 +6,8 @@
 
 namespace vzt
 {
-    Application::Application(std::vector<const char*> extensions, SurfaceInitializer surfaceInitializer)
+    Application::Application(std::vector<const char*> extensions, SurfaceInitializer surfaceInitializer,
+            int width, int height)
     {
         if (enableValidationLayers && !CheckValidationLayerSupport())
         {
@@ -56,14 +57,9 @@ namespace vzt
             m_debugMessenger->Initialize(m_vkInstance);
         }
 
-
         m_surface = std::make_unique<Surface>(m_vkInstance, surfaceInitializer);
-
         m_deviceManager = std::make_unique<DeviceManager>(m_vkInstance, m_surface.get());
-    }
-
-    Application::~Application()
-    {
+        m_swapChain = std::make_unique<SwapChain>(m_deviceManager->PickedPhysicalDevice(), m_surface.get(), 0, 0);
     }
 
     bool Application::CheckValidationLayerSupport()

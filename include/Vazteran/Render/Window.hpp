@@ -31,7 +31,6 @@ namespace vzt
         const uint32_t m_height;
 
         std::unique_ptr<Application> m_application;
-        std::unique_ptr<Surface> m_surface;
     };
 
 }
