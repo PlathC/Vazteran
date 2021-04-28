@@ -151,32 +151,17 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
-        include/Vazteran/Utils/IO.hpp
-        include/Vazteran/Render/Vulkan/RenderPass.hpp
-        include/Vazteran/Render/Vulkan/GraphicPipeline.hpp
-        include/Vazteran/Render/Vulkan/ImageView.hpp
-        include/Vazteran/Render/Vulkan/SwapChain.hpp
-        include/Vazteran/Render/Vulkan/Surface.hpp
-        include/Vazteran/Render/Vulkan/ErrorHandler.hpp
-        include/Vazteran/Render/Vulkan/PhysicalDevice.hpp
-        include/Vazteran/Render/Vulkan/DeviceManager.hpp
-        include/Vazteran/Render/Vulkan/Application.hpp
-        include/Vazteran/Render/Window.hpp
-        include/Vazteran/Viewer.hpp)
+        include/Vazteran/Vulkan/DeviceManager.hpp
+        include/Vazteran/Vulkan/Instance.hpp
+        include/Vazteran/Application.hpp
+        include/Vazteran/Window.hpp
+        )
 
 set(SOURCES
-        src/Vazteran/Utils/IO.cpp
-        src/Vazteran/Render/Vulkan/RenderPass.cpp
-        src/Vazteran/Render/Vulkan/GraphicPipeline.cpp
-        src/Vazteran/Render/Vulkan/ImageView.cpp
-        src/Vazteran/Render/Vulkan/SwapChain.cpp
-        src/Vazteran/Render/Vulkan/ErrorHandler.cpp
-        src/Vazteran/Render/Vulkan/Surface.cpp
-        src/Vazteran/Render/Vulkan/PhysicalDevice.cpp
-        src/Vazteran/Render/Vulkan/DeviceManager.cpp
-        src/Vazteran/Render/Vulkan/Application.cpp
-        src/Vazteran/Render/Window.cpp
-        src/Vazteran/Viewer.cpp
+        src/Vazteran/Vulkan/DeviceManager.cpp
+        src/Vazteran/Vulkan/Instance.cpp
+        src/Vazteran/Application.cpp
+        src/Vazteran/Window.cpp
         src/Vazteran/main.cpp)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})

@@ -1,26 +1,18 @@
-//
-// Created by Cyprien Plateau--Holleville on 20/01/2021.
-//
-
 #include <cstdlib>
 #include <iostream>
-#include <stdexcept>
 
-#include "include/Vazteran/Viewer.hpp"
+#include "Vazteran/Application.hpp"
 
 int main()
 {
-    try
-    {
-        vzt::Viewer app;
+    auto app = vzt::Application{"Vazteran"};
+
+    try {
         app.Run();
-    }
-    catch (const std::exception& e)
-    {
+    } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-
     return EXIT_SUCCESS;
 }
 
