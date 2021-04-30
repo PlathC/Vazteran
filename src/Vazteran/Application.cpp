@@ -4,6 +4,7 @@
 
 #include "Vazteran/Application.hpp"
 #include "Vazteran/Window.hpp"
+#include "Vazteran/Vulkan/DeviceManager.hpp"
 
 namespace vzt {
     Application::Application(std::string_view name) {
@@ -23,7 +24,10 @@ namespace vzt {
     void Application::Run() {
         while(!m_window->ShouldClose()) {
             glfwPollEvents();
+            m_window->Draw();
         }
+
+        vkDeviceWaitIdle(m_window->Device()->LogicalDevice());
     }
 
     Application::~Application() {

@@ -153,14 +153,24 @@ endif ()
 set(HEADERS
         include/Vazteran/Vulkan/DeviceManager.hpp
         include/Vazteran/Vulkan/Instance.hpp
+        include/Vazteran/Vulkan/FrameBuffer.hpp
+        include/Vazteran/Vulkan/GraphicPipeline.hpp
+        include/Vazteran/Vulkan/Shader.hpp
+        include/Vazteran/Vulkan/SwapChain.hpp
         include/Vazteran/Application.hpp
+        include/Vazteran/Utils.hpp
         include/Vazteran/Window.hpp
         )
 
 set(SOURCES
         src/Vazteran/Vulkan/DeviceManager.cpp
         src/Vazteran/Vulkan/Instance.cpp
+        src/Vazteran/Vulkan/FrameBuffer.cpp
+        src/Vazteran/Vulkan/GraphicPipeline.cpp
+        src/Vazteran/Vulkan/Shader.cpp
+        src/Vazteran/Vulkan/SwapChain.cpp
         src/Vazteran/Application.cpp
+        src/Vazteran/Utils.cpp
         src/Vazteran/Window.cpp
         src/Vazteran/main.cpp)
 
@@ -182,10 +192,29 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         glm::glm
         Vulkan::Vulkan)
 
-file(COPY shaders DESTINATION ${CMAKE_BINARY_DIR}/bin)
+# Based on https://www.reddit.com/r/vulkan/comments/kbaxlz/what_is_your_workflow_when_compiling_shader_files/gfg0s3s?utm_source=share&utm_medium=web2x&context=3
+function(add_shader TARGET SHADER)
+    find_program(GLSLC glslc)
 
-if(WIN32)
-    add_custom_target(compileShader COMMAND cmd /c ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.bat )
-else()
-    add_custom_target(compileShader COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/shaders/compile.sh )
-endif()
+    set(current-shader-path ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER})
+    set(current-output-path ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${SHADER}.spv)
+
+    # Add a custom command to compile GLSL to SPIR-V.
+    get_filename_component(current-output-dir ${current-output-path} DIRECTORY)
+    file(MAKE_DIRECTORY ${current-output-dir})
+
+    add_custom_command(
+            OUTPUT ${current-output-path}
+            COMMAND ${GLSLC} -o ${current-output-path} ${current-shader-path}
+            DEPENDS ${current-shader-path}
+            IMPLICIT_DEPENDS CXX ${current-shader-path}
+            VERBATIM)
+
+    # Make sure our build depends on this output.
+    set_source_files_properties(${current-output-path} PROPERTIES GENERATED TRUE)
+    target_sources(${TARGET} PRIVATE ${current-output-path})
+endfunction(add_shader)
+
+
+add_shader(${PROJECT_NAME} shaders/shader.vert)
+add_shader(${PROJECT_NAME} shaders/shader.frag)
