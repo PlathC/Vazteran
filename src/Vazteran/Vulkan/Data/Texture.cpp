@@ -34,21 +34,37 @@ namespace vzt {
         memcpy(data, pixels, static_cast<size_t>(imageSize));
         vkUnmapMemory(m_logicalDevice->VkHandle(), stagingBufferMemory);
 
-        m_logicalDevice->CreateImage(m_textureImage, m_textureImageMemory, m_width, m_height,
-                                     VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-                                     VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-        TransitionLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        m_logicalDevice->CopyBufferToImage(
-                stagingBuffer, m_textureImage, static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height)
+        m_logicalDevice->CreateImage(
+                m_textureImage, m_textureImageMemory, m_width, m_height,
+                VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
-        TransitionLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        m_logicalDevice->TransitionImageLayout(
+                m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_ASPECT_COLOR_BIT
+        );
+        m_logicalDevice->CopyBufferToImage(
+                stagingBuffer, m_textureImage,
+                static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height)
+        );
+        m_logicalDevice->TransitionImageLayout(
+                m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_ASPECT_COLOR_BIT
+        );
 
         vkDestroyBuffer(m_logicalDevice->VkHandle(), stagingBuffer, nullptr);
         vkFreeMemory(m_logicalDevice->VkHandle(), stagingBufferMemory, nullptr);
 
-        m_textureImageView = m_logicalDevice->CreateImageView(m_textureImage, VK_FORMAT_R8G8B8A8_SRGB);
+        m_textureImageView = m_logicalDevice->CreateImageView(
+                m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+                VK_IMAGE_ASPECT_COLOR_BIT
+        );
     }
 
     TextureImage::TextureImage(TextureImage&& original):
@@ -71,54 +87,6 @@ namespace vzt {
         std::swap(m_textureImageView, original.m_textureImageView);
 
         return *this;
-    }
-
-    void TextureImage::TransitionLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
-        m_logicalDevice->SingleTimeCommand([&](VkCommandBuffer commandBuffer) {
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.oldLayout = oldLayout;
-            barrier.newLayout = newLayout;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-
-            barrier.image = m_textureImage;
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
-
-            barrier.srcAccessMask = 0; // TODO
-            barrier.dstAccessMask = 0; // TODO
-            VkPipelineStageFlags sourceStage;
-            VkPipelineStageFlags destinationStage;
-
-            if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-                barrier.srcAccessMask = 0;
-                barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-                sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-                destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-                barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-                sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-                destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-            } else {
-                throw std::invalid_argument("Unsupported layout transition!");
-            }
-
-            vkCmdPipelineBarrier(
-                    commandBuffer,
-                    sourceStage, destinationStage,
-                    0,
-                    0, nullptr,
-                    0, nullptr,
-                    1, &barrier
-            );
-        });
     }
 
     TextureImage::~TextureImage() {

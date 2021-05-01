@@ -32,6 +32,9 @@ namespace vzt {
         std::vector<const char*> Extensions() { return m_extensions; }
         SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface) const;
         QueueFamilyIndices FindQueueFamilies(VkSurfaceKHR surface) const;
+        VkFormat FindDepthFormat();
+        VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
+                                     VkFormatFeatureFlags features);
 
         ~PhysicalDevice();
 
@@ -43,6 +46,7 @@ namespace vzt {
         VkPhysicalDevice m_vkHandle;
         std::vector<const char*> m_extensions;
     };
+    static bool HasStencilComponent(VkFormat format);
 
     static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<const char*>& deviceExtensions);
     static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);

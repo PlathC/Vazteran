@@ -20,7 +20,6 @@ namespace vzt {
         TextureImage(TextureImage&& original);
         TextureImage& operator=(TextureImage&& original) noexcept;
 
-        void TransitionLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
         VkImageView ImageView() const { return m_textureImageView; }
 
         ~TextureImage();

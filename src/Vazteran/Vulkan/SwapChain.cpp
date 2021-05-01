@@ -17,6 +17,8 @@ namespace vzt {
         m_textureSampler = std::make_unique<TextureSampler>(m_logicalDevice);
         CreateImageKHR();
         CreateImageViews();
+        CreateDepthResources();
+        CreateFrameBuffers();
         CreateCommandBuffers();
         CreateSynchronizationObjects();
     }
@@ -86,10 +88,6 @@ namespace vzt {
         return false;
     }
 
-    void SwapChain::SetTextureImage(std::unique_ptr<TextureImage> textureImage) {
-        m_textureImage = std::move(textureImage);
-        UpdateDescriptorSets();
-    }
 
     void SwapChain::Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight) {
         Cleanup();
@@ -101,6 +99,8 @@ namespace vzt {
         CreateSwapChain();
         CreateImageKHR();
         CreateImageViews();
+        CreateDepthResources();
+        CreateFrameBuffers();
         CreateCommandBuffers();
     }
 
@@ -222,12 +222,31 @@ namespace vzt {
     void SwapChain::CreateImageViews() {
         m_swapChainImageViews.resize(m_swapChainImages.size());
         for (std::size_t i = 0; i < m_swapChainImageViews.size(); i++) {
-            m_swapChainImageViews[i] = m_logicalDevice->CreateImageView(m_swapChainImages[i], m_swapChainImageFormat);
+            m_swapChainImageViews[i] = m_logicalDevice->CreateImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
         }
+    }
 
+    void SwapChain::CreateDepthResources() {
+        VkFormat depthFormat = m_logicalDevice->Parent()->FindDepthFormat();
+        m_logicalDevice->CreateImage(
+                m_depthImage, m_depthImageMemory,
+                m_swapChainExtent.width, m_swapChainExtent.height, depthFormat,
+                VK_IMAGE_TILING_OPTIMAL,
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        );
+
+        m_depthImageView = m_logicalDevice->CreateImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+        m_logicalDevice->TransitionImageLayout(
+                m_depthImage, depthFormat,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
+    }
+
+    void SwapChain::CreateFrameBuffers() {
         for(const auto& imageView : m_swapChainImageViews) {
             m_frameBuffers.emplace_back(std::make_unique<FrameBuffer>(
-                    m_logicalDevice, m_graphicPipeline->RenderPass(), imageView, m_swapChainExtent.width, m_swapChainExtent.height
+                    m_logicalDevice, m_graphicPipeline->RenderPass(), imageView, m_depthImageView,
+                    m_swapChainExtent.width, m_swapChainExtent.height
             ));
         }
     }
@@ -266,6 +285,7 @@ namespace vzt {
                 throw std::runtime_error("Failed to begin recording command buffer!");
             }
 
+
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassInfo.renderPass = m_graphicPipeline->RenderPass();
@@ -273,9 +293,11 @@ namespace vzt {
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = m_swapChainExtent;
 
-            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
-            renderPassInfo.clearValueCount = 1;
-            renderPassInfo.pClearValues = &clearColor;
+            std::array<VkClearValue, 2> clearValues{};
+            clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
+            clearValues[1].depthStencil = {1.0f, 0};
+            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            renderPassInfo.pClearValues = clearValues.data();
 
             vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
                 vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
@@ -359,6 +381,10 @@ namespace vzt {
 
     void SwapChain::Cleanup() {
         vkDeviceWaitIdle(m_logicalDevice->VkHandle());
+
+        vkDestroyImageView(m_logicalDevice->VkHandle(), m_depthImageView, nullptr);
+        vkDestroyImage(m_logicalDevice->VkHandle(), m_depthImage, nullptr);
+        vkFreeMemory(m_logicalDevice->VkHandle(), m_depthImageMemory, nullptr);
 
         m_frameBuffers.clear();
         vkFreeCommandBuffers(m_logicalDevice->VkHandle(), m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());

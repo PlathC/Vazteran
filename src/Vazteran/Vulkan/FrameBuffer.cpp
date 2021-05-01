@@ -1,3 +1,4 @@
+#include <array>
 #include <stdexcept>
 
 #include <vulkan/vulkan.h>
@@ -7,17 +8,17 @@
 
 namespace vzt {
     FrameBuffer::FrameBuffer(LogicalDevice* logicalDevice, VkRenderPass renderPass, VkImageView imageView,
-                             uint32_t width, uint32_t height):
+                             VkImageView depthImageView, uint32_t width, uint32_t height):
             m_logicalDevice(logicalDevice) {
-        VkImageView attachments[] = {
-                imageView
+        std::array<VkImageView, 2> attachments = {
+                imageView, depthImageView
         };
 
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = width;
         framebufferInfo.height = height;
         framebufferInfo.layers = 1;

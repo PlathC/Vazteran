@@ -11,4 +11,7 @@ to render my potential future test related to computer graphics.
 
 ## Current state
 
-It is not currently able to produce any image and mainly based on vulkan-tutorial.com but might evolved on the basis of other resources.
+
+## Samples 
+
+- [The Crounching Boy](https://www.myminifactory.com/object/3d-print-the-crouching-boy-104413)

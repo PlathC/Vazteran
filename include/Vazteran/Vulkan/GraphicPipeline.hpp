@@ -35,7 +35,10 @@ namespace vzt {
         ~GraphicPipeline();
 
     private:
+        void CreateRenderPass();
+
         LogicalDevice* m_logicalDevice;
+        VkFormat m_colorImageFormat;
         VkRenderPass m_renderPass;
         VkDescriptorSetLayout m_descriptorSetLayout;
         VkPipelineLayout m_pipelineLayout;

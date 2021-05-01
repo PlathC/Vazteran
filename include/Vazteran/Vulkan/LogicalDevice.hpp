@@ -22,10 +22,12 @@ namespace vzt {
                           VkMemoryPropertyFlags properties);
         void CreateImage(VkImage& image, VkDeviceMemory& imageMemory, uint32_t width, uint32_t height, VkFormat format,
                          VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
-        VkImageView CreateImageView(VkImage image, VkFormat format);
+        VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height);
+        void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
+                                   VkImageLayout newLayout, VkImageAspectFlags aspectFlags);
         void SingleTimeCommand(SingleTimeCommandFunction singleTimeCommandFunction);
         void AllocateMemory(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkMemoryPropertyFlags properties);
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
