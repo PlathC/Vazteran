@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_VERTEX_HPP
-#define VAZTERAN_VERTEX_HPP
+#ifndef VAZTERAN_DATA_HPP
+#define VAZTERAN_DATA_HPP
 
 #include <array>
 #include <vector>
@@ -37,6 +37,12 @@ namespace vzt {
             return attributeDescriptions;
         }
     };
+
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
 }
 
-#endif //VAZTERAN_VERTEX_HPP
+#endif //VAZTERAN_DATA_HPP

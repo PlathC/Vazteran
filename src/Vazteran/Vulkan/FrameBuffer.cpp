@@ -22,13 +22,13 @@ namespace vzt {
         framebufferInfo.height = height;
         framebufferInfo.layers = 1;
 
-        if (vkCreateFramebuffer(m_logicalDevice->VkHandle(), &framebufferInfo, nullptr, &m_frameBuffer)
+        if (vkCreateFramebuffer(m_logicalDevice->VkHandle(), &framebufferInfo, nullptr, &m_vkHandle)
             != VK_SUCCESS) {
             throw std::runtime_error("Failed to create framebuffer!");
         }
     }
 
     FrameBuffer::~FrameBuffer() {
-        vkDestroyFramebuffer(m_logicalDevice->VkHandle(), m_frameBuffer, nullptr);
+        vkDestroyFramebuffer(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
     }
 }

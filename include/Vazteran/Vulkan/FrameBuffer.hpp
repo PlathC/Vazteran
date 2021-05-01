@@ -10,12 +10,12 @@ namespace vzt {
         FrameBuffer(LogicalDevice* logicalDevice, VkRenderPass rendPass, VkImageView imageView,
                     uint32_t width, uint32_t height);
 
-        VkFramebuffer Buffer() const { return m_frameBuffer; }
+        VkFramebuffer VkHandle() const { return m_vkHandle; }
 
         ~FrameBuffer();
     private:
         LogicalDevice* m_logicalDevice;
-        VkFramebuffer m_frameBuffer;
+        VkFramebuffer m_vkHandle;
     };
 }
 

@@ -1,10 +1,26 @@
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
-#include "Vazteran/Vulkan/Data/Vertex.hpp"
+#include "Vazteran/Vulkan/Data/Data.hpp"
 
 namespace vzt {
     GraphicPipeline::GraphicPipeline(LogicalDevice* logicalDevice, const PipelineSettings& settings):
             m_logicalDevice(logicalDevice) {
+
+        VkDescriptorSetLayoutBinding uboLayoutBinding{};
+        uboLayoutBinding.binding = 0;
+        uboLayoutBinding.descriptorCount = 1;
+        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &uboLayoutBinding;
+
+        if (vkCreateDescriptorSetLayout(m_logicalDevice->VkHandle(), &layoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor set layout!");
+        }
 
         auto bindingDescription = Vertex::GetBindingDescription();
         auto attributeDescriptions = Vertex::GetAttributeDescriptions();
@@ -47,7 +63,7 @@ namespace vzt {
         rasterizer.polygonMode = static_cast<VkPolygonMode>(settings.drawType);
         rasterizer.lineWidth = 1.0f;
         rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthBiasConstantFactor = 0.0f; // Optional
         rasterizer.depthBiasClamp = 0.0f; // Optional
@@ -88,10 +104,8 @@ namespace vzt {
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 0; // Optional
-        pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
-        pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-        pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
 
         if (vkCreatePipelineLayout(m_logicalDevice->VkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
@@ -167,6 +181,7 @@ namespace vzt {
     }
 
     GraphicPipeline::~GraphicPipeline() {
+        vkDestroyDescriptorSetLayout(m_logicalDevice->VkHandle(), m_descriptorSetLayout, nullptr);
         vkDestroyPipeline(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
         vkDestroyPipelineLayout(m_logicalDevice->VkHandle(), m_pipelineLayout, nullptr);
         vkDestroyRenderPass(m_logicalDevice->VkHandle(), m_renderPass, nullptr);

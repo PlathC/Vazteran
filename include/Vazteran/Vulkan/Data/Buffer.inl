@@ -2,7 +2,7 @@
 
 namespace vzt {
     template<class Type>
-    Buffer<Type>::Buffer(LogicalDevice* device, const std::vector<Type>& data, VkBufferUsageFlags usage) :
+    StagedBuffer<Type>::StagedBuffer(LogicalDevice* device, const std::vector<Type>& data, VkBufferUsageFlags usage) :
             m_device(device), m_data(data) {
         VkDeviceSize bufferSize = sizeof(m_data[0]) * m_data.size();
 
@@ -32,7 +32,7 @@ namespace vzt {
     }
 
     template<class Type>
-    Buffer<Type>::~Buffer() {
+    StagedBuffer<Type>::~StagedBuffer() {
         vkDestroyBuffer(m_device->VkHandle(), m_vkHandle, nullptr);
         vkFreeMemory(m_device->VkHandle(), m_bufferMemory, nullptr);
     }
