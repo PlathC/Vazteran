@@ -151,7 +151,8 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
-        include/Vazteran/Vulkan/DeviceManager.hpp
+        include/Vazteran/Vulkan/PhysicalDevice.hpp
+        include/Vazteran/Vulkan/LogicalDevice.hpp
         include/Vazteran/Vulkan/Instance.hpp
         include/Vazteran/Vulkan/FrameBuffer.hpp
         include/Vazteran/Vulkan/GraphicPipeline.hpp
@@ -163,7 +164,8 @@ set(HEADERS
         )
 
 set(SOURCES
-        src/Vazteran/Vulkan/DeviceManager.cpp
+        src/Vazteran/Vulkan/PhysicalDevice.cpp
+        src/Vazteran/Vulkan/LogicalDevice.cpp
         src/Vazteran/Vulkan/Instance.cpp
         src/Vazteran/Vulkan/FrameBuffer.cpp
         src/Vazteran/Vulkan/GraphicPipeline.cpp

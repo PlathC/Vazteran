@@ -2,17 +2,19 @@
 #define VAZTERAN_FRAMEBUFFER_HPP
 
 namespace vzt {
-    class DeviceManager;
+    class LogicalDevice;
     class SwapChain;
 
     class FrameBuffer {
     public:
-        FrameBuffer(DeviceManager* deviceManager, VkRenderPass rendPass, VkImageView imageView,
+        FrameBuffer(LogicalDevice* logicalDevice, VkRenderPass rendPass, VkImageView imageView,
                     uint32_t width, uint32_t height);
+
         VkFramebuffer Buffer() const { return m_frameBuffer; }
+
         ~FrameBuffer();
     private:
-        DeviceManager* m_deviceManager;
+        LogicalDevice* m_logicalDevice;
         VkFramebuffer m_frameBuffer;
     };
 }

@@ -21,17 +21,19 @@ namespace vzt {
         DrawType drawType = DrawType::Fill;
     };
 
-    class DeviceManager;
+    class LogicalDevice;
 
     class GraphicPipeline {
     public:
-        GraphicPipeline(DeviceManager* deviceManager, const PipelineSettings& settings);
+        GraphicPipeline(LogicalDevice* logicalDevice, const PipelineSettings& settings);
+
         VkRenderPass RenderPass() const { return m_renderPass; }
         VkPipeline Pipeline() const { return m_graphicPipeline; }
+
         ~GraphicPipeline();
 
     private:
-        DeviceManager* m_deviceManager;
+        LogicalDevice* m_logicalDevice;
         VkRenderPass m_renderPass;
         VkPipelineLayout m_pipelineLayout;
         VkPipeline m_graphicPipeline;

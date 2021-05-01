@@ -4,12 +4,14 @@
 #include "Vazteran/Vulkan/Instance.hpp"
 
 namespace vzt {
-    const std::vector<const char*> Instance::ValidationLayers = {
+    const std::vector<const char*> Instance::DefaultValidationLayers = {
             "VK_LAYER_KHRONOS_validation"
     };
 
-    Instance::Instance(std::string_view name, std::vector<const char*> extensions) {
-        if (EnableValidationLayers && !CheckValidationLayerSupport()) {
+    Instance::Instance(std::string_view name, std::vector<const char*> extensions,
+                       const std::vector<const char*>& validationLayers):
+            m_validationLayers(validationLayers) {
+        if (EnableValidationLayers && !CheckValidationLayerSupport(m_validationLayers)) {
             throw std::runtime_error("validation layers requested, but not available!");
         }
 
@@ -25,8 +27,9 @@ namespace vzt {
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        if constexpr (EnableValidationLayers)
+        if constexpr (EnableValidationLayers) {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
 
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
@@ -44,8 +47,8 @@ namespace vzt {
         };
 
         if constexpr (EnableValidationLayers) {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(ValidationLayers.size());
-            createInfo.ppEnabledLayerNames = ValidationLayers.data();
+            createInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
+            createInfo.ppEnabledLayerNames = m_validationLayers.data();
 
             VkDebugUtilsMessengerCreateInfoEXT instanceDebugCreateInfo;
             createInfoDebugMessenger(instanceDebugCreateInfo);
@@ -54,7 +57,7 @@ namespace vzt {
             createInfo.enabledLayerCount = 0;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS) {
+        if (vkCreateInstance(&createInfo, nullptr, &m_handle) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create Vulkan instance!");
         }
 
@@ -64,26 +67,49 @@ namespace vzt {
         createInfoDebugMessenger(debugMessengerCreateInfo);
 
         auto vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-                vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT"));
+                vkGetInstanceProcAddr(m_handle, "vkCreateDebugUtilsMessengerEXT"));
         if (vkCreateDebugUtilsMessengerEXT == nullptr
             || vkCreateDebugUtilsMessengerEXT(
-                    m_instance,
-                    &debugMessengerCreateInfo,
-                    nullptr,
-                    &m_debugMessenger)
+                m_handle,
+                &debugMessengerCreateInfo,
+                nullptr,
+                &m_debugMessenger)
                     != VK_SUCCESS) {
             throw std::runtime_error("Failed to set up debug messenger!");
         }
     }
+    std::vector<VkPhysicalDevice> Instance::EnumeratePhysicalDevice() {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
 
-    bool Instance::CheckValidationLayerSupport() {
+        if (deviceCount == 0) {
+            throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+        }
+
+        auto devices = std::vector<VkPhysicalDevice>(deviceCount);
+        vkEnumeratePhysicalDevices(m_handle, &deviceCount, devices.data());
+
+        return devices;
+    }
+
+    Instance::~Instance() {
+        auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+                vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
+        if (vkDestroyDebugUtilsMessengerEXT != nullptr) {
+            vkDestroyDebugUtilsMessengerEXT(m_handle, m_debugMessenger, nullptr);
+        }
+
+        vkDestroyInstance(m_handle, nullptr);
+    }
+
+    bool Instance::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers) {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-        for (const std::string& layerName : ValidationLayers) {
+        for (const std::string& layerName : validationLayers) {
             bool layerFound = false;
 
             for (const auto& layerProperties : availableLayers) {
@@ -99,16 +125,6 @@ namespace vzt {
         }
 
         return true;
-    }
-
-    Instance::~Instance() {
-        auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-                vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT"));
-        if (vkDestroyDebugUtilsMessengerEXT != nullptr) {
-            vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
-        }
-
-        vkDestroyInstance(m_instance, nullptr);
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(

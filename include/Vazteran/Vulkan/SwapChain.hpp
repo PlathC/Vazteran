@@ -9,13 +9,15 @@
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
 
 namespace vzt {
-    class DeviceManager;
     class GraphicPipeline;
+    class LogicalDevice;
 
     class SwapChain {
     public:
-        SwapChain(DeviceManager *deviceManager, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
+        SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
+
         bool DrawFrame();
+
         ~SwapChain();
 
     private:
@@ -27,7 +29,7 @@ namespace vzt {
 
         int m_frameBufferWidth;
         int m_frameBufferHeight;
-        DeviceManager* m_deviceManager;
+        LogicalDevice* m_logicalDevice;
         VkSwapchainKHR m_swapChain;
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;

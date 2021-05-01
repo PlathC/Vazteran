@@ -9,8 +9,13 @@
 namespace vzt {
     class Instance {
     public:
-        Instance(std::string_view name, std::vector<const char*> extensions);
-        VkInstance Get() { return m_instance; };
+        Instance(std::string_view name, std::vector<const char*> extensions,
+                 const std::vector<const char*>& validationLayers = DefaultValidationLayers);
+
+        std::vector<VkPhysicalDevice> EnumeratePhysicalDevice();
+        VkInstance VkHandle() const { return m_handle; };
+        std::vector<const char*> ValidationLayers() const { return m_validationLayers; }
+
         ~Instance();
 
 #ifdef NDEBUG
@@ -18,12 +23,13 @@ namespace vzt {
 #else
         static constexpr bool EnableValidationLayers = true;
 #endif
-        static const std::vector<const char*> ValidationLayers;
+        static const std::vector<const char*> DefaultValidationLayers;
     private:
-        VkInstance m_instance;
-        VkDebugUtilsMessengerEXT m_debugMessenger;
+        static bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayers);
 
-        static bool CheckValidationLayerSupport();
+        VkInstance m_handle;
+        VkDebugUtilsMessengerEXT m_debugMessenger;
+        std::vector<const char*> m_validationLayers;
     };
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(

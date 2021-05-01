@@ -1,15 +1,16 @@
 #include <stdexcept>
 #include <vector>
 
-#include "Vazteran/Vulkan/DeviceManager.hpp"
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
+#include "Vazteran/Vulkan/LogicalDevice.hpp"
+#include "Vazteran/Vulkan/PhysicalDevice.hpp"
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
 namespace vzt {
-    SwapChain::SwapChain(DeviceManager* deviceManager, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight) :
+    SwapChain::SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight) :
             m_frameBufferWidth(frameBufferWidth), m_frameBufferHeight(frameBufferHeight),
-            m_deviceManager(deviceManager) {
-        SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_deviceManager->PhysicalDevice(), surface);
+            m_logicalDevice(logicalDevice) {
+        SwapChainSupportDetails swapChainSupport = m_logicalDevice->Parent()->QuerySwapChainSupport(surface);
 
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR m_presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
@@ -30,7 +31,7 @@ namespace vzt {
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = FindQueueFamilies(m_deviceManager->PhysicalDevice(), surface);
+        QueueFamilyIndices indices = m_logicalDevice->Parent()->FindQueueFamilies(surface);
         uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
         if (indices.graphicsFamily != indices.presentFamily) {
@@ -49,13 +50,13 @@ namespace vzt {
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        if (vkCreateSwapchainKHR(m_deviceManager->LogicalDevice(), &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
+        if (vkCreateSwapchainKHR(m_logicalDevice->VkHandle(), &createInfo, nullptr, &m_swapChain) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create swap chain!");
         }
 
-        vkGetSwapchainImagesKHR(m_deviceManager->LogicalDevice(), m_swapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_swapChain, &imageCount, nullptr);
         m_swapChainImages.resize(imageCount);
-        vkGetSwapchainImagesKHR(m_deviceManager->LogicalDevice(), m_swapChain, &imageCount, m_swapChainImages.data());
+        vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_swapChain, &imageCount, m_swapChainImages.data());
         m_swapChainImageFormat = surfaceFormat.format;
         m_swapChainExtent = extent;
         m_swapChainImageViews.resize(m_swapChainImages.size());
@@ -78,15 +79,15 @@ namespace vzt {
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(m_deviceManager->LogicalDevice(), &createInfo, nullptr, &m_swapChainImageViews[i])
+            if (vkCreateImageView(m_logicalDevice->VkHandle(), &createInfo, nullptr, &m_swapChainImageViews[i])
                 != VK_SUCCESS) {
                 throw std::runtime_error("failed to create image views!");
             }
         }
         m_graphicPipeline = std::make_unique<GraphicPipeline>(
-                m_deviceManager, PipelineSettings{
-                        Shader(m_deviceManager, "./shaders/shader.vert.spv", ShaderStage::VertexShader),
-                        Shader(m_deviceManager, "./shaders/shader.frag.spv", ShaderStage::FragmentShader),
+                m_logicalDevice, PipelineSettings{
+                        Shader(m_logicalDevice, "./shaders/shader.vert.spv", ShaderStage::VertexShader),
+                        Shader(m_logicalDevice, "./shaders/shader.frag.spv", ShaderStage::FragmentShader),
                         m_swapChainExtent,
                         m_swapChainImageFormat
                 }
@@ -94,7 +95,7 @@ namespace vzt {
 
         for(const auto& imageView : m_swapChainImageViews) {
             m_frameBuffers.emplace_back(std::make_unique<FrameBuffer>(
-                    m_deviceManager, m_graphicPipeline->RenderPass(), imageView, m_swapChainExtent.width, m_swapChainExtent.height
+                    m_logicalDevice, m_graphicPipeline->RenderPass(), imageView, m_swapChainExtent.width, m_swapChainExtent.height
             ));
         }
 
@@ -102,7 +103,7 @@ namespace vzt {
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
         poolInfo.flags = 0; // Optional
-        if (vkCreateCommandPool(m_deviceManager->LogicalDevice(), &poolInfo, nullptr, &m_commandPool)
+        if (vkCreateCommandPool(m_logicalDevice->VkHandle(), &poolInfo, nullptr, &m_commandPool)
                 != VK_SUCCESS) {
             throw std::runtime_error("Failed to create command pool!");
         }
@@ -115,7 +116,7 @@ namespace vzt {
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
 
-        if (vkAllocateCommandBuffers(m_deviceManager->LogicalDevice(), &allocInfo, m_commandBuffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(m_logicalDevice->VkHandle(), &allocInfo, m_commandBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate command buffers!");
         }
 
@@ -162,19 +163,19 @@ namespace vzt {
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MaxFramesInFlight; i++) {
-            if (vkCreateSemaphore(m_deviceManager->LogicalDevice(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS
-                    || vkCreateSemaphore(m_deviceManager->LogicalDevice(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS
-                    || vkCreateFence(m_deviceManager->LogicalDevice(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS){
+            if (vkCreateSemaphore(m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS
+                    || vkCreateSemaphore(m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS
+                    || vkCreateFence(m_logicalDevice->VkHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS){
                 throw std::runtime_error("Failed to create synchronization objects for a frame!");
             }
         }
     }
 
     bool SwapChain::DrawFrame() {
-        vkWaitForFences(m_deviceManager->LogicalDevice(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
-        VkResult result = vkAcquireNextImageKHR(m_deviceManager->LogicalDevice(), m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(m_logicalDevice->VkHandle(), m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             return true;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
@@ -183,7 +184,7 @@ namespace vzt {
 
         // Check if a previous frame is using this image (i.e. there is its fence to wait on)
         if (m_imagesInFlight[imageIndex] != VK_NULL_HANDLE) {
-            vkWaitForFences(m_deviceManager->LogicalDevice(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+            vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
         }
         // Mark the image as now being in use by this frame
         m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
@@ -203,9 +204,9 @@ namespace vzt {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        vkResetFences(m_deviceManager->LogicalDevice(), 1, &m_inFlightFences[m_currentFrame]);
+        vkResetFences(m_logicalDevice->VkHandle(), 1, &m_inFlightFences[m_currentFrame]);
 
-        if (vkQueueSubmit(m_deviceManager->GraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(m_logicalDevice->GraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS) {
             throw std::runtime_error("Failed to submit draw command buffer!");
         }
 
@@ -220,7 +221,7 @@ namespace vzt {
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr; // Optional
 
-        result = vkQueuePresentKHR(m_deviceManager->PresentQueue(), &presentInfo);
+        result = vkQueuePresentKHR(m_logicalDevice->PresentQueue(), &presentInfo);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
             return true;
         } else if (result != VK_SUCCESS) {
@@ -233,18 +234,18 @@ namespace vzt {
 
     SwapChain::~SwapChain() {
         for (std::size_t i = 0; i < MaxFramesInFlight; i++) {
-            vkDestroySemaphore(m_deviceManager->LogicalDevice(), m_renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(m_deviceManager->LogicalDevice(), m_imageAvailableSemaphores[i], nullptr);
-            vkDestroyFence(m_deviceManager->LogicalDevice(), m_inFlightFences[i], nullptr);
+            vkDestroySemaphore(m_logicalDevice->VkHandle(), m_renderFinishedSemaphores[i], nullptr);
+            vkDestroySemaphore(m_logicalDevice->VkHandle(), m_imageAvailableSemaphores[i], nullptr);
+            vkDestroyFence(m_logicalDevice->VkHandle(), m_inFlightFences[i], nullptr);
         }
 
-        vkDestroyCommandPool(m_deviceManager->LogicalDevice(), m_commandPool, nullptr);
+        vkDestroyCommandPool(m_logicalDevice->VkHandle(), m_commandPool, nullptr);
 
         for (auto imageView : m_swapChainImageViews) {
-            vkDestroyImageView(m_deviceManager->LogicalDevice(), imageView, nullptr);
+            vkDestroyImageView(m_logicalDevice->VkHandle(), imageView, nullptr);
         }
 
-        vkDestroySwapchainKHR(m_deviceManager->LogicalDevice(), m_swapChain, nullptr);
+        vkDestroySwapchainKHR(m_logicalDevice->VkHandle(), m_swapChain, nullptr);
     }
 
     VkSurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {

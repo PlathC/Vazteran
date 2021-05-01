@@ -1,9 +1,9 @@
-#include "Vazteran/Vulkan/DeviceManager.hpp"
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
+#include "Vazteran/Vulkan/LogicalDevice.hpp"
 
 namespace vzt {
-    GraphicPipeline::GraphicPipeline(DeviceManager* deviceManager, const PipelineSettings& settings):
-            m_deviceManager(deviceManager) {
+    GraphicPipeline::GraphicPipeline(LogicalDevice* logicalDevice, const PipelineSettings& settings):
+            m_logicalDevice(logicalDevice) {
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 0;
@@ -88,7 +88,7 @@ namespace vzt {
         pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
         pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-        if (vkCreatePipelineLayout(m_deviceManager->LogicalDevice(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(m_logicalDevice->VkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
@@ -128,9 +128,9 @@ namespace vzt {
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(m_deviceManager->LogicalDevice(), &renderPassInfo, nullptr, &m_renderPass)
+        if (vkCreateRenderPass(m_logicalDevice->VkHandle(), &renderPassInfo, nullptr, &m_renderPass)
             != VK_SUCCESS) {
-            throw std::runtime_error("failed to create render pass!");
+            throw std::runtime_error("Failed to create render pass!");
         }
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -155,15 +155,15 @@ namespace vzt {
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
-        if (vkCreateGraphicsPipelines(m_deviceManager->LogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicPipeline)
+        if (vkCreateGraphicsPipelines(m_logicalDevice->VkHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicPipeline)
             != VK_SUCCESS) {
             throw std::runtime_error("Failed to create graphics pipeline!");
         }
     }
 
     GraphicPipeline::~GraphicPipeline() {
-        vkDestroyPipeline(m_deviceManager->LogicalDevice(), m_graphicPipeline, nullptr);
-        vkDestroyPipelineLayout(m_deviceManager->LogicalDevice(), m_pipelineLayout, nullptr);
-        vkDestroyRenderPass(m_deviceManager->LogicalDevice(), m_renderPass, nullptr);
+        vkDestroyPipeline(m_logicalDevice->VkHandle(), m_graphicPipeline, nullptr);
+        vkDestroyPipelineLayout(m_logicalDevice->VkHandle(), m_pipelineLayout, nullptr);
+        vkDestroyRenderPass(m_logicalDevice->VkHandle(), m_renderPass, nullptr);
     }
 }

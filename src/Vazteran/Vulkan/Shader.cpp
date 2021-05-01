@@ -1,9 +1,9 @@
-#include "Vazteran/Vulkan/DeviceManager.hpp"
+#include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/Shader.hpp"
 
 namespace vzt {
-    Shader::Shader(DeviceManager* deviceManager, const fs::path& compiled_file, ShaderStage shaderStage):
-            m_deviceManager(deviceManager), m_shaderStage(shaderStage) {
+    Shader::Shader(LogicalDevice* logicalDevice, const fs::path& compiled_file, ShaderStage shaderStage):
+            m_logicalDevice(logicalDevice), m_shaderStage(shaderStage) {
         m_compiledSource = vzt::ReadFile(compiled_file);
 
         VkShaderModuleCreateInfo createInfo{};
@@ -11,7 +11,7 @@ namespace vzt {
         createInfo.codeSize = m_compiledSource.size();
         createInfo.pCode = reinterpret_cast<const uint32_t*>(m_compiledSource.data());
 
-        if (vkCreateShaderModule(m_deviceManager->LogicalDevice(), &createInfo, nullptr, &m_shaderModule) != VK_SUCCESS) {
+        if (vkCreateShaderModule(m_logicalDevice->VkHandle(), &createInfo, nullptr, &m_shaderModule) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create shader module!");
         }
 
@@ -22,6 +22,6 @@ namespace vzt {
     }
 
     Shader::~Shader() {
-        vkDestroyShaderModule(m_deviceManager->LogicalDevice(), m_shaderModule, nullptr);
+        vkDestroyShaderModule(m_logicalDevice->VkHandle(), m_shaderModule, nullptr);
     }
 }

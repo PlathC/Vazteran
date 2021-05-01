@@ -6,7 +6,7 @@
 #include <vulkan/vulkan.h>
 
 namespace vzt {
-    class DeviceManager;
+    class LogicalDevice;
 
     enum ShaderStage {
         VertexShader = VK_SHADER_STAGE_VERTEX_BIT,
@@ -15,11 +15,13 @@ namespace vzt {
 
     class Shader {
     public:
-        Shader(DeviceManager* deviceManager, const fs::path& compiled_file, ShaderStage shaderStage);
+        Shader(LogicalDevice* logicalDevice, const fs::path& compiled_file, ShaderStage shaderStage);
+
         VkPipelineShaderStageCreateInfo Stage() const { return m_stage; }
+
         ~Shader();
     private:
-        DeviceManager* m_deviceManager;
+        LogicalDevice* m_logicalDevice;
         std::vector<char> m_compiledSource;
         VkShaderModule m_shaderModule;
         VkPipelineShaderStageCreateInfo m_stage{};
