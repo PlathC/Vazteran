@@ -17,11 +17,19 @@ namespace vzt {
         SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
 
         bool DrawFrame();
+        void Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
+        void FrameBufferResized() { m_framebufferResized = true; };
 
         ~SwapChain();
 
     private:
-        const int MaxFramesInFlight = 2;
+        void CreateSwapChain();
+        void CreateImageKHR();
+        void CreateImageViews();
+        void CreateCommandBuffers();
+        void CreateSynchronizationObjects();
+
+        constexpr static int MaxFramesInFlight = 2;
 
         VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
         VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
@@ -29,17 +37,22 @@ namespace vzt {
 
         int m_frameBufferWidth;
         int m_frameBufferHeight;
+        VkSurfaceKHR m_surface;
+        uint32_t m_imageCount;
         LogicalDevice* m_logicalDevice;
         VkSwapchainKHR m_swapChain;
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
+
         VkCommandPool m_commandPool;
         std::vector<VkCommandBuffer> m_commandBuffers;
         std::vector<VkSemaphore> m_imageAvailableSemaphores;
         std::vector<VkSemaphore> m_renderFinishedSemaphores;
         std::vector<VkFence> m_inFlightFences;
         std::vector<VkFence> m_imagesInFlight;
+
         std::size_t m_currentFrame = 0;
+        bool m_framebufferResized = false;
 
         std::vector<VkImage> m_swapChainImages;
         std::vector<VkImageView> m_swapChainImageViews;

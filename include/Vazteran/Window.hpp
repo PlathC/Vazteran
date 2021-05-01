@@ -18,7 +18,7 @@ namespace vzt {
     struct SurfaceHandler {
     public:
         SurfaceHandler(Instance* instance, VkSurfaceKHR surface);
-        VkSurfaceKHR Surface() const { return m_surface; }
+        VkSurfaceKHR VkHandle() const { return m_surface; }
         ~SurfaceHandler();
 
     private:
@@ -34,6 +34,7 @@ namespace vzt {
 
         bool ShouldClose() { return glfwWindowShouldClose(m_window.get()); }
         void Draw();
+        void FrameBufferResized();
         LogicalDevice* Device() { return m_logicalDevice.get(); }
 
         ~Window();
