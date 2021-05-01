@@ -15,6 +15,7 @@ namespace vzt {
     class GraphicPipeline;
     class PhysicalDevice;
     class SwapChain;
+    class TextureImage;
 
     struct SurfaceHandler {
     public:
@@ -42,16 +43,18 @@ namespace vzt {
     private:
         uint32_t m_width;
         uint32_t m_height;
+
         const std::vector<Vertex> m_vertices = {
-                {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-                {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-                {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-                {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+                {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+                {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+                {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+                {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
         };
 
         const std::vector<uint32_t> m_vertexIndices = {
                 0, 1, 2, 2, 3, 0
         };
+
 
         GLFWwindowPtr m_window;
         Instance* m_instance;

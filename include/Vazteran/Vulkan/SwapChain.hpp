@@ -11,7 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-#include "Vazteran/Vulkan/Data/Data.hpp"
+#include "Vazteran/Vulkan/Data/Vertex.hpp"
+#include "Vazteran/Vulkan/Data/Texture.hpp"
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
 
 namespace vzt {
@@ -23,9 +24,10 @@ namespace vzt {
     class SwapChain {
     public:
         SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                  RenderPassFunction renderPass);
+                  RenderPassFunction renderPass, std::unique_ptr<TextureImage> textureImage);
 
         bool DrawFrame(UniformBufferObject ubo);
+        void SetTextureImage(std::unique_ptr<TextureImage> textureImage);
         void Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
         void FrameBufferResized() { m_framebufferResized = true; };
         uint32_t Width() const { return m_frameBufferWidth; }
@@ -42,6 +44,8 @@ namespace vzt {
 
         void UpdateUniformBuffer(uint32_t currentImage, UniformBufferObject ubo);
 
+        void UpdateDescriptorSets();
+
         void Cleanup();
 
         constexpr static int MaxFramesInFlight = 2;
@@ -50,13 +54,14 @@ namespace vzt {
         VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
         VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
+        LogicalDevice* m_logicalDevice;
+        VkSwapchainKHR m_vkHandle;
+
         int m_frameBufferWidth;
         int m_frameBufferHeight;
         RenderPassFunction m_renderPass;
         VkSurfaceKHR m_surface;
         uint32_t m_imageCount;
-        LogicalDevice* m_logicalDevice;
-        VkSwapchainKHR m_vkHandle;
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
 
@@ -79,6 +84,8 @@ namespace vzt {
         std::vector<VkImageView> m_swapChainImageViews;
         std::unique_ptr<GraphicPipeline> m_graphicPipeline;
         std::vector<std::unique_ptr<FrameBuffer>> m_frameBuffers;
+        std::unique_ptr<TextureSampler> m_textureSampler;
+        std::unique_ptr<TextureImage> m_textureImage;
     };
 }
 

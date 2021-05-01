@@ -1,7 +1,7 @@
 #ifndef VAZTERAN_BUFFER_HPP
 #define VAZTERAN_BUFFER_HPP
 
-#include "Vazteran/Vulkan/Data/Data.hpp"
+#include "Vazteran/Vulkan/Data/Vertex.hpp"
 
 namespace vzt {
     class LogicalDevice;

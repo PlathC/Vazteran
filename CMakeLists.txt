@@ -151,9 +151,10 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
-        include/Vazteran/Vulkan/Data/Data.hpp
         include/Vazteran/Vulkan/Data/Buffer.hpp
         include/Vazteran/Vulkan/Data/Buffer.inl
+        include/Vazteran/Vulkan/Data/Vertex.hpp
+        include/Vazteran/Vulkan/Data/Texture.hpp
         include/Vazteran/Vulkan/PhysicalDevice.hpp
         include/Vazteran/Vulkan/LogicalDevice.hpp
         include/Vazteran/Vulkan/Instance.hpp
@@ -167,6 +168,7 @@ set(HEADERS
         )
 
 set(SOURCES
+        src/Vazteran/Vulkan/Data/Texture.cpp
         src/Vazteran/Vulkan/PhysicalDevice.cpp
         src/Vazteran/Vulkan/LogicalDevice.cpp
         src/Vazteran/Vulkan/Instance.cpp
@@ -191,6 +193,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC ${VAZTERAN_LINKER_FLAGS})
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/stb)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw
@@ -223,3 +226,4 @@ endfunction(add_shader)
 
 add_shader(${PROJECT_NAME} shaders/shader.vert)
 add_shader(${PROJECT_NAME} shaders/shader.frag)
+file(COPY samples DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

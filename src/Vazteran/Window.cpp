@@ -4,8 +4,6 @@
 
 #include "Vazteran/Window.hpp"
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Vulkan/LogicalDevice.hpp"
-#include "Vazteran/Vulkan/PhysicalDevice.hpp"
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
 namespace vzt {
@@ -49,6 +47,8 @@ namespace vzt {
 
         int frameBufferWidth, frameBufferHeight;
         glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
+        fs::path texturePath = "./samples/texture.jpg";
+        auto texture = std::make_unique<TextureImage>(m_logicalDevice.get(), texturePath);
         m_swapChain = std::make_unique<vzt::SwapChain>(
                 m_logicalDevice.get(), surface, frameBufferWidth, frameBufferHeight,
                 [&](VkCommandBuffer commandBuffer, VkDescriptorSet& descriptorSet, GraphicPipeline* graphicPipeline) {
@@ -60,7 +60,8 @@ namespace vzt {
 
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->Layout(), 0, 1, &descriptorSet, 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indexBuffer->Size()), 1, 0, 0, 0);
-                }
+                },
+                std::move(texture)
         );
     }
 
