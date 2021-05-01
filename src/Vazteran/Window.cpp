@@ -38,13 +38,28 @@ namespace vzt {
             throw std::runtime_error("Failed to create window surface!");
         }
 
-        m_surface = std::make_unique<SurfaceHandler>(m_instance, surface);
+        m_surface        = std::make_unique<SurfaceHandler>(m_instance, surface);
         m_physicalDevice = std::make_unique<PhysicalDevice>(m_instance, surface);
-        m_logicalDevice = std::make_unique<LogicalDevice>(m_instance, m_physicalDevice.get(), surface);
+        m_logicalDevice  = std::make_unique<LogicalDevice>(m_instance, m_physicalDevice.get(), surface);
+
+        m_vertexBuffer   = std::make_unique<VertexBuffer>(m_logicalDevice.get(), m_vertices,
+                                                          VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        m_indexBuffer    = std::make_unique<IndexBuffer>(m_logicalDevice.get(), m_vertexIndices,
+                                                         VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
         int frameBufferWidth, frameBufferHeight;
         glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
-        m_swapChain = std::make_unique<vzt::SwapChain>(m_logicalDevice.get(), surface, frameBufferWidth, frameBufferHeight);
+        m_swapChain = std::make_unique<vzt::SwapChain>(
+                m_logicalDevice.get(), surface, frameBufferWidth, frameBufferHeight,
+                [&](VkCommandBuffer commandBuffer) {
+
+                    VkBuffer vertexBuffers[] = { m_vertexBuffer->VkHandle() };
+                    VkDeviceSize offsets[] = {0};
+                    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+                    vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->VkHandle(), 0, VK_INDEX_TYPE_UINT32);
+                    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indexBuffer->Size()), 1, 0, 0, 0);
+                }
+        );
     }
 
     void Window::Draw() {

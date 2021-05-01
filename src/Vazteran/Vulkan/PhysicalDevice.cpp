@@ -23,18 +23,18 @@ namespace vzt {
 
     PhysicalDevice::PhysicalDevice(Instance* instance, VkSurfaceKHR surface,
                                    const std::vector<const char*>& deviceExtensions) :
-            m_handle(FindBestDevice(instance, surface, deviceExtensions)), m_extensions(deviceExtensions) {
-        if (m_handle == VK_NULL_HANDLE) {
+            m_vkHandle(FindBestDevice(instance, surface, deviceExtensions)), m_extensions(deviceExtensions) {
+        if (m_vkHandle == VK_NULL_HANDLE) {
             throw std::runtime_error("Failed to find a suitable GPU!");
         }
     }
 
     SwapChainSupportDetails PhysicalDevice::QuerySwapChainSupport(VkSurfaceKHR surface) const {
-        return vzt::QuerySwapChainSupport(m_handle, surface);
+        return vzt::QuerySwapChainSupport(m_vkHandle, surface);
     }
 
     QueueFamilyIndices PhysicalDevice::FindQueueFamilies(VkSurfaceKHR surface) const {
-        return vzt::FindQueueFamilies(m_handle, surface);
+        return vzt::FindQueueFamilies(m_vkHandle, surface);
     }
 
     PhysicalDevice::~PhysicalDevice() { }
@@ -53,7 +53,7 @@ namespace vzt {
     }
 
     static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
-        SwapChainSupportDetails details;
+        SwapChainSupportDetails details{};
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
         uint32_t formatCount;
@@ -75,7 +75,7 @@ namespace vzt {
     }
 
     static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
-        QueueFamilyIndices indices;
+        QueueFamilyIndices indices{};
 
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);

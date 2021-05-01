@@ -1,15 +1,20 @@
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
+#include "Vazteran/Vulkan/Data/Vertex.hpp"
 
 namespace vzt {
     GraphicPipeline::GraphicPipeline(LogicalDevice* logicalDevice, const PipelineSettings& settings):
             m_logicalDevice(logicalDevice) {
+
+        auto bindingDescription = Vertex::GetBindingDescription();
+        auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -155,14 +160,14 @@ namespace vzt {
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
 
-        if (vkCreateGraphicsPipelines(m_logicalDevice->VkHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_graphicPipeline)
+        if (vkCreateGraphicsPipelines(m_logicalDevice->VkHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_vkHandle)
             != VK_SUCCESS) {
             throw std::runtime_error("Failed to create graphics pipeline!");
         }
     }
 
     GraphicPipeline::~GraphicPipeline() {
-        vkDestroyPipeline(m_logicalDevice->VkHandle(), m_graphicPipeline, nullptr);
+        vkDestroyPipeline(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
         vkDestroyPipelineLayout(m_logicalDevice->VkHandle(), m_pipelineLayout, nullptr);
         vkDestroyRenderPass(m_logicalDevice->VkHandle(), m_renderPass, nullptr);
     }

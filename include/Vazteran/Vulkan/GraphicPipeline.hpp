@@ -28,7 +28,7 @@ namespace vzt {
         GraphicPipeline(LogicalDevice* logicalDevice, const PipelineSettings& settings);
 
         VkRenderPass RenderPass() const { return m_renderPass; }
-        VkPipeline Pipeline() const { return m_graphicPipeline; }
+        VkPipeline VkHandle() const { return m_vkHandle; }
 
         ~GraphicPipeline();
 
@@ -36,7 +36,7 @@ namespace vzt {
         LogicalDevice* m_logicalDevice;
         VkRenderPass m_renderPass;
         VkPipelineLayout m_pipelineLayout;
-        VkPipeline m_graphicPipeline;
+        VkPipeline m_vkHandle;
     };
 }
 

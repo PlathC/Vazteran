@@ -151,6 +151,9 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
+        include/Vazteran/Vulkan/Data/Vertex.hpp
+        include/Vazteran/Vulkan/Data/Buffer.hpp
+        include/Vazteran/Vulkan/Data/Buffer.inl
         include/Vazteran/Vulkan/PhysicalDevice.hpp
         include/Vazteran/Vulkan/LogicalDevice.hpp
         include/Vazteran/Vulkan/Instance.hpp

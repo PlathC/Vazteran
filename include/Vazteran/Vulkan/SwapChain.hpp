@@ -2,6 +2,7 @@
 #define VAZTERAN_SWAPCHAIN_HPP
 
 #include <iostream>
+#include <functional>
 #include <vector>
 
 #include <vulkan/vulkan.h>
@@ -12,9 +13,12 @@ namespace vzt {
     class GraphicPipeline;
     class LogicalDevice;
 
+    using RenderPassFunction = std::function<void(VkCommandBuffer)>;
+
     class SwapChain {
     public:
-        SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
+        SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
+                  RenderPassFunction renderPass);
 
         bool DrawFrame();
         void Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
@@ -37,6 +41,7 @@ namespace vzt {
 
         int m_frameBufferWidth;
         int m_frameBufferHeight;
+        RenderPassFunction m_renderPass;
         VkSurfaceKHR m_surface;
         uint32_t m_imageCount;
         LogicalDevice* m_logicalDevice;

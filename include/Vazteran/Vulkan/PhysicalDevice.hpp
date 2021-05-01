@@ -28,7 +28,7 @@ namespace vzt {
         PhysicalDevice(Instance* instance, VkSurfaceKHR surface,
                        const std::vector<const char*>& deviceExtensions = PhysicalDevice::DefaultDeviceExtensions);
 
-        VkPhysicalDevice VkHandle() const { return m_handle; }
+        VkPhysicalDevice VkHandle() const { return m_vkHandle; }
         std::vector<const char*> Extensions() { return m_extensions; }
         SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface) const;
         QueueFamilyIndices FindQueueFamilies(VkSurfaceKHR surface) const;
@@ -40,7 +40,7 @@ namespace vzt {
                                                const std::vector<const char*>& deviceExtensions);
         static const std::vector<const char*> DefaultDeviceExtensions;
 
-        VkPhysicalDevice m_handle;
+        VkPhysicalDevice m_vkHandle;
         std::vector<const char*> m_extensions;
     };
 

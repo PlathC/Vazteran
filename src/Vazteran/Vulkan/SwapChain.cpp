@@ -7,9 +7,10 @@
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
 namespace vzt {
-    SwapChain::SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight) :
-            m_frameBufferWidth(frameBufferWidth), m_frameBufferHeight(frameBufferHeight), m_surface(surface),
-            m_logicalDevice(logicalDevice) {
+    SwapChain::SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
+                         RenderPassFunction renderPass) :
+            m_frameBufferWidth(frameBufferWidth), m_frameBufferHeight(frameBufferHeight), m_renderPass(renderPass),
+            m_surface(surface), m_logicalDevice(logicalDevice) {
 
         CreateSwapChain();
         CreateImageKHR();
@@ -87,6 +88,8 @@ namespace vzt {
         vkFreeCommandBuffers(m_logicalDevice->VkHandle(), m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
         m_graphicPipeline.reset();
 
+        vkDestroyCommandPool(m_logicalDevice->VkHandle(), m_commandPool, nullptr);
+
         for (auto& m_swapChainImageView : m_swapChainImageViews) {
             vkDestroyImageView(m_logicalDevice->VkHandle(), m_swapChainImageView, nullptr);
         }
@@ -96,6 +99,7 @@ namespace vzt {
         m_surface = surface;
         m_frameBufferWidth = frameBufferWidth;
         m_frameBufferHeight = frameBufferHeight;
+
         CreateSwapChain();
         CreateImageKHR();
         CreateImageViews();
@@ -142,7 +146,7 @@ namespace vzt {
         m_swapChainImageFormat = surfaceFormat.format;
         m_swapChainExtent = extent;
 
-        QueueFamilyIndices indices = m_logicalDevice->Parent()->FindQueueFamilies(m_surface);
+        QueueFamilyIndices indices = m_logicalDevice->DeviceQueueFamilyIndices();
         uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
         if (indices.graphicsFamily != indices.presentFamily) {
@@ -215,7 +219,7 @@ namespace vzt {
     }
 
     void SwapChain::CreateCommandBuffers() {
-        QueueFamilyIndices indices = m_logicalDevice->Parent()->FindQueueFamilies(m_surface);
+        QueueFamilyIndices indices = m_logicalDevice->DeviceQueueFamilyIndices();
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -260,8 +264,10 @@ namespace vzt {
             renderPassInfo.pClearValues = &clearColor;
 
             vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->Pipeline());
-            vkCmdDraw(m_commandBuffers[i], 3, 2, 0, 0);
+                vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
+            // vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle->VkHandle());
+            // vkCmdDraw(m_commandBuffers[i], 3, 2, 0, 0);
+            m_renderPass(m_commandBuffers[i]);
             vkCmdEndRenderPass(m_commandBuffers[i]);
 
             if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS) {
