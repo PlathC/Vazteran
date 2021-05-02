@@ -6,15 +6,15 @@ to render my potential future test related to computer graphics.
 | Feature                                                         | Progress  |
 |-----------------------------------------------------------------|-----------|
 | Razterization (Vulkan)                                          | Done      |
-| Phong                                                               | To do     |
+| Phong                                                           | WIP       |
 | PBR                                                             | To do     |
 | Path tracing                                                    | To do     |
 
 ## Current state
 
-The engine can now load 3D models and handle to simulate a very simple illumination pattern.
+The engine can now load 3D models and present it with an hardcoded phong that will be extended in order to use uniform data.
 
-![](./readmefiles/Vazteran-prephong.png)
+![](./readmefiles/Vazteran-WIPPhong.png)
 
 ## Samples 
 

@@ -30,6 +30,7 @@ namespace vzt {
         glm::vec3 CRotation() const { return m_rotation; }
         glm::vec3& Position() { return m_position; }
         glm::vec3 CPosition() const { return m_position; }
+
     private:
         std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
