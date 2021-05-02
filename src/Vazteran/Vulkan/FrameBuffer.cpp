@@ -7,13 +7,8 @@
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
 
 namespace vzt {
-    FrameBuffer::FrameBuffer(LogicalDevice* logicalDevice, VkRenderPass renderPass, VkImageView imageView,
-                             VkImageView depthImageView, uint32_t width, uint32_t height):
+    FrameBuffer::FrameBuffer(LogicalDevice* logicalDevice, VkRenderPass renderPass, std::vector<VkImageView> attachments, uint32_t width, uint32_t height):
             m_logicalDevice(logicalDevice) {
-        std::array<VkImageView, 2> attachments = {
-                imageView, depthImageView
-        };
-
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = renderPass;

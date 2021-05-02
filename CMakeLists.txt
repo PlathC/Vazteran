@@ -151,35 +151,44 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
-        include/Vazteran/Vulkan/Data/Buffer.hpp
-        include/Vazteran/Vulkan/Data/Buffer.inl
-        include/Vazteran/Vulkan/Data/Vertex.hpp
-        include/Vazteran/Vulkan/Data/Texture.hpp
-        include/Vazteran/Vulkan/PhysicalDevice.hpp
-        include/Vazteran/Vulkan/LogicalDevice.hpp
-        include/Vazteran/Vulkan/Instance.hpp
-        include/Vazteran/Vulkan/FrameBuffer.hpp
-        include/Vazteran/Vulkan/GraphicPipeline.hpp
-        include/Vazteran/Vulkan/Shader.hpp
-        include/Vazteran/Vulkan/SwapChain.hpp
         include/Vazteran/Application.hpp
+        include/Vazteran/Math.hpp
         include/Vazteran/Utils.hpp
         include/Vazteran/Window.hpp
+        include/Vazteran/Data/Camera.hpp
+        include/Vazteran/Data/Image.hpp
+        include/Vazteran/Data/Material.hpp
+        include/Vazteran/Data/Model.hpp
+        include/Vazteran/Vulkan/Buffer.hpp
+        include/Vazteran/Vulkan/Buffer.inl
+        include/Vazteran/Vulkan/FrameBuffer.hpp
+        include/Vazteran/Vulkan/GpuObject.hpp
+        include/Vazteran/Vulkan/GraphicPipeline.hpp
+        include/Vazteran/Vulkan/Instance.hpp
+        include/Vazteran/Vulkan/LogicalDevice.hpp
+        include/Vazteran/Vulkan/PhysicalDevice.hpp
+        include/Vazteran/Vulkan/Texture.hpp
+        include/Vazteran/Vulkan/Shader.hpp
+        include/Vazteran/Vulkan/SwapChain.hpp
         )
 
 set(SOURCES
-        src/Vazteran/Vulkan/Data/Texture.cpp
-        src/Vazteran/Vulkan/PhysicalDevice.cpp
-        src/Vazteran/Vulkan/LogicalDevice.cpp
-        src/Vazteran/Vulkan/Instance.cpp
-        src/Vazteran/Vulkan/FrameBuffer.cpp
-        src/Vazteran/Vulkan/GraphicPipeline.cpp
-        src/Vazteran/Vulkan/Shader.cpp
-        src/Vazteran/Vulkan/SwapChain.cpp
+        src/Vazteran/main.cpp
         src/Vazteran/Application.cpp
         src/Vazteran/Utils.cpp
         src/Vazteran/Window.cpp
-        src/Vazteran/main.cpp)
+        src/Vazteran/Data/Camera.cpp
+        src/Vazteran/Data/Image.cpp
+        src/Vazteran/Data/Material.cpp
+        src/Vazteran/Data/Model.cpp
+        src/Vazteran/Vulkan/Instance.cpp
+        src/Vazteran/Vulkan/GraphicPipeline.cpp
+        src/Vazteran/Vulkan/FrameBuffer.cpp
+        src/Vazteran/Vulkan/LogicalDevice.cpp
+        src/Vazteran/Vulkan/PhysicalDevice.cpp
+        src/Vazteran/Vulkan/Shader.cpp
+        src/Vazteran/Vulkan/SwapChain.cpp
+        src/Vazteran/Vulkan/Texture.cpp)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 
@@ -194,6 +203,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC ${VAZTERAN_LINKER_FLAGS})
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/stb)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/tinyobj)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw

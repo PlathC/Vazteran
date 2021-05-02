@@ -7,8 +7,8 @@ namespace vzt {
 
     class FrameBuffer {
     public:
-        FrameBuffer(LogicalDevice* logicalDevice, VkRenderPass renderPass, VkImageView imageView,
-                    VkImageView depthImageView, uint32_t width, uint32_t height);
+        FrameBuffer(LogicalDevice* logicalDevice, VkRenderPass renderPass, std::vector<VkImageView> attachments,
+                    uint32_t width, uint32_t height);
 
         VkFramebuffer VkHandle() const { return m_vkHandle; }
 

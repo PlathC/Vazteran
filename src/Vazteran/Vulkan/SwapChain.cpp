@@ -245,7 +245,7 @@ namespace vzt {
     void SwapChain::CreateFrameBuffers() {
         for(const auto& imageView : m_swapChainImageViews) {
             m_frameBuffers.emplace_back(std::make_unique<FrameBuffer>(
-                    m_logicalDevice, m_graphicPipeline->RenderPass(), imageView, m_depthImageView,
+                    m_logicalDevice, m_graphicPipeline->RenderPass(), std::vector<VkImageView>({imageView, m_depthImageView}),
                     m_swapChainExtent.width, m_swapChainExtent.height
             ));
         }
@@ -285,7 +285,6 @@ namespace vzt {
                 throw std::runtime_error("Failed to begin recording command buffer!");
             }
 
-
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassInfo.renderPass = m_graphicPipeline->RenderPass();
@@ -300,10 +299,10 @@ namespace vzt {
             renderPassInfo.pClearValues = clearValues.data();
 
             vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
+            vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
             // vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle->VkHandle());
             // vkCmdDraw(m_commandBuffers[i], 3, 2, 0, 0);
-                m_renderPass(m_commandBuffers[i], m_descriptorSets[i], m_graphicPipeline.get());
+            m_renderPass(m_commandBuffers[i], m_descriptorSets[i], m_graphicPipeline.get());
             vkCmdEndRenderPass(m_commandBuffers[i]);
 
             if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS) {

@@ -7,7 +7,7 @@
 
 namespace vzt {
     const std::vector<const char*> PhysicalDevice::DefaultDeviceExtensions = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 
     VkPhysicalDevice PhysicalDevice::FindBestDevice(Instance* instance, VkSurfaceKHR surface,

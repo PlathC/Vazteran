@@ -11,8 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
-#include "Vazteran/Vulkan/Data/Vertex.hpp"
-#include "Vazteran/Vulkan/Data/Texture.hpp"
+#include "Vazteran/Vulkan/GpuObject.hpp"
+#include "Vazteran/Vulkan/Texture.hpp"
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
 
 namespace vzt {
@@ -91,9 +91,7 @@ namespace vzt {
 
         std::unique_ptr<TextureSampler> m_textureSampler;
         std::unique_ptr<TextureImage> m_textureImage;
-
     };
 }
-
 
 #endif //VAZTERAN_SWAPCHAIN_HPP

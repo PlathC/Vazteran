@@ -7,12 +7,14 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "Vazteran/Vulkan/Data/Buffer.hpp"
+#include "Vazteran/Data/Camera.hpp"
+#include "Vazteran/Vulkan/Buffer.hpp"
 #include "Vazteran/Vulkan/Instance.hpp"
 
 namespace vzt {
     class LogicalDevice;
     class GraphicPipeline;
+    class Model;
     class PhysicalDevice;
     class SwapChain;
     class TextureImage;
@@ -44,23 +46,6 @@ namespace vzt {
         uint32_t m_width;
         uint32_t m_height;
 
-        const std::vector<Vertex> m_vertices = {
-                {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-                {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-                {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-                {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-                {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
-                {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-                {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f}},
-                {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
-        };
-
-        const std::vector<uint32_t> m_vertexIndices = {
-                0, 1, 2, 2, 3, 0,
-                4, 5, 6, 6, 7, 4
-        };
-
 
         GLFWwindowPtr m_window;
         Instance* m_instance;
@@ -70,6 +55,8 @@ namespace vzt {
         std::unique_ptr<SwapChain> m_swapChain;
         std::unique_ptr<VertexBuffer> m_vertexBuffer;
         std::unique_ptr<IndexBuffer> m_indexBuffer;
+        Camera m_camera;
+        std::unique_ptr<Model> m_model;
     };
 }
 
