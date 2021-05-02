@@ -15,8 +15,9 @@ namespace vzt {
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         void* data;
+        auto imageData = m_image.Data();
         vkMapMemory(m_logicalDevice->VkHandle(), stagingBufferMemory, 0, imageSize, 0, &data);
-        memcpy(data, m_image.Data().data(), static_cast<size_t>(imageSize));
+        memcpy(data, imageData.data(), static_cast<size_t>(imageSize));
         vkUnmapMemory(m_logicalDevice->VkHandle(), stagingBufferMemory);
 
         m_logicalDevice->CreateImage(

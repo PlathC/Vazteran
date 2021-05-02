@@ -9,12 +9,17 @@
 
 namespace vzt {
     SwapChain::SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                         RenderPassFunction renderPass, std::unique_ptr<TextureImage> textureImage) :
+                         RenderPassFunction renderPass, const PhongMaterial& currentMaterial) :
             m_frameBufferWidth(frameBufferWidth), m_frameBufferHeight(frameBufferHeight), m_renderPass(std::move(renderPass)),
-            m_surface(surface), m_logicalDevice(logicalDevice), m_textureImage(std::move(textureImage)) {
+            m_surface(surface), m_logicalDevice(logicalDevice) {
 
+        m_ambientImage =std::make_unique<TextureImage>(logicalDevice, currentMaterial.ambient);
+        m_ambientSampler = std::make_unique<TextureSampler>(m_logicalDevice);
+        m_diffuseImage = std::make_unique<TextureImage>(logicalDevice, currentMaterial.diffuse);
+        m_diffuseSampler = std::make_unique<TextureSampler>(m_logicalDevice);
+        m_specularImage = std::make_unique<TextureImage>(logicalDevice, currentMaterial.specular);
+        m_specularSampler = std::make_unique<TextureSampler>(m_logicalDevice);
         CreateSwapChain();
-        m_textureSampler = std::make_unique<TextureSampler>(m_logicalDevice);
         CreateImageKHR();
         CreateImageViews();
         CreateDepthResources();
@@ -188,11 +193,15 @@ namespace vzt {
             );
         }
 
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        std::array<VkDescriptorPoolSize, 4> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+        poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[2].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+        poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[3].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -299,10 +308,8 @@ namespace vzt {
             renderPassInfo.pClearValues = clearValues.data();
 
             vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
-            // vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle->VkHandle());
-            // vkCmdDraw(m_commandBuffers[i], 3, 2, 0, 0);
-            m_renderPass(m_commandBuffers[i], m_descriptorSets[i], m_graphicPipeline.get());
+                vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
+                m_renderPass(m_commandBuffers[i], m_descriptorSets[i], m_graphicPipeline.get());
             vkCmdEndRenderPass(m_commandBuffers[i]);
 
             if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS) {
@@ -346,17 +353,22 @@ namespace vzt {
             bufferInfo.offset = 0;
             bufferInfo.range = sizeof(UniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            if(m_textureImage)
-                imageInfo.imageView = m_textureImage->ImageView();
-            else{
-                imageInfo.imageView = VK_NULL_HANDLE;
-            }
+            VkDescriptorImageInfo ambientInfo{};
+            ambientInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            ambientInfo.imageView = m_ambientImage->ImageView();
+            ambientInfo.sampler = m_ambientSampler->VkHandle();
 
-            imageInfo.sampler = m_textureSampler->VkHandle();
+            VkDescriptorImageInfo diffuseInfo{};
+            diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            diffuseInfo.imageView = m_diffuseImage->ImageView();
+            diffuseInfo.sampler = m_diffuseSampler->VkHandle();
 
-            std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
+            VkDescriptorImageInfo specularInfo{};
+            specularInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            specularInfo.imageView = m_specularImage->ImageView();
+            specularInfo.sampler = m_specularSampler->VkHandle();
+
+            std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
 
             descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWrites[0].dstSet = m_descriptorSets[i];
@@ -372,7 +384,23 @@ namespace vzt {
             descriptorWrites[1].dstArrayElement = 0;
             descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &imageInfo;
+            descriptorWrites[1].pImageInfo = &ambientInfo;
+
+            descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[2].dstSet = m_descriptorSets[i];
+            descriptorWrites[2].dstBinding = 2;
+            descriptorWrites[2].dstArrayElement = 0;
+            descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[2].descriptorCount = 1;
+            descriptorWrites[2].pImageInfo = &diffuseInfo;
+
+            descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrites[3].dstSet = m_descriptorSets[i];
+            descriptorWrites[3].dstBinding = 3;
+            descriptorWrites[3].dstArrayElement = 0;
+            descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrites[3].descriptorCount = 1;
+            descriptorWrites[3].pImageInfo = &specularInfo;
 
             vkUpdateDescriptorSets(m_logicalDevice->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }

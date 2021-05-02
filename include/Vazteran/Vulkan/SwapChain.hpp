@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 
+#include "Vazteran/Data/Material.hpp"
 #include "Vazteran/Vulkan/GpuObject.hpp"
 #include "Vazteran/Vulkan/Texture.hpp"
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
@@ -24,7 +25,7 @@ namespace vzt {
     class SwapChain {
     public:
         SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                  RenderPassFunction renderPass, std::unique_ptr<TextureImage> textureImage);
+                  RenderPassFunction renderPass, const PhongMaterial& currentMaterial);
 
         bool DrawFrame(UniformBufferObject ubo);
         void Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
@@ -89,8 +90,12 @@ namespace vzt {
         std::vector<VkBuffer> m_uniformBuffers;
         std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 
-        std::unique_ptr<TextureSampler> m_textureSampler;
-        std::unique_ptr<TextureImage> m_textureImage;
+        std::unique_ptr<TextureSampler> m_ambientSampler;
+        std::unique_ptr<TextureImage> m_ambientImage;
+        std::unique_ptr<TextureSampler> m_diffuseSampler;
+        std::unique_ptr<TextureImage> m_diffuseImage;
+        std::unique_ptr<TextureSampler> m_specularSampler;
+        std::unique_ptr<TextureImage> m_specularImage;
     };
 }
 

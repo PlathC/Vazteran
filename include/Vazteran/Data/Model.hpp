@@ -18,10 +18,11 @@ namespace vzt {
 
     class Model {
     public:
-        Model(const fs::path& modelPath, Material material);
+        Model(const fs::path& modelPath);
         const std::vector<Vertex>& Vertices() const { return m_vertices; }
         const std::vector<uint32_t>& Indices() const { return m_indices; }
-        const Material& Mat() const { return m_material; }
+        const PhongMaterial& CMat() const { return m_material; }
+        PhongMaterial& Mat() { return m_material; }
         AABB BoundingBox() const;
 
         glm::mat4 ModelMatrix() const;
@@ -32,7 +33,7 @@ namespace vzt {
     private:
         std::vector<Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
-        Material m_material;
+        PhongMaterial m_material;
 
         glm::vec3 m_position = {0.f, 0.f, 0.f};
         glm::vec3 m_rotation = {0.f, 0.f, 0.f};

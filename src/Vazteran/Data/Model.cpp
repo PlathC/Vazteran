@@ -4,17 +4,32 @@
 #include <tiny_obj_loader.h>
 
 #include "Vazteran/Data/Model.hpp"
-
+#include <iostream>
 namespace vzt {
-    Model::Model(const fs::path& modelPath, Material material):
-            m_material(std::move(material)) {
+    Model::Model(const fs::path& modelPath){
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string errorMessage;
 
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &errorMessage, modelPath.string().c_str())) {
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &errorMessage, modelPath.string().c_str(),
+                              (modelPath.parent_path().string() + "/").c_str())) {
             throw std::runtime_error(errorMessage);
+        }
+
+        // TODO: Handle more than one material per Model
+        if (!materials.empty()){
+            m_material = {
+                    Image({materials[0].ambient[0], materials[0].ambient[1], materials[0].ambient[2], 1.f}),
+                    Image({materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.f}),
+                    Image({materials[0].specular[0], materials[0].specular[1], materials[0].specular[2], 1.f})
+            };
+        }else {
+            m_material = {
+                    Image({1.f, 1.f, 1.f, 1.f}),
+                    Image({1.f, 1.f, 1.f, 1.f}),
+                    Image({1.f, 1.f, 1.f, 1.f}),
+            };
         }
 
         std::unordered_map<Vertex, uint32_t> uniqueVertices{};

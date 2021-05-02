@@ -6,7 +6,7 @@ to render my potential future test related to computer graphics.
 | Feature                                                         | Progress  |
 |-----------------------------------------------------------------|-----------|
 | Razterization (Vulkan)                                          | Done      |
-| Phong                                                           | To do     |
+| Phong                                                               | To do     |
 | PBR                                                             | To do     |
 | Path tracing                                                    | To do     |
 

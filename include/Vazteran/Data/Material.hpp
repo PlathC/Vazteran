@@ -8,15 +8,10 @@
 #include "Vazteran/Data/Image.hpp"
 
 namespace vzt {
-    class Material {
-    public:
-        Material(glm::vec4 albedo);
-        Material(Image albedo);
-
-        const Image& Albedo() const { return m_albedo; }
-
-    private:
-        Image m_albedo;
+    struct PhongMaterial {
+        Image ambient;
+        Image diffuse;
+        Image specular;
     };
 }
 

@@ -12,14 +12,31 @@ namespace vzt {
         uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-        VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-        samplerLayoutBinding.binding = 1;
-        samplerLayoutBinding.descriptorCount = 1;
-        samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        samplerLayoutBinding.pImmutableSamplers = nullptr;
-        samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        VkDescriptorSetLayoutBinding ambientLayoutBinding{};
+        ambientLayoutBinding.binding = 1;
+        ambientLayoutBinding.descriptorCount = 1;
+        ambientLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        ambientLayoutBinding.pImmutableSamplers = nullptr;
+        ambientLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
+        VkDescriptorSetLayoutBinding diffuseLayoutBinding{};
+        diffuseLayoutBinding.binding = 2;
+        diffuseLayoutBinding.descriptorCount = 1;
+        diffuseLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        diffuseLayoutBinding.pImmutableSamplers = nullptr;
+        diffuseLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        VkDescriptorSetLayoutBinding specularLayoutBinding{};
+        specularLayoutBinding.binding = 3;
+        specularLayoutBinding.descriptorCount = 1;
+        specularLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        specularLayoutBinding.pImmutableSamplers = nullptr;
+        specularLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        std::array<VkDescriptorSetLayoutBinding, 4> bindings = {
+                uboLayoutBinding, ambientLayoutBinding, diffuseLayoutBinding, specularLayoutBinding
+        };
+
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());

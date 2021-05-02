@@ -41,7 +41,11 @@ namespace vzt {
         m_physicalDevice = std::make_unique<PhysicalDevice>(m_instance, surface);
         m_logicalDevice  = std::make_unique<LogicalDevice>(m_instance, m_physicalDevice.get(), surface);
 
-        m_model = std::make_unique<Model>("./samples/TheCrounchingBoy.obj", glm::vec4{1., 1., 1., 1.});
+        m_model = std::make_unique<Model>("./samples/viking_room.obj.obj");
+        auto texture = Image("./samples/viking_room.png");
+        m_model->Mat().ambient = texture;
+        m_model->Mat().diffuse = texture;
+
         m_camera = Camera::FromModel(*m_model, m_width / static_cast<float>(m_height));
 
         m_vertexBuffer = std::make_unique<VertexBuffer>(m_logicalDevice.get(), m_model->Vertices(),
@@ -63,7 +67,7 @@ namespace vzt {
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->Layout(), 0, 1, &descriptorSet, 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indexBuffer->Size()), 1, 0, 0, 0);
                 },
-                std::move(std::make_unique<TextureImage>(m_logicalDevice.get(), m_model->Mat().Albedo()))
+                m_model->Mat()
         );
     }
 
@@ -80,6 +84,7 @@ namespace vzt {
         };
 
         ubo.projection[1][1] *= -1;
+        ubo.viewPosition = m_camera.position;
 
         if(m_swapChain->DrawFrame(ubo)) {
             vkDeviceWaitIdle(m_logicalDevice->VkHandle());
@@ -91,7 +96,7 @@ namespace vzt {
             }
 
             m_swapChain->Recreate(m_surface->VkHandle(), frameBufferWidth, frameBufferHeight);
-            m_camera.aspectRatio =frameBufferWidth / static_cast<float>(frameBufferHeight);
+            m_camera.aspectRatio = static_cast<float>(frameBufferWidth) / static_cast<float>(frameBufferHeight);
         }
     }
 

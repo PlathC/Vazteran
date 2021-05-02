@@ -10,7 +10,7 @@ namespace vzt {
 
     class TextureImage {
     public:
-        TextureImage(LogicalDevice* logicalDevice, Image  image);
+        TextureImage(LogicalDevice* logicalDevice, Image image);
 
         TextureImage(TextureImage&) = delete;
         TextureImage& operator=(TextureImage&) = delete;

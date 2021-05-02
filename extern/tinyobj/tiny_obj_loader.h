@@ -1347,7 +1347,7 @@ bool MaterialFileReader::operator()(const std::string &matId,
   std::ifstream matIStream(filepath.c_str());
   if (!matIStream) {
     std::stringstream ss;
-    ss << "WARN: Material file [ " << filepath << " ] not found." << std::endl;
+    ss << "WARN: PhongMaterial file [ " << filepath << " ] not found." << std::endl;
     if (err) {
       (*err) += ss.str();
     }
@@ -1373,7 +1373,7 @@ bool MaterialStreamReader::operator()(const std::string &matId,
   (void)matId;
   if (!m_inStream) {
     std::stringstream ss;
-    ss << "WARN: Material stream in error state. " << std::endl;
+    ss << "WARN: PhongMaterial stream in error state. " << std::endl;
     if (err) {
       (*err) += ss.str();
     }
