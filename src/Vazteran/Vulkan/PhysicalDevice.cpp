@@ -10,7 +10,7 @@ namespace vzt {
             VK_KHR_SWAPCHAIN_EXTENSION_NAME,
     };
 
-    VkPhysicalDevice PhysicalDevice::FindBestDevice(Instance* instance, VkSurfaceKHR surface,
+    VkPhysicalDevice PhysicalDevice::FindBestDevice(vzt::Instance* instance, VkSurfaceKHR surface,
                                                     const std::vector<const char*>& deviceExtensions) {
         std::vector<VkPhysicalDevice> physicalDevices = instance->EnumeratePhysicalDevice();
         for (const auto& device : physicalDevices) {
@@ -21,7 +21,7 @@ namespace vzt {
         return VK_NULL_HANDLE;
     }
 
-    PhysicalDevice::PhysicalDevice(Instance* instance, VkSurfaceKHR surface,
+    PhysicalDevice::PhysicalDevice(vzt::Instance* instance, VkSurfaceKHR surface,
                                    const std::vector<const char*>& deviceExtensions) :
             m_vkHandle(FindBestDevice(instance, surface, deviceExtensions)), m_extensions(deviceExtensions) {
         if (m_vkHandle == VK_NULL_HANDLE) {
@@ -67,13 +67,14 @@ namespace vzt {
 
     PhysicalDevice::~PhysicalDevice() { }
 
-    static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<const char*>& deviceExtensions) {
-        QueueFamilyIndices indices = FindQueueFamilies(device, surface);
+    static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface,
+                                 const std::vector<const char*>& deviceExtensions) {
+        QueueFamilyIndices indices = vzt::FindQueueFamilies(device, surface);
 
-        bool extensionsSupported = CheckDeviceExtensionSupport(device, deviceExtensions);
+        bool extensionsSupported = vzt::CheckDeviceExtensionSupport(device, deviceExtensions);
         bool swapChainAdequate = false;
         if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(device, surface);
+            vzt::SwapChainSupportDetails swapChainSupport = vzt::QuerySwapChainSupport(device, surface);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
         }
 
@@ -83,8 +84,8 @@ namespace vzt {
         return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
     }
 
-    static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
-        SwapChainSupportDetails details{};
+    static vzt::SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
+        vzt::SwapChainSupportDetails details{};
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
 
         uint32_t formatCount;
@@ -106,7 +107,7 @@ namespace vzt {
     }
 
     static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
-        QueueFamilyIndices indices{};
+        vzt::QueueFamilyIndices indices{};
 
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);

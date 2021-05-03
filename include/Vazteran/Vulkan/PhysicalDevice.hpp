@@ -25,13 +25,13 @@ namespace vzt {
 
     class PhysicalDevice {
     public:
-        PhysicalDevice(Instance* instance, VkSurfaceKHR surface,
-                       const std::vector<const char*>& deviceExtensions = PhysicalDevice::DefaultDeviceExtensions);
+        PhysicalDevice(vzt::Instance* instance, VkSurfaceKHR surface,
+                       const std::vector<const char*>& deviceExtensions = vzt::PhysicalDevice::DefaultDeviceExtensions);
 
         VkPhysicalDevice VkHandle() const { return m_vkHandle; }
         std::vector<const char*> Extensions() { return m_extensions; }
-        SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface) const;
-        QueueFamilyIndices FindQueueFamilies(VkSurfaceKHR surface) const;
+        vzt::SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface) const;
+        vzt::QueueFamilyIndices FindQueueFamilies(VkSurfaceKHR surface) const;
         VkFormat FindDepthFormat();
         VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
                                      VkFormatFeatureFlags features);
@@ -39,13 +39,14 @@ namespace vzt {
         ~PhysicalDevice();
 
     private:
-        static VkPhysicalDevice FindBestDevice(Instance* instance, VkSurfaceKHR surface,
+        static VkPhysicalDevice FindBestDevice(vzt::Instance* instance, VkSurfaceKHR surface,
                                                const std::vector<const char*>& deviceExtensions);
         static const std::vector<const char*> DefaultDeviceExtensions;
 
         VkPhysicalDevice m_vkHandle;
         std::vector<const char*> m_extensions;
     };
+
     static bool HasStencilComponent(VkFormat format);
 
     static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<const char*>& deviceExtensions);

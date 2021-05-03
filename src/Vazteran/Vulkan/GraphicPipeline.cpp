@@ -3,7 +3,7 @@
 #include "Vazteran/Vulkan/GpuObject.hpp"
 
 namespace vzt {
-    GraphicPipeline::GraphicPipeline(LogicalDevice* logicalDevice, const PipelineSettings& settings):
+    GraphicPipeline::GraphicPipeline(vzt::LogicalDevice* logicalDevice, const vzt::PipelineSettings& settings):
             m_logicalDevice(logicalDevice), m_colorImageFormat(settings.swapChainImageFormat) {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;

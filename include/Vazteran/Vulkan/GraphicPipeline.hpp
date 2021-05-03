@@ -14,18 +14,18 @@ namespace vzt {
     };
 
     struct PipelineSettings {
-        Shader vertexShader;
-        Shader fragmentShader;
+        vzt::Shader vertexShader;
+        vzt::Shader fragmentShader;
         VkExtent2D swapChainExtent;
         VkFormat swapChainImageFormat;
-        DrawType drawType = DrawType::Fill;
+        vzt::DrawType drawType = DrawType::Fill;
     };
 
     class LogicalDevice;
 
     class GraphicPipeline {
     public:
-        GraphicPipeline(LogicalDevice* logicalDevice, const PipelineSettings& settings);
+        GraphicPipeline(vzt::LogicalDevice* logicalDevice, const vzt::PipelineSettings& settings);
 
         VkDescriptorSetLayout DescriptorSetLayout() const { return m_descriptorSetLayout; }
         VkRenderPass RenderPass() const { return m_renderPass; }
@@ -37,7 +37,7 @@ namespace vzt {
     private:
         void CreateRenderPass();
 
-        LogicalDevice* m_logicalDevice;
+        vzt::LogicalDevice* m_logicalDevice;
         VkFormat m_colorImageFormat;
         VkRenderPass m_renderPass;
         VkDescriptorSetLayout m_descriptorSetLayout;

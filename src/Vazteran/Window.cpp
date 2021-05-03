@@ -9,14 +9,14 @@
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
 namespace vzt {
-    SurfaceHandler::SurfaceHandler(Instance* instance, VkSurfaceKHR surface) :
+    SurfaceHandler::SurfaceHandler(vzt::Instance* instance, VkSurfaceKHR surface) :
             m_instance(instance), m_surface(surface) {}
 
     SurfaceHandler::~SurfaceHandler() {
         vkDestroySurfaceKHR(m_instance->VkHandle(), m_surface, nullptr);
     }
 
-    Window::Window(Instance* instance, std::string_view name, const uint32_t width, const uint32_t height) :
+    Window::Window(vzt::Instance* instance, std::string_view name, const uint32_t width, const uint32_t height) :
             m_instance(instance), m_width(width), m_height(height) {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         m_window = GLFWwindowPtr(
@@ -37,11 +37,11 @@ namespace vzt {
             throw std::runtime_error("Failed to create window surface!");
         }
 
-        m_surface        = std::make_unique<SurfaceHandler>(m_instance, surface);
-        m_physicalDevice = std::make_unique<PhysicalDevice>(m_instance, surface);
-        m_logicalDevice  = std::make_unique<LogicalDevice>(m_instance, m_physicalDevice.get(), surface);
+        m_surface        = std::make_unique<vzt::SurfaceHandler>(m_instance, surface);
+        m_physicalDevice = std::make_unique<vzt::PhysicalDevice>(m_instance, surface);
+        m_logicalDevice  = std::make_unique<vzt::LogicalDevice>(m_instance, m_physicalDevice.get(), surface);
 
-        m_model = std::make_unique<Model>("./samples/viking_room.obj.obj");
+        m_model = std::make_unique<vzt::Model>("./samples/viking_room.obj");
         auto texture = Image("./samples/viking_room.png");
         m_model->Mat().ambient = texture;
         m_model->Mat().diffuse = texture;
@@ -77,7 +77,7 @@ namespace vzt {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         m_model->Rotation() = time * glm::radians(45.0f) * glm::vec3(0.0f, 0.0f, 1.0f);
-        UniformBufferObject ubo{
+        vzt::UniformBufferObject ubo{
             m_model->ModelMatrix(),
             m_camera.View(),
                 m_camera.Projection()

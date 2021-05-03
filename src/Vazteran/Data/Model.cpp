@@ -5,6 +5,7 @@
 
 #include "Vazteran/Data/Model.hpp"
 #include <iostream>
+
 namespace vzt {
     Model::Model(const fs::path& modelPath){
         tinyobj::attrib_t attrib;
@@ -35,7 +36,7 @@ namespace vzt {
         std::unordered_map<Vertex, uint32_t> uniqueVertices{};
         for (const auto& shape : shapes) {
             for (const auto& index : shape.mesh.indices) {
-                Vertex vertex{};
+                vzt::Vertex vertex{};
                 vertex.position = {
                         attrib.vertices[3 * index.vertex_index + 0],
                         attrib.vertices[3 * index.vertex_index + 1],
@@ -110,9 +111,9 @@ namespace vzt {
         // https://stackoverflow.com/a/58630206
         auto movedAABB = m_aabb;
 
-        glm::mat4 translated = glm::translate(glm::mat4(1.f), {0.f, 0.f, 0.f});
-        glm::mat4 translatedRotateX = glm::rotate(translated, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
-        glm::mat4 translatedRotateXY = glm::rotate(translatedRotateX, m_rotation.y, glm::vec3(0.f, 1.f, 0.f));
+        glm::mat4 translated           = glm::translate(glm::mat4(1.f), {0.f, 0.f, 0.f});
+        glm::mat4 translatedRotateX    = glm::rotate(translated, m_rotation.x, glm::vec3(1.f, 0.f, 0.f));
+        glm::mat4 translatedRotateXY   = glm::rotate(translatedRotateX, m_rotation.y, glm::vec3(0.f, 1.f, 0.f));
         glm::mat4 transformationMatrix = glm::rotate(translatedRotateXY, m_rotation.z, glm::vec3(0., 0., 1.));
 
         for (auto& vertex : movedAABB.vertices) {

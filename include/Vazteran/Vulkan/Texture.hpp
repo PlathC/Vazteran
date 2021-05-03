@@ -10,7 +10,7 @@ namespace vzt {
 
     class TextureImage {
     public:
-        TextureImage(LogicalDevice* logicalDevice, Image image);
+        TextureImage(vzt::LogicalDevice* logicalDevice, vzt::Image image);
 
         TextureImage(TextureImage&) = delete;
         TextureImage& operator=(TextureImage&) = delete;
@@ -22,23 +22,24 @@ namespace vzt {
 
         ~TextureImage();
     private:
-        LogicalDevice* m_logicalDevice;
+        vzt::LogicalDevice* m_logicalDevice;
+
         VkImage m_textureImage = VK_NULL_HANDLE;
         VkDeviceMemory m_textureImageMemory;
         VkImageView m_textureImageView = VK_NULL_HANDLE;
 
-        Image m_image;
+        vzt::Image m_image;
     };
 
     class TextureSampler {
     public:
-        TextureSampler(LogicalDevice* logicalDevice);
+        TextureSampler(vzt::LogicalDevice* logicalDevice);
 
         VkSampler VkHandle() const { return m_vkHandle; }
 
         ~TextureSampler();
     private:
-        LogicalDevice* m_logicalDevice;
+        vzt::LogicalDevice* m_logicalDevice;
         VkSampler m_vkHandle;
     };
 }

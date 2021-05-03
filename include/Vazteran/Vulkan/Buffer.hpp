@@ -17,14 +17,14 @@ namespace vzt {
         ~StagedBuffer();
 
     private:
-        LogicalDevice* m_device;
+        vzt::LogicalDevice* m_device;
         VkBuffer m_vkHandle;
         VkDeviceMemory m_bufferMemory;
         std::size_t m_size;
     };
 
-    using VertexBuffer = StagedBuffer<Vertex>;
-    using IndexBuffer = StagedBuffer<uint32_t>;
+    using VertexBuffer = vzt::StagedBuffer<vzt::Vertex>;
+    using IndexBuffer = vzt::StagedBuffer<uint32_t>;
 }
 
 #include "Vazteran/Vulkan/Buffer.inl"

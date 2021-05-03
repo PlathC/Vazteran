@@ -7,7 +7,7 @@
 #include "Vazteran/Vulkan/PhysicalDevice.hpp"
 
 namespace vzt {
-    LogicalDevice::LogicalDevice(Instance* instance, PhysicalDevice* parent, VkSurfaceKHR surface):
+    LogicalDevice::LogicalDevice(vzt::Instance* instance, vzt::PhysicalDevice* parent, VkSurfaceKHR surface):
             m_parent(parent) {
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         m_queueFamilyIndices = parent->FindQueueFamilies(surface);
@@ -71,7 +71,8 @@ namespace vzt {
         vkBindBufferMemory(m_vkHandle, buffer, bufferMemory, 0);
     }
 
-    void LogicalDevice::CreateImage(VkImage& image, VkDeviceMemory& imageMemory, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+    void LogicalDevice::CreateImage(VkImage& image, VkDeviceMemory& imageMemory, uint32_t width, uint32_t height,
+                                    VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                                     VkMemoryPropertyFlags properties) {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -218,7 +219,7 @@ namespace vzt {
         });
     }
 
-    void LogicalDevice::SingleTimeCommand(SingleTimeCommandFunction singleTimeCommandFunction) {
+    void LogicalDevice::SingleTimeCommand(vzt::SingleTimeCommandFunction singleTimeCommandFunction) {
         VkCommandPool transferCommandPool;
 
         VkCommandPoolCreateInfo poolInfo{};

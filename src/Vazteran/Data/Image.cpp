@@ -20,7 +20,7 @@ namespace vzt {
         m_channels = static_cast<uint8_t>(channels);
     }
 
-    Image::Image(std::vector<uint8_t>  imageData, uint32_t width, uint32_t height, uint8_t channels):
+    Image::Image(std::vector<uint8_t> imageData, uint32_t width, uint32_t height, uint8_t channels):
             m_data(std::move(imageData)), m_width(width), m_height(height), m_channels(channels) {
     }
 

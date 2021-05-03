@@ -16,8 +16,8 @@ namespace vzt{
 
         ~Application();
     private:
-        std::unique_ptr<Instance> m_instance;
-        std::unique_ptr<Window> m_window;
+        std::unique_ptr<vzt::Instance> m_instance;
+        std::unique_ptr<vzt::Window> m_window;
     };
 }
 

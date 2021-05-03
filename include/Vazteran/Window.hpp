@@ -21,12 +21,12 @@ namespace vzt {
 
     struct SurfaceHandler {
     public:
-        SurfaceHandler(Instance* instance, VkSurfaceKHR surface);
+        SurfaceHandler(vzt::Instance* instance, VkSurfaceKHR surface);
         VkSurfaceKHR VkHandle() const { return m_surface; }
         ~SurfaceHandler();
 
     private:
-        Instance* m_instance;
+        vzt::Instance* m_instance;
         VkSurfaceKHR m_surface;
     };
 
@@ -34,12 +34,12 @@ namespace vzt {
 
     class Window {
     public:
-        Window(Instance* instance, std::string_view name, uint32_t width, uint32_t height);
+        Window(vzt::Instance* instance, std::string_view name, uint32_t width, uint32_t height);
 
         bool ShouldClose() { return glfwWindowShouldClose(m_window.get()); }
         void Draw();
         void FrameBufferResized();
-        LogicalDevice* Device() { return m_logicalDevice.get(); }
+        vzt::LogicalDevice* Device() { return m_logicalDevice.get(); }
 
         ~Window();
     private:
@@ -49,14 +49,14 @@ namespace vzt {
 
         GLFWwindowPtr m_window;
         Instance* m_instance;
-        std::unique_ptr<SurfaceHandler> m_surface;
-        std::unique_ptr<PhysicalDevice> m_physicalDevice;
-        std::unique_ptr<LogicalDevice> m_logicalDevice;
-        std::unique_ptr<SwapChain> m_swapChain;
+        std::unique_ptr<vzt::SurfaceHandler> m_surface;
+        std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;
+        std::unique_ptr<vzt::LogicalDevice> m_logicalDevice;
+        std::unique_ptr<vzt::SwapChain> m_swapChain;
         std::unique_ptr<VertexBuffer> m_vertexBuffer;
         std::unique_ptr<IndexBuffer> m_indexBuffer;
-        Camera m_camera;
-        std::unique_ptr<Model> m_model;
+        vzt::Camera m_camera;
+        std::unique_ptr<vzt::Model> m_model;
     };
 }
 

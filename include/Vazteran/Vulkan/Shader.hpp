@@ -10,22 +10,25 @@ namespace vzt {
 
     enum ShaderStage {
         VertexShader = VK_SHADER_STAGE_VERTEX_BIT,
-        FragmentShader = VK_SHADER_STAGE_FRAGMENT_BIT,
+        TesselationControlShader = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+        TesselationEvaluationShader = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
+        GeometryShader = VK_SHADER_STAGE_GEOMETRY_BIT,
+        FragmentShader = VK_SHADER_STAGE_FRAGMENT_BIT
     };
 
     class Shader {
     public:
-        Shader(LogicalDevice* logicalDevice, const fs::path& compiled_file, ShaderStage shaderStage);
+        Shader(LogicalDevice* logicalDevice, const fs::path& compiled_file, vzt::ShaderStage shaderStage);
 
         VkPipelineShaderStageCreateInfo Stage() const { return m_stage; }
 
         ~Shader();
     private:
-        LogicalDevice* m_logicalDevice;
+        vzt::LogicalDevice* m_logicalDevice;
         std::vector<char> m_compiledSource;
-        VkShaderModule m_shaderModule;
+        VkShaderModule m_shaderModule{};
         VkPipelineShaderStageCreateInfo m_stage{};
-        ShaderStage m_shaderStage;
+        vzt::ShaderStage m_shaderStage;
     };
 }
 

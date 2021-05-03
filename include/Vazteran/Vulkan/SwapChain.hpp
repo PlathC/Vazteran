@@ -24,10 +24,10 @@ namespace vzt {
 
     class SwapChain {
     public:
-        SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                  RenderPassFunction renderPass, const PhongMaterial& currentMaterial);
+        SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
+                  vzt::RenderPassFunction renderPass, const vzt::PhongMaterial& currentMaterial);
 
-        bool DrawFrame(UniformBufferObject ubo);
+        bool DrawFrame(vzt::UniformBufferObject ubo);
         void Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
         void FrameBufferResized() { m_framebufferResized = true; };
         uint32_t Width() const { return m_frameBufferWidth; }
@@ -44,26 +44,26 @@ namespace vzt {
         void CreateCommandBuffers();
         void CreateSynchronizationObjects();
 
-        void UpdateUniformBuffer(uint32_t currentImage, UniformBufferObject ubo);
+        void UpdateUniformBuffer(uint32_t currentImage, vzt::UniformBufferObject ubo);
         void UpdateDescriptorSets();
         void Cleanup();
 
         constexpr static int MaxFramesInFlight = 2;
 
-        VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+        static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
         VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
         VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-        LogicalDevice* m_logicalDevice;
+        vzt::LogicalDevice* m_logicalDevice;
         VkSwapchainKHR m_vkHandle;
-        std::unique_ptr<GraphicPipeline> m_graphicPipeline;
+        std::unique_ptr<vzt::GraphicPipeline> m_graphicPipeline;
 
         std::size_t m_currentFrame = 0;
         bool m_framebufferResized = false;
 
         int m_frameBufferWidth;
         int m_frameBufferHeight;
-        RenderPassFunction m_renderPass;
+        vzt::RenderPassFunction m_renderPass;
         VkSurfaceKHR m_surface;
         uint32_t m_imageCount;
         VkFormat m_swapChainImageFormat;
@@ -85,17 +85,17 @@ namespace vzt {
 
         std::vector<VkImage> m_swapChainImages;
         std::vector<VkImageView> m_swapChainImageViews;
-        std::vector<std::unique_ptr<FrameBuffer>> m_frameBuffers;
+        std::vector<std::unique_ptr<vzt::FrameBuffer>> m_frameBuffers;
 
         std::vector<VkBuffer> m_uniformBuffers;
         std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 
-        std::unique_ptr<TextureSampler> m_ambientSampler;
-        std::unique_ptr<TextureImage> m_ambientImage;
-        std::unique_ptr<TextureSampler> m_diffuseSampler;
-        std::unique_ptr<TextureImage> m_diffuseImage;
-        std::unique_ptr<TextureSampler> m_specularSampler;
-        std::unique_ptr<TextureImage> m_specularImage;
+        std::unique_ptr<vzt::TextureSampler> m_ambientSampler;
+        std::unique_ptr<vzt::TextureImage> m_ambientImage;
+        std::unique_ptr<vzt::TextureSampler> m_diffuseSampler;
+        std::unique_ptr<vzt::TextureImage> m_diffuseImage;
+        std::unique_ptr<vzt::TextureSampler> m_specularSampler;
+        std::unique_ptr<vzt::TextureImage> m_specularImage;
     };
 }
 

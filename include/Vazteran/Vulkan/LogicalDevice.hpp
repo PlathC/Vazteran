@@ -16,7 +16,7 @@ namespace vzt {
 
     class LogicalDevice {
     public:
-        LogicalDevice(Instance* instance, PhysicalDevice* parent, VkSurfaceKHR surface);
+        LogicalDevice(vzt::Instance* instance, vzt::PhysicalDevice* parent, VkSurfaceKHR surface);
 
         void CreateBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize size, VkBufferUsageFlags usage,
                           VkMemoryPropertyFlags properties);
@@ -36,19 +36,19 @@ namespace vzt {
         VkDevice VkHandle() { return m_vkHandle; }
         VkQueue GraphicsQueue() const { return m_graphicsQueue; }
         VkQueue PresentQueue() const { return m_presentQueue; }
-        QueueFamilyIndices DeviceQueueFamilyIndices() const { return m_queueFamilyIndices; };
-        PhysicalDevice* Parent() const { return m_parent; }
+        vzt::QueueFamilyIndices DeviceQueueFamilyIndices() const { return m_queueFamilyIndices; };
+        vzt::PhysicalDevice* Parent() const { return m_parent; }
 
         ~LogicalDevice();
 
     private:
-        PhysicalDevice* m_parent = nullptr;
+        vzt::PhysicalDevice* m_parent = nullptr;
         VkPhysicalDeviceFeatures m_deviceFeatures{};
         VkDevice m_vkHandle{};
         VkQueue m_graphicsQueue{};
         VkQueue m_presentQueue{};
 
-        QueueFamilyIndices m_queueFamilyIndices;
+        vzt::QueueFamilyIndices m_queueFamilyIndices;
     };
 }
 

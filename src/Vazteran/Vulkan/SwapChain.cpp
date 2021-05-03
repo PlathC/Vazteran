@@ -8,17 +8,17 @@
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
 namespace vzt {
-    SwapChain::SwapChain(LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                         RenderPassFunction renderPass, const PhongMaterial& currentMaterial) :
+    SwapChain::SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
+                         vzt::RenderPassFunction renderPass, const vzt::PhongMaterial& currentMaterial) :
             m_frameBufferWidth(frameBufferWidth), m_frameBufferHeight(frameBufferHeight), m_renderPass(std::move(renderPass)),
             m_surface(surface), m_logicalDevice(logicalDevice) {
 
-        m_ambientImage =std::make_unique<TextureImage>(logicalDevice, currentMaterial.ambient);
-        m_ambientSampler = std::make_unique<TextureSampler>(m_logicalDevice);
-        m_diffuseImage = std::make_unique<TextureImage>(logicalDevice, currentMaterial.diffuse);
-        m_diffuseSampler = std::make_unique<TextureSampler>(m_logicalDevice);
-        m_specularImage = std::make_unique<TextureImage>(logicalDevice, currentMaterial.specular);
-        m_specularSampler = std::make_unique<TextureSampler>(m_logicalDevice);
+        m_ambientImage =std::make_unique<vzt::TextureImage>(logicalDevice, currentMaterial.ambient);
+        m_ambientSampler = std::make_unique<vzt::TextureSampler>(m_logicalDevice);
+        m_diffuseImage = std::make_unique<vzt::TextureImage>(logicalDevice, currentMaterial.diffuse);
+        m_diffuseSampler = std::make_unique<vzt::TextureSampler>(m_logicalDevice);
+        m_specularImage = std::make_unique<vzt::TextureImage>(logicalDevice, currentMaterial.specular);
+        m_specularSampler = std::make_unique<vzt::TextureSampler>(m_logicalDevice);
         CreateSwapChain();
         CreateImageKHR();
         CreateImageViews();
@@ -28,7 +28,7 @@ namespace vzt {
         CreateSynchronizationObjects();
     }
 
-    bool SwapChain::DrawFrame(UniformBufferObject ubo) {
+    bool SwapChain::DrawFrame(vzt::UniformBufferObject ubo) {
         vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
@@ -166,10 +166,10 @@ namespace vzt {
             throw std::runtime_error("Failed to create swap chain!");
         }
 
-        m_graphicPipeline = std::make_unique<GraphicPipeline>(
+        m_graphicPipeline = std::make_unique<vzt::GraphicPipeline>(
                 m_logicalDevice, PipelineSettings{
-                        Shader(m_logicalDevice, "./shaders/shader.vert.spv", ShaderStage::VertexShader),
-                        Shader(m_logicalDevice, "./shaders/shader.frag.spv", ShaderStage::FragmentShader),
+                        vzt::Shader(m_logicalDevice, "./shaders/shader.vert.spv", ShaderStage::VertexShader),
+                        vzt::Shader(m_logicalDevice, "./shaders/shader.frag.spv", ShaderStage::FragmentShader),
                         m_swapChainExtent,
                         m_swapChainImageFormat
                 }
@@ -181,7 +181,7 @@ namespace vzt {
         m_swapChainImages.resize(m_imageCount);
         vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, m_swapChainImages.data());
 
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+        VkDeviceSize bufferSize = sizeof(vzt::UniformBufferObject);
 
         m_uniformBuffers.resize(m_swapChainImages.size());
         m_uniformBuffersMemory.resize(m_swapChainImages.size());
@@ -253,7 +253,7 @@ namespace vzt {
 
     void SwapChain::CreateFrameBuffers() {
         for(const auto& imageView : m_swapChainImageViews) {
-            m_frameBuffers.emplace_back(std::make_unique<FrameBuffer>(
+            m_frameBuffers.emplace_back(std::make_unique<vzt::FrameBuffer>(
                     m_logicalDevice, m_graphicPipeline->RenderPass(), std::vector<VkImageView>({imageView, m_depthImageView}),
                     m_swapChainExtent.width, m_swapChainExtent.height
             ));
@@ -261,7 +261,7 @@ namespace vzt {
     }
 
     void SwapChain::CreateCommandBuffers() {
-        QueueFamilyIndices indices = m_logicalDevice->DeviceQueueFamilyIndices();
+        vzt::QueueFamilyIndices indices = m_logicalDevice->DeviceQueueFamilyIndices();
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -339,7 +339,7 @@ namespace vzt {
         }
     }
 
-    void SwapChain::UpdateUniformBuffer(uint32_t currentImage, UniformBufferObject ubo) {
+    void SwapChain::UpdateUniformBuffer(uint32_t currentImage, vzt::UniformBufferObject ubo) {
         void* data;
         vkMapMemory(m_logicalDevice->VkHandle(), m_uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
@@ -351,7 +351,7 @@ namespace vzt {
             VkDescriptorBufferInfo bufferInfo{};
             bufferInfo.buffer = m_uniformBuffers[i];
             bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
+            bufferInfo.range = sizeof(vzt::UniformBufferObject);
 
             VkDescriptorImageInfo ambientInfo{};
             ambientInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

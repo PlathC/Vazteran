@@ -5,7 +5,7 @@
 #include <utility>
 
 namespace vzt {
-    TextureImage::TextureImage(LogicalDevice* logicalDevice, Image image):
+    TextureImage::TextureImage(LogicalDevice* logicalDevice, vzt::Image image):
             m_logicalDevice(logicalDevice), m_image(std::move(image)) {
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;

@@ -2,7 +2,7 @@
 #include "Vazteran/Vulkan/Shader.hpp"
 
 namespace vzt {
-    Shader::Shader(LogicalDevice* logicalDevice, const fs::path& compiled_file, ShaderStage shaderStage):
+    Shader::Shader(vzt::LogicalDevice* logicalDevice, const fs::path& compiled_file, vzt::ShaderStage shaderStage):
             m_logicalDevice(logicalDevice), m_shaderStage(shaderStage) {
         m_compiledSource = vzt::ReadFile(compiled_file);
 

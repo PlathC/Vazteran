@@ -9,9 +9,9 @@
 
 namespace vzt {
     struct PhongMaterial {
-        Image ambient;
-        Image diffuse;
-        Image specular;
+        vzt::Image ambient;
+        vzt::Image diffuse;
+        vzt::Image specular;
     };
 }
 
