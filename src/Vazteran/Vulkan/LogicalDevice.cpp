@@ -90,7 +90,7 @@ namespace vzt {
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         if (vkCreateImage(m_vkHandle, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create image!");
+            throw std::runtime_error("Failed to create image!");
         }
 
         VkMemoryRequirements memRequirements;
@@ -102,7 +102,7 @@ namespace vzt {
         allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
         if (vkAllocateMemory(m_vkHandle, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate image memory!");
+            throw std::runtime_error("Failed to allocate image memory!");
         }
 
         vkBindImageMemory(m_vkHandle, image, imageMemory, 0);

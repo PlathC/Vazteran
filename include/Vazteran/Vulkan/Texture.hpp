@@ -8,39 +8,44 @@
 namespace vzt {
     class LogicalDevice;
 
-    class TextureImage {
+    class ImageView {
     public:
-        TextureImage(vzt::LogicalDevice* logicalDevice, vzt::Image image);
+        ImageView(vzt::LogicalDevice* logicalDevice, vzt::Image image);
 
-        TextureImage(TextureImage&) = delete;
-        TextureImage& operator=(TextureImage&) = delete;
+        ImageView(ImageView&) = delete;
+        ImageView& operator=(ImageView&) = delete;
 
-        TextureImage(TextureImage&& original);
-        TextureImage& operator=(TextureImage&& original) noexcept;
+        ImageView(ImageView&& original) noexcept ;
+        ImageView& operator=(ImageView&& original) noexcept;
 
-        VkImageView ImageView() const { return m_textureImageView; }
+        VkImageView VkHandle() const { return m_vkHandle; }
 
-        ~TextureImage();
+        ~ImageView();
     private:
         vzt::LogicalDevice* m_logicalDevice;
 
-        VkImage m_textureImage = VK_NULL_HANDLE;
-        VkDeviceMemory m_textureImageMemory;
-        VkImageView m_textureImageView = VK_NULL_HANDLE;
+        VkImage m_vkImage = VK_NULL_HANDLE;
+        VkDeviceMemory m_deviceMemory;
+        VkImageView m_vkHandle = VK_NULL_HANDLE;
 
         vzt::Image m_image;
     };
 
-    class TextureSampler {
+    class Sampler {
     public:
-        TextureSampler(vzt::LogicalDevice* logicalDevice);
+        explicit Sampler(vzt::LogicalDevice* logicalDevice);
 
         VkSampler VkHandle() const { return m_vkHandle; }
 
-        ~TextureSampler();
+        ~Sampler();
     private:
         vzt::LogicalDevice* m_logicalDevice;
-        VkSampler m_vkHandle;
+        VkSampler m_vkHandle{};
+    };
+
+    struct TextureHandler {
+        std::unique_ptr<ImageView> imageView;
+        std::unique_ptr<Sampler> sampler;
     };
 }
 

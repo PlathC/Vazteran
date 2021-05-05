@@ -6,6 +6,10 @@
 #include "Vazteran/Data/Image.hpp"
 
 namespace vzt {
+    Image::Image():
+        Image({0, 0, 0, 0}, 1, 1, 4)  {
+    }
+
     Image::Image(const fs::path &imagePath) {
         int width, height, channels;
         stbi_uc* pixels = stbi_load(imagePath.string().c_str(),
@@ -17,7 +21,10 @@ namespace vzt {
         m_data = std::vector<uint8_t>(pixels, pixels + (width * height * 4));
         m_width = width;
         m_height = height;
-        m_channels = static_cast<uint8_t>(channels);
+
+        // We love the image with STBI_rgb_alpha, so we can set it as 4
+        // even though channels might be different.
+        m_channels = 4;
     }
 
     Image::Image(std::vector<uint8_t> imageData, uint32_t width, uint32_t height, uint8_t channels):

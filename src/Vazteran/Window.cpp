@@ -37,6 +37,7 @@ namespace vzt {
             throw std::runtime_error("Failed to create window surface!");
         }
 
+        // TODO: Move into Renderer
         m_surface        = std::make_unique<vzt::SurfaceHandler>(m_instance, surface);
         m_physicalDevice = std::make_unique<vzt::PhysicalDevice>(m_instance, surface);
         m_logicalDevice  = std::make_unique<vzt::LogicalDevice>(m_instance, m_physicalDevice.get(), surface);
@@ -45,9 +46,11 @@ namespace vzt {
         auto texture = Image("./samples/viking_room.png");
         m_model->Mat().ambient = texture;
         m_model->Mat().diffuse = texture;
-
+        m_model->Mat().specular = glm::vec4(0., 0., 0., 0.);
         m_camera = Camera::FromModel(*m_model, m_width / static_cast<float>(m_height));
 
+
+        // TODO: Integrate this in the Renderer class
         m_vertexBuffer = std::make_unique<VertexBuffer>(m_logicalDevice.get(), m_model->Vertices(),
                                                         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
         m_indexBuffer  = std::make_unique<IndexBuffer>(m_logicalDevice.get(), m_model->Indices(),
@@ -55,10 +58,23 @@ namespace vzt {
 
         int frameBufferWidth, frameBufferHeight;
         glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
+
+        std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders;
+        shaders.emplace("./shaders/shader.vert.spv", ShaderStage::VertexShader,
+                        std::vector<SamplerDescriptorSet>{},
+                        std::vector<UniformDescriptorSet>{{0, sizeof(vzt::Transforms)}});
+        shaders.emplace("./shaders/shader.frag.spv", ShaderStage::FragmentShader,
+                        std::vector<SamplerDescriptorSet>{
+                                {1, m_model->Mat().ambient},
+                                {2, m_model->Mat().diffuse},
+                                {3, m_model->Mat().specular},},
+                        std::vector<UniformDescriptorSet>{
+                        }
+            );
+
         m_swapChain = std::make_unique<vzt::SwapChain>(
                 m_logicalDevice.get(), surface, frameBufferWidth, frameBufferHeight,
                 [&](VkCommandBuffer commandBuffer, VkDescriptorSet& descriptorSet, GraphicPipeline* graphicPipeline) {
-
                     VkBuffer vertexBuffers[] = { m_vertexBuffer->VkHandle() };
                     VkDeviceSize offsets[] = {0};
                     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -67,7 +83,7 @@ namespace vzt {
                     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->Layout(), 0, 1, &descriptorSet, 0, nullptr);
                     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indexBuffer->Size()), 1, 0, 0, 0);
                 },
-                m_model->Mat()
+                std::move(shaders)
         );
     }
 
@@ -77,10 +93,11 @@ namespace vzt {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         m_model->Rotation() = time * glm::radians(45.0f) * glm::vec3(0.0f, 0.0f, 1.0f);
-        vzt::UniformBufferObject ubo{
+        vzt::Transforms ubo{
             m_model->ModelMatrix(),
             m_camera.View(),
-                m_camera.Projection()
+                m_camera.Projection(),
+                m_camera.position
         };
 
         ubo.projection[1][1] *= -1;

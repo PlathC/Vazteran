@@ -5,20 +5,14 @@
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/PhysicalDevice.hpp"
+#include "Vazteran/Vulkan/RenderPass.hpp"
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
 namespace vzt {
     SwapChain::SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                         vzt::RenderPassFunction renderPass, const vzt::PhongMaterial& currentMaterial) :
+                         vzt::RenderPassFunction renderPass, std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders) :
             m_frameBufferWidth(frameBufferWidth), m_frameBufferHeight(frameBufferHeight), m_renderPass(std::move(renderPass)),
-            m_surface(surface), m_logicalDevice(logicalDevice) {
-
-        m_ambientImage =std::make_unique<vzt::TextureImage>(logicalDevice, currentMaterial.ambient);
-        m_ambientSampler = std::make_unique<vzt::TextureSampler>(m_logicalDevice);
-        m_diffuseImage = std::make_unique<vzt::TextureImage>(logicalDevice, currentMaterial.diffuse);
-        m_diffuseSampler = std::make_unique<vzt::TextureSampler>(m_logicalDevice);
-        m_specularImage = std::make_unique<vzt::TextureImage>(logicalDevice, currentMaterial.specular);
-        m_specularSampler = std::make_unique<vzt::TextureSampler>(m_logicalDevice);
+            m_surface(surface), m_logicalDevice(logicalDevice), m_shaders(std::move(shaders)) {
         CreateSwapChain();
         CreateImageKHR();
         CreateImageViews();
@@ -28,7 +22,7 @@ namespace vzt {
         CreateSynchronizationObjects();
     }
 
-    bool SwapChain::DrawFrame(vzt::UniformBufferObject ubo) {
+    bool SwapChain::DrawFrame(vzt::Transforms ubo) {
         vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;
@@ -75,7 +69,7 @@ namespace vzt {
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapChains[] = {m_vkHandle };
+        VkSwapchainKHR swapChains[] = { m_vkHandle };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
@@ -165,13 +159,11 @@ namespace vzt {
         if (vkCreateSwapchainKHR(m_logicalDevice->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create swap chain!");
         }
-
         m_graphicPipeline = std::make_unique<vzt::GraphicPipeline>(
                 m_logicalDevice, PipelineSettings{
-                        vzt::Shader(m_logicalDevice, "./shaders/shader.vert.spv", ShaderStage::VertexShader),
-                        vzt::Shader(m_logicalDevice, "./shaders/shader.frag.spv", ShaderStage::FragmentShader),
-                        m_swapChainExtent,
-                        m_swapChainImageFormat
+                        m_shaders,
+                        std::make_unique<vzt::RenderPass>(m_logicalDevice, m_swapChainImageFormat),
+                        m_swapChainExtent
                 }
         );
     }
@@ -181,7 +173,7 @@ namespace vzt {
         m_swapChainImages.resize(m_imageCount);
         vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, m_swapChainImages.data());
 
-        VkDeviceSize bufferSize = sizeof(vzt::UniformBufferObject);
+        VkDeviceSize bufferSize = sizeof(vzt::Transforms);
 
         m_uniformBuffers.resize(m_swapChainImages.size());
         m_uniformBuffersMemory.resize(m_swapChainImages.size());
@@ -192,16 +184,12 @@ namespace vzt {
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
             );
         }
-
-        std::array<VkDescriptorPoolSize, 4> poolSizes{};
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
-        poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[2].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
-        poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[3].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+        auto descriptorTypes = m_graphicPipeline->DescriptorTypes();
+        auto poolSizes = std::vector<VkDescriptorPoolSize>(descriptorTypes.size());
+        for (std::size_t i = 0; i < descriptorTypes.size(); i++) {
+            poolSizes[i].type = descriptorTypes[i];
+            poolSizes[i].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+        }
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -254,7 +242,7 @@ namespace vzt {
     void SwapChain::CreateFrameBuffers() {
         for(const auto& imageView : m_swapChainImageViews) {
             m_frameBuffers.emplace_back(std::make_unique<vzt::FrameBuffer>(
-                    m_logicalDevice, m_graphicPipeline->RenderPass(), std::vector<VkImageView>({imageView, m_depthImageView}),
+                    m_logicalDevice, m_graphicPipeline->RenderPass()->VkHandle(), std::vector<VkImageView>({imageView, m_depthImageView}),
                     m_swapChainExtent.width, m_swapChainExtent.height
             ));
         }
@@ -296,7 +284,7 @@ namespace vzt {
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            renderPassInfo.renderPass = m_graphicPipeline->RenderPass();
+            renderPassInfo.renderPass = m_graphicPipeline->RenderPass()->VkHandle();
             renderPassInfo.framebuffer = m_frameBuffers[i]->VkHandle();
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = m_swapChainExtent;
@@ -339,70 +327,16 @@ namespace vzt {
         }
     }
 
-    void SwapChain::UpdateUniformBuffer(uint32_t currentImage, vzt::UniformBufferObject ubo) {
+    void SwapChain::UpdateUniformBuffer(uint32_t currentImage, vzt::Transforms ubo) {
         void* data;
         vkMapMemory(m_logicalDevice->VkHandle(), m_uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-        memcpy(data, &ubo, sizeof(ubo));
+            memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(m_logicalDevice->VkHandle(), m_uniformBuffersMemory[currentImage]);
     }
 
     void SwapChain::UpdateDescriptorSets() {
         for (std::size_t i = 0; i < m_swapChainImages.size(); i++) {
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = m_uniformBuffers[i];
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(vzt::UniformBufferObject);
-
-            VkDescriptorImageInfo ambientInfo{};
-            ambientInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            ambientInfo.imageView = m_ambientImage->ImageView();
-            ambientInfo.sampler = m_ambientSampler->VkHandle();
-
-            VkDescriptorImageInfo diffuseInfo{};
-            diffuseInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            diffuseInfo.imageView = m_diffuseImage->ImageView();
-            diffuseInfo.sampler = m_diffuseSampler->VkHandle();
-
-            VkDescriptorImageInfo specularInfo{};
-            specularInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            specularInfo.imageView = m_specularImage->ImageView();
-            specularInfo.sampler = m_specularSampler->VkHandle();
-
-            std::array<VkWriteDescriptorSet, 4> descriptorWrites{};
-
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = m_descriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-            descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet = m_descriptorSets[i];
-            descriptorWrites[1].dstBinding = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo = &ambientInfo;
-
-            descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[2].dstSet = m_descriptorSets[i];
-            descriptorWrites[2].dstBinding = 2;
-            descriptorWrites[2].dstArrayElement = 0;
-            descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[2].descriptorCount = 1;
-            descriptorWrites[2].pImageInfo = &diffuseInfo;
-
-            descriptorWrites[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[3].dstSet = m_descriptorSets[i];
-            descriptorWrites[3].dstBinding = 3;
-            descriptorWrites[3].dstArrayElement = 0;
-            descriptorWrites[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[3].descriptorCount = 1;
-            descriptorWrites[3].pImageInfo = &specularInfo;
-
-            vkUpdateDescriptorSets(m_logicalDevice->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+            m_graphicPipeline->UpdateDescriptorSet(m_descriptorSets[i], m_uniformBuffers[i]);
         }
     }
 

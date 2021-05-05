@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "Vazteran/Vulkan/Shader.hpp"
 
@@ -13,36 +14,41 @@ namespace vzt {
         Point = VK_POLYGON_MODE_POINT
     };
 
+    class RenderPass;
     struct PipelineSettings {
-        vzt::Shader vertexShader;
-        vzt::Shader fragmentShader;
+        std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders;
+        std::unique_ptr<vzt::RenderPass> renderPass;
         VkExtent2D swapChainExtent;
-        VkFormat swapChainImageFormat;
         vzt::DrawType drawType = DrawType::Fill;
     };
 
     class LogicalDevice;
+    class ImageView;
+    class Sampler;
 
     class GraphicPipeline {
     public:
-        GraphicPipeline(vzt::LogicalDevice* logicalDevice, const vzt::PipelineSettings& settings);
+        GraphicPipeline(vzt::LogicalDevice* logicalDevice, vzt::PipelineSettings settings);
 
         VkDescriptorSetLayout DescriptorSetLayout() const { return m_descriptorSetLayout; }
-        VkRenderPass RenderPass() const { return m_renderPass; }
+        RenderPass* RenderPass() const { return m_renderPass.get(); }
         VkPipelineLayout Layout() const { return m_pipelineLayout; }
         VkPipeline VkHandle() const { return m_vkHandle; }
+        void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer) const;
+        std::vector<VkDescriptorType> DescriptorTypes() const;
 
         ~GraphicPipeline();
 
     private:
-        void CreateRenderPass();
-
+        std::unique_ptr<vzt::RenderPass> m_renderPass;
         vzt::LogicalDevice* m_logicalDevice;
-        VkFormat m_colorImageFormat;
-        VkRenderPass m_renderPass;
+
+        std::unordered_map<uint32_t, TextureHandler> m_textureHandlers;
+        std::unordered_map<uint32_t, uint32_t> m_uniformRanges;
+
         VkDescriptorSetLayout m_descriptorSetLayout;
         VkPipelineLayout m_pipelineLayout;
-        VkPipeline m_vkHandle;
+        VkPipeline m_vkHandle{};
     };
 }
 

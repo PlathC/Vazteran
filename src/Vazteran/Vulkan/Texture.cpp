@@ -5,11 +5,11 @@
 #include <utility>
 
 namespace vzt {
-    TextureImage::TextureImage(LogicalDevice* logicalDevice, vzt::Image image):
+    ImageView::ImageView(LogicalDevice* logicalDevice, vzt::Image image):
             m_logicalDevice(logicalDevice), m_image(std::move(image)) {
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
-        VkDeviceSize imageSize = m_image.Width() * m_image.Height() * 4;
+        VkDeviceSize imageSize = m_image.Width() * m_image.Height() * m_image.Channels();
         m_logicalDevice->CreateBuffer(stagingBuffer, stagingBufferMemory, imageSize,
                                       VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -21,23 +21,23 @@ namespace vzt {
         vkUnmapMemory(m_logicalDevice->VkHandle(), stagingBufferMemory);
 
         m_logicalDevice->CreateImage(
-                m_textureImage, m_textureImageMemory, m_image.Width(), m_image.Height(),
+                m_vkImage, m_deviceMemory, m_image.Width(), m_image.Height(),
                 VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
 
         m_logicalDevice->TransitionImageLayout(
-                m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+                m_vkImage, VK_FORMAT_R8G8B8A8_SRGB,
                 VK_IMAGE_LAYOUT_UNDEFINED,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_ASPECT_COLOR_BIT
         );
         m_logicalDevice->CopyBufferToImage(
-                stagingBuffer, m_textureImage,m_image.Width(), m_image.Height()
+                stagingBuffer, m_vkImage, m_image.Width(), m_image.Height()
         );
         m_logicalDevice->TransitionImageLayout(
-                m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+                m_vkImage, VK_FORMAT_R8G8B8A8_SRGB,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_IMAGE_ASPECT_COLOR_BIT
@@ -45,40 +45,40 @@ namespace vzt {
 
         vkDestroyBuffer(m_logicalDevice->VkHandle(), stagingBuffer, nullptr);
         vkFreeMemory(m_logicalDevice->VkHandle(), stagingBufferMemory, nullptr);
-        m_textureImageView = m_logicalDevice->CreateImageView(
-                m_textureImage, VK_FORMAT_R8G8B8A8_SRGB,
+        m_vkHandle = m_logicalDevice->CreateImageView(
+                m_vkImage, VK_FORMAT_R8G8B8A8_SRGB,
                 VK_IMAGE_ASPECT_COLOR_BIT
         );
     }
 
-    TextureImage::TextureImage(TextureImage&& original):
+    ImageView::ImageView(ImageView&& original) noexcept :
             m_logicalDevice(original.m_logicalDevice),
-            m_textureImageMemory(original.m_textureImageMemory),
+            m_deviceMemory(original.m_deviceMemory),
             m_image(std::move(original.m_image)) {
-        std::swap(m_textureImage, original.m_textureImage);
-        std::swap(m_textureImageView, original.m_textureImageView);
+        std::swap(m_vkImage, original.m_vkImage);
+        std::swap(m_vkHandle, original.m_vkHandle);
     }
 
-    TextureImage& TextureImage::operator=(TextureImage&& original) noexcept {
+    ImageView& ImageView::operator=(ImageView&& original) noexcept {
         m_logicalDevice = original.m_logicalDevice;
-        m_textureImageMemory = original.m_textureImageMemory;
+        m_deviceMemory = original.m_deviceMemory;
         m_image = std::move(original.m_image);
-        std::swap(m_textureImage, original.m_textureImage);
-        std::swap(m_textureImageView, original.m_textureImageView);
+        std::swap(m_vkImage, original.m_vkImage);
+        std::swap(m_vkHandle, original.m_vkHandle);
 
         return *this;
     }
 
-    TextureImage::~TextureImage() {
-        if (m_textureImageView != VK_NULL_HANDLE)
-            vkDestroyImageView(m_logicalDevice->VkHandle(), m_textureImageView, nullptr);
+    ImageView::~ImageView() {
+        if (m_vkHandle != VK_NULL_HANDLE)
+            vkDestroyImageView(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
 
-        if (m_textureImage != VK_NULL_HANDLE)
-            vkDestroyImage(m_logicalDevice->VkHandle(), m_textureImage, nullptr);
-        vkFreeMemory(m_logicalDevice->VkHandle(), m_textureImageMemory, nullptr);
+        if (m_vkImage != VK_NULL_HANDLE)
+            vkDestroyImage(m_logicalDevice->VkHandle(), m_vkImage, nullptr);
+        vkFreeMemory(m_logicalDevice->VkHandle(), m_deviceMemory, nullptr);
     }
 
-    TextureSampler::TextureSampler(LogicalDevice* logicalDevice) :
+    Sampler::Sampler(LogicalDevice* logicalDevice) :
             m_logicalDevice(logicalDevice) {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(m_logicalDevice->Parent()->VkHandle(), &properties);
@@ -99,11 +99,11 @@ namespace vzt {
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
         if (vkCreateSampler(m_logicalDevice->VkHandle(), &samplerInfo, nullptr, &m_vkHandle) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture sampler!");
+            throw std::runtime_error("Failed to create texture sampler!");
         }
     }
 
-    TextureSampler::~TextureSampler() {
+    Sampler::~Sampler() {
         vkDestroySampler(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
     }
 }

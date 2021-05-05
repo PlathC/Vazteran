@@ -167,6 +167,7 @@ set(HEADERS
         include/Vazteran/Vulkan/Instance.hpp
         include/Vazteran/Vulkan/LogicalDevice.hpp
         include/Vazteran/Vulkan/PhysicalDevice.hpp
+        include/Vazteran/Vulkan/RenderPass.hpp
         include/Vazteran/Vulkan/Texture.hpp
         include/Vazteran/Vulkan/Shader.hpp
         include/Vazteran/Vulkan/SwapChain.hpp
@@ -186,6 +187,7 @@ set(SOURCES
         src/Vazteran/Vulkan/FrameBuffer.cpp
         src/Vazteran/Vulkan/LogicalDevice.cpp
         src/Vazteran/Vulkan/PhysicalDevice.cpp
+        src/Vazteran/Vulkan/RenderPass.cpp
         src/Vazteran/Vulkan/Shader.cpp
         src/Vazteran/Vulkan/SwapChain.cpp
         src/Vazteran/Vulkan/Texture.cpp)

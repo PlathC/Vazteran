@@ -10,7 +10,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
 #include "Vazteran/Data/Material.hpp"
 #include "Vazteran/Vulkan/GpuObject.hpp"
 #include "Vazteran/Vulkan/Texture.hpp"
@@ -25,9 +24,9 @@ namespace vzt {
     class SwapChain {
     public:
         SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                  vzt::RenderPassFunction renderPass, const vzt::PhongMaterial& currentMaterial);
+                  vzt::RenderPassFunction renderPass, std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders);
 
-        bool DrawFrame(vzt::UniformBufferObject ubo);
+        bool DrawFrame(vzt::Transforms ubo);
         void Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
         void FrameBufferResized() { m_framebufferResized = true; };
         uint32_t Width() const { return m_frameBufferWidth; }
@@ -44,7 +43,7 @@ namespace vzt {
         void CreateCommandBuffers();
         void CreateSynchronizationObjects();
 
-        void UpdateUniformBuffer(uint32_t currentImage, vzt::UniformBufferObject ubo);
+        void UpdateUniformBuffer(uint32_t currentImage, vzt::Transforms ubo);
         void UpdateDescriptorSets();
         void Cleanup();
 
@@ -90,12 +89,8 @@ namespace vzt {
         std::vector<VkBuffer> m_uniformBuffers;
         std::vector<VkDeviceMemory> m_uniformBuffersMemory;
 
-        std::unique_ptr<vzt::TextureSampler> m_ambientSampler;
-        std::unique_ptr<vzt::TextureImage> m_ambientImage;
-        std::unique_ptr<vzt::TextureSampler> m_diffuseSampler;
-        std::unique_ptr<vzt::TextureImage> m_diffuseImage;
-        std::unique_ptr<vzt::TextureSampler> m_specularSampler;
-        std::unique_ptr<vzt::TextureImage> m_specularImage;
+        // TODO: Get this out from the swapchain
+        std::unordered_set<vzt::Shader, vzt::ShaderHash> m_shaders;
     };
 }
 

@@ -10,10 +10,10 @@ namespace fs = std::filesystem;
 namespace vzt {
     class Image {
     public:
+        Image();
         Image(const fs::path& imagePath);
         Image(std::vector<uint8_t> imageData, uint32_t width, uint32_t height, uint8_t channels);
         Image(glm::vec4 color);
-        Image() = default;
 
         Image& operator=(const fs::path& imagePath);
         Image& operator=(glm::vec4 color);

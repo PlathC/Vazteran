@@ -1,41 +1,56 @@
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/GpuObject.hpp"
+#include "Vazteran/Vulkan/LogicalDevice.hpp"
+#include "Vazteran/Vulkan/RenderPass.hpp"
+#include "Vazteran/Vulkan/Texture.hpp"
 
 namespace vzt {
-    GraphicPipeline::GraphicPipeline(vzt::LogicalDevice* logicalDevice, const vzt::PipelineSettings& settings):
-            m_logicalDevice(logicalDevice), m_colorImageFormat(settings.swapChainImageFormat) {
-        VkDescriptorSetLayoutBinding uboLayoutBinding{};
-        uboLayoutBinding.binding = 0;
-        uboLayoutBinding.descriptorCount = 1;
-        uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-        uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-        VkDescriptorSetLayoutBinding ambientLayoutBinding{};
-        ambientLayoutBinding.binding = 1;
-        ambientLayoutBinding.descriptorCount = 1;
-        ambientLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        ambientLayoutBinding.pImmutableSamplers = nullptr;
-        ambientLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    GraphicPipeline::GraphicPipeline(vzt::LogicalDevice* logicalDevice, vzt::PipelineSettings settings):
+            m_logicalDevice(logicalDevice), m_renderPass(std::move(settings.renderPass)) {
 
-        VkDescriptorSetLayoutBinding diffuseLayoutBinding{};
-        diffuseLayoutBinding.binding = 2;
-        diffuseLayoutBinding.descriptorCount = 1;
-        diffuseLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        diffuseLayoutBinding.pImmutableSamplers = nullptr;
-        diffuseLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        VkDescriptorSetLayoutBinding specularLayoutBinding{};
-        specularLayoutBinding.binding = 3;
-        specularLayoutBinding.descriptorCount = 1;
-        specularLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        specularLayoutBinding.pImmutableSamplers = nullptr;
-        specularLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-        std::array<VkDescriptorSetLayoutBinding, 4> bindings = {
-                uboLayoutBinding, ambientLayoutBinding, diffuseLayoutBinding, specularLayoutBinding
+        std::vector<std::unique_ptr<vzt::ShaderModule>> shaderModules{};
+        std::vector<VkDescriptorSetLayoutBinding> bindings;
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+        auto buildDescriptorSetLayoutBinding = [](const DescriptorSet* descriptorSet, vzt::ShaderStage stage) {
+            VkDescriptorSetLayoutBinding layoutBinding{};
+            layoutBinding.binding = descriptorSet->binding;
+            layoutBinding.descriptorCount = 1;
+            layoutBinding.pImmutableSamplers = nullptr; // Optional
+            layoutBinding.stageFlags = stage;
+            return layoutBinding;
         };
+
+        for (auto& shader : settings.shaders) {
+            auto samplerDescriptorSets = shader.SamplerDescriptorSets();
+            for(auto& sampler : samplerDescriptorSets) {
+                VkDescriptorSetLayoutBinding layoutBinding = buildDescriptorSetLayoutBinding(&sampler, shader.Stage());
+                layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                m_textureHandlers[layoutBinding.binding] = {
+                    std::make_unique<ImageView>(m_logicalDevice, sampler.image),
+                    std::make_unique<Sampler>(m_logicalDevice)
+                };
+                bindings.emplace_back(layoutBinding);
+            }
+
+            auto uniformDescriptorSets = shader.UniformDescriptorSets();
+            for(auto& uniform : uniformDescriptorSets) {
+                VkDescriptorSetLayoutBinding layoutBinding = buildDescriptorSetLayoutBinding(&uniform, shader.Stage());
+                layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                bindings.emplace_back(layoutBinding);
+                m_uniformRanges[layoutBinding.binding] = uniform.size;
+            }
+
+            auto module = std::make_unique<ShaderModule>(m_logicalDevice, shader.ShaderModuleCreateInfo());
+            VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
+            shaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            shaderStageCreateInfo.stage = static_cast<VkShaderStageFlagBits>(shader.Stage());
+            shaderStageCreateInfo.module = module->VkHandle();
+            shaderStageCreateInfo.pName = "main";
+
+            shaderModules.emplace_back(std::move(module));
+            shaderStages.emplace_back(shaderStageCreateInfo);
+        }
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -48,7 +63,6 @@ namespace vzt {
 
         auto bindingDescription = Vertex::GetBindingDescription();
         auto attributeDescriptions = Vertex::GetAttributeDescriptions();
-
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -135,8 +149,6 @@ namespace vzt {
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
-        CreateRenderPass();
-
         VkPipelineDepthStencilStateCreateInfo depthStencil{};
         depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         depthStencil.depthTestEnable = VK_TRUE;
@@ -146,11 +158,8 @@ namespace vzt {
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = 2;
-        VkPipelineShaderStageCreateInfo shaderStages[] = {
-                settings.vertexShader.Stage(), settings.fragmentShader.Stage()
-        };
 
-        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.pStages = shaderStages.data();
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
@@ -160,7 +169,7 @@ namespace vzt {
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = nullptr; // Optional
         pipelineInfo.layout = m_pipelineLayout;
-        pipelineInfo.renderPass = m_renderPass;
+        pipelineInfo.renderPass = m_renderPass->VkHandle();
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex = -1; // Optional
@@ -171,71 +180,64 @@ namespace vzt {
         }
     }
 
+    void GraphicPipeline::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer) const {
+        auto descriptorWrites = std::vector<VkWriteDescriptorSet>();
+        auto descriptorBufferInfo = std::vector<VkDescriptorBufferInfo>(m_uniformRanges.size());
+        std::size_t i = 0;
+        for(const auto& uniformRanges : m_uniformRanges) {
+            descriptorBufferInfo[i].buffer = uniformBuffer;
+            descriptorBufferInfo[i].offset = 0;
+            descriptorBufferInfo[i].range = uniformRanges.second;
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = descriptorSet;
+            descriptorWrite.dstBinding = uniformRanges.first;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo = &descriptorBufferInfo[i];
+            descriptorWrites.emplace_back(descriptorWrite);
+            i++;
+        }
+
+        i = 0;
+        auto descriptorImageInfo = std::vector<VkDescriptorImageInfo>(m_textureHandlers.size());
+        for(const auto& textureHandler : m_textureHandlers) {
+            descriptorImageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            descriptorImageInfo[i].imageView = textureHandler.second.imageView->VkHandle();
+            descriptorImageInfo[i].sampler = textureHandler.second.sampler->VkHandle();
+
+            VkWriteDescriptorSet descriptorWrite{};
+            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet = descriptorSet;
+            descriptorWrite.dstBinding = textureHandler.first;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pImageInfo = &descriptorImageInfo[i];
+            descriptorWrites.emplace_back(descriptorWrite);
+            i++;
+        }
+
+        vkUpdateDescriptorSets(m_logicalDevice->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    }
+
+    std::vector<VkDescriptorType> GraphicPipeline::DescriptorTypes() const {
+        std::vector<VkDescriptorType> descriptorTypes;
+        for(const auto& uniformRanges : m_uniformRanges) {
+            descriptorTypes.emplace_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        }
+
+        for(const auto& textureHandler : m_textureHandlers) {
+            descriptorTypes.emplace_back(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        }
+        return descriptorTypes;
+    }
+
     GraphicPipeline::~GraphicPipeline() {
         vkDestroyDescriptorSetLayout(m_logicalDevice->VkHandle(), m_descriptorSetLayout, nullptr);
         vkDestroyPipeline(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
         vkDestroyPipelineLayout(m_logicalDevice->VkHandle(), m_pipelineLayout, nullptr);
-        vkDestroyRenderPass(m_logicalDevice->VkHandle(), m_renderPass, nullptr);
-    }
-
-    void GraphicPipeline::CreateRenderPass() {
-        VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = m_colorImageFormat;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-        VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentDescription depthAttachment{};
-        depthAttachment.format = m_logicalDevice->Parent()->FindDepthFormat();
-        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference depthAttachmentRef{};
-        depthAttachmentRef.attachment = 1;
-        depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-        subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-                                  | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-                                  | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-                                   | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-        std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-        VkRenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        renderPassInfo.pAttachments = attachments.data();
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
-
-        if (vkCreateRenderPass(m_logicalDevice->VkHandle(), &renderPassInfo, nullptr, &m_renderPass)
-            != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create render pass!");
-        }
     }
 }

@@ -24,30 +24,15 @@ void main() {
     float lambertian = max(dot(N, L), 0.0);
     float specular = 0.0;
     if(lambertian > 0.0) {
-        vec3 R = reflect(-L, N);      // Reflected light vector
+        vec3 R = reflect(-L, N);           // Reflected light vector
         vec3 V = normalize(-vertPosition); // Vector to viewer
+
         // Compute the specular term
         float specAngle = max(dot(R, V), 0.0);
         specular = pow(specAngle, 75.);
     }
+
     outColor = 1.f * texture(objectAmbient, fragmentTextureCoordinates) +
                1.f * lambertian * texture(objectDiffuse, fragmentTextureCoordinates) +
-               1.f * specular * texture(objectDiffuse, fragmentTextureCoordinates) ;
-/*
-    const vec3 lightColor = vec3(0.4f, 0.4f, 0.4f);
-    vec3 ambient = texture(objectAmbient, fragmentTextureCoordinates).xyz * lightColor;
-
-    vec3 unitNormal = normalize(normal);
-    vec3 lightDir = normalize(lightPosition - fragmentPosition);
-    float lightImpact = max(dot(unitNormal, lightDir), 0.0);
-
-    vec3 viewDir = normalize(viewPosition - fragmentPosition);
-    vec3 reflectDir = reflect(-lightDir, unitNormal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 225);
-    vec3 specular = texture(objectSpecular, fragmentTextureCoordinates).xyz * spec * lightColor;
-
-    vec3 diffuse = texture(objectDiffuse, fragmentTextureCoordinates).xyz * lightImpact * lightColor;
-    vec3 result =  (ambient + diffuse) * fragmentColor;
-
-    outColor = vec4(result, 1.f);*/
+               1.f * specular * texture(objectSpecular, fragmentTextureCoordinates);
 }

@@ -17,7 +17,7 @@ namespace vzt {
     class Model;
     class PhysicalDevice;
     class SwapChain;
-    class TextureImage;
+    class ImageView;
 
     struct SurfaceHandler {
     public:
