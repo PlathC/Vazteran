@@ -153,6 +153,7 @@ endif ()
 set(HEADERS
         include/Vazteran/Application.hpp
         include/Vazteran/Math.hpp
+        include/Vazteran/Renderer.hpp
         include/Vazteran/Utils.hpp
         include/Vazteran/Window.hpp
         include/Vazteran/Data/Camera.hpp
@@ -176,6 +177,7 @@ set(HEADERS
 set(SOURCES
         src/Vazteran/main.cpp
         src/Vazteran/Application.cpp
+        src/Vazteran/Renderer.cpp
         src/Vazteran/Utils.cpp
         src/Vazteran/Window.cpp
         src/Vazteran/Data/Camera.cpp

@@ -88,12 +88,10 @@ namespace vzt {
     }
 
 
-    void SwapChain::Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight) {
+    void SwapChain::Recreate(VkSurfaceKHR surface) {
         Cleanup();
 
         m_surface = surface;
-        m_frameBufferWidth = frameBufferWidth;
-        m_frameBufferHeight = frameBufferHeight;
 
         CreateSwapChain();
         CreateImageKHR();
@@ -101,6 +99,17 @@ namespace vzt {
         CreateDepthResources();
         CreateFrameBuffers();
         CreateCommandBuffers();
+    }
+
+    void SwapChain::FrameBufferResized(vzt::Size2D newSize) {
+        m_frameBufferWidth = newSize.width;
+        m_frameBufferHeight = newSize.height;
+        m_framebufferResized = true;
+    };
+
+    vzt::Size2D SwapChain::FrameBufferSize() const {
+        return { static_cast<uint32_t>(m_frameBufferWidth),
+                 static_cast<uint32_t>(m_frameBufferHeight) };
     }
 
     SwapChain::~SwapChain() {

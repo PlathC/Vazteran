@@ -4,6 +4,7 @@
 #include <chrono>
 #include <iostream>
 #include <functional>
+#include <unordered_set>
 #include <vector>
 
 #define GLM_FORCE_RADIANS
@@ -12,8 +13,9 @@
 
 #include "Vazteran/Data/Material.hpp"
 #include "Vazteran/Vulkan/GpuObject.hpp"
-#include "Vazteran/Vulkan/Texture.hpp"
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
+#include "Vazteran/Vulkan/Shader.hpp"
+#include "Vazteran/Vulkan/Texture.hpp"
 
 namespace vzt {
     class GraphicPipeline;
@@ -27,10 +29,9 @@ namespace vzt {
                   vzt::RenderPassFunction renderPass, std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders);
 
         bool DrawFrame(vzt::Transforms ubo);
-        void Recreate(VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight);
-        void FrameBufferResized() { m_framebufferResized = true; };
-        uint32_t Width() const { return m_frameBufferWidth; }
-        uint32_t Height() const { return m_frameBufferHeight; }
+        void Recreate(VkSurfaceKHR surface);
+        void FrameBufferResized(vzt::Size2D newSize);
+        vzt::Size2D FrameBufferSize() const;
 
         ~SwapChain();
 

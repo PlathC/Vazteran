@@ -6,6 +6,7 @@
 
 namespace vzt{
     class Instance;
+    class Renderer;
     class Window;
 
     class Application {
@@ -18,6 +19,7 @@ namespace vzt{
     private:
         std::unique_ptr<vzt::Instance> m_instance;
         std::unique_ptr<vzt::Window> m_window;
+        std::unique_ptr<vzt::Renderer> m_renderer;
     };
 }
 

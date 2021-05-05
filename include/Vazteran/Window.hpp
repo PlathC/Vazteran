@@ -7,18 +7,10 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "Vazteran/Data/Camera.hpp"
-#include "Vazteran/Vulkan/Buffer.hpp"
-#include "Vazteran/Vulkan/Instance.hpp"
+#include "Vazteran/Utils.hpp"
 
 namespace vzt {
-    class LogicalDevice;
-    class GraphicPipeline;
-    class Model;
-    class PhysicalDevice;
-    class SwapChain;
-    class ImageView;
-
+    class Instance;
     struct SurfaceHandler {
     public:
         SurfaceHandler(vzt::Instance* instance, VkSurfaceKHR surface);
@@ -30,33 +22,31 @@ namespace vzt {
         VkSurfaceKHR m_surface;
     };
 
+
     using GLFWwindowPtr = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
+    using FrameBufferResizedCallback = std::function<void()>;
 
     class Window {
     public:
-        Window(vzt::Instance* instance, std::string_view name, uint32_t width, uint32_t height);
+        Window(std::string_view name, uint32_t width, uint32_t height,
+               FrameBufferResizedCallback  callback);
 
-        bool ShouldClose() { return glfwWindowShouldClose(m_window.get()); }
-        void Draw();
-        void FrameBufferResized();
-        vzt::LogicalDevice* Device() { return m_logicalDevice.get(); }
+        void FrameBufferResized() const;
+        vzt::Size2D FrameBufferSize() const;
+        bool ShouldClose() const { return glfwWindowShouldClose(m_window.get()); }
+        VkSurfaceKHR Surface(vzt::Instance* instance);
+        bool Update() const;
+        std::vector<const char*> VkExtensions() const;
 
         ~Window();
     private:
+        std::unique_ptr<SurfaceHandler> m_surface = nullptr;
+
         uint32_t m_width;
         uint32_t m_height;
 
-
         GLFWwindowPtr m_window;
-        Instance* m_instance;
-        std::unique_ptr<vzt::SurfaceHandler> m_surface;
-        std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;
-        std::unique_ptr<vzt::LogicalDevice> m_logicalDevice;
-        std::unique_ptr<vzt::SwapChain> m_swapChain;
-        std::unique_ptr<VertexBuffer> m_vertexBuffer;
-        std::unique_ptr<IndexBuffer> m_indexBuffer;
-        vzt::Camera m_camera;
-        std::unique_ptr<vzt::Model> m_model;
+        FrameBufferResizedCallback m_fbResizedCallback;
     };
 }
 
