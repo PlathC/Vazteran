@@ -18,14 +18,15 @@ namespace vzt {
 
     class Renderer {
     public:
-        Renderer(vzt::Instance* instance, VkSurfaceKHR surface, vzt::Size2D size);
+        Renderer(vzt::Instance* instance, VkSurfaceKHR surface, vzt::Size2D size,
+                std::unique_ptr<Model> model, Camera camera);
 
         void Draw();
-        LogicalDevice* Device() const { return m_logicalDevice.get(); }
+        vzt::LogicalDevice* Device() const { return m_logicalDevice.get(); }
         void FrameBufferResized(vzt::Size2D newSize);
 
     private:
-        Instance* m_instance;
+        vzt::Instance* m_instance;
         VkSurfaceKHR m_surface;
 
         std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;
@@ -34,8 +35,8 @@ namespace vzt {
         std::unique_ptr<VertexBuffer> m_vertexBuffer;
         std::unique_ptr<IndexBuffer> m_indexBuffer;
 
-        vzt::Camera m_camera;
         std::unique_ptr<vzt::Model> m_model;
+        vzt::Camera m_camera;
     };
 }
 

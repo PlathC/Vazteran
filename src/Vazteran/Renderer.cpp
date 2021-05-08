@@ -3,25 +3,15 @@
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
 namespace vzt {
-    Renderer::Renderer(vzt::Instance* instance, VkSurfaceKHR surface, vzt::Size2D size):
-            m_surface(surface) {
+    Renderer::Renderer(vzt::Instance* instance, VkSurfaceKHR surface, vzt::Size2D size, std::unique_ptr<Model> models,
+            Camera camera): m_surface(surface), m_model(std::move(models)), m_camera(camera) {
+
         m_physicalDevice = std::make_unique<vzt::PhysicalDevice>(instance, m_surface);
         m_logicalDevice  = std::make_unique<vzt::LogicalDevice>(instance, m_physicalDevice.get(), m_surface);
-
-        m_model = std::make_unique<vzt::Model>("./samples/viking_room.obj");
-        auto texture = Image("./samples/viking_room.png");
-        m_model->Mat().ambient = texture;
-        m_model->Mat().diffuse = texture;
-        m_model->Mat().specular = glm::vec4(0., 0., 0., 0.);
-
-        m_camera = Camera::FromModel(*m_model, size.width / static_cast<float>(size.height));
-
-
-        // TODO: Integrate this in the Renderer class
-        m_vertexBuffer = std::make_unique<VertexBuffer>(m_logicalDevice.get(), m_model->Vertices(),
-                                                        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-        m_indexBuffer  = std::make_unique<IndexBuffer>(m_logicalDevice.get(), m_model->Indices(),
-                                                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+        m_vertexBuffer = std::make_unique<vzt::VertexBuffer>(m_logicalDevice.get(), m_model->Vertices(),
+                VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        m_indexBuffer  = std::make_unique<vzt::IndexBuffer>(m_logicalDevice.get(), m_model->Indices(),
+                VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 
         std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders;
@@ -57,7 +47,7 @@ namespace vzt {
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         m_model->Rotation() = time * glm::radians(45.0f) * glm::vec3(0.0f, 0.0f, 1.0f);
-        vzt::Transforms ubo{
+        vzt::Transforms ubo {
                 m_model->ModelMatrix(),
                 m_camera.View(),
                 m_camera.Projection(),
@@ -69,6 +59,7 @@ namespace vzt {
 
         if(m_swapChain->DrawFrame(ubo)) {
             vkDeviceWaitIdle(m_logicalDevice->VkHandle());
+
             auto size = m_swapChain->FrameBufferSize();
             m_camera.aspectRatio = static_cast<float>(size.width) / static_cast<float>(size.height);
         }

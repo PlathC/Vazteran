@@ -4,9 +4,12 @@
 
 #include <string>
 
+#include "Vazteran/Data/Camera.hpp"
+
 namespace vzt{
     class Instance;
     class Renderer;
+    class Model;
     class Window;
 
     class Application {
@@ -16,6 +19,7 @@ namespace vzt{
         void Run();
 
         ~Application();
+
     private:
         std::unique_ptr<vzt::Instance> m_instance;
         std::unique_ptr<vzt::Window> m_window;
