@@ -12,10 +12,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Vazteran/Data/Material.hpp"
+
+#include "Vazteran/Vulkan/Buffer.hpp"
 #include "Vazteran/Vulkan/GpuObject.hpp"
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Vulkan/Shader.hpp"
-#include "Vazteran/Vulkan/Texture.hpp"
+#include "Vazteran/Vulkan/ImageUtils.hpp"
 
 namespace vzt {
     class GraphicPipeline;
@@ -23,8 +25,14 @@ namespace vzt {
 
     using RenderPassFunction = std::function<void(VkCommandBuffer, VkDescriptorSet&, GraphicPipeline*)>;
 
-    struct RenderComponent {
+    struct FrameComponent {
+        VkDescriptorSet descriptorSet;
+        VkCommandBuffer commandBuffer;
+        VkImage colorImage;
+        VkImageView colorImageView;
 
+        vzt::FrameBuffer frameBuffer;
+        vzt::Buffer<vzt::Transforms> uniformBuffer;
     };
 
     class SwapChain {
@@ -32,8 +40,8 @@ namespace vzt {
         SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
                   vzt::RenderPassFunction renderPass, std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders);
 
-        SwapChain(SwapChain&) = delete;
-        SwapChain& operator=(SwapChain&) = delete;
+        SwapChain(const SwapChain&) = delete;
+        SwapChain& operator=(const SwapChain&) = delete;
 
         SwapChain(SwapChain&& other) noexcept;
         SwapChain& operator=(SwapChain&& other) noexcept;
@@ -48,14 +56,10 @@ namespace vzt {
     private:
         void CreateSwapChain();
         void CreateImageKHR();
-        void CreateImageViews();
         void CreateDepthResources();
-        void CreateFrameBuffers();
-        void CreateCommandBuffers();
         void CreateSynchronizationObjects();
 
         void UpdateUniformBuffer(uint32_t currentImage, vzt::Transforms ubo);
-        void UpdateDescriptorSets();
         void Cleanup();
 
         constexpr static int MaxFramesInFlight = 2;
@@ -81,24 +85,13 @@ namespace vzt {
 
         VkCommandPool m_commandPool;
         VkDescriptorPool m_descriptorPool;
-
-        std::vector<VkDescriptorSet> m_descriptorSets;
-        std::vector<VkCommandBuffer> m_commandBuffers;
         std::vector<VkSemaphore> m_imageAvailableSemaphores;
         std::vector<VkSemaphore> m_renderFinishedSemaphores;
         std::vector<VkFence> m_inFlightFences;
         std::vector<VkFence> m_imagesInFlight;
 
-        VkImage m_depthImage;
-        VkDeviceMemory m_depthImageMemory;
-        VkImageView m_depthImageView;
-
-        std::vector<VkImage> m_swapChainImages;
-        std::vector<VkImageView> m_swapChainImageViews;
-        std::vector<std::unique_ptr<vzt::FrameBuffer>> m_frameBuffers;
-
-        std::vector<VkBuffer> m_uniformBuffers;
-        std::vector<VkDeviceMemory> m_uniformBuffersMemory;
+        std::vector<FrameComponent> m_frames;
+        std::unique_ptr<vzt::ImageHandler> m_depthImage;
 
         // TODO: Get this out from the swapchain
         std::unordered_set<vzt::Shader, vzt::ShaderHash> m_shaders;

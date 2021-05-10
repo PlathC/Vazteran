@@ -2,10 +2,8 @@
 #include "Vazteran/Vulkan/GpuObject.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/RenderPass.hpp"
-#include "Vazteran/Vulkan/Texture.hpp"
 
 namespace vzt {
-
     GraphicPipeline::GraphicPipeline(vzt::LogicalDevice* logicalDevice, vzt::PipelineSettings settings):
             m_logicalDevice(logicalDevice), m_renderPass(std::move(settings.renderPass)) {
 
@@ -26,11 +24,12 @@ namespace vzt {
             for(auto& sampler : samplerDescriptorSets) {
                 VkDescriptorSetLayoutBinding layoutBinding = buildDescriptorSetLayoutBinding(&sampler, shader.Stage());
                 layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                m_textureHandlers[layoutBinding.binding] = {
-                    std::make_unique<ImageView>(m_logicalDevice, sampler.image),
-                    std::make_unique<Sampler>(m_logicalDevice)
-                };
+
                 bindings.emplace_back(layoutBinding);
+                m_textureHandlers.insert(std::make_pair<uint32_t, vzt::ImageHandler>(std::move(layoutBinding.binding), {
+                        vzt::ImageView(m_logicalDevice, sampler.image),
+                        vzt::Sampler(m_logicalDevice)
+                }));
             }
 
             auto uniformDescriptorSets = shader.UniformDescriptorSets();
@@ -228,8 +227,8 @@ namespace vzt {
         auto descriptorImageInfo = std::vector<VkDescriptorImageInfo>(m_textureHandlers.size());
         for(const auto& textureHandler : m_textureHandlers) {
             descriptorImageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            descriptorImageInfo[i].imageView = textureHandler.second.imageView->VkHandle();
-            descriptorImageInfo[i].sampler = textureHandler.second.sampler->VkHandle();
+            descriptorImageInfo[i].imageView = textureHandler.second.imageView.VkHandle();
+            descriptorImageInfo[i].sampler = textureHandler.second.sampler.VkHandle();
 
             VkWriteDescriptorSet descriptorWrite{};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Utils.hpp"
-#include "Vazteran/Vulkan/Texture.hpp"
+#include "Vazteran/Vulkan/ImageUtils.hpp"
 
 namespace vzt {
     class LogicalDevice;
@@ -65,8 +65,8 @@ namespace vzt {
     public:
         ShaderModule(vzt::LogicalDevice* logicalDevice, VkShaderModuleCreateInfo createInfo);
 
-        ShaderModule(ShaderModule&) = delete;
-        ShaderModule& operator=(ShaderModule&) = delete;
+        ShaderModule(const ShaderModule&) = delete;
+        ShaderModule& operator=(const ShaderModule&) = delete;
 
         ShaderModule(ShaderModule&& other) noexcept;
         ShaderModule& operator=(ShaderModule&& other) noexcept;

@@ -11,8 +11,8 @@ namespace vzt {
     public:
         RenderPass(vzt::LogicalDevice* logicalDevice, VkFormat colorImageFormat);
 
-        RenderPass(RenderPass&) = delete;
-        RenderPass& operator=(RenderPass&) = delete;
+        RenderPass(const RenderPass&) = delete;
+        RenderPass& operator=(const RenderPass&) = delete;
 
         RenderPass(RenderPass&& other) noexcept;
         RenderPass& operator=(RenderPass&& other) noexcept;

@@ -10,8 +10,8 @@ namespace vzt {
         FrameBuffer(vzt::LogicalDevice* logicalDevice, VkRenderPass renderPass, std::vector<VkImageView> attachments,
                     uint32_t width, uint32_t height);
 
-        FrameBuffer(FrameBuffer&) = delete;
-        FrameBuffer& operator=(FrameBuffer&) = delete;
+        FrameBuffer(const FrameBuffer&) = delete;
+        FrameBuffer& operator=(const FrameBuffer&) = delete;
 
         FrameBuffer(FrameBuffer&&) noexcept;
         FrameBuffer& operator=(FrameBuffer&&) noexcept;

@@ -4,7 +4,6 @@
 
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
-#include "Vazteran/Vulkan/PhysicalDevice.hpp"
 #include "Vazteran/Vulkan/RenderPass.hpp"
 #include "Vazteran/Vulkan/SwapChain.hpp"
 
@@ -14,46 +13,30 @@ namespace vzt {
             m_frameBufferWidth(frameBufferWidth), m_frameBufferHeight(frameBufferHeight), m_renderPass(std::move(renderPass)),
             m_surface(surface), m_logicalDevice(logicalDevice), m_shaders(std::move(shaders)) {
         CreateSwapChain();
-        CreateImageKHR();
-        CreateImageViews();
         CreateDepthResources();
-        CreateFrameBuffers();
-        CreateCommandBuffers();
+        CreateImageKHR();
         CreateSynchronizationObjects();
     }
 
     SwapChain::SwapChain(SwapChain&& other) noexcept {
-        std::swap(m_logicalDevice, other.m_logicalDevice);
-        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
-        std::swap(m_graphicPipeline, other.m_graphicPipeline);
-        m_currentFrame = std::exchange(other.m_currentFrame, 0);
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));m_currentFrame = std::exchange(other.m_currentFrame, 0);
         m_framebufferResized = std::exchange(other.m_framebufferResized, false);
         m_frameBufferWidth = std::exchange(other.m_frameBufferWidth, 0);
-        m_frameBufferHeight = std::exchange(other.m_frameBufferHeight, 0);
-        std::swap(m_renderPass, other.m_renderPass);
-        m_imageCount = std::exchange(other.m_imageCount, 0);
+        m_frameBufferHeight = std::exchange(other.m_frameBufferHeight, 0);m_imageCount = std::exchange(other.m_imageCount, 0);
         m_swapChainImageFormat = std::exchange(other.m_swapChainImageFormat, static_cast<decltype(m_swapChainImageFormat)>(VK_NULL_HANDLE));
-        std::swap(m_swapChainExtent, other.m_swapChainExtent);
         m_commandPool = std::exchange(other.m_commandPool, static_cast<decltype(m_commandPool)>(VK_NULL_HANDLE));
         m_descriptorPool = std::exchange(other.m_descriptorPool, static_cast<decltype(m_descriptorPool)>(VK_NULL_HANDLE));
-        std::swap(m_descriptorSets, other.m_descriptorSets);
-        std::swap(m_commandBuffers, other.m_commandBuffers);
+        m_depthImage = std::exchange(other.m_depthImage, nullptr);
+
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+        std::swap(m_graphicPipeline, other.m_graphicPipeline);
+        std::swap(m_renderPass, other.m_renderPass);
+        std::swap(m_swapChainExtent, other.m_swapChainExtent);
         std::swap(m_imageAvailableSemaphores, other.m_imageAvailableSemaphores);
         std::swap(m_renderFinishedSemaphores, other.m_renderFinishedSemaphores);
         std::swap(m_inFlightFences, other.m_inFlightFences);
         std::swap(m_imagesInFlight, other.m_imagesInFlight);
-
-        m_depthImage = std::exchange(other.m_depthImage, static_cast<decltype(m_depthImage)>(VK_NULL_HANDLE));
-        m_depthImageMemory = std::exchange(other.m_depthImageMemory, static_cast<decltype(m_depthImageMemory)>(VK_NULL_HANDLE));
-        m_depthImageView = std::exchange(other.m_depthImageView, static_cast<decltype(m_depthImageView)>(VK_NULL_HANDLE));
-
-        std::swap(m_swapChainImages, other.m_swapChainImages);
-        std::swap(m_swapChainImageViews, other.m_swapChainImageViews);
-        std::swap(m_frameBuffers, other.m_frameBuffers);
-
-        std::swap(m_uniformBuffers, other.m_uniformBuffers);
-        std::swap(m_uniformBuffersMemory, other.m_uniformBuffersMemory);
-
+        std::swap(m_frames, other.m_frames);
         std::swap(m_shaders, other.m_shaders);
     }
 
@@ -71,24 +54,12 @@ namespace vzt {
         std::swap(m_swapChainExtent, other.m_swapChainExtent);
         std::swap(m_commandPool, other.m_commandPool);
         std::swap(m_descriptorPool, other.m_descriptorPool);
-        std::swap(m_descriptorSets, other.m_descriptorSets);
-        std::swap(m_commandBuffers, other.m_commandBuffers);
         std::swap(m_imageAvailableSemaphores, other.m_imageAvailableSemaphores);
         std::swap(m_renderFinishedSemaphores, other.m_renderFinishedSemaphores);
         std::swap(m_inFlightFences, other.m_inFlightFences);
         std::swap(m_imagesInFlight, other.m_imagesInFlight);
-
         std::swap(m_depthImage, other.m_depthImage);
-        std::swap(m_depthImageMemory, other.m_depthImageMemory);
-        std::swap(m_depthImageView, other.m_depthImageView);
-
-        std::swap(m_swapChainImages, other.m_swapChainImages);
-        std::swap(m_swapChainImageViews, other.m_swapChainImageViews);
-        std::swap(m_frameBuffers, other.m_frameBuffers);
-
-        std::swap(m_uniformBuffers, other.m_uniformBuffers);
-        std::swap(m_uniformBuffersMemory, other.m_uniformBuffersMemory);
-
+        std::swap(m_frames, other.m_frames);
         std::swap(m_shaders, other.m_shaders);
 
         return *this;
@@ -124,7 +95,7 @@ namespace vzt {
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_commandBuffers[imageIndex];
+        submitInfo.pCommandBuffers = &m_frames[imageIndex].commandBuffer;
 
         VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
@@ -156,6 +127,7 @@ namespace vzt {
         }
 
         m_currentFrame = (m_currentFrame + 1) % MaxFramesInFlight;
+
         return false;
     }
 
@@ -166,11 +138,8 @@ namespace vzt {
         m_surface = surface;
 
         CreateSwapChain();
-        CreateImageKHR();
-        CreateImageViews();
         CreateDepthResources();
-        CreateFrameBuffers();
-        CreateCommandBuffers();
+        CreateImageKHR();
     }
 
     void SwapChain::FrameBufferResized(vzt::Size2D newSize) {
@@ -251,122 +220,87 @@ namespace vzt {
 
     void SwapChain::CreateImageKHR() {
         vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, nullptr);
-        m_swapChainImages.resize(m_imageCount);
-        vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, m_swapChainImages.data());
+        auto swapChainImages = std::vector<VkImage>(m_imageCount);
+        m_frames.reserve(m_imageCount);
+        vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
 
-        VkDeviceSize bufferSize = sizeof(vzt::Transforms);
-
-        m_uniformBuffers.resize(m_swapChainImages.size());
-        m_uniformBuffersMemory.resize(m_swapChainImages.size());
-        for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-            m_logicalDevice->CreateBuffer(
-                    m_uniformBuffers[i], m_uniformBuffersMemory[i],
-                    bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-            );
-        }
         auto descriptorTypes = m_graphicPipeline->DescriptorTypes();
         auto poolSizes = std::vector<VkDescriptorPoolSize>(descriptorTypes.size());
+
         for (std::size_t i = 0; i < descriptorTypes.size(); i++) {
             poolSizes[i].type = descriptorTypes[i];
-            poolSizes[i].descriptorCount = static_cast<uint32_t>(m_swapChainImages.size());
+            poolSizes[i].descriptorCount = static_cast<uint32_t>(m_imageCount);
         }
 
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = static_cast<uint32_t>(m_swapChainImages.size());
+        VkDescriptorPoolCreateInfo descriptorPoolInfo{};
+        descriptorPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        descriptorPoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        descriptorPoolInfo.pPoolSizes = poolSizes.data();
+        descriptorPoolInfo.maxSets = static_cast<uint32_t>(m_imageCount);
 
-        if (vkCreateDescriptorPool(m_logicalDevice->VkHandle(), &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor pool!");
+        if (vkCreateDescriptorPool(m_logicalDevice->VkHandle(), &descriptorPoolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create descriptor pool!");
+        }
+        auto layouts = std::vector<VkDescriptorSetLayout>(m_imageCount, m_graphicPipeline->DescriptorSetLayout());
+        VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
+        descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descriptorSetAllocInfo.descriptorPool = m_descriptorPool;
+        descriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(m_imageCount);
+        descriptorSetAllocInfo.pSetLayouts = layouts.data();
+
+        auto descriptorSets = std::vector<VkDescriptorSet>(m_imageCount);
+        if (vkAllocateDescriptorSets(m_logicalDevice->VkHandle(), &descriptorSetAllocInfo, descriptorSets.data()) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to allocate descriptor sets!");
         }
 
-        auto layouts = std::vector<VkDescriptorSetLayout>(m_swapChainImages.size(), m_graphicPipeline->DescriptorSetLayout());
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = m_descriptorPool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(m_swapChainImages.size());
-        allocInfo.pSetLayouts = layouts.data();
-
-        m_descriptorSets.resize(m_swapChainImages.size());
-        if (vkAllocateDescriptorSets(m_logicalDevice->VkHandle(), &allocInfo, m_descriptorSets.data()) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
-
-        UpdateDescriptorSets();
-    }
-
-    void SwapChain::CreateImageViews() {
-        m_swapChainImageViews.resize(m_swapChainImages.size());
-        for (std::size_t i = 0; i < m_swapChainImageViews.size(); i++) {
-            m_swapChainImageViews[i] = m_logicalDevice->CreateImageView(m_swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
-        }
-    }
-
-    void SwapChain::CreateDepthResources() {
-        VkFormat depthFormat = m_logicalDevice->Parent()->FindDepthFormat();
-        m_logicalDevice->CreateImage(
-                m_depthImage, m_depthImageMemory,
-                m_swapChainExtent.width, m_swapChainExtent.height, depthFormat,
-                VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-        );
-
-        m_depthImageView = m_logicalDevice->CreateImageView(m_depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-        m_logicalDevice->TransitionImageLayout(
-                m_depthImage, depthFormat,
-                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_DEPTH_BIT);
-    }
-
-    void SwapChain::CreateFrameBuffers() {
-        for(const auto& imageView : m_swapChainImageViews) {
-            m_frameBuffers.emplace_back(std::make_unique<vzt::FrameBuffer>(
-                    m_logicalDevice, m_graphicPipeline->RenderPass()->VkHandle(), std::vector<VkImageView>({imageView, m_depthImageView}),
-                    m_swapChainExtent.width, m_swapChainExtent.height
-            ));
-        }
-    }
-
-    void SwapChain::CreateCommandBuffers() {
         vzt::QueueFamilyIndices indices = m_logicalDevice->DeviceQueueFamilyIndices();
 
-        VkCommandPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = indices.graphicsFamily.value();
-        poolInfo.flags = 0; // Optional
-        if (vkCreateCommandPool(m_logicalDevice->VkHandle(), &poolInfo, nullptr, &m_commandPool)
+        VkCommandPoolCreateInfo commandPoolInfo{};
+        commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        commandPoolInfo.flags = 0; // Optional
+        if (vkCreateCommandPool(m_logicalDevice->VkHandle(), &commandPoolInfo, nullptr, &m_commandPool)
             != VK_SUCCESS) {
             throw std::runtime_error("Failed to create command pool!");
         }
 
-        m_commandBuffers.resize(m_frameBuffers.size());
+        auto commandsBuffers = std::vector<VkCommandBuffer>(m_imageCount);
+        VkCommandBufferAllocateInfo commandBufferAllocInfo{};
+        commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        commandBufferAllocInfo.commandPool = m_commandPool;
+        commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        commandBufferAllocInfo.commandBufferCount = static_cast<uint32_t>(commandsBuffers.size());
 
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
-
-        if (vkAllocateCommandBuffers(m_logicalDevice->VkHandle(), &allocInfo, m_commandBuffers.data()) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(m_logicalDevice->VkHandle(), &commandBufferAllocInfo, commandsBuffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate command buffers!");
         }
 
-        for (size_t i = 0; i < m_commandBuffers.size(); i++) {
+        auto tempImageData = std::vector<uint8_t>(m_swapChainExtent.width * m_swapChainExtent.height * 4, 0);
+        for (size_t i = 0; i < m_imageCount; i++) {
+            // TODO: Handle CommandBuffer in a CommandPool class
+            auto buffer = vzt::Buffer<vzt::Transforms>(m_logicalDevice, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                                                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            VkImageView handle = m_logicalDevice->CreateImageView(swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+
+            auto frameBuffer = vzt::FrameBuffer(m_logicalDevice, m_graphicPipeline->RenderPass()->VkHandle(),
+                                                std::vector<VkImageView>({ handle, m_depthImage->imageView.VkHandle() }),
+                                                m_swapChainExtent.width, m_swapChainExtent.height);
+
+            m_graphicPipeline->UpdateDescriptorSet(descriptorSets[i], buffer.VkHandle());
+
             VkCommandBufferBeginInfo beginInfo{};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             beginInfo.flags = 0; // Optional
             beginInfo.pInheritanceInfo = nullptr; // Optional
 
-            if (vkBeginCommandBuffer(m_commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+            if (vkBeginCommandBuffer(commandsBuffers[i], &beginInfo) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to begin recording command buffer!");
             }
 
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassInfo.renderPass = m_graphicPipeline->RenderPass()->VkHandle();
-            renderPassInfo.framebuffer = m_frameBuffers[i]->VkHandle();
+            renderPassInfo.framebuffer = frameBuffer.VkHandle();
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = m_swapChainExtent;
 
@@ -376,22 +310,37 @@ namespace vzt {
             renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
             renderPassInfo.pClearValues = clearValues.data();
 
-            vkCmdBeginRenderPass(m_commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
-                m_renderPass(m_commandBuffers[i], m_descriptorSets[i], m_graphicPipeline.get());
-            vkCmdEndRenderPass(m_commandBuffers[i]);
+            vkCmdBeginRenderPass(commandsBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBindPipeline(commandsBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->VkHandle());
+                m_renderPass(commandsBuffers[i], descriptorSets[i], m_graphicPipeline.get());
+            vkCmdEndRenderPass(commandsBuffers[i]);
 
-            if (vkEndCommandBuffer(m_commandBuffers[i]) != VK_SUCCESS) {
+            if (vkEndCommandBuffer(commandsBuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to record command buffer!");
             }
+
+            m_frames.emplace_back( FrameComponent{
+                    descriptorSets[i], commandsBuffers[i], swapChainImages[i], handle,
+                    std::move(frameBuffer), std::move(buffer)
+            });
         }
+    }
+
+
+    void SwapChain::CreateDepthResources() {
+        VkFormat depthFormat = m_logicalDevice->Parent()->FindDepthFormat();
+        m_depthImage = std::make_unique<vzt::ImageHandler>( vzt::ImageHandler{
+                vzt::ImageView(m_logicalDevice, Size2D{ m_swapChainExtent.width, m_swapChainExtent.height },
+                               depthFormat, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT,
+                               VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
+                Sampler(m_logicalDevice) });
     }
 
     void SwapChain::CreateSynchronizationObjects() {
         m_imageAvailableSemaphores.resize(MaxFramesInFlight);
         m_renderFinishedSemaphores.resize(MaxFramesInFlight);
         m_inFlightFences.resize(MaxFramesInFlight);
-        m_imagesInFlight.resize(m_swapChainImages.size(), VK_NULL_HANDLE);
+        m_imagesInFlight.resize(m_imageCount, VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -409,43 +358,27 @@ namespace vzt {
     }
 
     void SwapChain::UpdateUniformBuffer(uint32_t currentImage, vzt::Transforms ubo) {
-        void* data;
-        vkMapMemory(m_logicalDevice->VkHandle(), m_uniformBuffersMemory[currentImage], 0, sizeof(ubo), 0, &data);
-            memcpy(data, &ubo, sizeof(ubo));
-        vkUnmapMemory(m_logicalDevice->VkHandle(), m_uniformBuffersMemory[currentImage]);
-    }
-
-    void SwapChain::UpdateDescriptorSets() {
-        for (std::size_t i = 0; i < m_swapChainImages.size(); i++) {
-            m_graphicPipeline->UpdateDescriptorSet(m_descriptorSets[i], m_uniformBuffers[i]);
-        }
+        m_frames[currentImage].uniformBuffer.Update<vzt::Transforms>({ubo});
     }
 
     void SwapChain::Cleanup() {
         vkDeviceWaitIdle(m_logicalDevice->VkHandle());
 
-        vkDestroyImageView(m_logicalDevice->VkHandle(), m_depthImageView, nullptr);
-        vkDestroyImage(m_logicalDevice->VkHandle(), m_depthImage, nullptr);
-        vkFreeMemory(m_logicalDevice->VkHandle(), m_depthImageMemory, nullptr);
-
-        m_frameBuffers.clear();
-        vkFreeCommandBuffers(m_logicalDevice->VkHandle(), m_commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
-        m_graphicPipeline.reset();
-
-        vkDestroyCommandPool(m_logicalDevice->VkHandle(), m_commandPool, nullptr);
-
-        for (auto& m_swapChainImageView : m_swapChainImageViews) {
-            vkDestroyImageView(m_logicalDevice->VkHandle(), m_swapChainImageView, nullptr);
+        m_depthImage.reset();
+        auto commandsBuffers = std::vector<VkCommandBuffer>(m_imageCount);
+        for (std::size_t i = 0; i < m_frames.size(); i++) {
+            commandsBuffers[i] = m_frames[i].commandBuffer;
+            vkDestroyImageView(m_logicalDevice->VkHandle(), m_frames[i].colorImageView, nullptr);
         }
 
+        vkFreeCommandBuffers(m_logicalDevice->VkHandle(), m_commandPool, static_cast<uint32_t>(commandsBuffers.size()), commandsBuffers.data());
+        vkDestroyDescriptorPool(m_logicalDevice->VkHandle(), m_descriptorPool, nullptr);
+        vkDestroyCommandPool(m_logicalDevice->VkHandle(), m_commandPool, nullptr);
         vkDestroySwapchainKHR(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
 
-        for (size_t i = 0; i < m_swapChainImages.size(); i++) {
-            vkDestroyBuffer(m_logicalDevice->VkHandle(), m_uniformBuffers[i], nullptr);
-            vkFreeMemory(m_logicalDevice->VkHandle(), m_uniformBuffersMemory[i], nullptr);
-        }
+        m_frames.clear();
+        m_graphicPipeline.reset();
 
-        vkDestroyDescriptorPool(m_logicalDevice->VkHandle(), m_descriptorPool, nullptr);
     }
 
     VkSurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats) {

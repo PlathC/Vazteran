@@ -2,7 +2,7 @@
 
 namespace vzt {
     template<class Type>
-    StagedBuffer<Type>::StagedBuffer(vzt::LogicalDevice* device, const std::vector<Type>& data, VkBufferUsageFlags usage) :
+    Buffer<Type>::Buffer(vzt::LogicalDevice* device, const std::vector<Type>& data, VkBufferUsageFlags usage) :
             m_device(device), m_size(data.size()) {
 
         VkDeviceSize bufferSize = sizeof(data[0]) * data.size();
@@ -17,7 +17,7 @@ namespace vzt {
 
         void* dataPtr;
         vkMapMemory(m_device->VkHandle(), stagingBufferMemory, 0, bufferSize, 0, &dataPtr);
-            memcpy(dataPtr, data.data(), static_cast<size_t>(bufferSize));
+            memcpy(dataPtr, data.data(), static_cast<std::size_t>(bufferSize));
         vkUnmapMemory(m_device->VkHandle(), stagingBufferMemory);
 
         m_device->CreateBuffer(
@@ -33,15 +33,23 @@ namespace vzt {
     }
 
     template<class Type>
-    StagedBuffer<Type>::StagedBuffer(StagedBuffer<Type>&& other) noexcept {
-        m_device = std::swap(other.m_device, nullptr);
-        m_vkHandle = std::swap(other.m_vkHandle, VK_NULL_HANDLE);
-        m_bufferMemory = std::swap(other.m_bufferMemory, VK_NULL_HANDLE);
-        m_size = std::swap(other.m_size, 0);
+    Buffer<Type>::Buffer(vzt::LogicalDevice* device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+                         std::size_t size):
+            m_device(device), m_size(size) {
+        VkDeviceSize bufferSize = m_size * sizeof(Type);
+        m_device->CreateBuffer( m_vkHandle, m_bufferMemory, bufferSize, usage, properties);
     }
 
     template<class Type>
-    StagedBuffer<Type>& StagedBuffer<Type>::operator=(StagedBuffer<Type>&& other) noexcept {
+    Buffer<Type>::Buffer(Buffer<Type>&& other) noexcept {
+        m_device = std::exchange(other.m_device, nullptr);
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+        m_bufferMemory = std::exchange(other.m_bufferMemory, static_cast<decltype(m_bufferMemory)>(VK_NULL_HANDLE));
+        m_size = std::exchange(other.m_size, 0);
+    }
+
+    template<class Type>
+    Buffer<Type>& Buffer<Type>::operator=(Buffer<Type>&& other) noexcept {
         std::swap(m_device, other.m_device);
         std::swap(m_vkHandle, other.m_vkHandle);
         std::swap(m_bufferMemory, other.m_bufferMemory);
@@ -49,9 +57,22 @@ namespace vzt {
     }
 
     template<class Type>
-    StagedBuffer<Type>::~StagedBuffer() {
+    template<class SetType>
+    void Buffer<Type>::Update(const std::vector<SetType>& newData) {
+        VkDeviceSize bufferSize = sizeof(newData[0]) * newData.size();
+        m_size = newData.size();
+
+        void* data;
+        vkMapMemory(m_device->VkHandle(), m_bufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, newData.data(), static_cast<std::size_t>(bufferSize));
+        vkUnmapMemory(m_device->VkHandle(), m_bufferMemory);
+    }
+
+    template<class Type>
+    Buffer<Type>::~Buffer() {
         if (m_vkHandle != VK_NULL_HANDLE)
             vkDestroyBuffer(m_device->VkHandle(), m_vkHandle, nullptr);
+
         if (m_bufferMemory != VK_NULL_HANDLE)
             vkFreeMemory(m_device->VkHandle(), m_bufferMemory, nullptr);
     }

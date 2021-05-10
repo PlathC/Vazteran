@@ -1,26 +1,33 @@
 #ifndef VAZTERAN_BUFFER_HPP
 #define VAZTERAN_BUFFER_HPP
 
+#include <cctype>
+
 #include "Vazteran/Vulkan/GpuObject.hpp"
 
 namespace vzt {
     class LogicalDevice;
 
     template<class Type>
-    class StagedBuffer {
+    class Buffer {
     public:
-        StagedBuffer(LogicalDevice* device, const std::vector<Type>& data, VkBufferUsageFlags usage);
+        Buffer(LogicalDevice* device, const std::vector<Type>& data, VkBufferUsageFlags usage);
+        Buffer(vzt::LogicalDevice* device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+               std::size_t size = 1);
 
-        StagedBuffer(StagedBuffer&) = delete;
-        StagedBuffer& operator=(StagedBuffer&) = delete;
+        Buffer(const Buffer&) = delete;
+        Buffer& operator=(const Buffer&) = delete;
 
-        StagedBuffer(StagedBuffer&& other) noexcept;
-        StagedBuffer& operator=(StagedBuffer&& other) noexcept;
+        Buffer(Buffer&& other) noexcept;
+        Buffer& operator=(Buffer&& other) noexcept;
+
+        template<class SetType>
+        void Update(const std::vector<SetType>& newData);
 
         VkBuffer VkHandle() const { return m_vkHandle; }
         std::size_t Size() const { return m_size; }
 
-        ~StagedBuffer();
+        ~Buffer();
 
     private:
         vzt::LogicalDevice* m_device = nullptr;
@@ -29,8 +36,8 @@ namespace vzt {
         std::size_t m_size = 0;
     };
 
-    using VertexBuffer = vzt::StagedBuffer<vzt::Vertex>;
-    using IndexBuffer = vzt::StagedBuffer<uint32_t>;
+    using VertexBuffer = vzt::Buffer<vzt::Vertex>;
+    using IndexBuffer = vzt::Buffer<uint32_t>;
 }
 
 #include "Vazteran/Vulkan/Buffer.inl"

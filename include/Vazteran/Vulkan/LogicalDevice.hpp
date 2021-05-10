@@ -18,8 +18,8 @@ namespace vzt {
     public:
         LogicalDevice(vzt::Instance* instance, vzt::PhysicalDevice* parent, VkSurfaceKHR surface);
 
-        LogicalDevice(LogicalDevice&) = delete;
-        LogicalDevice& operator=(LogicalDevice&) = delete;
+        LogicalDevice(const LogicalDevice&) = delete;
+        LogicalDevice& operator=(const LogicalDevice&) = delete;
 
         LogicalDevice(LogicalDevice&&) noexcept;
         LogicalDevice& operator=(LogicalDevice&&) noexcept;

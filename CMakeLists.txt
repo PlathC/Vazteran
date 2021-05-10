@@ -169,7 +169,7 @@ set(HEADERS
         include/Vazteran/Vulkan/LogicalDevice.hpp
         include/Vazteran/Vulkan/PhysicalDevice.hpp
         include/Vazteran/Vulkan/RenderPass.hpp
-        include/Vazteran/Vulkan/Texture.hpp
+        include/Vazteran/Vulkan/ImageUtils.hpp
         include/Vazteran/Vulkan/Shader.hpp
         include/Vazteran/Vulkan/SwapChain.hpp
         )
@@ -192,7 +192,7 @@ set(SOURCES
         src/Vazteran/Vulkan/RenderPass.cpp
         src/Vazteran/Vulkan/Shader.cpp
         src/Vazteran/Vulkan/SwapChain.cpp
-        src/Vazteran/Vulkan/Texture.cpp)
+        src/Vazteran/Vulkan/ImageUtils.cpp)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 

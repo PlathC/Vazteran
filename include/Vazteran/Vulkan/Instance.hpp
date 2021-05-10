@@ -12,8 +12,8 @@ namespace vzt {
         Instance(std::string_view name, std::vector<const char*> extensions,
                  const std::vector<const char*>& validationLayers = DefaultValidationLayers);
 
-        Instance(Instance&) = delete;
-        Instance& operator=(Instance&) = delete;
+        Instance(const Instance&) = delete;
+        Instance& operator=(const Instance&) = delete;
 
         Instance(Instance&& other) noexcept;
         Instance& operator=(Instance&& other) noexcept;
