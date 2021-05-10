@@ -28,6 +28,7 @@ namespace vzt {
         m_descriptorPool = std::exchange(other.m_descriptorPool, static_cast<decltype(m_descriptorPool)>(VK_NULL_HANDLE));
         m_depthImage = std::exchange(other.m_depthImage, nullptr);
 
+        std::swap(m_surface, other.m_surface);
         std::swap(m_logicalDevice, other.m_logicalDevice);
         std::swap(m_graphicPipeline, other.m_graphicPipeline);
         std::swap(m_renderPass, other.m_renderPass);
@@ -61,6 +62,7 @@ namespace vzt {
         std::swap(m_depthImage, other.m_depthImage);
         std::swap(m_frames, other.m_frames);
         std::swap(m_shaders, other.m_shaders);
+        std::swap(m_surface, other.m_surface);
 
         return *this;
     }
