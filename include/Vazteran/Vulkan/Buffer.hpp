@@ -11,16 +11,22 @@ namespace vzt {
     public:
         StagedBuffer(LogicalDevice* device, const std::vector<Type>& data, VkBufferUsageFlags usage);
 
+        StagedBuffer(StagedBuffer&) = delete;
+        StagedBuffer& operator=(StagedBuffer&) = delete;
+
+        StagedBuffer(StagedBuffer&& other) noexcept;
+        StagedBuffer& operator=(StagedBuffer&& other) noexcept;
+
         VkBuffer VkHandle() const { return m_vkHandle; }
         std::size_t Size() const { return m_size; }
 
         ~StagedBuffer();
 
     private:
-        vzt::LogicalDevice* m_device;
-        VkBuffer m_vkHandle;
-        VkDeviceMemory m_bufferMemory;
-        std::size_t m_size;
+        vzt::LogicalDevice* m_device = nullptr;
+        VkBuffer m_vkHandle = VK_NULL_HANDLE;
+        VkDeviceMemory m_bufferMemory = VK_NULL_HANDLE;
+        std::size_t m_size = 0;
     };
 
     using VertexBuffer = vzt::StagedBuffer<vzt::Vertex>;

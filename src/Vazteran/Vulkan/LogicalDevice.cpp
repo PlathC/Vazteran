@@ -56,6 +56,26 @@ namespace vzt {
         vkGetDeviceQueue(m_vkHandle, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueue);
     }
 
+    LogicalDevice::LogicalDevice(LogicalDevice&& other) noexcept {
+        std::swap(other.m_parent, m_parent);
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+        std::swap(m_deviceFeatures, other.m_deviceFeatures);
+        std::swap(m_graphicsQueue, other.m_graphicsQueue);
+        std::swap(m_presentQueue, other.m_presentQueue);
+        std::swap(m_queueFamilyIndices, other.m_queueFamilyIndices);
+    }
+
+    LogicalDevice& LogicalDevice::operator=(LogicalDevice&& other) noexcept {
+        std::swap(m_parent, other.m_parent);
+        std::swap(m_vkHandle, other.m_vkHandle);
+        std::swap(m_deviceFeatures, other.m_deviceFeatures);
+        std::swap(m_graphicsQueue, other.m_graphicsQueue);
+        std::swap(m_presentQueue, other.m_presentQueue);
+        std::swap(m_queueFamilyIndices, other.m_queueFamilyIndices);
+
+        return *this;
+    }
+
     void LogicalDevice::CreateBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize size,
                                      VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
         VkBufferCreateInfo bufferInfo{};
@@ -291,6 +311,8 @@ namespace vzt {
     }
 
     LogicalDevice::~LogicalDevice() {
-        vkDestroyDevice(m_vkHandle, nullptr);
+        if (m_vkHandle != VK_NULL_HANDLE) {
+            vkDestroyDevice(m_vkHandle, nullptr);
+        }
     }
 }

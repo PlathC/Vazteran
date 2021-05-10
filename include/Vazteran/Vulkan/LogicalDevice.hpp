@@ -18,6 +18,12 @@ namespace vzt {
     public:
         LogicalDevice(vzt::Instance* instance, vzt::PhysicalDevice* parent, VkSurfaceKHR surface);
 
+        LogicalDevice(LogicalDevice&) = delete;
+        LogicalDevice& operator=(LogicalDevice&) = delete;
+
+        LogicalDevice(LogicalDevice&&) noexcept;
+        LogicalDevice& operator=(LogicalDevice&&) noexcept;
+
         void CreateBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize size, VkBufferUsageFlags usage,
                           VkMemoryPropertyFlags properties);
         void CreateImage(VkImage& image, VkDeviceMemory& imageMemory, uint32_t width, uint32_t height, VkFormat format,
@@ -42,9 +48,9 @@ namespace vzt {
         ~LogicalDevice();
 
     private:
-        vzt::PhysicalDevice* m_parent = nullptr;
-        VkPhysicalDeviceFeatures m_deviceFeatures{};
+        vzt::PhysicalDevice* m_parent;
         VkDevice m_vkHandle{};
+        VkPhysicalDeviceFeatures m_deviceFeatures{};
         VkQueue m_graphicsQueue{};
         VkQueue m_presentQueue{};
 

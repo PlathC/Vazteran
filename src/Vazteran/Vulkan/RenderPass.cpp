@@ -66,7 +66,21 @@ namespace vzt {
         }
     }
 
+    RenderPass::RenderPass(RenderPass&& other) noexcept {
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+        m_logicalDevice = std::exchange(other.m_logicalDevice, nullptr);
+    }
+
+    RenderPass& RenderPass::operator=(RenderPass&& other) noexcept {
+        std::swap(m_vkHandle, other.m_vkHandle);
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+
+        return *this;
+    }
+
     RenderPass::~RenderPass() {
-        vkDestroyRenderPass(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+        if (m_vkHandle != VK_NULL_HANDLE) {
+            vkDestroyRenderPass(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+        }
     }
 }

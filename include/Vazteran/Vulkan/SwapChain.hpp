@@ -23,10 +23,20 @@ namespace vzt {
 
     using RenderPassFunction = std::function<void(VkCommandBuffer, VkDescriptorSet&, GraphicPipeline*)>;
 
+    struct RenderComponent {
+
+    };
+
     class SwapChain {
     public:
         SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
                   vzt::RenderPassFunction renderPass, std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders);
+
+        SwapChain(SwapChain&) = delete;
+        SwapChain& operator=(SwapChain&) = delete;
+
+        SwapChain(SwapChain&& other) noexcept;
+        SwapChain& operator=(SwapChain&& other) noexcept;
 
         bool DrawFrame(vzt::Transforms ubo);
         void Recreate(VkSurfaceKHR surface);

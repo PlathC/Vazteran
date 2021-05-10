@@ -30,6 +30,12 @@ namespace vzt {
     public:
         GraphicPipeline(vzt::LogicalDevice* logicalDevice, vzt::PipelineSettings settings);
 
+        GraphicPipeline(GraphicPipeline&) = delete;
+        GraphicPipeline& operator=(GraphicPipeline&) = delete;
+
+        GraphicPipeline(GraphicPipeline&& other) noexcept;
+        GraphicPipeline& operator=(GraphicPipeline&& other) noexcept;
+
         VkDescriptorSetLayout DescriptorSetLayout() const { return m_descriptorSetLayout; }
         RenderPass* RenderPass() const { return m_renderPass.get(); }
         VkPipelineLayout Layout() const { return m_pipelineLayout; }
@@ -40,15 +46,16 @@ namespace vzt {
         ~GraphicPipeline();
 
     private:
-        std::unique_ptr<vzt::RenderPass> m_renderPass;
         vzt::LogicalDevice* m_logicalDevice;
+
+        VkPipeline m_vkHandle{};
+        VkPipelineLayout m_pipelineLayout;
+        VkDescriptorSetLayout m_descriptorSetLayout;
+        std::unique_ptr<vzt::RenderPass> m_renderPass;
 
         std::unordered_map<uint32_t, TextureHandler> m_textureHandlers;
         std::unordered_map<uint32_t, uint32_t> m_uniformRanges;
 
-        VkDescriptorSetLayout m_descriptorSetLayout;
-        VkPipelineLayout m_pipelineLayout;
-        VkPipeline m_vkHandle{};
     };
 }
 

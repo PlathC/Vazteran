@@ -103,7 +103,21 @@ namespace vzt {
         }
     }
 
+    Sampler::Sampler(Sampler&& other) noexcept {
+        m_logicalDevice = std::exchange(other.m_logicalDevice, nullptr);
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+    }
+
+    Sampler& Sampler::operator=(Sampler&& other) noexcept {
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+        std::swap(m_vkHandle, other.m_vkHandle);
+
+        return *this;
+    }
+
     Sampler::~Sampler() {
-        vkDestroySampler(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+        if (m_vkHandle != VK_NULL_HANDLE) {
+            vkDestroySampler(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+        }
     }
 }

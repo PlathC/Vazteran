@@ -33,9 +33,27 @@ namespace vzt {
     }
 
     template<class Type>
+    StagedBuffer<Type>::StagedBuffer(StagedBuffer<Type>&& other) noexcept {
+        m_device = std::swap(other.m_device, nullptr);
+        m_vkHandle = std::swap(other.m_vkHandle, VK_NULL_HANDLE);
+        m_bufferMemory = std::swap(other.m_bufferMemory, VK_NULL_HANDLE);
+        m_size = std::swap(other.m_size, 0);
+    }
+
+    template<class Type>
+    StagedBuffer<Type>& StagedBuffer<Type>::operator=(StagedBuffer<Type>&& other) noexcept {
+        std::swap(m_device, other.m_device);
+        std::swap(m_vkHandle, other.m_vkHandle);
+        std::swap(m_bufferMemory, other.m_bufferMemory);
+        std::swap(m_size, other.m_size);
+    }
+
+    template<class Type>
     StagedBuffer<Type>::~StagedBuffer() {
-        vkDestroyBuffer(m_device->VkHandle(), m_vkHandle, nullptr);
-        vkFreeMemory(m_device->VkHandle(), m_bufferMemory, nullptr);
+        if (m_vkHandle != VK_NULL_HANDLE)
+            vkDestroyBuffer(m_device->VkHandle(), m_vkHandle, nullptr);
+        if (m_bufferMemory != VK_NULL_HANDLE)
+            vkFreeMemory(m_device->VkHandle(), m_bufferMemory, nullptr);
     }
 
 }

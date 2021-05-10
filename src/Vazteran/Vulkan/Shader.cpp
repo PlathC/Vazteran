@@ -23,8 +23,22 @@ namespace vzt {
         }
     }
 
+    ShaderModule::ShaderModule(ShaderModule&& other) noexcept {
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+    }
+
+    ShaderModule& ShaderModule::operator=(ShaderModule&& other) noexcept {
+        std::swap(m_vkHandle, other.m_vkHandle);
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+
+        return *this;
+    }
+
     ShaderModule::~ShaderModule() {
-        vkDestroyShaderModule(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+        if (m_vkHandle != VK_NULL_HANDLE) {
+            vkDestroyShaderModule(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+        }
     }
 
 }

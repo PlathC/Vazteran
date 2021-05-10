@@ -180,6 +180,29 @@ namespace vzt {
         }
     }
 
+    GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept {
+        m_logicalDevice = std::exchange(other.m_logicalDevice, nullptr);
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+        m_pipelineLayout = std::exchange(other.m_pipelineLayout, static_cast<decltype(m_pipelineLayout)>(VK_NULL_HANDLE));
+        m_descriptorSetLayout = std::exchange(other.m_descriptorSetLayout, static_cast<decltype(m_descriptorSetLayout)>(VK_NULL_HANDLE));
+
+        std::swap(m_renderPass, other.m_renderPass);
+        std::swap(m_textureHandlers, other.m_textureHandlers);
+        std::swap(m_uniformRanges, other.m_uniformRanges);
+    }
+
+    GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept {
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+        std::swap(m_vkHandle, other.m_vkHandle);
+        std::swap(m_pipelineLayout, other.m_pipelineLayout);
+        std::swap(m_descriptorSetLayout, other.m_descriptorSetLayout);
+        std::swap(m_renderPass, other.m_renderPass);
+        std::swap(m_textureHandlers, other.m_textureHandlers);
+        std::swap(m_uniformRanges, other.m_uniformRanges);
+
+        return *this;
+    }
+
     void GraphicPipeline::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer) const {
         auto descriptorWrites = std::vector<VkWriteDescriptorSet>();
         auto descriptorBufferInfo = std::vector<VkDescriptorBufferInfo>(m_uniformRanges.size());
@@ -236,8 +259,16 @@ namespace vzt {
     }
 
     GraphicPipeline::~GraphicPipeline() {
-        vkDestroyDescriptorSetLayout(m_logicalDevice->VkHandle(), m_descriptorSetLayout, nullptr);
-        vkDestroyPipeline(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
-        vkDestroyPipelineLayout(m_logicalDevice->VkHandle(), m_pipelineLayout, nullptr);
+        if (m_descriptorSetLayout != VK_NULL_HANDLE) {
+            vkDestroyDescriptorSetLayout(m_logicalDevice->VkHandle(), m_descriptorSetLayout, nullptr);
+        }
+
+        if (m_vkHandle != VK_NULL_HANDLE) {
+            vkDestroyPipeline(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+        }
+
+        if (m_pipelineLayout != VK_NULL_HANDLE) {
+            vkDestroyPipelineLayout(m_logicalDevice->VkHandle(), m_pipelineLayout, nullptr);
+        }
     }
 }

@@ -47,7 +47,6 @@ namespace vzt {
 
     private:
         std::vector<char> m_compiledSource;
-        VkShaderModule m_shaderModule{};
         VkShaderModuleCreateInfo m_shaderModuleCreateInfo{};
         vzt::ShaderStage m_shaderStage;
         std::vector<SamplerDescriptorSet> m_samplerDescriptorSets;
@@ -65,6 +64,12 @@ namespace vzt {
     class ShaderModule {
     public:
         ShaderModule(vzt::LogicalDevice* logicalDevice, VkShaderModuleCreateInfo createInfo);
+
+        ShaderModule(ShaderModule&) = delete;
+        ShaderModule& operator=(ShaderModule&) = delete;
+
+        ShaderModule(ShaderModule&& other) noexcept;
+        ShaderModule& operator=(ShaderModule&& other) noexcept;
 
         VkShaderModule VkHandle() const { return m_vkHandle; }
 

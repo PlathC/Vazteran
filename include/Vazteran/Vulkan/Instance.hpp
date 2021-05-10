@@ -12,6 +12,12 @@ namespace vzt {
         Instance(std::string_view name, std::vector<const char*> extensions,
                  const std::vector<const char*>& validationLayers = DefaultValidationLayers);
 
+        Instance(Instance&) = delete;
+        Instance& operator=(Instance&) = delete;
+
+        Instance(Instance&& other) noexcept;
+        Instance& operator=(Instance&& other) noexcept;
+
         std::vector<VkPhysicalDevice> EnumeratePhysicalDevice();
         VkInstance VkHandle() const { return m_handle; };
         std::vector<const char*> ValidationLayers() const { return m_validationLayers; }
@@ -27,8 +33,8 @@ namespace vzt {
     private:
         static bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayers);
 
-        VkInstance m_handle;
-        VkDebugUtilsMessengerEXT m_debugMessenger;
+        VkInstance m_handle = VK_NULL_HANDLE;
+        VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
         std::vector<const char*> m_validationLayers;
     };
 

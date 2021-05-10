@@ -22,6 +22,78 @@ namespace vzt {
         CreateSynchronizationObjects();
     }
 
+    SwapChain::SwapChain(SwapChain&& other) noexcept {
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+        m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+        std::swap(m_graphicPipeline, other.m_graphicPipeline);
+        m_currentFrame = std::exchange(other.m_currentFrame, 0);
+        m_framebufferResized = std::exchange(other.m_framebufferResized, false);
+        m_frameBufferWidth = std::exchange(other.m_frameBufferWidth, 0);
+        m_frameBufferHeight = std::exchange(other.m_frameBufferHeight, 0);
+        std::swap(m_renderPass, other.m_renderPass);
+        m_imageCount = std::exchange(other.m_imageCount, 0);
+        m_swapChainImageFormat = std::exchange(other.m_swapChainImageFormat, static_cast<decltype(m_swapChainImageFormat)>(VK_NULL_HANDLE));
+        std::swap(m_swapChainExtent, other.m_swapChainExtent);
+        m_commandPool = std::exchange(other.m_commandPool, static_cast<decltype(m_commandPool)>(VK_NULL_HANDLE));
+        m_descriptorPool = std::exchange(other.m_descriptorPool, static_cast<decltype(m_descriptorPool)>(VK_NULL_HANDLE));
+        std::swap(m_descriptorSets, other.m_descriptorSets);
+        std::swap(m_commandBuffers, other.m_commandBuffers);
+        std::swap(m_imageAvailableSemaphores, other.m_imageAvailableSemaphores);
+        std::swap(m_renderFinishedSemaphores, other.m_renderFinishedSemaphores);
+        std::swap(m_inFlightFences, other.m_inFlightFences);
+        std::swap(m_imagesInFlight, other.m_imagesInFlight);
+
+        m_depthImage = std::exchange(other.m_depthImage, static_cast<decltype(m_depthImage)>(VK_NULL_HANDLE));
+        m_depthImageMemory = std::exchange(other.m_depthImageMemory, static_cast<decltype(m_depthImageMemory)>(VK_NULL_HANDLE));
+        m_depthImageView = std::exchange(other.m_depthImageView, static_cast<decltype(m_depthImageView)>(VK_NULL_HANDLE));
+
+        std::swap(m_swapChainImages, other.m_swapChainImages);
+        std::swap(m_swapChainImageViews, other.m_swapChainImageViews);
+        std::swap(m_frameBuffers, other.m_frameBuffers);
+
+        std::swap(m_uniformBuffers, other.m_uniformBuffers);
+        std::swap(m_uniformBuffersMemory, other.m_uniformBuffersMemory);
+
+        std::swap(m_shaders, other.m_shaders);
+    }
+
+    SwapChain& SwapChain::operator=(SwapChain&& other) noexcept {
+        std::swap(m_logicalDevice, other.m_logicalDevice);
+        std::swap(m_vkHandle, other.m_vkHandle);
+        std::swap(m_graphicPipeline, other.m_graphicPipeline);
+        std::swap(m_currentFrame, other.m_currentFrame);
+        std::swap(m_framebufferResized, other.m_framebufferResized);
+        std::swap(m_frameBufferWidth, other.m_frameBufferWidth);
+        std::swap(m_frameBufferHeight, other.m_frameBufferHeight);
+        std::swap(m_renderPass, other.m_renderPass);
+        std::swap(m_imageCount, other.m_imageCount);
+        std::swap(m_swapChainImageFormat, other.m_swapChainImageFormat);
+        std::swap(m_swapChainExtent, other.m_swapChainExtent);
+        std::swap(m_commandPool, other.m_commandPool);
+        std::swap(m_descriptorPool, other.m_descriptorPool);
+        std::swap(m_descriptorSets, other.m_descriptorSets);
+        std::swap(m_commandBuffers, other.m_commandBuffers);
+        std::swap(m_imageAvailableSemaphores, other.m_imageAvailableSemaphores);
+        std::swap(m_renderFinishedSemaphores, other.m_renderFinishedSemaphores);
+        std::swap(m_inFlightFences, other.m_inFlightFences);
+        std::swap(m_imagesInFlight, other.m_imagesInFlight);
+
+        std::swap(m_depthImage, other.m_depthImage);
+        std::swap(m_depthImageMemory, other.m_depthImageMemory);
+        std::swap(m_depthImageView, other.m_depthImageView);
+
+        std::swap(m_swapChainImages, other.m_swapChainImages);
+        std::swap(m_swapChainImageViews, other.m_swapChainImageViews);
+        std::swap(m_frameBuffers, other.m_frameBuffers);
+
+        std::swap(m_uniformBuffers, other.m_uniformBuffers);
+        std::swap(m_uniformBuffersMemory, other.m_uniformBuffersMemory);
+
+        std::swap(m_shaders, other.m_shaders);
+
+        return *this;
+    }
+
     bool SwapChain::DrawFrame(vzt::Transforms ubo) {
         vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 

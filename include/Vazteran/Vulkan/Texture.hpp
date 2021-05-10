@@ -35,12 +35,19 @@ namespace vzt {
     public:
         explicit Sampler(vzt::LogicalDevice* logicalDevice);
 
+        Sampler(Sampler&) = delete;
+        Sampler& operator=(Sampler&) = delete;
+
+        Sampler(Sampler&& other) noexcept;
+        Sampler& operator=(Sampler&& other) noexcept;
+
         VkSampler VkHandle() const { return m_vkHandle; }
 
         ~Sampler();
+
     private:
         vzt::LogicalDevice* m_logicalDevice;
-        VkSampler m_vkHandle{};
+        VkSampler m_vkHandle;
     };
 
     struct TextureHandler {

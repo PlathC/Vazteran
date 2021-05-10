@@ -78,6 +78,21 @@ namespace vzt {
             throw std::runtime_error("Failed to set up debug messenger!");
         }
     }
+
+    Instance::Instance(Instance&& other) noexcept {
+        m_handle = std::exchange(other.m_handle, static_cast<decltype(m_handle)>(VK_NULL_HANDLE));
+        m_debugMessenger = std::exchange(other.m_debugMessenger, static_cast<decltype(m_debugMessenger)>(VK_NULL_HANDLE));
+        m_validationLayers = std::exchange(other.m_validationLayers, static_cast<decltype(m_validationLayers)>(VK_NULL_HANDLE));
+    }
+
+    Instance& Instance::operator=(Instance&& other) noexcept {
+        std::swap(m_handle, other.m_handle);
+        std::swap(m_debugMessenger, other.m_debugMessenger);
+        std::swap(m_validationLayers, other.m_validationLayers);
+
+        return *this;
+    }
+
     std::vector<VkPhysicalDevice> Instance::EnumeratePhysicalDevice() {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
@@ -95,11 +110,15 @@ namespace vzt {
     Instance::~Instance() {
         auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
                 vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
-        if (vkDestroyDebugUtilsMessengerEXT != nullptr) {
+        if (vkDestroyDebugUtilsMessengerEXT != nullptr
+        && m_handle != VK_NULL_HANDLE
+        && m_debugMessenger != VK_NULL_HANDLE) {
             vkDestroyDebugUtilsMessengerEXT(m_handle, m_debugMessenger, nullptr);
         }
 
-        vkDestroyInstance(m_handle, nullptr);
+        if (m_handle != VK_NULL_HANDLE) {
+            vkDestroyInstance(m_handle, nullptr);
+        }
     }
 
     bool Instance::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers) {
@@ -133,7 +152,18 @@ namespace vzt {
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData) {
 
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        // TODO: Handle this in a real logger
+        std::string severityDisplay;
+        if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+            severityDisplay = "VERBOSE";
+        } else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+            severityDisplay = "INFO";
+        } else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+            severityDisplay = "WARNING";
+        } else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+            severityDisplay = "ERROR";
+        }
+        std::cerr << "[" << severityDisplay << "] " << "Validation layer: " << pCallbackData->pMessage << std::endl;
         return VK_FALSE;
     }
 }
