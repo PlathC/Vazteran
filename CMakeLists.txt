@@ -173,7 +173,7 @@ set(HEADERS
         include/Vazteran/Vulkan/ImageUtils.hpp
         include/Vazteran/Vulkan/Shader.hpp
         include/Vazteran/Vulkan/SwapChain.hpp
-        include/Vazteran/Vulkan/VkRenderTarget.hpp
+        include/Vazteran/Vulkan/RenderTarget.hpp
         )
 
 set(SOURCES
@@ -196,7 +196,7 @@ set(SOURCES
         src/Vazteran/Vulkan/Shader.cpp
         src/Vazteran/Vulkan/SwapChain.cpp
         src/Vazteran/Vulkan/ImageUtils.cpp
-        src/Vazteran/Vulkan/VkRenderTarget.cpp)
+        src/Vazteran/Vulkan/RenderTarget.cpp)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 

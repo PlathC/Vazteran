@@ -8,7 +8,7 @@
 #include "Vazteran/Vulkan/Buffer.hpp"
 #include "Vazteran/Vulkan/Instance.hpp"
 #include "Vazteran/Vulkan/SwapChain.hpp"
-#include "Vazteran/Vulkan/VkRenderTarget.hpp"
+#include "Vazteran/Vulkan/RenderTarget.hpp"
 
 namespace vzt {
     class GraphicPipeline;
@@ -37,7 +37,7 @@ namespace vzt {
         // std::unique_ptr<vzt::Model> m_model;
         struct ModelRenderTarget {
             vzt::Model* model;
-            vzt::VkRenderTarget vkTarget;
+            vzt::RenderTarget vkTarget;
         };
         std::vector<ModelRenderTarget> m_targets;
 
