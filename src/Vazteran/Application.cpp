@@ -15,16 +15,17 @@ namespace vzt {
         });
         m_instance = std::make_unique<vzt::Instance>(name, m_window->VkExtensions());
 
-        std::unique_ptr<vzt::Model> model = std::make_unique<vzt::Model>("./samples/TheCrounchingBoy.obj");
-        model->Mat().ambient = glm::vec4(0.5, 0.5, 0.5, 1.);
-        model->Mat().diffuse = glm::vec4(0.5, 0.5, 0.5, 1.);
-        model->Mat().specular = glm::vec4(0.5, 0.5, 0.5, 1.);
+        m_models.emplace_back(std::make_unique<vzt::Model>("./samples/TheCrounchingBoy.obj"));
+        m_models[0]->Mat().ambientMap  = glm::vec4(0.5, 0.5, 0.5, 1.);
+        m_models[0]->Mat().diffuseMap  = glm::vec4(0.5, 0.5, 0.5, 1.);
+        m_models[0]->Mat().specularMap = glm::vec4(0.5, 0.5, 0.5, 1.);
 
         auto size = m_window->FrameBufferSize();
-        vzt::Camera camera = Camera::FromModel(*model, size.width / static_cast<float>(size.height));
+        vzt::Camera camera = Camera::FromModel(*m_models[0], size.width / static_cast<float>(size.height));
 
         m_renderer = std::make_unique<vzt::Renderer>(
-                m_instance.get(), m_window->Surface(m_instance.get()), m_window->FrameBufferSize(), std::move(model), camera);
+                m_instance.get(), m_window->Surface(m_instance.get()), m_window->FrameBufferSize(), camera,
+                std::vector<vzt::Model*>{ m_models[0].get() });
     }
 
     void Application::Run() {

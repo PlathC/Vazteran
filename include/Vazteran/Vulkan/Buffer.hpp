@@ -3,7 +3,7 @@
 
 #include <cctype>
 
-#include "Vazteran/Vulkan/GpuObject.hpp"
+#include "Vazteran/Vulkan/GpuObjects.hpp"
 
 namespace vzt {
     class LogicalDevice;

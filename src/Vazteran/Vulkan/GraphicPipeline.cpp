@@ -1,5 +1,5 @@
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Vulkan/GpuObject.hpp"
+#include "Vazteran/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/RenderPass.hpp"
 
@@ -7,37 +7,32 @@ namespace vzt {
     GraphicPipeline::GraphicPipeline(vzt::LogicalDevice* logicalDevice, vzt::PipelineSettings settings):
             m_logicalDevice(logicalDevice), m_renderPass(std::move(settings.renderPass)) {
 
+        auto vertexShader = Shader("./shaders/shader.vert.spv", ShaderStage::VertexShader);
+        vertexShader.SetUniformDescriptorSet(0, sizeof(vzt::Transforms));
+        m_shaders.emplace(vertexShader);
+
+        auto fragShader = Shader("./shaders/shader.frag.spv", ShaderStage::FragmentShader);
+        fragShader.SetSamplerDescriptorSet(1, Image());
+        fragShader.SetSamplerDescriptorSet(2, Image());
+        fragShader.SetSamplerDescriptorSet(3, Image());
+        m_shaders.emplace(fragShader);
+
         std::vector<std::unique_ptr<vzt::ShaderModule>> shaderModules{};
         std::vector<VkDescriptorSetLayoutBinding> bindings;
         std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-        auto buildDescriptorSetLayoutBinding = [](const DescriptorSet* descriptorSet, vzt::ShaderStage stage) {
+        auto buildDescriptorSetLayoutBinding = [](vzt::ShaderStage stage, uint32_t binding, VkDescriptorType type) {
             VkDescriptorSetLayoutBinding layoutBinding{};
-            layoutBinding.binding = descriptorSet->binding;
+            layoutBinding.binding = binding;
             layoutBinding.descriptorCount = 1;
             layoutBinding.pImmutableSamplers = nullptr; // Optional
-            layoutBinding.stageFlags = stage;
+            layoutBinding.stageFlags = static_cast<VkShaderStageFlags>(stage);
+            layoutBinding.descriptorType = type;
             return layoutBinding;
         };
 
-        for (auto& shader : settings.shaders) {
-            auto samplerDescriptorSets = shader.SamplerDescriptorSets();
-            for(auto& sampler : samplerDescriptorSets) {
-                VkDescriptorSetLayoutBinding layoutBinding = buildDescriptorSetLayoutBinding(&sampler, shader.Stage());
-                layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-                bindings.emplace_back(layoutBinding);
-                m_textureHandlers.insert(std::make_pair<uint32_t, vzt::ImageHandler>(std::move(layoutBinding.binding), {
-                        vzt::ImageView(m_logicalDevice, sampler.image),
-                        vzt::Sampler(m_logicalDevice)
-                }));
-            }
-
-            auto uniformDescriptorSets = shader.UniformDescriptorSets();
-            for(auto& uniform : uniformDescriptorSets) {
-                VkDescriptorSetLayoutBinding layoutBinding = buildDescriptorSetLayoutBinding(&uniform, shader.Stage());
-                layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                bindings.emplace_back(layoutBinding);
-                m_uniformRanges[layoutBinding.binding] = uniform.size;
+        for (auto& shader : m_shaders) {
+            for (const auto descriptor: shader.DescriptorTypes()) {
+                bindings.emplace_back(buildDescriptorSetLayoutBinding(shader.Stage(), descriptor.first, descriptor.second));
             }
 
             auto module = std::make_unique<ShaderModule>(m_logicalDevice, shader.ShaderModuleCreateInfo());
@@ -186,8 +181,8 @@ namespace vzt {
         m_descriptorSetLayout = std::exchange(other.m_descriptorSetLayout, static_cast<decltype(m_descriptorSetLayout)>(VK_NULL_HANDLE));
 
         std::swap(m_renderPass, other.m_renderPass);
-        std::swap(m_textureHandlers, other.m_textureHandlers);
-        std::swap(m_uniformRanges, other.m_uniformRanges);
+        // std::swap(m_textureHandlers, other.m_textureHandlers);
+        // std::swap(m_uniformRanges, other.m_uniformRanges);
     }
 
     GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept {
@@ -196,63 +191,22 @@ namespace vzt {
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
         std::swap(m_descriptorSetLayout, other.m_descriptorSetLayout);
         std::swap(m_renderPass, other.m_renderPass);
-        std::swap(m_textureHandlers, other.m_textureHandlers);
-        std::swap(m_uniformRanges, other.m_uniformRanges);
+        // std::swap(m_textureHandlers, other.m_textureHandlers);
+        // std::swap(m_uniformRanges, other.m_uniformRanges);
 
         return *this;
     }
 
-    void GraphicPipeline::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer) const {
-        auto descriptorWrites = std::vector<VkWriteDescriptorSet>();
-        auto descriptorBufferInfo = std::vector<VkDescriptorBufferInfo>(m_uniformRanges.size());
-        std::size_t i = 0;
-        for(const auto& uniformRanges : m_uniformRanges) {
-            descriptorBufferInfo[i].buffer = uniformBuffer;
-            descriptorBufferInfo[i].offset = 0;
-            descriptorBufferInfo[i].range = uniformRanges.second;
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = descriptorSet;
-            descriptorWrite.dstBinding = uniformRanges.first;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pBufferInfo = &descriptorBufferInfo[i];
-            descriptorWrites.emplace_back(descriptorWrite);
-            i++;
-        }
-
-        i = 0;
-        auto descriptorImageInfo = std::vector<VkDescriptorImageInfo>(m_textureHandlers.size());
-        for(const auto& textureHandler : m_textureHandlers) {
-            descriptorImageInfo[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            descriptorImageInfo[i].imageView = textureHandler.second.imageView.VkHandle();
-            descriptorImageInfo[i].sampler = textureHandler.second.sampler.VkHandle();
-
-            VkWriteDescriptorSet descriptorWrite{};
-            descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrite.dstSet = descriptorSet;
-            descriptorWrite.dstBinding = textureHandler.first;
-            descriptorWrite.dstArrayElement = 0;
-            descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrite.descriptorCount = 1;
-            descriptorWrite.pImageInfo = &descriptorImageInfo[i];
-            descriptorWrites.emplace_back(descriptorWrite);
-            i++;
-        }
-
-        vkUpdateDescriptorSets(m_logicalDevice->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    void GraphicPipeline::Bind(VkCommandBuffer commandsBuffer) const {
+        vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
     }
 
     std::vector<VkDescriptorType> GraphicPipeline::DescriptorTypes() const {
         std::vector<VkDescriptorType> descriptorTypes;
-        for(const auto& uniformRanges : m_uniformRanges) {
-            descriptorTypes.emplace_back(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-        }
-
-        for(const auto& textureHandler : m_textureHandlers) {
-            descriptorTypes.emplace_back(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+        for (auto& shader : m_shaders) {
+            auto types = shader.DescriptorTypes();
+            for (const auto& type : types)
+                descriptorTypes.emplace_back(type.second);
         }
         return descriptorTypes;
     }

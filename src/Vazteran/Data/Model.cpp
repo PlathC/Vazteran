@@ -20,13 +20,28 @@ namespace vzt {
 
         // TODO: Handle more than one material per Model
         if (!materials.empty()){
+            Image ambientTexture{};
+            Image diffuseTexture{};
+            Image specularTexture{};
+
+            if (fs::exists(materials[0].ambient_texname))
+                ambientTexture = Image(materials[0].ambient_texname);
+            if (fs::exists(materials[0].diffuse_texname))
+                diffuseTexture = Image(materials[0].diffuse_texname);
+            if (fs::exists(materials[0].specular_texname))
+                specularTexture = Image(materials[0].specular_texname);
+
             m_material = {
-                    Image({materials[0].ambient[0], materials[0].ambient[1], materials[0].ambient[2], 1.f}),
-                    Image({materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.f}),
-                    Image({materials[0].specular[0], materials[0].specular[1], materials[0].specular[2], 1.f})
+                    vzt::Color{materials[0].ambient[0], materials[0].ambient[1], materials[0].ambient[2], 1.f},
+                    vzt::Color{materials[0].diffuse[0], materials[0].diffuse[1], materials[0].diffuse[2], 1.f},
+                    vzt::Color{materials[0].specular[0], materials[0].specular[1], materials[0].specular[2], 1.f},
+                    ambientTexture, diffuseTexture, specularTexture
             };
-        }else {
+        } else {
             m_material = {
+                    vzt::Color{1., 1., 1., 1.},
+                    vzt::Color{1., 1., 1., 1.},
+                    vzt::Color{1., 1., 1., 1.},
                     Image({1.f, 1.f, 1.f, 1.f}),
                     Image({1.f, 1.f, 1.f, 1.f}),
                     Image({1.f, 1.f, 1.f, 1.f}),

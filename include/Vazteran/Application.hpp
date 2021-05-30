@@ -24,6 +24,8 @@ namespace vzt{
         std::unique_ptr<vzt::Instance> m_instance;
         std::unique_ptr<vzt::Window> m_window;
         std::unique_ptr<vzt::Renderer> m_renderer;
+
+        std::vector<std::unique_ptr<vzt::Model>> m_models;
     };
 }
 

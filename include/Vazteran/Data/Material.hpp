@@ -5,13 +5,18 @@
 
 #include <glm/glm.hpp>
 
+#include "Vazteran/Data/Types.hpp"
 #include "Vazteran/Data/Image.hpp"
 
 namespace vzt {
-    struct PhongMaterial {
-        vzt::Image ambient;
-        vzt::Image diffuse;
-        vzt::Image specular;
+    struct Material {
+        vzt::Color ambientColor;
+        vzt::Color diffuseColor;
+        vzt::Color specularColor;
+
+        vzt::Image ambientMap;
+        vzt::Image diffuseMap;
+        vzt::Image specularMap;
     };
 }
 

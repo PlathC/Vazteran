@@ -7,7 +7,7 @@
 
 namespace vzt {
     Image::Image():
-        Image({0, 0, 0, 0}, 1, 1, 4)  {
+        Image({255, 255, 255, 255}, 1, 1, 4)  {
     }
 
     Image::Image(const fs::path &imagePath) {

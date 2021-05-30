@@ -2023,7 +2023,7 @@ glm::i32vec2 const PositionDataI32[VertexCount] =
 #include <glm/gtc/random.hpp> // ballRand
 
 // vecRand3, generate a random and equiprobable normalized vec3
-glm::vec3 lighting(intersection const& Intersection, material const& PhongMaterial, light const& Light, glm::vec3 const& View)
+glm::vec3 lighting(intersection const& Intersection, material const& Material, light const& Light, glm::vec3 const& View)
 {
     glm::vec3 Color = glm::vec3(0.0f);
     glm::vec3 LightVertor = glm::normalize(
@@ -2036,16 +2036,16 @@ glm::vec3 lighting(intersection const& Intersection, material const& PhongMateri
         if(Diffuse &lt;= 0.0f)
             return Color;
 
-        if(PhongMaterial.isDiffuse())
-            Color += Light.color() * PhongMaterial.diffuse() * Diffuse;
+        if(Material.isDiffuse())
+            Color += Light.color() * Material.diffuse() * Diffuse;
 
-        if(PhongMaterial.isSpecular())
+        if(Material.isSpecular())
         {
             glm::vec3 Reflect = glm::reflect(-LightVector, Intersection.normal());
             float Dot = glm::dot(Reflect, View);
             float Base = Dot &gt; 0.0f ? Dot : 0.0f;
-            float Specular = glm::pow(Base, PhongMaterial.exponent());
-            Color += PhongMaterial.specular() \* Specular;
+            float Specular = glm::pow(Base, Material.exponent());
+            Color += Material.specular() \* Specular;
         }
     }
 

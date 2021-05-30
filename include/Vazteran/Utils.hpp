@@ -7,11 +7,6 @@
 namespace fs = std::filesystem;
 
 namespace vzt {
-    struct Size2D {
-        uint32_t width;
-        uint32_t height;
-    };
-
     std::vector<char> ReadFile(const fs::path& filename);
 }
 

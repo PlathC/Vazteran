@@ -1,15 +1,20 @@
 #ifndef VAZTERAN_SHADER_HPP
 #define VAZTERAN_SHADER_HPP
 
+#include <optional>
+#include <unordered_set>
+
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Utils.hpp"
+#include "Vazteran/Vulkan/Buffer.hpp"
 #include "Vazteran/Vulkan/ImageUtils.hpp"
+#include "Vazteran/Vulkan/GpuObjects.hpp"
 
 namespace vzt {
     class LogicalDevice;
 
-    enum ShaderStage {
+    enum class ShaderStage {
         VertexShader = VK_SHADER_STAGE_VERTEX_BIT,
         TesselationControlShader = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
         TesselationEvaluationShader = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,
@@ -21,9 +26,7 @@ namespace vzt {
         uint32_t binding;
     };
 
-    struct SamplerDescriptorSet : public DescriptorSet {
-        vzt::Image image;
-    };
+    struct SamplerDescriptorSet : public DescriptorSet { };
 
     struct UniformDescriptorSet : public DescriptorSet {
         uint32_t size;
@@ -31,14 +34,17 @@ namespace vzt {
 
     class Shader {
     public:
-        Shader(const fs::path& compiled_file,
-               vzt::ShaderStage shaderStage, std::vector<SamplerDescriptorSet> samplerDescriptorSets,
-               std::vector<UniformDescriptorSet> uniformDescriptorSets);
+        Shader(const fs::path& compiled_file, vzt::ShaderStage shaderStage);
 
         VkShaderModuleCreateInfo ShaderModuleCreateInfo() const { return m_shaderModuleCreateInfo; }
         vzt::ShaderStage Stage() const { return m_shaderStage; }
+
+        void SetSamplerDescriptorSet(uint32_t binding, const vzt::Image& image);
+        void SetUniformDescriptorSet(uint32_t binding, uint32_t size);
+
         std::vector<SamplerDescriptorSet> SamplerDescriptorSets() const { return m_samplerDescriptorSets; }
         std::vector<UniformDescriptorSet> UniformDescriptorSets() const { return m_uniformDescriptorSets; }
+        std::vector<std::pair<uint32_t, VkDescriptorType>> DescriptorTypes() const;
 
         bool operator==(const Shader& other) const
         {
@@ -49,8 +55,8 @@ namespace vzt {
         std::vector<char> m_compiledSource;
         VkShaderModuleCreateInfo m_shaderModuleCreateInfo{};
         vzt::ShaderStage m_shaderStage;
-        std::vector<SamplerDescriptorSet> m_samplerDescriptorSets;
-        std::vector<UniformDescriptorSet> m_uniformDescriptorSets;
+        std::vector<SamplerDescriptorSet> m_samplerDescriptorSets{};
+        std::vector<UniformDescriptorSet> m_uniformDescriptorSets{};
     };
 
     struct ShaderHash

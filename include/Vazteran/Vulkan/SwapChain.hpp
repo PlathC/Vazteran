@@ -14,7 +14,7 @@
 #include "Vazteran/Data/Material.hpp"
 
 #include "Vazteran/Vulkan/Buffer.hpp"
-#include "Vazteran/Vulkan/GpuObject.hpp"
+#include "Vazteran/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Vulkan/Shader.hpp"
 #include "Vazteran/Vulkan/ImageUtils.hpp"
@@ -23,22 +23,19 @@ namespace vzt {
     class GraphicPipeline;
     class LogicalDevice;
 
-    using RenderPassFunction = std::function<void(VkCommandBuffer, VkDescriptorSet&, GraphicPipeline*)>;
+    using RenderPassFunction = std::function<void(VkCommandBuffer, uint32_t)>;
 
     struct FrameComponent {
-        VkDescriptorSet descriptorSet;
         VkCommandBuffer commandBuffer;
         VkImage colorImage;
         VkImageView colorImageView;
 
         vzt::FrameBuffer frameBuffer;
-        vzt::Buffer<vzt::Transforms> uniformBuffer;
     };
 
     class SwapChain {
     public:
-        SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, int frameBufferWidth, int frameBufferHeight,
-                  vzt::RenderPassFunction renderPass, std::unordered_set<vzt::Shader, vzt::ShaderHash> shaders);
+        SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize);
 
         SwapChain(const SwapChain&) = delete;
         SwapChain& operator=(const SwapChain&) = delete;
@@ -46,20 +43,22 @@ namespace vzt {
         SwapChain(SwapChain&& other) noexcept;
         SwapChain& operator=(SwapChain&& other) noexcept;
 
-        bool DrawFrame(vzt::Transforms ubo);
+        bool DrawFrame();
         void Recreate(VkSurfaceKHR surface);
-        void FrameBufferResized(vzt::Size2D newSize);
-        vzt::Size2D FrameBufferSize() const;
+        void FrameBufferResized(vzt::Size2D<int> newSize);
+        vzt::Size2D<int> FrameBufferSize() const;
+        void RecordCommandBuffers(vzt::RenderPassFunction renderPass);
+        GraphicPipeline* Pipeline() { return m_graphicPipelines[0].get(); }
+        uint32_t ImageCount() const { return m_imageCount; }
 
         ~SwapChain();
 
     private:
         void CreateSwapChain();
-        void CreateImageKHR();
         void CreateDepthResources();
         void CreateSynchronizationObjects();
 
-        void UpdateUniformBuffer(uint32_t currentImage, vzt::Transforms ubo);
+        //void UpdateUniformBuffer(uint32_t currentImage, vzt::Transforms ubo);
         void Cleanup();
 
         constexpr static int MaxFramesInFlight = 2;
@@ -70,21 +69,18 @@ namespace vzt {
 
         vzt::LogicalDevice* m_logicalDevice;
         VkSwapchainKHR m_vkHandle;
-        std::unique_ptr<vzt::GraphicPipeline> m_graphicPipeline;
+        std::vector<std::unique_ptr<vzt::GraphicPipeline>> m_graphicPipelines;
 
         std::size_t m_currentFrame = 0;
         bool m_framebufferResized = false;
 
-        int m_frameBufferWidth;
-        int m_frameBufferHeight;
-        vzt::RenderPassFunction m_renderPass;
+        vzt::Size2D<int> m_frameBufferSize;
         VkSurfaceKHR m_surface;
         uint32_t m_imageCount;
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
 
         VkCommandPool m_commandPool;
-        VkDescriptorPool m_descriptorPool;
         std::vector<VkSemaphore> m_imageAvailableSemaphores;
         std::vector<VkSemaphore> m_renderFinishedSemaphores;
         std::vector<VkFence> m_inFlightFences;
@@ -92,9 +88,6 @@ namespace vzt {
 
         std::vector<FrameComponent> m_frames;
         std::unique_ptr<vzt::ImageHandler> m_depthImage;
-
-        // TODO: Get this out from the swapchain
-        std::unordered_set<vzt::Shader, vzt::ShaderHash> m_shaders;
     };
 }
 

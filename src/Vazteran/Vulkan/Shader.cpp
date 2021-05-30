@@ -4,16 +4,46 @@
 #include "Vazteran/Vulkan/Shader.hpp"
 
 namespace vzt {
-    Shader::Shader(const fs::path& compiled_file, vzt::ShaderStage shaderStage,
-                   std::vector<SamplerDescriptorSet> samplerDescriptorSets,
-                   std::vector<UniformDescriptorSet> uniformDescriptorSets):
-            m_shaderStage(shaderStage), m_samplerDescriptorSets(std::move(samplerDescriptorSets)),
-            m_uniformDescriptorSets(std::move(uniformDescriptorSets)) {
+    Shader::Shader(const fs::path& compiled_file, vzt::ShaderStage shaderStage):
+            m_shaderStage(shaderStage) {
         m_compiledSource = vzt::ReadFile(compiled_file);
 
         m_shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         m_shaderModuleCreateInfo.codeSize = m_compiledSource.size();
         m_shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(m_compiledSource.data());
+    }
+
+    void Shader::SetSamplerDescriptorSet(uint32_t binding, const vzt::Image& image) {
+        for (auto& sampler: m_samplerDescriptorSets) {
+            if (sampler.binding == binding){
+                return;
+            }
+        }
+
+        // If this binding is not currently used
+        m_samplerDescriptorSets.emplace_back(SamplerDescriptorSet{binding});
+    }
+
+    void Shader::SetUniformDescriptorSet(uint32_t binding, uint32_t size) {
+        for (auto& uniform: m_uniformDescriptorSets) {
+            if (uniform.binding == binding)
+                uniform.size = size;
+            return;
+        }
+
+        // If this binding is not currently used
+        m_uniformDescriptorSets.emplace_back(UniformDescriptorSet{binding, size});
+    }
+
+    std::vector<std::pair<uint32_t, VkDescriptorType>> Shader::DescriptorTypes() const {
+        std::vector<std::pair<uint32_t, VkDescriptorType>> descriptorTypes;
+        for (const auto& samplerDescriptorSet: m_samplerDescriptorSets)
+            descriptorTypes.emplace_back(samplerDescriptorSet.binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+        for (const auto& samplerDescriptorSet: m_uniformDescriptorSets)
+            descriptorTypes.emplace_back(samplerDescriptorSet.binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+        return descriptorTypes;
     }
 
     ShaderModule::ShaderModule(vzt::LogicalDevice* logicalDevice, VkShaderModuleCreateInfo createInfo) :
@@ -40,5 +70,4 @@ namespace vzt {
             vkDestroyShaderModule(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
         }
     }
-
 }

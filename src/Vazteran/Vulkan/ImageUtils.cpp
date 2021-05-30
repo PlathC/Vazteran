@@ -60,7 +60,7 @@ namespace vzt {
 
     }
 
-    ImageView::ImageView(LogicalDevice* logicalDevice, Size2D size, VkFormat format, VkImageUsageFlags usage,
+    ImageView::ImageView(LogicalDevice* logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
                          VkImageAspectFlags aspectFlags, VkImageLayout layout):
             m_logicalDevice(logicalDevice){
         m_logicalDevice->CreateImage(m_vkImage, m_deviceMemory, size.width, size.height, format,

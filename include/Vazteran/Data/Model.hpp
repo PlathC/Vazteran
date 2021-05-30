@@ -7,7 +7,7 @@ namespace fs = std::filesystem;
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Vazteran/Data/Material.hpp"
-#include "Vazteran/Vulkan/GpuObject.hpp"
+#include "Vazteran/Vulkan/GpuObjects.hpp"
 
 namespace vzt {
     struct AABB {
@@ -21,8 +21,8 @@ namespace vzt {
         Model(const fs::path& modelPath);
         const std::vector<Vertex>& Vertices() const { return m_vertices; }
         const std::vector<uint32_t>& Indices() const { return m_indices; }
-        const vzt::PhongMaterial& CMat() const { return m_material; }
-        vzt::PhongMaterial& Mat() { return m_material; }
+        const vzt::Material& CMat() const { return m_material; }
+        vzt::Material& Mat() { return m_material; }
         vzt::AABB BoundingBox() const;
 
         glm::mat4 ModelMatrix() const;
@@ -34,7 +34,7 @@ namespace vzt {
     private:
         std::vector<vzt::Vertex> m_vertices;
         std::vector<uint32_t> m_indices;
-        vzt::PhongMaterial m_material;
+        vzt::Material m_material;
 
         glm::vec3 m_position = {0.f, 0.f, 0.f};
         glm::vec3 m_rotation = {0.f, 0.f, 0.f};

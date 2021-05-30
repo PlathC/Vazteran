@@ -8,6 +8,7 @@
 #include "Vazteran/Vulkan/Buffer.hpp"
 #include "Vazteran/Vulkan/Instance.hpp"
 #include "Vazteran/Vulkan/SwapChain.hpp"
+#include "Vazteran/Vulkan/VkRenderTarget.hpp"
 
 namespace vzt {
     class GraphicPipeline;
@@ -18,12 +19,12 @@ namespace vzt {
 
     class Renderer {
     public:
-        Renderer(vzt::Instance* instance, VkSurfaceKHR surface, vzt::Size2D size,
-                std::unique_ptr<Model> model, Camera camera);
+        Renderer(vzt::Instance* instance, VkSurfaceKHR surface, vzt::Size2D<int> size, vzt::Camera camera,
+                 std::vector<vzt::Model*> models = {});
 
         void Draw();
         vzt::LogicalDevice* Device() const { return m_logicalDevice.get(); }
-        void FrameBufferResized(vzt::Size2D newSize);
+        void FrameBufferResized(vzt::Size2D<int> newSize);
 
     private:
         vzt::Instance* m_instance;
@@ -32,10 +33,14 @@ namespace vzt {
         std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;
         std::unique_ptr<vzt::LogicalDevice> m_logicalDevice;
         std::unique_ptr<vzt::SwapChain> m_swapChain;
-        std::unique_ptr<VertexBuffer> m_vertexBuffer;
-        std::unique_ptr<IndexBuffer> m_indexBuffer;
 
-        std::unique_ptr<vzt::Model> m_model;
+        // std::unique_ptr<vzt::Model> m_model;
+        struct ModelRenderTarget {
+            vzt::Model* model;
+            vzt::VkRenderTarget vkTarget;
+        };
+        std::vector<ModelRenderTarget> m_targets;
+
         vzt::Camera m_camera;
     };
 }

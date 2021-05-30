@@ -39,14 +39,14 @@ namespace vzt {
         m_fbResizedCallback();
     }
 
-    vzt::Size2D Window::FrameBufferSize() const {
+    vzt::Size2D<int> Window::FrameBufferSize() const {
         int frameBufferWidth = 0, frameBufferHeight = 0;
         glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
         while (frameBufferWidth == 0 || frameBufferHeight == 0) {
             glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
             glfwWaitEvents();
         }
-        return { static_cast<uint32_t>(frameBufferWidth), static_cast<uint32_t>(frameBufferHeight) };
+        return { frameBufferWidth, frameBufferHeight };
     }
 
     VkSurfaceKHR Window::Surface(vzt::Instance* instance) {

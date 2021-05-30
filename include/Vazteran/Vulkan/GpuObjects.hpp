@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_GPUOBJECT_HPP
-#define VAZTERAN_GPUOBJECT_HPP
+#ifndef VAZTERAN_GPUOBJECTS_HPP
+#define VAZTERAN_GPUOBJECTS_HPP
 
 #include <array>
 #include <vector>
@@ -70,8 +70,10 @@ namespace vzt {
         glm::vec3 viewPosition;
     };
 
-    struct Material {
-        float shininess;
+    struct MaterialData {
+        glm::vec4 ambientColor;
+        glm::vec4 diffuseColor;
+        glm::vec4 specularColor;
     };
 }
 
@@ -89,4 +91,4 @@ namespace std {
     };
 }
 
-#endif //VAZTERAN_GPUOBJECT_HPP
+#endif //VAZTERAN_GPUOBJECTS_HPP

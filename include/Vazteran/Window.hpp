@@ -7,6 +7,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "Vazteran/Data/Types.hpp"
 #include "Vazteran/Utils.hpp"
 
 namespace vzt {
@@ -32,7 +33,7 @@ namespace vzt {
                FrameBufferResizedCallback  callback);
 
         void FrameBufferResized() const;
-        vzt::Size2D FrameBufferSize() const;
+        vzt::Size2D<int> FrameBufferSize() const;
         bool ShouldClose() const { return glfwWindowShouldClose(m_window.get()); }
         VkSurfaceKHR Surface(vzt::Instance* instance);
         bool Update() const;

@@ -33,6 +33,6 @@ void main() {
     }
 
     outColor = 1.f * texture(objectAmbient, fragmentTextureCoordinates) +
-               1.f * lambertian * texture(objectDiffuse, fragmentTextureCoordinates) +
-               1.f * specular * texture(objectSpecular, fragmentTextureCoordinates);
+                1.f * lambertian * texture(objectDiffuse, fragmentTextureCoordinates) +
+                1.f * specular * texture(objectSpecular, fragmentTextureCoordinates);
 }
