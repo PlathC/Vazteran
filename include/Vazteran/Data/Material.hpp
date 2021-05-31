@@ -10,13 +10,14 @@
 
 namespace vzt {
     struct Material {
-        vzt::Color ambientColor;
-        vzt::Color diffuseColor;
-        vzt::Color specularColor;
-
         vzt::Image ambientMap;
         vzt::Image diffuseMap;
         vzt::Image specularMap;
+
+        vzt::Color ambientColor;
+        vzt::Color diffuseColor;
+        vzt::Color specularColor;
+        float shininess;
     };
 }
 

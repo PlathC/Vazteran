@@ -13,7 +13,7 @@ namespace vzt {
         m_shaderModuleCreateInfo.pCode = reinterpret_cast<const uint32_t*>(m_compiledSource.data());
     }
 
-    void Shader::SetSamplerDescriptorSet(uint32_t binding, const vzt::Image& image) {
+    void Shader::SetSamplerDescriptorSet(uint32_t binding) {
         for (auto& sampler: m_samplerDescriptorSets) {
             if (sampler.binding == binding){
                 return;

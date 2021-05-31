@@ -16,9 +16,6 @@ namespace vzt {
         m_instance = std::make_unique<vzt::Instance>(name, m_window->VkExtensions());
 
         m_models.emplace_back(std::make_unique<vzt::Model>("./samples/TheCrounchingBoy.obj"));
-        m_models[0]->Mat().ambientMap  = glm::vec4(0.5, 0.5, 0.5, 1.);
-        m_models[0]->Mat().diffuseMap  = glm::vec4(0.5, 0.5, 0.5, 1.);
-        m_models[0]->Mat().specularMap = glm::vec4(0.5, 0.5, 0.5, 1.);
 
         auto size = m_window->FrameBufferSize();
         vzt::Camera camera = Camera::FromModel(*m_models[0], size.width / static_cast<float>(size.height));

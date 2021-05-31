@@ -8,31 +8,36 @@ namespace vzt {
             m_logicalDevice(logicalDevice), m_renderPass(std::move(settings.renderPass)) {
 
         auto vertexShader = Shader("./shaders/shader.vert.spv", ShaderStage::VertexShader);
-        vertexShader.SetUniformDescriptorSet(0, sizeof(vzt::Transforms));
+        vertexShader.SetUniformDescriptorSet(0, sizeof(vzt::ObjectData));
         m_shaders.emplace(vertexShader);
 
         auto fragShader = Shader("./shaders/shader.frag.spv", ShaderStage::FragmentShader);
-        fragShader.SetSamplerDescriptorSet(1, Image());
-        fragShader.SetSamplerDescriptorSet(2, Image());
-        fragShader.SetSamplerDescriptorSet(3, Image());
+        fragShader.SetUniformDescriptorSet(0, sizeof(vzt::ObjectData));
+        fragShader.SetSamplerDescriptorSet(1);
+        fragShader.SetSamplerDescriptorSet(2);
+        fragShader.SetSamplerDescriptorSet(3);
         m_shaders.emplace(fragShader);
 
         std::vector<std::unique_ptr<vzt::ShaderModule>> shaderModules{};
         std::vector<VkDescriptorSetLayoutBinding> bindings;
         std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-        auto buildDescriptorSetLayoutBinding = [](vzt::ShaderStage stage, uint32_t binding, VkDescriptorType type) {
+        auto buildDescriptorSetLayoutBinding = [](VkShaderStageFlags stages, uint32_t binding, VkDescriptorType type) {
             VkDescriptorSetLayoutBinding layoutBinding{};
             layoutBinding.binding = binding;
             layoutBinding.descriptorCount = 1;
             layoutBinding.pImmutableSamplers = nullptr; // Optional
-            layoutBinding.stageFlags = static_cast<VkShaderStageFlags>(stage);
+            layoutBinding.stageFlags = stages;
             layoutBinding.descriptorType = type;
             return layoutBinding;
         };
 
-        for (auto& shader : m_shaders) {
+        std::unordered_map<uint32_t, std::pair<VkShaderStageFlags, VkDescriptorType>> descriptors;
+        for(auto& shader: m_shaders) {
             for (const auto descriptor: shader.DescriptorTypes()) {
-                bindings.emplace_back(buildDescriptorSetLayoutBinding(shader.Stage(), descriptor.first, descriptor.second));
+                if(descriptors.find(descriptor.first) == descriptors.end())
+                    descriptors[descriptor.first] = std::make_pair(static_cast<VkShaderStageFlags>(shader.Stage()), descriptor.second);
+                else
+                    descriptors[descriptor.first].first |= static_cast<VkShaderStageFlags>(shader.Stage());
             }
 
             auto module = std::make_unique<ShaderModule>(m_logicalDevice, shader.ShaderModuleCreateInfo());
@@ -45,6 +50,10 @@ namespace vzt {
             shaderModules.emplace_back(std::move(module));
             shaderStages.emplace_back(shaderStageCreateInfo);
         }
+
+        bindings.reserve(descriptors.size());
+        for (const auto& descriptor : descriptors)
+            bindings.emplace_back(buildDescriptorSetLayoutBinding(descriptor.second.first, descriptor.first, descriptor.second.second));
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -181,8 +190,6 @@ namespace vzt {
         m_descriptorSetLayout = std::exchange(other.m_descriptorSetLayout, static_cast<decltype(m_descriptorSetLayout)>(VK_NULL_HANDLE));
 
         std::swap(m_renderPass, other.m_renderPass);
-        // std::swap(m_textureHandlers, other.m_textureHandlers);
-        // std::swap(m_uniformRanges, other.m_uniformRanges);
     }
 
     GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept {
@@ -191,8 +198,6 @@ namespace vzt {
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
         std::swap(m_descriptorSetLayout, other.m_descriptorSetLayout);
         std::swap(m_renderPass, other.m_renderPass);
-        // std::swap(m_textureHandlers, other.m_textureHandlers);
-        // std::swap(m_uniformRanges, other.m_uniformRanges);
 
         return *this;
     }

@@ -37,11 +37,15 @@ namespace vzt {
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         for (auto& target: m_targets) {
             target.model->Rotation() = time * glm::radians(45.0f) * glm::vec3(0.0f, 0.0f, 1.0f);
-            vzt::Transforms ubo {
+            vzt::ObjectData ubo {
+                    target.model->CMat().ambientColor,
+                    target.model->CMat().diffuseColor,
+                    target.model->CMat().specularColor,
                     target.model->ModelMatrix(),
                     m_camera.View(),
                     m_camera.Projection(),
-                    m_camera.position
+                    m_camera.position,
+                    target.model->CMat().shininess
             };
 
             ubo.projection[1][1] *= -1;

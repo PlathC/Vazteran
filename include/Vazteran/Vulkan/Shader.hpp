@@ -39,7 +39,7 @@ namespace vzt {
         VkShaderModuleCreateInfo ShaderModuleCreateInfo() const { return m_shaderModuleCreateInfo; }
         vzt::ShaderStage Stage() const { return m_shaderStage; }
 
-        void SetSamplerDescriptorSet(uint32_t binding, const vzt::Image& image);
+        void SetSamplerDescriptorSet(uint32_t binding);
         void SetUniformDescriptorSet(uint32_t binding, uint32_t size);
 
         std::vector<SamplerDescriptorSet> SamplerDescriptorSets() const { return m_samplerDescriptorSets; }

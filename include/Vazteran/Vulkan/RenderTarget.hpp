@@ -25,7 +25,7 @@ namespace vzt {
         vzt::GraphicPipeline* Pipeline() { return m_graphicPipeline; }
         void Render(VkCommandBuffer commandBuffer, uint32_t imageCount);
         void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer);
-        void UpdateUniform(const vzt::Transforms& transform);
+        void UpdateUniform(const vzt::ObjectData& objectData);
 
         ~RenderTarget();
 
@@ -40,7 +40,7 @@ namespace vzt {
 
         VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
         std::vector<VkDescriptorSet> m_descriptorSets;
-        std::vector<vzt::Buffer<vzt::Transforms>> m_uniformBuffers;
+        std::vector<vzt::Buffer<vzt::ObjectData>> m_uniformBuffers;
 
         vzt::GraphicPipeline* m_graphicPipeline = nullptr;
     };

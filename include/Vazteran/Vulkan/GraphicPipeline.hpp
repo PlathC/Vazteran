@@ -40,7 +40,6 @@ namespace vzt {
         RenderPass* RenderPass() const { return m_renderPass.get(); }
         VkPipelineLayout Layout() const { return m_pipelineLayout; }
         VkPipeline VkHandle() const { return m_vkHandle; }
-        void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer) const;
         std::vector<VkDescriptorType> DescriptorTypes() const;
         std::unordered_set<vzt::Shader, vzt::ShaderHash> Shaders() { return m_shaders; };
 

@@ -162,10 +162,10 @@ namespace vzt {
     }
 
     //TODO: Use template and more optimized synchronization behaviour
-    void RenderTarget::UpdateUniform(const vzt::Transforms& transform) {
+    void RenderTarget::UpdateUniform(const vzt::ObjectData& objectData) {
         vkDeviceWaitIdle(m_logicalDevice->VkHandle());
         for (auto& uniformBuffer: m_uniformBuffers) {
-            uniformBuffer.Update<vzt::Transforms>({transform});
+            uniformBuffer.Update<vzt::ObjectData>({objectData});
         }
     }
 
