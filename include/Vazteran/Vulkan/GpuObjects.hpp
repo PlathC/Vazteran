@@ -63,16 +63,19 @@ namespace vzt {
         }
     };
 
-    struct ObjectData {
+    struct MaterialInfo {
         glm::vec4 ambientColor;
         glm::vec4 diffuseColor;
         glm::vec4 specularColor;
 
+        float shininess;
+    };
+
+    struct Transforms {
         glm::mat4 model;
         glm::mat4 view;
         glm::mat4 projection;
         glm::vec3 viewPosition;
-        float shininess;
     };
 }
 

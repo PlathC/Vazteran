@@ -32,7 +32,11 @@ namespace vzt {
         }
 
         // If this binding is not currently used
-        m_uniformDescriptorSets.emplace_back(UniformDescriptorSet{binding, size});
+        m_uniformDescriptorSets.emplace_back(SizedDescriptorSet{binding, size});
+    }
+
+    void Shader::AddPushConstant(uint32_t size) {
+        m_pushConstants.emplace_back(size);
     }
 
     std::vector<std::pair<uint32_t, VkDescriptorType>> Shader::DescriptorTypes() const {
@@ -40,10 +44,27 @@ namespace vzt {
         for (const auto& samplerDescriptorSet: m_samplerDescriptorSets)
             descriptorTypes.emplace_back(samplerDescriptorSet.binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
-        for (const auto& samplerDescriptorSet: m_uniformDescriptorSets)
-            descriptorTypes.emplace_back(samplerDescriptorSet.binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+        for (const auto& uniformDescriptorSet: m_uniformDescriptorSets)
+            descriptorTypes.emplace_back(uniformDescriptorSet.binding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
         return descriptorTypes;
+    }
+
+    std::vector<VkPushConstantRange> Shader::PushConstants() const {
+        std::vector<VkPushConstantRange> pushConstants;
+        pushConstants.reserve(m_pushConstants.size());
+
+        uint32_t offsetAccumulation = 0;
+        for (auto pushConstantSize: m_pushConstants) {
+            VkPushConstantRange pushConstantRange{};
+            pushConstantRange.stageFlags = static_cast<VkShaderStageFlagBits>(m_shaderStage);
+            pushConstantRange.offset = offsetAccumulation;
+            pushConstantRange.size = pushConstantSize;
+            pushConstants.emplace_back(pushConstantRange);
+            offsetAccumulation += pushConstantSize;
+        }
+
+        return pushConstants;
     }
 
     ShaderModule::ShaderModule(vzt::LogicalDevice* logicalDevice, VkShaderModuleCreateInfo createInfo) :

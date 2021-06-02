@@ -38,7 +38,6 @@ namespace vzt {
             }
         }
 
-
         auto descriptorTypes = m_graphicPipeline->DescriptorTypes();
         auto poolSizes = std::vector<VkDescriptorPoolSize>(descriptorTypes.size());
 
@@ -78,6 +77,13 @@ namespace vzt {
                     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             UpdateDescriptorSet(m_descriptorSets[i], m_uniformBuffers[i].VkHandle());
         }
+
+        UpdateUniform({
+              model.CMat().ambientColor,
+              model.CMat().diffuseColor,
+              model.CMat().specularColor,
+              model.CMat().shininess
+        });
     }
 
     RenderTarget::RenderTarget(RenderTarget&& other) noexcept {
@@ -113,8 +119,11 @@ namespace vzt {
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->VkHandle(), 0, VK_INDEX_TYPE_UINT32);
-
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->Layout(), 0, 1, &m_descriptorSets[imageCount], 0, nullptr);
+
+        vkCmdPushConstants(commandBuffer, m_graphicPipeline->Layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+                           sizeof(vzt::Transforms), &m_currentPushConstants);
+
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indexBuffer->Size()), 1, 0, 0, 0);
     }
 
@@ -162,11 +171,15 @@ namespace vzt {
     }
 
     //TODO: Use template and more optimized synchronization behaviour
-    void RenderTarget::UpdateUniform(const vzt::ObjectData& objectData) {
+    void RenderTarget::UpdateUniform(const vzt::MaterialInfo& materialInfo) {
         vkDeviceWaitIdle(m_logicalDevice->VkHandle());
         for (auto& uniformBuffer: m_uniformBuffers) {
-            uniformBuffer.Update<vzt::ObjectData>({objectData});
+            uniformBuffer.Update<vzt::MaterialInfo>({materialInfo});
         }
+    }
+
+    void RenderTarget::UpdatePushConstants(const vzt::Transforms& objectData) {
+        m_currentPushConstants = objectData;
     }
 
     RenderTarget::~RenderTarget() {

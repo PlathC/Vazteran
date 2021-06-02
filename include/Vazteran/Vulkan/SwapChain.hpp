@@ -23,7 +23,7 @@ namespace vzt {
     class GraphicPipeline;
     class LogicalDevice;
 
-    using RenderPassFunction = std::function<void(VkCommandBuffer, uint32_t)>;
+    using RenderFunction = std::function<void(VkCommandBuffer, uint32_t)>;
 
     struct FrameComponent {
         VkCommandBuffer commandBuffer;
@@ -35,7 +35,8 @@ namespace vzt {
 
     class SwapChain {
     public:
-        SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize);
+        SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize,
+                  vzt::RenderFunction renderFunction);
 
         SwapChain(const SwapChain&) = delete;
         SwapChain& operator=(const SwapChain&) = delete;
@@ -45,9 +46,9 @@ namespace vzt {
 
         bool DrawFrame();
         void Recreate(VkSurfaceKHR surface);
+        void UpdateCommandBuffers();
         void FrameBufferResized(vzt::Size2D<int> newSize);
         vzt::Size2D<int> FrameBufferSize() const;
-        void RecordCommandBuffers(vzt::RenderPassFunction renderPass);
         GraphicPipeline* Pipeline() { return m_graphicPipelines[0].get(); }
         uint32_t ImageCount() const { return m_imageCount; }
 
@@ -56,9 +57,11 @@ namespace vzt {
     private:
         void CreateSwapChain();
         void CreateDepthResources();
+        void CreateCommandBuffers();
+        void RecordCommandBuffer(VkCommandBuffer& commandBuffer, const FrameBuffer& frameBuffer, uint32_t imageCount);
         void CreateSynchronizationObjects();
 
-        //void UpdateUniformBuffer(uint32_t currentImage, vzt::Transforms ubo);
+        void CleanCommandBuffers();
         void Cleanup();
 
         constexpr static int MaxFramesInFlight = 2;
@@ -88,6 +91,8 @@ namespace vzt {
 
         std::vector<FrameComponent> m_frames;
         std::unique_ptr<vzt::ImageHandler> m_depthImage;
+
+        vzt::RenderFunction m_renderFunction;
     };
 }
 

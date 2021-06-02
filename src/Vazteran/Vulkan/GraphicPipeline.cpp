@@ -8,11 +8,11 @@ namespace vzt {
             m_logicalDevice(logicalDevice), m_renderPass(std::move(settings.renderPass)) {
 
         auto vertexShader = Shader("./shaders/shader.vert.spv", ShaderStage::VertexShader);
-        vertexShader.SetUniformDescriptorSet(0, sizeof(vzt::ObjectData));
+        vertexShader.AddPushConstant(sizeof(vzt::Transforms));
         m_shaders.emplace(vertexShader);
 
         auto fragShader = Shader("./shaders/shader.frag.spv", ShaderStage::FragmentShader);
-        fragShader.SetUniformDescriptorSet(0, sizeof(vzt::ObjectData));
+        fragShader.SetUniformDescriptorSet(0, sizeof(vzt::MaterialInfo));
         fragShader.SetSamplerDescriptorSet(1);
         fragShader.SetSamplerDescriptorSet(2);
         fragShader.SetSamplerDescriptorSet(3);
@@ -31,7 +31,8 @@ namespace vzt {
             return layoutBinding;
         };
 
-        std::unordered_map<uint32_t, std::pair<VkShaderStageFlags, VkDescriptorType>> descriptors;
+        std::unordered_map<uint32_t, std::pair<VkShaderStageFlags, VkDescriptorType>> descriptors{};
+        std::vector<VkPushConstantRange> pushConstants{};
         for(auto& shader: m_shaders) {
             for (const auto descriptor: shader.DescriptorTypes()) {
                 if(descriptors.find(descriptor.first) == descriptors.end())
@@ -39,6 +40,9 @@ namespace vzt {
                 else
                     descriptors[descriptor.first].first |= static_cast<VkShaderStageFlags>(shader.Stage());
             }
+
+            auto currentPushConstants = shader.PushConstants();
+            pushConstants.insert(pushConstants.cend(), currentPushConstants.begin(), currentPushConstants.end());
 
             auto module = std::make_unique<ShaderModule>(m_logicalDevice, shader.ShaderModuleCreateInfo());
             VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
@@ -147,6 +151,11 @@ namespace vzt {
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &m_descriptorSetLayout;
+
+        if (!pushConstants.empty()) {
+            pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
+            pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
+        }
 
         if (vkCreatePipelineLayout(m_logicalDevice->VkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");

@@ -28,7 +28,7 @@ namespace vzt {
 
     struct SamplerDescriptorSet : public DescriptorSet { };
 
-    struct UniformDescriptorSet : public DescriptorSet {
+    struct SizedDescriptorSet : public DescriptorSet {
         uint32_t size;
     };
 
@@ -41,10 +41,12 @@ namespace vzt {
 
         void SetSamplerDescriptorSet(uint32_t binding);
         void SetUniformDescriptorSet(uint32_t binding, uint32_t size);
+        void AddPushConstant(uint32_t size);
 
         std::vector<SamplerDescriptorSet> SamplerDescriptorSets() const { return m_samplerDescriptorSets; }
-        std::vector<UniformDescriptorSet> UniformDescriptorSets() const { return m_uniformDescriptorSets; }
+        std::vector<SizedDescriptorSet> UniformDescriptorSets() const { return m_uniformDescriptorSets; }
         std::vector<std::pair<uint32_t, VkDescriptorType>> DescriptorTypes() const;
+        std::vector<VkPushConstantRange> PushConstants() const;
 
         bool operator==(const Shader& other) const
         {
@@ -56,7 +58,8 @@ namespace vzt {
         VkShaderModuleCreateInfo m_shaderModuleCreateInfo{};
         vzt::ShaderStage m_shaderStage;
         std::vector<SamplerDescriptorSet> m_samplerDescriptorSets{};
-        std::vector<UniformDescriptorSet> m_uniformDescriptorSets{};
+        std::vector<SizedDescriptorSet> m_uniformDescriptorSets{};
+        std::vector<uint32_t> m_pushConstants{};
     };
 
     struct ShaderHash

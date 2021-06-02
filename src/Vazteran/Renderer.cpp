@@ -11,7 +11,12 @@ namespace vzt {
         m_logicalDevice  = std::make_unique<vzt::LogicalDevice>(instance, m_physicalDevice.get(), m_surface);
 
         m_swapChain = std::make_unique<vzt::SwapChain>(
-            m_logicalDevice.get(), surface, size
+            m_logicalDevice.get(), surface, size,
+            [&](VkCommandBuffer commandBuffer, uint32_t imageCount) {
+                for (auto& target: m_targets){
+                    target.vkTarget.Render(commandBuffer, imageCount);
+                }
+            }
         );
 
         for(auto& model: models) {
@@ -21,13 +26,7 @@ namespace vzt {
             });
         }
 
-        m_swapChain->RecordCommandBuffers(
-            [&](VkCommandBuffer commandBuffer, uint32_t imageCount) {
-                for (auto& target: m_targets){
-                    target.vkTarget.Render(commandBuffer, imageCount);
-                }
-            }
-        );
+        m_swapChain->UpdateCommandBuffers();
     }
 
     void Renderer::Draw() {
@@ -37,23 +36,23 @@ namespace vzt {
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         for (auto& target: m_targets) {
             target.model->Rotation() = time * glm::radians(45.0f) * glm::vec3(0.0f, 0.0f, 1.0f);
-            vzt::ObjectData ubo {
-                    target.model->CMat().ambientColor,
-                    target.model->CMat().diffuseColor,
-                    target.model->CMat().specularColor,
-                    target.model->ModelMatrix(),
-                    m_camera.View(),
-                    m_camera.Projection(),
-                    m_camera.position,
-                    target.model->CMat().shininess
+            auto modelMatrix = target.model->ModelMatrix();
+            auto viewMatrix = m_camera.View();
+            auto projectionMatrix = m_camera.Projection();
+            vzt::Transforms transforms {
+                    modelMatrix,
+                    viewMatrix,
+                    projectionMatrix,
+
+                    m_camera.position
             };
 
-            ubo.projection[1][1] *= -1;
-            ubo.viewPosition = m_camera.position;
+            transforms.projection[1][1] *= -1;
+            transforms.viewPosition = m_camera.position;
 
-            target.vkTarget.UpdateUniform(ubo);
+            target.vkTarget.UpdatePushConstants(transforms);
+            m_swapChain->UpdateCommandBuffers();
         }
-
 
         if(m_swapChain->DrawFrame()) {
             vkDeviceWaitIdle(m_logicalDevice->VkHandle());
@@ -71,13 +70,6 @@ namespace vzt {
         for(auto& target: m_targets) {
             target.vkTarget = vzt::RenderTarget(m_logicalDevice.get(), m_swapChain->Pipeline(), *target.model, m_swapChain->ImageCount());
         }
-
-        m_swapChain->RecordCommandBuffers(
-                [&](VkCommandBuffer commandBuffer, uint32_t imageCount) {
-                    for (auto& target: m_targets){
-                        target.vkTarget.Render(commandBuffer, imageCount);
-                    }
-                }
-        );
+        m_swapChain->UpdateCommandBuffers();
     }
 }

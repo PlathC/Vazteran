@@ -166,14 +166,14 @@ set(HEADERS
         include/Vazteran/Vulkan/FrameBuffer.hpp
         include/Vazteran/Vulkan/GpuObjects.hpp
         include/Vazteran/Vulkan/GraphicPipeline.hpp
+        include/Vazteran/Vulkan/ImageUtils.hpp
         include/Vazteran/Vulkan/Instance.hpp
         include/Vazteran/Vulkan/LogicalDevice.hpp
         include/Vazteran/Vulkan/PhysicalDevice.hpp
         include/Vazteran/Vulkan/RenderPass.hpp
-        include/Vazteran/Vulkan/ImageUtils.hpp
+        include/Vazteran/Vulkan/RenderTarget.hpp
         include/Vazteran/Vulkan/Shader.hpp
         include/Vazteran/Vulkan/SwapChain.hpp
-        include/Vazteran/Vulkan/RenderTarget.hpp
         )
 
 set(SOURCES
@@ -189,14 +189,15 @@ set(SOURCES
         src/Vazteran/Data/Types.cpp
         src/Vazteran/Vulkan/Instance.cpp
         src/Vazteran/Vulkan/GraphicPipeline.cpp
+        src/Vazteran/Vulkan/ImageUtils.cpp
         src/Vazteran/Vulkan/FrameBuffer.cpp
         src/Vazteran/Vulkan/LogicalDevice.cpp
         src/Vazteran/Vulkan/PhysicalDevice.cpp
         src/Vazteran/Vulkan/RenderPass.cpp
+        src/Vazteran/Vulkan/RenderTarget.cpp
         src/Vazteran/Vulkan/Shader.cpp
         src/Vazteran/Vulkan/SwapChain.cpp
-        src/Vazteran/Vulkan/ImageUtils.cpp
-        src/Vazteran/Vulkan/RenderTarget.cpp)
+        )
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 
