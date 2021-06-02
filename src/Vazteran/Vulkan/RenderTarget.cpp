@@ -12,21 +12,21 @@ namespace vzt {
             if (samplerDescriptorSets.size() == 3) {
                 m_textureHandlers.insert(std::make_pair<uint32_t, vzt::ImageHandler>(
                         std::move(samplerDescriptorSets[0].binding), {
-                                vzt::ImageView(m_logicalDevice, model.CMat().ambientMap),
+                                vzt::ImageView(m_logicalDevice, model.CMat().ambientMap, VK_FORMAT_R8G8B8A8_SRGB),
                                 vzt::Sampler(m_logicalDevice)
                         })
                 );
 
                 m_textureHandlers.insert(std::make_pair<uint32_t, vzt::ImageHandler>(
                         std::move(samplerDescriptorSets[1].binding), {
-                                vzt::ImageView(m_logicalDevice, model.CMat().diffuseMap),
+                                vzt::ImageView(m_logicalDevice, model.CMat().diffuseMap, VK_FORMAT_R8G8B8A8_SRGB),
                                 vzt::Sampler(m_logicalDevice)
                         })
                 );
 
                 m_textureHandlers.insert(std::make_pair<uint32_t, vzt::ImageHandler>(
                         std::move(samplerDescriptorSets[2].binding), {
-                                vzt::ImageView(m_logicalDevice, model.CMat().specularMap),
+                                vzt::ImageView(m_logicalDevice, model.CMat().specularMap, VK_FORMAT_R8G8B8A8_SRGB),
                                 vzt::Sampler(m_logicalDevice)
                         })
                 );

@@ -28,7 +28,6 @@ layout(location = 5) in vec3 vertPosition;
 layout(location = 0) out vec4 outColor;
 
 void main() {
-
     const vec3 lightPosition = vec3(1.0f,  1.0f, 1.0f);
     const vec3 lightIntensity = vec3( 1.0f,  1.0f, 1.0f);
 

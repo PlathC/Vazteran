@@ -14,7 +14,7 @@ to render my potential future test related to computer graphics.
 
 The engine can now load 3D models and present it with an hardcoded phong that will be extended in order to use uniform data.
 
-![](./readmefiles/Vazteran-WIPPhong.png)
+![](./readmefiles/Texture.png)
 
 ![](./readmefiles/Phong.png)
 
