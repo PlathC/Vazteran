@@ -32,7 +32,10 @@ void main() {
     fragmentColor = inColor;
     fragmentPosition = vec3(objectData.model * vec4(inPosition, 1.f));
     fragmentTextureCoordinates = inTextureCoordinates;
-    normal = inNormal;
-    vec4 vertPosition4 = objectData.view * objectData.model * vec4(inPosition, 1.f);
+
+    mat4 modelViewMatrix = objectData.view * objectData.model;
+    mat4 normalMatrix = transpose(inverse(modelViewMatrix));
+    normal = normalize(normalMatrix * vec4(inNormal, 0.0)).xyz;
+    vec4 vertPosition4 = modelViewMatrix * vec4(inPosition, 1.f);
     vertPosition = vec3(vertPosition4) / vertPosition4.w;
 }

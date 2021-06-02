@@ -3,7 +3,7 @@
 
 #include "Vazteran/Application.hpp"
 
-int main()
+int main(int /* args */, char*[]/* argv */ )
 {
     auto app = vzt::Application{"Vazteran"};
 

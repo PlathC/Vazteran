@@ -43,10 +43,10 @@ namespace vzt {
                     Image({1.f, 1.f, 1.f, 1.f}),
                     Image({1.f, 1.f, 1.f, 1.f}),
                     Image({1.f, 1.f, 1.f, 1.f}),
-                    vzt::Color{1., 1., 1., 1.},
-                    vzt::Color{1., 1., 1., 1.},
-                    vzt::Color{1., 1., 1., 1.},
-                    225.
+                    vzt::Color{  0.05f, 0.2f, 0.05f , 1.},
+                    vzt::Color{  0.3f,  0.5f, 0.3f  , 1.},
+                    vzt::Color{  0.6f,  0.6f, 0.6f  , 1.},
+                    50.
             };
         }
 

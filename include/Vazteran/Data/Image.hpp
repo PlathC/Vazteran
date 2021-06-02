@@ -19,9 +19,9 @@ namespace vzt {
         Image& operator=(glm::vec4 color);
 
         const std::vector<uint8_t>& Data() { return m_data; }
-        uint32_t Width() { return m_width; }
-        uint32_t Height() { return m_height; }
-        uint8_t Channels() { return m_channels; }
+        uint32_t Width() const { return m_width; }
+        uint32_t Height() const { return m_height; }
+        uint8_t Channels() const { return m_channels; }
     private:
         std::vector<uint8_t> m_data;
         uint32_t m_width;
