@@ -2,6 +2,7 @@
 #include <utility>
 #include <vector>
 
+#include "Vazteran/Vulkan/CommandPool.hpp"
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/RenderPass.hpp"
@@ -9,12 +10,12 @@
 
 namespace vzt {
     SwapChain::SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize,
-                         vzt::RenderFunction renderFunction) :
+                         CommandPool* commandPool, uint32_t maxFrameInFlight) :
             m_frameBufferSize(std::move(frameBufferSize)), m_surface(surface), m_logicalDevice(logicalDevice),
-            m_renderFunction(renderFunction) {
+            m_commandPool(commandPool), m_maxFrameInFlight(maxFrameInFlight) {
         CreateSwapChain();
         CreateDepthResources();
-        CreateCommandBuffers();
+        CreateRenderSupport();
         CreateSynchronizationObjects();
     }
 
@@ -23,7 +24,7 @@ namespace vzt {
         m_framebufferResized = std::exchange(other.m_framebufferResized, false);
         m_frameBufferSize = std::exchange(other.m_frameBufferSize, {});
         std::exchange(m_swapChainImageFormat, other.m_swapChainImageFormat);
-        m_commandPool = std::exchange(other.m_commandPool, static_cast<decltype(m_commandPool)>(VK_NULL_HANDLE));
+        m_commandPool = std::exchange(other.m_commandPool, nullptr);
         m_depthImage = std::exchange(other.m_depthImage, nullptr);
 
         std::swap(m_surface, other.m_surface);
@@ -35,6 +36,8 @@ namespace vzt {
         std::swap(m_inFlightFences, other.m_inFlightFences);
         std::swap(m_imagesInFlight, other.m_imagesInFlight);
         std::swap(m_frames, other.m_frames);
+        std::swap(m_commandPool, other.m_commandPool);
+        std::swap(m_maxFrameInFlight, other.m_maxFrameInFlight);
     }
 
     SwapChain& SwapChain::operator=(SwapChain&& other) noexcept {
@@ -54,6 +57,8 @@ namespace vzt {
         std::swap(m_depthImage, other.m_depthImage);
         std::swap(m_frames, other.m_frames);
         std::swap(m_surface, other.m_surface);
+        std::swap(m_commandPool, other.m_commandPool);
+        std::swap(m_maxFrameInFlight, other.m_maxFrameInFlight);
 
         return *this;
     }
@@ -67,7 +72,7 @@ namespace vzt {
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             return true;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            throw std::runtime_error("Failed to acquire swap chain image!");
+            throw std::runtime_error("Failed to acquire swapchain image!");
         }
 
         // Check if a previous frame is using this image (i.e. there is its fence to wait on)
@@ -76,6 +81,8 @@ namespace vzt {
         }
         // Mark the image as now being in use by this frame
         m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
+
+        m_commandPool->RecordBuffer(m_swapChainExtent, m_graphicPipelines[0].get(), m_frames[imageIndex], imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -86,7 +93,7 @@ namespace vzt {
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &m_frames[imageIndex].commandBuffer;
+        submitInfo.pCommandBuffers = &(*m_commandPool)[imageIndex];
 
         VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
@@ -117,7 +124,7 @@ namespace vzt {
             throw std::runtime_error("Failed to present swap chain image!");
         }
 
-        m_currentFrame = (m_currentFrame + 1) % MaxFramesInFlight;
+        m_currentFrame = (m_currentFrame + 1) % m_maxFrameInFlight;
         return false;
     }
 
@@ -129,20 +136,7 @@ namespace vzt {
 
         CreateSwapChain();
         CreateDepthResources();
-        CreateCommandBuffers();
-        CreateDepthResources();
-    }
-
-    void SwapChain::UpdateCommandBuffers() {
-        for(std::size_t i = 0; i < m_frames.size(); i++) {
-            // Might requires to use another pool during this operation to speed it up
-            // https://www.reddit.com/r/vulkan/comments/59c6bu/rebuilding_command_buffer_each_frame/
-            if (m_imagesInFlight[i] != VK_NULL_HANDLE) {
-                vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
-            }
-
-            RecordCommandBuffer(m_frames[i].commandBuffer, m_frames[i].frameBuffer, static_cast<uint32_t>(i));
-        }
+        CreateRenderSupport();
     }
 
     void SwapChain::FrameBufferResized(vzt::Size2D<int> newSize) {
@@ -155,7 +149,7 @@ namespace vzt {
     }
 
     SwapChain::~SwapChain() {
-        for (std::size_t i = 0; i < MaxFramesInFlight; i++) {
+        for (std::size_t i = 0; i < m_maxFrameInFlight; i++) {
             vkDestroySemaphore(m_logicalDevice->VkHandle(), m_renderFinishedSemaphores[i], nullptr);
             vkDestroySemaphore(m_logicalDevice->VkHandle(), m_imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(m_logicalDevice->VkHandle(), m_inFlightFences[i], nullptr);
@@ -211,7 +205,7 @@ namespace vzt {
         createInfo.oldSwapchain = VK_NULL_HANDLE;
 
         if (vkCreateSwapchainKHR(m_logicalDevice->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create swap chain!");
+            throw std::runtime_error("Failed to create swapchain!");
         }
 
         m_graphicPipelines.emplace_back(std::make_unique<vzt::GraphicPipeline>(
@@ -231,93 +225,32 @@ namespace vzt {
                 Sampler(m_logicalDevice) });
     }
 
-    void SwapChain::CreateCommandBuffers() {
-        if (!m_frames.empty()) {
-            CleanCommandBuffers();
-        }
-
+    void SwapChain::CreateRenderSupport() {
         vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, nullptr);
         auto swapChainImages = std::vector<VkImage>(m_imageCount);
         m_frames.reserve(m_imageCount);
         vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
-
-        vzt::QueueFamilyIndices indices = m_logicalDevice->DeviceQueueFamilyIndices();
-
-        VkCommandPoolCreateInfo commandPoolInfo{};
-        commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
-        commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        if (vkCreateCommandPool(m_logicalDevice->VkHandle(), &commandPoolInfo, nullptr, &m_commandPool)
-            != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create command pool!");
-        }
-
-        auto commandsBuffers = std::vector<VkCommandBuffer>(m_imageCount);
-        VkCommandBufferAllocateInfo commandBufferAllocInfo{};
-        commandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        commandBufferAllocInfo.commandPool = m_commandPool;
-        commandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        commandBufferAllocInfo.commandBufferCount = static_cast<uint32_t>(commandsBuffers.size());
-
-        if (vkAllocateCommandBuffers(m_logicalDevice->VkHandle(), &commandBufferAllocInfo, commandsBuffers.data()) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to allocate command buffers!");
-        }
+        m_commandPool->AllocateCommandBuffers(m_imageCount);
 
         auto tempImageData = std::vector<uint8_t>(m_swapChainExtent.width * m_swapChainExtent.height * 4, 0);
         for (size_t i = 0; i < m_imageCount; i++) {
             // TODO: Handle CommandBuffer in a CommandPool class
             VkImageView handle = m_logicalDevice->CreateImageView(swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
-            auto frameBuffer = vzt::FrameBuffer(m_logicalDevice, m_graphicPipelines[0]->RenderPass()->VkHandle(),
+            auto frameBuffer = vzt::FrameBuffer(m_logicalDevice, swapChainImages[i], handle, m_graphicPipelines[0]->RenderPass()->VkHandle(),
                                                 std::vector<VkImageView>({ handle, m_depthImage->imageView.VkHandle() }),
                                                 m_swapChainExtent.width, m_swapChainExtent.height);
 
-            RecordCommandBuffer(commandsBuffers[i], frameBuffer, static_cast<uint32_t>(i));
-
-            m_frames.emplace_back( FrameComponent{
-                    commandsBuffers[i], swapChainImages[i], handle,
-                    std::move(frameBuffer)
-            });
+            m_frames.emplace_back(std::move(frameBuffer));
+            m_commandPool->RecordBuffer(m_swapChainExtent, m_graphicPipelines[0].get(), m_frames[i], i);
         }
     }
 
-    void SwapChain::RecordCommandBuffer(VkCommandBuffer& commandBuffer, const FrameBuffer& frameBuffer, uint32_t imageCount) {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfo.flags = 0; // Optional
-        beginInfo.pInheritanceInfo = nullptr; // Optional
-
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to begin recording command buffer!");
-        }
-
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_graphicPipelines[0]->RenderPass()->VkHandle();
-        renderPassInfo.framebuffer = frameBuffer.VkHandle();
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = m_swapChainExtent;
-
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
-        clearValues[1].depthStencil = {1.0f, 0};
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            m_renderFunction(commandBuffer, imageCount);
-        vkCmdEndRenderPass(commandBuffer);
-
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to record command buffer!");
-        }
-
-    }
 
     void SwapChain::CreateSynchronizationObjects() {
-        m_imageAvailableSemaphores.resize(MaxFramesInFlight);
-        m_renderFinishedSemaphores.resize(MaxFramesInFlight);
-        m_inFlightFences.resize(MaxFramesInFlight);
+        m_imageAvailableSemaphores.resize(m_maxFrameInFlight);
+        m_renderFinishedSemaphores.resize(m_maxFrameInFlight);
+        m_inFlightFences.resize(m_maxFrameInFlight);
         m_imagesInFlight.resize(m_imageCount, VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo{};
@@ -326,7 +259,7 @@ namespace vzt {
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < MaxFramesInFlight; i++) {
+        for (size_t i = 0; i < m_maxFrameInFlight; i++) {
             if (vkCreateSemaphore(m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS
                 || vkCreateSemaphore(m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS
                 || vkCreateFence(m_logicalDevice->VkHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS){
@@ -335,27 +268,16 @@ namespace vzt {
         }
     }
 
-    void SwapChain::CleanCommandBuffers() {
-        auto commandsBuffers = std::vector<VkCommandBuffer>(m_imageCount);
+
+    void SwapChain::Cleanup() {
         for (std::size_t i = 0; i < m_frames.size(); i++) {
             if (m_imagesInFlight[i] != VK_NULL_HANDLE) {
                 vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
             }
-
-            commandsBuffers[i] = m_frames[i].commandBuffer;
-            vkDestroyImageView(m_logicalDevice->VkHandle(), m_frames[i].colorImageView, nullptr);
         }
-
-        vkFreeCommandBuffers(m_logicalDevice->VkHandle(), m_commandPool, static_cast<uint32_t>(commandsBuffers.size()), commandsBuffers.data());
-        vkDestroyCommandPool(m_logicalDevice->VkHandle(), m_commandPool, nullptr);
         m_frames.clear();
-    }
-
-    void SwapChain::Cleanup() {
-        vkDeviceWaitIdle(m_logicalDevice->VkHandle());
-
         m_depthImage.reset();
-        CleanCommandBuffers();
+
         vkDestroySwapchainKHR(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
 
         m_graphicPipelines.clear();

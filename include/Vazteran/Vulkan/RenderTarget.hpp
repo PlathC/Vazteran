@@ -22,8 +22,7 @@ namespace vzt {
         RenderTarget(RenderTarget&& other) noexcept;
         RenderTarget& operator=(RenderTarget&& other) noexcept;
 
-        vzt::GraphicPipeline* Pipeline() { return m_graphicPipeline; }
-        void Render(VkCommandBuffer commandBuffer, uint32_t imageCount);
+        void Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount);
         void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer);
         void UpdateUniform(const vzt::MaterialInfo& materialInfo);
         void UpdatePushConstants(const vzt::Transforms& objectData);
@@ -43,8 +42,6 @@ namespace vzt {
         std::vector<VkDescriptorSet> m_descriptorSets;
         std::vector<vzt::Buffer<vzt::MaterialInfo>> m_uniformBuffers;
         vzt::Transforms m_currentPushConstants{};
-
-        vzt::GraphicPipeline* m_graphicPipeline = nullptr;
     };
 }
 

@@ -39,7 +39,7 @@ namespace vzt {
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 
-        VkDevice VkHandle() { return m_vkHandle; }
+        VkDevice VkHandle() const { return m_vkHandle; }
         VkQueue GraphicsQueue() const { return m_graphicsQueue; }
         VkQueue PresentQueue() const { return m_presentQueue; }
         vzt::QueueFamilyIndices DeviceQueueFamilyIndices() const { return m_queueFamilyIndices; };

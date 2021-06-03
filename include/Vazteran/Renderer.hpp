@@ -6,6 +6,7 @@
 #include "Vazteran/Utils.hpp"
 #include "Vazteran/Data/Camera.hpp"
 #include "Vazteran/Vulkan/Buffer.hpp"
+#include "Vazteran/Vulkan/CommandPool.hpp"
 #include "Vazteran/Vulkan/Instance.hpp"
 #include "Vazteran/Vulkan/SwapChain.hpp"
 #include "Vazteran/Vulkan/RenderTarget.hpp"
@@ -23,16 +24,18 @@ namespace vzt {
                  std::vector<vzt::Model*> models = {});
 
         void Draw();
-        vzt::LogicalDevice* Device() const { return m_logicalDevice.get(); }
+        const vzt::LogicalDevice* Device() const { return m_logicalDevice.get(); }
         void FrameBufferResized(vzt::Size2D<int> newSize);
 
     private:
-        vzt::Instance* m_instance;
+        constexpr static uint32_t MaxFramesInFlight = 2;
+
         VkSurfaceKHR m_surface;
 
         std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;
         std::unique_ptr<vzt::LogicalDevice> m_logicalDevice;
         std::unique_ptr<vzt::SwapChain> m_swapChain;
+        vzt::CommandPool m_commandPool;
 
         // std::unique_ptr<vzt::Model> m_model;
         struct ModelRenderTarget {

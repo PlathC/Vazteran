@@ -4,9 +4,9 @@
 namespace vzt {
     RenderTarget::RenderTarget(vzt::LogicalDevice* logicalDevice, vzt::GraphicPipeline* graphicPipeline,
                                    const vzt::Model& model, uint32_t imageCount):
-            m_imageCount(imageCount), m_logicalDevice(logicalDevice), m_graphicPipeline(graphicPipeline) {
+            m_imageCount(imageCount), m_logicalDevice(logicalDevice) {
 
-        for (auto& shader : m_graphicPipeline->Shaders()) {
+        for (auto& shader : graphicPipeline->Shaders()) {
             auto samplerDescriptorSets = shader.SamplerDescriptorSets();
 
             if (samplerDescriptorSets.size() == 3) {
@@ -38,7 +38,7 @@ namespace vzt {
             }
         }
 
-        auto descriptorTypes = m_graphicPipeline->DescriptorTypes();
+        auto descriptorTypes = graphicPipeline->DescriptorTypes();
         auto poolSizes = std::vector<VkDescriptorPoolSize>(descriptorTypes.size());
 
         for (std::size_t i = 0; i < descriptorTypes.size(); i++) {
@@ -56,7 +56,7 @@ namespace vzt {
             throw std::runtime_error("Failed to create descriptor pool!");
         }
 
-        auto layouts = std::vector<VkDescriptorSetLayout>(m_imageCount, m_graphicPipeline->DescriptorSetLayout());
+        auto layouts = std::vector<VkDescriptorSetLayout>(m_imageCount, graphicPipeline->DescriptorSetLayout());
         VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
         descriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         descriptorSetAllocInfo.descriptorPool = m_descriptorPool;
@@ -95,7 +95,6 @@ namespace vzt {
         std::swap(m_uniformRanges, other.m_uniformRanges);
         m_descriptorPool = std::exchange(other.m_descriptorPool, static_cast<decltype(m_descriptorPool)>(VK_NULL_HANDLE));        std::swap(m_descriptorSets, other.m_descriptorSets);
         std::swap(m_uniformBuffers, other.m_uniformBuffers);
-        std::swap(m_graphicPipeline, other.m_graphicPipeline);
     }
 
     RenderTarget& RenderTarget::operator=(RenderTarget&& other)  noexcept {
@@ -108,20 +107,19 @@ namespace vzt {
         std::swap(m_descriptorPool, other.m_descriptorPool);
         std::swap(m_descriptorSets, other.m_descriptorSets);
         std::swap(m_uniformBuffers, other.m_uniformBuffers);
-        std::swap(m_graphicPipeline, other.m_graphicPipeline);
 
         return *this;
     }
 
-    void RenderTarget::Render(VkCommandBuffer commandBuffer, uint32_t imageCount) {
-        m_graphicPipeline->Bind(commandBuffer);
+    void RenderTarget::Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount) {
+        graphicPipeline->Bind(commandBuffer);
         VkBuffer vertexBuffers[] = { m_vertexBuffer->VkHandle() };
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(commandBuffer, m_indexBuffer->VkHandle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->Layout(), 0, 1, &m_descriptorSets[imageCount], 0, nullptr);
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline->Layout(), 0, 1, &m_descriptorSets[imageCount], 0, nullptr);
 
-        vkCmdPushConstants(commandBuffer, m_graphicPipeline->Layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
+        vkCmdPushConstants(commandBuffer, graphicPipeline->Layout(), VK_SHADER_STAGE_VERTEX_BIT, 0,
                            sizeof(vzt::Transforms), &m_currentPushConstants);
 
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indexBuffer->Size()), 1, 0, 0, 0);

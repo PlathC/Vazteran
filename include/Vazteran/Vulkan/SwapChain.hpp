@@ -3,7 +3,6 @@
 
 #include <chrono>
 #include <iostream>
-#include <functional>
 #include <unordered_set>
 #include <vector>
 
@@ -20,23 +19,14 @@
 #include "Vazteran/Vulkan/ImageUtils.hpp"
 
 namespace vzt {
+    class CommandPool;
     class GraphicPipeline;
     class LogicalDevice;
-
-    using RenderFunction = std::function<void(VkCommandBuffer, uint32_t)>;
-
-    struct FrameComponent {
-        VkCommandBuffer commandBuffer;
-        VkImage colorImage;
-        VkImageView colorImageView;
-
-        vzt::FrameBuffer frameBuffer;
-    };
 
     class SwapChain {
     public:
         SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize,
-                  vzt::RenderFunction renderFunction);
+                  CommandPool* commandPool, uint32_t maxFrameInFlight);
 
         SwapChain(const SwapChain&) = delete;
         SwapChain& operator=(const SwapChain&) = delete;
@@ -46,7 +36,6 @@ namespace vzt {
 
         bool DrawFrame();
         void Recreate(VkSurfaceKHR surface);
-        void UpdateCommandBuffers();
         void FrameBufferResized(vzt::Size2D<int> newSize);
         vzt::Size2D<int> FrameBufferSize() const;
         GraphicPipeline* Pipeline() { return m_graphicPipelines[0].get(); }
@@ -57,14 +46,12 @@ namespace vzt {
     private:
         void CreateSwapChain();
         void CreateDepthResources();
-        void CreateCommandBuffers();
-        void RecordCommandBuffer(VkCommandBuffer& commandBuffer, const FrameBuffer& frameBuffer, uint32_t imageCount);
+        void CreateRenderSupport();
         void CreateSynchronizationObjects();
 
-        void CleanCommandBuffers();
         void Cleanup();
 
-        constexpr static int MaxFramesInFlight = 2;
+        uint32_t m_maxFrameInFlight;
 
         static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
         VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
@@ -83,16 +70,15 @@ namespace vzt {
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
 
-        VkCommandPool m_commandPool;
+        // Might requires to be changed to std::reference_wrapper<vzt::CommandPool>
+        vzt::CommandPool* m_commandPool;
         std::vector<VkSemaphore> m_imageAvailableSemaphores;
         std::vector<VkSemaphore> m_renderFinishedSemaphores;
         std::vector<VkFence> m_inFlightFences;
         std::vector<VkFence> m_imagesInFlight;
 
-        std::vector<FrameComponent> m_frames;
+        std::vector<vzt::FrameBuffer> m_frames;
         std::unique_ptr<vzt::ImageHandler> m_depthImage;
-
-        vzt::RenderFunction m_renderFunction;
     };
 }
 

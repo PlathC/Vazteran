@@ -13,14 +13,11 @@ namespace vzt {
                 m_renderer->FrameBufferResized(m_window->FrameBufferSize());
             }
         });
+
         m_instance = std::make_unique<vzt::Instance>(name, m_window->VkExtensions());
 
-        m_models.emplace_back(std::make_unique<vzt::Model>("./samples/TheCrounchingBoy.obj"));
-        // m_models[0]->Mat().diffuseMap = vzt::Image("./samples/viking_room.png");
-        // m_models[0]->Mat().ambientMap = vzt::Image("./samples/viking_room.png");
-        // m_models[0]->Mat().specularMap = vzt::Image("./samples/viking_room.png");
-
         auto size = m_window->FrameBufferSize();
+        m_models.emplace_back(std::make_unique<vzt::Model>("./samples/TheCrounchingBoy.obj"));
         vzt::Camera camera = Camera::FromModel(*m_models[0], size.width / static_cast<float>(size.height));
 
         m_renderer = std::make_unique<vzt::Renderer>(

@@ -163,6 +163,7 @@ set(HEADERS
         include/Vazteran/Data/Types.hpp
         include/Vazteran/Vulkan/Buffer.hpp
         include/Vazteran/Vulkan/Buffer.inl
+        include/Vazteran/Vulkan/CommandPool.hpp
         include/Vazteran/Vulkan/FrameBuffer.hpp
         include/Vazteran/Vulkan/GpuObjects.hpp
         include/Vazteran/Vulkan/GraphicPipeline.hpp
@@ -187,6 +188,7 @@ set(SOURCES
         src/Vazteran/Data/Material.cpp
         src/Vazteran/Data/Model.cpp
         src/Vazteran/Data/Types.cpp
+        src/Vazteran/Vulkan/CommandPool.cpp
         src/Vazteran/Vulkan/Instance.cpp
         src/Vazteran/Vulkan/GraphicPipeline.cpp
         src/Vazteran/Vulkan/ImageUtils.cpp
