@@ -82,7 +82,7 @@ namespace vzt {
     Instance::Instance(Instance&& other) noexcept {
         m_handle = std::exchange(other.m_handle, static_cast<decltype(m_handle)>(VK_NULL_HANDLE));
         m_debugMessenger = std::exchange(other.m_debugMessenger, static_cast<decltype(m_debugMessenger)>(VK_NULL_HANDLE));
-        m_validationLayers = std::exchange(other.m_validationLayers, static_cast<decltype(m_validationLayers)>(VK_NULL_HANDLE));
+        m_validationLayers = std::exchange(other.m_validationLayers, {});
     }
 
     Instance& Instance::operator=(Instance&& other) noexcept {
