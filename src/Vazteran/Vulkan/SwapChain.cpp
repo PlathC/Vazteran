@@ -22,9 +22,8 @@ namespace vzt {
         m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));m_currentFrame = std::exchange(other.m_currentFrame, 0);
         m_framebufferResized = std::exchange(other.m_framebufferResized, false);
         m_frameBufferSize = std::exchange(other.m_frameBufferSize, {});
-        m_swapChainImageFormat = std::exchange(other.m_swapChainImageFormat, static_cast<decltype(m_swapChainImageFormat)>(VK_NULL_HANDLE));
+        std::exchange(m_swapChainImageFormat, other.m_swapChainImageFormat);
         m_commandPool = std::exchange(other.m_commandPool, static_cast<decltype(m_commandPool)>(VK_NULL_HANDLE));
-        // m_descriptorPool = std::exchange(other.m_descriptorPool, static_cast<decltype(m_descriptorPool)>(VK_NULL_HANDLE));
         m_depthImage = std::exchange(other.m_depthImage, nullptr);
 
         std::swap(m_surface, other.m_surface);
@@ -142,7 +141,7 @@ namespace vzt {
                 vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
             }
 
-            RecordCommandBuffer(m_frames[i].commandBuffer, m_frames[i].frameBuffer, i);
+            RecordCommandBuffer(m_frames[i].commandBuffer, m_frames[i].frameBuffer, static_cast<uint32_t>(i));
         }
     }
 
@@ -273,7 +272,7 @@ namespace vzt {
                                                 std::vector<VkImageView>({ handle, m_depthImage->imageView.VkHandle() }),
                                                 m_swapChainExtent.width, m_swapChainExtent.height);
 
-            RecordCommandBuffer(commandsBuffers[i], frameBuffer, i);
+            RecordCommandBuffer(commandsBuffers[i], frameBuffer, static_cast<uint32_t>(i));
 
             m_frames.emplace_back( FrameComponent{
                     commandsBuffers[i], swapChainImages[i], handle,
