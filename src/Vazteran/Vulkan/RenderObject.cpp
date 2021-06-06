@@ -1,9 +1,9 @@
 #include "Vazteran/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Vulkan/RenderTarget.hpp"
+#include "Vazteran/Vulkan/RenderObject.hpp"
 
 namespace vzt {
-    RenderTarget::RenderTarget(vzt::LogicalDevice* logicalDevice, vzt::GraphicPipeline* graphicPipeline,
-                                   const vzt::Model& model, uint32_t imageCount):
+    RenderObject::RenderObject(vzt::LogicalDevice* logicalDevice, vzt::GraphicPipeline* graphicPipeline,
+                               const vzt::Model& model, uint32_t imageCount):
             m_imageCount(imageCount), m_logicalDevice(logicalDevice) {
 
         for (auto& shader : graphicPipeline->Shaders()) {
@@ -86,7 +86,7 @@ namespace vzt {
         });
     }
 
-    RenderTarget::RenderTarget(RenderTarget&& other) noexcept {
+    RenderObject::RenderObject(RenderObject&& other) noexcept {
         std::swap(m_imageCount, other.m_imageCount);
         std::swap(m_logicalDevice, other.m_logicalDevice);
         std::swap(m_vertexBuffer, other.m_vertexBuffer);
@@ -97,7 +97,7 @@ namespace vzt {
         std::swap(m_uniformBuffers, other.m_uniformBuffers);
     }
 
-    RenderTarget& RenderTarget::operator=(RenderTarget&& other)  noexcept {
+    RenderObject& RenderObject::operator=(RenderObject&& other)  noexcept {
         std::swap(m_imageCount, other.m_imageCount);
         std::swap(m_logicalDevice, other.m_logicalDevice);
         std::swap(m_vertexBuffer, other.m_vertexBuffer);
@@ -111,7 +111,7 @@ namespace vzt {
         return *this;
     }
 
-    void RenderTarget::Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount) {
+    void RenderObject::Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount) {
         graphicPipeline->Bind(commandBuffer);
         VkBuffer vertexBuffers[] = { m_vertexBuffer->VkHandle() };
         VkDeviceSize offsets[] = {0};
@@ -125,7 +125,7 @@ namespace vzt {
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(m_indexBuffer->Size()), 1, 0, 0, 0);
     }
 
-    void RenderTarget::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer) {
+    void RenderObject::UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer) {
         auto descriptorWrites = std::vector<VkWriteDescriptorSet>();
         auto descriptorBufferInfo = std::vector<VkDescriptorBufferInfo>(m_uniformRanges.size());
         std::size_t i = 0;
@@ -169,18 +169,18 @@ namespace vzt {
     }
 
     //TODO: Use template and more optimized synchronization behaviour
-    void RenderTarget::UpdateUniform(const vzt::MaterialInfo& materialInfo) {
+    void RenderObject::UpdateUniform(const vzt::MaterialInfo& materialInfo) {
         vkDeviceWaitIdle(m_logicalDevice->VkHandle());
         for (auto& uniformBuffer: m_uniformBuffers) {
             uniformBuffer.Update<vzt::MaterialInfo>({materialInfo});
         }
     }
 
-    void RenderTarget::UpdatePushConstants(const vzt::Transforms& objectData) {
+    void RenderObject::UpdatePushConstants(const vzt::Transforms& objectData) {
         m_currentPushConstants = objectData;
     }
 
-    RenderTarget::~RenderTarget() {
+    RenderObject::~RenderObject() {
         if (m_descriptorPool != VK_NULL_HANDLE)
             vkDestroyDescriptorPool(m_logicalDevice->VkHandle(), m_descriptorPool, nullptr);
     }

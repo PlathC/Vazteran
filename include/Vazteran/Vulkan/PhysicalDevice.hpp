@@ -35,6 +35,7 @@ namespace vzt {
         VkFormat FindDepthFormat();
         VkFormat FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
                                      VkFormatFeatureFlags features);
+        VkSampleCountFlagBits MaxUsableSampleCount();
 
         ~PhysicalDevice();
 
@@ -53,6 +54,7 @@ namespace vzt {
     static SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
     static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
     static bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions);
+    VkSampleCountFlagBits MaxUsableSampleCount(VkPhysicalDevice physicalDevice);
 }
 
 #endif //VAZTERAN_PHYSICALDEVICE_HPP

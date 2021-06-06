@@ -23,7 +23,7 @@ namespace vzt {
         for(auto& model: models) {
             m_targets.emplace_back(ModelRenderTarget{
                     model,
-                    vzt::RenderTarget(m_logicalDevice.get(), m_swapChain->Pipeline(), *model, m_swapChain->ImageCount())
+                    vzt::RenderObject(m_logicalDevice.get(), m_swapChain->Pipeline(), *model, m_swapChain->ImageCount())
             });
         }
     }
@@ -65,7 +65,7 @@ namespace vzt {
         m_swapChain->Recreate(m_surface);
 
         for(auto& target: m_targets) {
-            target.vkTarget = vzt::RenderTarget(m_logicalDevice.get(), m_swapChain->Pipeline(), *target.model, m_swapChain->ImageCount());
+            target.vkTarget = vzt::RenderObject(m_logicalDevice.get(), m_swapChain->Pipeline(), *target.model, m_swapChain->ImageCount());
         }
     }
 }

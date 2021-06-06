@@ -26,8 +26,9 @@ namespace vzt {
 
         void CreateBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize size, VkBufferUsageFlags usage,
                           VkMemoryPropertyFlags properties);
-        void CreateImage(VkImage& image, VkDeviceMemory& imageMemory, uint32_t width, uint32_t height, VkFormat format,
-                         VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
+        void CreateImage(VkImage& image, VkDeviceMemory& imageMemory, uint32_t width, uint32_t height,
+                         VkFormat format, VkSampleCountFlagBits numSamples, VkImageTiling tiling,
+                         VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
         VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
 
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);

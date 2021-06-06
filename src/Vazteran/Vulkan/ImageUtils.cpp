@@ -24,7 +24,7 @@ namespace vzt {
 
         m_logicalDevice->CreateImage(
                 m_vkImage, m_deviceMemory, image.Width(), image.Height(),
-                format, VK_IMAGE_TILING_OPTIMAL,
+                format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
@@ -63,7 +63,7 @@ namespace vzt {
     ImageView::ImageView(LogicalDevice* logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
                          VkImageAspectFlags aspectFlags, VkImageLayout layout):
             m_logicalDevice(logicalDevice){
-        m_logicalDevice->CreateImage(m_vkImage, m_deviceMemory, size.width, size.height, format,
+        m_logicalDevice->CreateImage(m_vkImage, m_deviceMemory, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
                                      VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         m_vkHandle = m_logicalDevice->CreateImageView(m_vkImage, format, aspectFlags);
         m_logicalDevice->TransitionImageLayout( m_vkImage, format,VK_IMAGE_LAYOUT_UNDEFINED, layout,

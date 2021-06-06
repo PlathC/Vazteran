@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_RENDERTARGET_HPP
-#define VAZTERAN_RENDERTARGET_HPP
+#ifndef VAZTERAN_RENDEROBJECT_HPP
+#define VAZTERAN_RENDEROBJECT_HPP
 
 #include <vulkan/vulkan.h>
 
@@ -11,23 +11,23 @@ namespace vzt {
     class GraphicPipeline;
     class LogicalDevice;
 
-    class RenderTarget {
+    class RenderObject {
     public:
-        RenderTarget(vzt::LogicalDevice* logicalDevice, vzt::GraphicPipeline* graphicPipeline,
-                       const vzt::Model& model, uint32_t imageCount);
+        RenderObject(vzt::LogicalDevice* logicalDevice, vzt::GraphicPipeline* graphicPipeline,
+                     const vzt::Model& model, uint32_t imageCount);
 
-        RenderTarget(const RenderTarget&) = delete;
-        RenderTarget& operator=(const RenderTarget&) = delete;
+        RenderObject(const RenderObject&) = delete;
+        RenderObject& operator=(const RenderObject&) = delete;
 
-        RenderTarget(RenderTarget&& other) noexcept;
-        RenderTarget& operator=(RenderTarget&& other) noexcept;
+        RenderObject(RenderObject&& other) noexcept;
+        RenderObject& operator=(RenderObject&& other) noexcept;
 
         void Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount);
         void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer);
         void UpdateUniform(const vzt::MaterialInfo& materialInfo);
         void UpdatePushConstants(const vzt::Transforms& objectData);
 
-        ~RenderTarget();
+        ~RenderObject();
 
     private:
         uint32_t m_imageCount{};
@@ -45,4 +45,4 @@ namespace vzt {
     };
 }
 
-#endif //VAZTERAN_RENDERTARGET_HPP
+#endif //VAZTERAN_RENDEROBJECT_HPP
