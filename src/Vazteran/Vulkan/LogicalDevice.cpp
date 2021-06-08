@@ -239,7 +239,7 @@ namespace vzt {
         });
     }
 
-    void LogicalDevice::SingleTimeCommand(vzt::SingleTimeCommandFunction singleTimeCommandFunction) {
+    void LogicalDevice::SingleTimeCommand(const vzt::SingleTimeCommandFunction& singleTimeCommandFunction) {
         VkCommandPool transferCommandPool;
 
         VkCommandPoolCreateInfo poolInfo{};
