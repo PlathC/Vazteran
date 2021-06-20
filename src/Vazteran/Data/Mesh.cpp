@@ -86,34 +86,6 @@ namespace vzt {
                             };
                         }
 
-                        if (m_vertices.empty()) {
-                            m_aabb.minimum = m_aabb.maximum = vertex.position;
-                        } else {
-                            if (vertex.position.x < m_aabb.minimum.x) {
-                                m_aabb.minimum.x = vertex.position.x;
-                            }
-
-                            if (vertex.position.y < m_aabb.minimum.y) {
-                                m_aabb.minimum.y = vertex.position.y;
-                            }
-
-                            if (vertex.position.z < m_aabb.minimum.z) {
-                                m_aabb.minimum.z = vertex.position.z;
-                            }
-
-                            if (vertex.position.x > m_aabb.maximum.x) {
-                                m_aabb.maximum.x = vertex.position.x;
-                            }
-
-                            if (vertex.position.y > m_aabb.maximum.y) {
-                                m_aabb.maximum.y = vertex.position.y;
-                            }
-
-                            if (vertex.position.z > m_aabb.maximum.z) {
-                                m_aabb.maximum.z = vertex.position.z;
-                            }
-                        }
-
                         m_vertices.emplace_back(vertex);
                     }
                     subMeshVertexIndices.push_back(tinyObjToVazteranVertexIndices[index.vertex_index]);
@@ -126,23 +98,13 @@ namespace vzt {
             m_subMeshes.push_back({tinyObjToVazteranMaterialIndices[materialId], subMeshVertexIndices});
         }
 
-        m_aabb.vertices = std::array<glm::vec3, 8>{
-                // Bottom
-                glm::vec3{ m_aabb.minimum.x, m_aabb.minimum.y, m_aabb.minimum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.minimum.y, m_aabb.minimum.z },
-                glm::vec3{ m_aabb.minimum.x, m_aabb.maximum.y, m_aabb.minimum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.maximum.y, m_aabb.minimum.z },
-
-                // Top
-                glm::vec3{ m_aabb.minimum.x, m_aabb.minimum.y, m_aabb.maximum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.minimum.y, m_aabb.maximum.z },
-                glm::vec3{ m_aabb.minimum.x, m_aabb.maximum.y, m_aabb.maximum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.maximum.y, m_aabb.maximum.z },
-        };
+        m_aabb = vzt::AABB(m_vertices);
     }
 
-    Mesh::Mesh(const std::vector<vzt::Vertex>& vertices, const std::vector<uint32_t> vertexIndices,
-         const vzt::Material& material) {
+    Mesh::Mesh(std::vector<vzt::Vertex> vertices, std::vector<uint32_t> vertexIndices, const vzt::Material& material):
+        m_subMeshes({ vzt::SubMesh{ 0, std::move(vertexIndices) } }),
+        m_vertices(std::move(vertices)),
+        m_materials({ material }){
 
     }
 
@@ -151,8 +113,8 @@ namespace vzt {
                std::vector<vzt::Material> materials) :
             m_subMeshes(std::move(subMeshes)),
             m_vertices(std::move(vertices)),
-            m_materials(std::move(materials)) {
-        ComputeBoundingBox();
+            m_materials(std::move(materials)),
+            m_aabb(m_vertices) {
     }
 
     std::vector<std::vector<uint32_t>> Mesh::VertexIndices() const {
@@ -172,53 +134,4 @@ namespace vzt {
         return indices;
     }
 
-    std::vector<vzt::Vertex> Mesh::Vertices() const {
-        return m_vertices;
-    }
-
-    std::vector<vzt::Material> Mesh::Materials() const {
-        return m_materials;
-    }
-
-    void Mesh::ComputeBoundingBox() {
-        for (const auto& vertex: m_vertices) {
-            if (vertex.position.x < m_aabb.minimum.x) {
-                m_aabb.minimum.x = vertex.position.x;
-            }
-
-            if (vertex.position.y < m_aabb.minimum.y) {
-                m_aabb.minimum.y = vertex.position.y;
-            }
-
-            if (vertex.position.z < m_aabb.minimum.z) {
-                m_aabb.minimum.z = vertex.position.z;
-            }
-
-            if (vertex.position.x > m_aabb.maximum.x) {
-                m_aabb.maximum.x = vertex.position.x;
-            }
-
-            if (vertex.position.y > m_aabb.maximum.y) {
-                m_aabb.maximum.y = vertex.position.y;
-            }
-
-            if (vertex.position.z > m_aabb.maximum.z) {
-                m_aabb.maximum.z = vertex.position.z;
-            }
-        }
-
-        m_aabb.vertices = std::array<glm::vec3, 8>{
-                // Bottom
-                glm::vec3{ m_aabb.minimum.x, m_aabb.minimum.y, m_aabb.minimum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.minimum.y, m_aabb.minimum.z },
-                glm::vec3{ m_aabb.minimum.x, m_aabb.maximum.y, m_aabb.minimum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.maximum.y, m_aabb.minimum.z },
-
-                // Top
-                glm::vec3{ m_aabb.minimum.x, m_aabb.minimum.y, m_aabb.maximum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.minimum.y, m_aabb.maximum.z },
-                glm::vec3{ m_aabb.minimum.x, m_aabb.maximum.y, m_aabb.maximum.z },
-                glm::vec3{ m_aabb.maximum.x, m_aabb.maximum.y, m_aabb.maximum.z },
-        };
-    }
 }

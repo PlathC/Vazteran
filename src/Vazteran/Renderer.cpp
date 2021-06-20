@@ -15,40 +15,33 @@ namespace vzt {
         );
 
         m_commandPool.SetRenderFunction([&](VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount) {
-            for (auto& target: m_targets){
-                target.vkTarget->Render(commandBuffer, graphicPipeline, imageCount);
+            for (auto& object: m_objects){
+                object->Render(commandBuffer, graphicPipeline, imageCount);
             }
         });
 
         for(auto& model: models) {
-            auto renderObject = std::make_unique<vzt::RenderObject>(m_logicalDevice.get(), m_swapChain->Pipeline(), *model, m_swapChain->ImageCount());
-            ModelRenderTarget target = { model, std::move(renderObject) };
-            m_targets.emplace_back(std::move(target));
+            auto renderObject = std::make_unique<vzt::RenderObject>(m_logicalDevice.get(), m_swapChain->Pipeline(), model, m_swapChain->ImageCount());
+            m_objects.emplace_back(std::move(renderObject));
         }
     }
 
     void Renderer::Draw() {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-        for (auto& target: m_targets) {
-            target.model->Rotation() = time * glm::radians(45.0f) * glm::vec3(0.0f, 0.0f, 1.0f);
-            auto modelMatrix = target.model->ModelMatrix();
+        for (auto& object: m_objects) {
+            auto modelMatrix = object->Model()->ModelMatrix();
             auto viewMatrix = m_camera.View();
             auto projectionMatrix = m_camera.Projection();
             vzt::Transforms transforms {
                     modelMatrix,
                     viewMatrix,
                     projectionMatrix,
-
                     m_camera.position
             };
 
             transforms.projection[1][1] *= -1;
             transforms.viewPosition = m_camera.position;
 
-            target.vkTarget->UpdatePushConstants(transforms);
+            object->UpdatePushConstants(transforms);
         }
 
         if(m_swapChain->DrawFrame()) {
@@ -62,9 +55,5 @@ namespace vzt {
     void Renderer::FrameBufferResized(vzt::Size2D<int> newSize) {
         m_swapChain->FrameBufferResized(newSize);
         m_swapChain->Recreate(m_surface);
-
-        for(auto& target: m_targets) {
-            target.vkTarget = std::make_unique<vzt::RenderObject>(m_logicalDevice.get(), m_swapChain->Pipeline(), *target.model, m_swapChain->ImageCount());
-        }
     }
 }

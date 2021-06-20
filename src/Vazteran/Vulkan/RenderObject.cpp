@@ -2,9 +2,9 @@
 #include "Vazteran/Vulkan/RenderObject.hpp"
 
 namespace vzt {
-    RenderObject::RenderObject(vzt::LogicalDevice *logicalDevice, vzt::GraphicPipeline *graphicPipeline,
-                               const vzt::Model &model, uint32_t imageCount) :
-            m_imageCount(imageCount), m_logicalDevice(logicalDevice) {
+    RenderObject::RenderObject(vzt::LogicalDevice* logicalDevice, vzt::GraphicPipeline* graphicPipeline,
+                               vzt::Model* model, uint32_t imageCount) :
+            m_imageCount(imageCount), m_logicalDevice(logicalDevice), m_model(model) {
 
         // Create descriptor pools
         auto descriptorTypes = graphicPipeline->DescriptorTypes();
@@ -16,12 +16,12 @@ namespace vzt {
         }
 
         // Use one vertex buffer for the whole mesh
-        m_vertexBuffer = std::make_unique<vzt::VertexBuffer>(logicalDevice, model.CMesh().Vertices(),
+        m_vertexBuffer = std::make_unique<vzt::VertexBuffer>(logicalDevice, model->CMesh().CVertices(),
                                                              VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
         // Handle submesh indices
-        auto subMeshRawIndices = model.CMesh().VertexIndices();
-        auto subMeshMaterialIndices = model.CMesh().MaterialIndices();
+        auto subMeshRawIndices = model->CMesh().VertexIndices();
+        auto subMeshMaterialIndices = model->CMesh().MaterialIndices();
         std::vector<uint32_t> indices;
         indices.reserve(subMeshRawIndices.size());
         for (std::size_t i = 0; i < subMeshRawIndices.size(); i++) {
@@ -35,7 +35,7 @@ namespace vzt {
         m_subMeshesIndexBuffer = std::make_unique<vzt::IndexBuffer>(logicalDevice, indices,
                                                                     VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
-        auto materials = model.CMesh().Materials();
+        auto materials = model->CMesh().CMaterials();
         m_descriptorPools.resize(materials.size());
         for (auto &shader : graphicPipeline->Shaders()) {
             auto uniformDescriptorSets = shader.UniformDescriptorSets();

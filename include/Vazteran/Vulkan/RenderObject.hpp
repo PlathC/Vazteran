@@ -15,13 +15,15 @@ namespace vzt {
     class RenderObject {
     public:
         RenderObject(vzt::LogicalDevice* logicalDevice, vzt::GraphicPipeline* graphicPipeline,
-                     const vzt::Model& model, uint32_t imageCount);
+                     vzt::Model* model, uint32_t imageCount);
 
         RenderObject(const RenderObject&) = delete;
         RenderObject& operator=(const RenderObject&) = delete;
 
         RenderObject(RenderObject&& other) noexcept = default;
         RenderObject& operator=(RenderObject&& other) noexcept = default;
+
+        vzt::Model* Model() const { return m_model; }
 
         void Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount);
         void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer,
@@ -33,6 +35,7 @@ namespace vzt {
     private:
         uint32_t m_imageCount{};
         LogicalDevice* m_logicalDevice = nullptr;
+        vzt::Model* m_model;
 
         std::unique_ptr<vzt::VertexBuffer> m_vertexBuffer;
 

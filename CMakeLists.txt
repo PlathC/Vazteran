@@ -156,6 +156,7 @@ set(HEADERS
         include/Vazteran/Renderer.hpp
         include/Vazteran/Utils.hpp
         include/Vazteran/Window.hpp
+        include/Vazteran/Data/Aabb.hpp
         include/Vazteran/Data/Camera.hpp
         include/Vazteran/Data/Image.hpp
         include/Vazteran/Data/Material.hpp
@@ -185,6 +186,7 @@ set(SOURCES
         src/Vazteran/Renderer.cpp
         src/Vazteran/Utils.cpp
         src/Vazteran/Window.cpp
+        src/Vazteran/Data/Aabb.cpp
         src/Vazteran/Data/Camera.cpp
         src/Vazteran/Data/Image.cpp
         src/Vazteran/Data/Material.cpp
