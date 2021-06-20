@@ -18,6 +18,8 @@ The engine can now load 3D models and present it with an hardcoded phong that wi
 
 ![](./readmefiles/MultipleObject.png)
 
+![](./readmefiles/Sponza.png)
+
 ## Samples 
 
 - [The Crounching Boy](https://www.myminifactory.com/object/3d-print-the-crouching-boy-104413)
