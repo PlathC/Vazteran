@@ -16,15 +16,14 @@ namespace vzt {
 
         m_commandPool.SetRenderFunction([&](VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount) {
             for (auto& target: m_targets){
-                target.vkTarget.Render(commandBuffer, graphicPipeline, imageCount);
+                target.vkTarget->Render(commandBuffer, graphicPipeline, imageCount);
             }
         });
 
         for(auto& model: models) {
-            m_targets.emplace_back(ModelRenderTarget{
-                    model,
-                    vzt::RenderObject(m_logicalDevice.get(), m_swapChain->Pipeline(), *model, m_swapChain->ImageCount())
-            });
+            auto renderObject = std::make_unique<vzt::RenderObject>(m_logicalDevice.get(), m_swapChain->Pipeline(), *model, m_swapChain->ImageCount());
+            ModelRenderTarget target = { model, std::move(renderObject) };
+            m_targets.emplace_back(std::move(target));
         }
     }
 
@@ -49,7 +48,7 @@ namespace vzt {
             transforms.projection[1][1] *= -1;
             transforms.viewPosition = m_camera.position;
 
-            target.vkTarget.UpdatePushConstants(transforms);
+            target.vkTarget->UpdatePushConstants(transforms);
         }
 
         if(m_swapChain->DrawFrame()) {
@@ -65,7 +64,7 @@ namespace vzt {
         m_swapChain->Recreate(m_surface);
 
         for(auto& target: m_targets) {
-            target.vkTarget = vzt::RenderObject(m_logicalDevice.get(), m_swapChain->Pipeline(), *target.model, m_swapChain->ImageCount());
+            target.vkTarget = std::make_unique<vzt::RenderObject>(m_logicalDevice.get(), m_swapChain->Pipeline(), *target.model, m_swapChain->ImageCount());
         }
     }
 }

@@ -40,7 +40,7 @@ namespace vzt {
         // std::unique_ptr<vzt::Model> m_model;
         struct ModelRenderTarget {
             vzt::Model* model;
-            vzt::RenderObject vkTarget;
+            std::unique_ptr<vzt::RenderObject> vkTarget;
         };
         std::vector<ModelRenderTarget> m_targets;
 

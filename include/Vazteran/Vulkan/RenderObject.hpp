@@ -1,6 +1,7 @@
 #ifndef VAZTERAN_RENDEROBJECT_HPP
 #define VAZTERAN_RENDEROBJECT_HPP
 
+#include <vector>
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Data/Model.hpp"
@@ -19,12 +20,12 @@ namespace vzt {
         RenderObject(const RenderObject&) = delete;
         RenderObject& operator=(const RenderObject&) = delete;
 
-        RenderObject(RenderObject&& other) noexcept;
-        RenderObject& operator=(RenderObject&& other) noexcept;
+        RenderObject(RenderObject&& other) noexcept = default;
+        RenderObject& operator=(RenderObject&& other) noexcept = default;
 
         void Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount);
-        void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer);
-        void UpdateUniform(const vzt::MaterialInfo& materialInfo);
+        void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer,
+                                 const std::unordered_map<uint32_t, vzt::ImageHandler>& textureHandlers);
         void UpdatePushConstants(const vzt::Transforms& objectData);
 
         ~RenderObject();
@@ -33,14 +34,27 @@ namespace vzt {
         uint32_t m_imageCount{};
         LogicalDevice* m_logicalDevice = nullptr;
 
-        std::unique_ptr<VertexBuffer> m_vertexBuffer;
-        std::unique_ptr<IndexBuffer> m_indexBuffer;
-        std::unordered_map<uint32_t, ImageHandler> m_textureHandlers;
+        std::unique_ptr<vzt::VertexBuffer> m_vertexBuffer;
+
+        struct SubMeshData {
+            uint32_t materialDataIndex;
+            uint32_t minOffset;
+            uint32_t maxOffset;
+        };
+        std::vector<SubMeshData> m_subMeshData;
+        std::unique_ptr<vzt::IndexBuffer> m_subMeshesIndexBuffer;
         std::unordered_map<uint32_t, uint32_t> m_uniformRanges;
 
-        VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
-        std::vector<VkDescriptorSet> m_descriptorSets;
-        std::vector<vzt::Buffer<vzt::MaterialInfo>> m_uniformBuffers;
+        struct MaterialData {
+            std::unordered_map<uint32_t, vzt::ImageHandler> textureHandlers;
+            std::vector<VkDescriptorSet> descriptorSets;
+
+            // TODO: Use a single buffer + offset
+            std::vector<vzt::Buffer<vzt::MaterialInfo>> uniformBuffers;
+        };
+        std::vector<std::unique_ptr<MaterialData>> m_materialData;
+
+        std::vector<VkDescriptorPool> m_descriptorPools;
         vzt::Transforms m_currentPushConstants{};
     };
 }

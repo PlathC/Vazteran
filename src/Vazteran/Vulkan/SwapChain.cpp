@@ -246,7 +246,6 @@ namespace vzt {
         }
     }
 
-
     void SwapChain::CreateSynchronizationObjects() {
         m_imageAvailableSemaphores.resize(m_maxFrameInFlight);
         m_renderFinishedSemaphores.resize(m_maxFrameInFlight);
@@ -267,7 +266,6 @@ namespace vzt {
             }
         }
     }
-
 
     void SwapChain::Cleanup() {
         for (std::size_t i = 0; i < m_frames.size(); i++) {
