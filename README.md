@@ -23,3 +23,4 @@ The engine can now load 3D models and present it with an hardcoded phong that wi
 ## Samples 
 
 - [The Crounching Boy](https://www.myminifactory.com/object/3d-print-the-crouching-boy-104413)
+- [Sponza by Marko Dabrovic](http://hdri.cgtechniques.com/~sponza/files/)
