@@ -16,7 +16,7 @@ The engine can now load 3D models and present it with an hardcoded phong that wi
 
 ![](./readmefiles/Texture.png)
 
-![](./readmefiles/Phong.png)
+![](./readmefiles/MultipleObject.png)
 
 ## Samples 
 

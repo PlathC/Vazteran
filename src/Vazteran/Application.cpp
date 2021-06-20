@@ -23,8 +23,9 @@ namespace vzt {
         boudingBoxes.emplace_back(m_models[0]->BoundingBox());
         for (uint32_t i = 0; i < 128; i++) {
             auto moved = std::make_unique<vzt::Model>(*m_models[0]);
-            moved->Position() += glm::sphericalRand(5.);
-            moved->Mesh().Materials()[0].ambientColor = glm::vec4(glm::sphericalRand(1.), 1.);
+            auto movement = glm::sphericalRand(5.f);
+            moved->Position() += movement;
+            moved->Mesh().Materials()[0].ambientColor = glm::vec4(movement / 5.f, 1.);
             boudingBoxes.emplace_back(moved->BoundingBox());
 
             m_models.emplace_back(std::move(moved));
