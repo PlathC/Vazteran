@@ -1,4 +1,5 @@
 #include <array>
+#include <stdexcept>
 
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/RenderPass.hpp"
