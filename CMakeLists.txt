@@ -156,10 +156,13 @@ set(HEADERS
         include/Vazteran/Renderer.hpp
         include/Vazteran/Utils.hpp
         include/Vazteran/Window.hpp
+        include/Vazteran/Data/Aabb.hpp
         include/Vazteran/Data/Camera.hpp
         include/Vazteran/Data/Image.hpp
         include/Vazteran/Data/Material.hpp
+        include/Vazteran/Data/Mesh.hpp
         include/Vazteran/Data/Model.hpp
+        include/Vazteran/Data/Vertex.hpp
         include/Vazteran/Data/Types.hpp
         include/Vazteran/Vulkan/Buffer.hpp
         include/Vazteran/Vulkan/Buffer.inl
@@ -183,10 +186,13 @@ set(SOURCES
         src/Vazteran/Renderer.cpp
         src/Vazteran/Utils.cpp
         src/Vazteran/Window.cpp
+        src/Vazteran/Data/Aabb.cpp
         src/Vazteran/Data/Camera.cpp
         src/Vazteran/Data/Image.cpp
         src/Vazteran/Data/Material.cpp
+        src/Vazteran/Data/Mesh.cpp
         src/Vazteran/Data/Model.cpp
+        src/Vazteran/Data/Vertex.cpp
         src/Vazteran/Data/Types.cpp
         src/Vazteran/Vulkan/CommandPool.cpp
         src/Vazteran/Vulkan/Instance.cpp

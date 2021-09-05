@@ -37,13 +37,7 @@ namespace vzt {
         std::unique_ptr<vzt::SwapChain> m_swapChain;
         vzt::CommandPool m_commandPool;
 
-        // std::unique_ptr<vzt::Model> m_model;
-        struct ModelRenderTarget {
-            vzt::Model* model;
-            vzt::RenderObject vkTarget;
-        };
-        std::vector<ModelRenderTarget> m_targets;
-
+        std::vector<std::unique_ptr<vzt::RenderObject>> m_objects;
         vzt::Camera m_camera;
     };
 }

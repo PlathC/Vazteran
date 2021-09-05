@@ -10,14 +10,16 @@
 
 namespace vzt {
     struct Material {
-        vzt::Image ambientMap;
-        vzt::Image diffuseMap;
-        vzt::Image specularMap;
+        vzt::Image ambientMap = vzt::Image({1.f, 1.f, 1.f, 1.f});
+        vzt::Image diffuseMap = vzt::Image({1.f, 1.f, 1.f, 1.f});
+        vzt::Image specularMap = vzt::Image({1.f, 1.f, 1.f, 1.f});;
 
-        vzt::Color ambientColor;
-        vzt::Color diffuseColor;
-        vzt::Color specularColor;
-        float shininess;
+        vzt::Color ambientColor = vzt::Color{  0.05f, 0.2f, 0.05f , 1.};
+        vzt::Color diffuseColor = vzt::Color{  0.3f,  0.5f, 0.3f  , 1.};
+        vzt::Color specularColor = vzt::Color{  0.6f,  0.6f, 0.6f  , 1.};
+        float shininess = 50.;
+
+        static const vzt::Material Default;
     };
 }
 

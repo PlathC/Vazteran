@@ -7,23 +7,16 @@ namespace fs = std::filesystem;
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Vazteran/Data/Material.hpp"
-#include "Vazteran/Vulkan/GpuObjects.hpp"
+#include "Vazteran/Data/Mesh.hpp"
+#include "Vazteran/Data/Vertex.hpp"
 
 namespace vzt {
-    struct AABB {
-        std::array<glm::vec3, 8> vertices;
-        glm::vec3 minimum = {0.f, 0.f, 0.f};
-        glm::vec3 maximum = {0.f, 0.f, 0.f};
-    };
-
     class Model {
     public:
         Model(const fs::path& modelPath);
-        const std::vector<Vertex>& Vertices() const { return m_vertices; }
-        const std::vector<uint32_t>& Indices() const { return m_indices; }
-        const vzt::Material& CMat() const { return m_material; }
-        vzt::Material& Mat() { return m_material; }
         vzt::AABB BoundingBox() const;
+        vzt::Mesh& Mesh() { return m_mesh; };
+        const vzt::Mesh& CMesh() const { return m_mesh; };
 
         glm::mat4 ModelMatrix() const;
         glm::vec3& Rotation() { return m_rotation; }
@@ -32,14 +25,10 @@ namespace vzt {
         glm::vec3 CPosition() const { return m_position; }
 
     private:
-        std::vector<vzt::Vertex> m_vertices;
-        std::vector<uint32_t> m_indices;
-        vzt::Material m_material;
+        vzt::Mesh m_mesh;
 
         glm::vec3 m_position = {0.f, 0.f, 0.f};
         glm::vec3 m_rotation = {0.f, 0.f, 0.f};
-
-        vzt::AABB m_aabb{};
     };
 }
 

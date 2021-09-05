@@ -13,12 +13,11 @@ layout(binding = 1) uniform sampler2D objectAmbientMap;
 layout(binding = 2) uniform sampler2D objectDiffuseMap;
 layout(binding = 3) uniform sampler2D objectSpecularMap;
 
-layout(location = 0) in vec3 fragmentColor;
-layout(location = 1) in vec3 fragmentPosition;
-layout(location = 2) in vec2 fragmentTextureCoordinates;
-layout(location = 3) in vec3 normal;
-layout(location = 4) in vec3 viewPosition;
-layout(location = 5) in vec3 vertPosition;
+layout(location = 0) in vec3 fragmentPosition;
+layout(location = 1) in vec2 fragmentTextureCoordinates;
+layout(location = 2) in vec3 normal;
+layout(location = 3) in vec3 viewPosition;
+layout(location = 4) in vec3 vertPosition;
 
 layout(location = 0) out vec4 outColor;
 
