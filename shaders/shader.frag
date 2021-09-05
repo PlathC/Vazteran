@@ -25,19 +25,20 @@ layout(location = 0) out vec4 outColor;
 void main() {
     const vec3 lightPosition = vec3(1.0f,  1.0f, 1.0f);
     const vec3 lightIntensity = vec3( 1.0f,  1.0f, 1.0f);
+    
+    // Blinn-Phong model: https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model
+    vec3 lightDirection = normalize(lightPosition - vertPosition);
+    vec3 viewerDirection = normalize(-vertPosition);
 
-    vec3 N = normalize(normal);
-    vec3 L = normalize(lightPosition - vertPosition);
-    vec3 V = normalize(-vertPosition);
-
-    // Compute half way vector between viewer and light-source
-    vec3 halfWay = normalize(V + L);
-    float sdn = dot(L, N);
-
+    vec3 halfWay = normalize(viewerDirection + lightDirection);
+    float lightDotNormal = max(dot(lightDirection, normal), 0.0f);
+    
     vec3 ambient = material.ambient.xyz * texture(objectAmbientMap, fragmentTextureCoordinates).xyz;
-    vec3 diffuse = material.diffuse.xyz * max(sdn, 0.0) * texture(objectDiffuseMap, fragmentTextureCoordinates).xyz;
-    vec3 specular = material.specular.xyz * mix( 0.0, pow(dot(N, halfWay), material.shininess), step( 0.0, sdn))
-                    * texture(objectSpecularMap, fragmentTextureCoordinates).xyz;
+    vec3 diffuse = material.diffuse.xyz * lightDotNormal * texture(objectDiffuseMap, fragmentTextureCoordinates).xyz;
+    
+    float specularAngle = max(dot(normal, halfWay), 0.0f);
+    float scaledSpecular = pow(specularAngle, material.shininess);
+    vec3 specular = material.specular.xyz * scaledSpecular * texture(objectSpecularMap, fragmentTextureCoordinates).xyz;
 
-    outColor = vec4(lightIntensity * (ambient + diffuse + specular), 1.);
+    outColor = vec4(lightIntensity * (ambient + diffuse + specular), 1.0f);
 }
