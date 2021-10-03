@@ -3,7 +3,9 @@
 
 #include <cctype>
 
-#include <Vazteran/Data/Vertex.hpp>
+#include <vk_mem_alloc.h>
+
+#include "Vazteran/Data/Vertex.hpp"
 
 namespace vzt {
     class LogicalDevice;
@@ -32,12 +34,12 @@ namespace vzt {
     private:
         vzt::LogicalDevice* m_device = nullptr;
         VkBuffer m_vkHandle = VK_NULL_HANDLE;
-        VkDeviceMemory m_bufferMemory = VK_NULL_HANDLE;
+        VmaAllocation m_allocation;
         std::size_t m_size = 0;
     };
 
-    using VertexBuffer = vzt::Buffer<vzt::Vertex>;
-    using IndexBuffer = vzt::Buffer<uint32_t>;
+    using VertexBuffer = Buffer<vzt::Vertex>;
+    using IndexBuffer = Buffer<uint32_t>;
 }
 
 #include "Vazteran/Vulkan/Buffer.inl"

@@ -221,6 +221,7 @@ target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURC
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/stb)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/tinyobj)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/vma)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw

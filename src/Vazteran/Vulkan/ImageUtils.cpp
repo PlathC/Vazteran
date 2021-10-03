@@ -9,24 +9,22 @@
 namespace vzt {
     ImageView::ImageView(LogicalDevice* logicalDevice, vzt::Image image, VkFormat format):
             m_logicalDevice(logicalDevice) {
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VmaAllocation stagingBufAlloc = VK_NULL_HANDLE;
         VkDeviceSize imageSize = image.Width() * image.Height() * image.Channels();
-        m_logicalDevice->CreateBuffer(stagingBuffer, stagingBufferMemory, imageSize,
-                                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        m_logicalDevice->CreateBuffer(stagingBuffer, stagingBufAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_CPU_ONLY);
 
         void* data;
         auto imageData = image.Data();
-        vkMapMemory(m_logicalDevice->VkHandle(), stagingBufferMemory, 0, imageSize, 0, &data);
+        vmaMapMemory(m_logicalDevice->AllocatorHandle(), stagingBufAlloc, &data);
         memcpy(data, imageData.data(), static_cast<size_t>(imageSize));
-        vkUnmapMemory(m_logicalDevice->VkHandle(), stagingBufferMemory);
-
+        vmaUnmapMemory(m_logicalDevice->AllocatorHandle(), stagingBufAlloc);
         m_logicalDevice->CreateImage(
-                m_vkImage, m_deviceMemory, image.Width(), image.Height(),
-                format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+            m_vkImage, m_allocation, image.Width(), image.Height(),
+            format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
         );
 
         m_logicalDevice->TransitionImageLayout(
@@ -47,24 +45,30 @@ namespace vzt {
                 VK_IMAGE_ASPECT_COLOR_BIT
         );
 
-        vkDestroyBuffer(m_logicalDevice->VkHandle(), stagingBuffer, nullptr);
-        vkFreeMemory(m_logicalDevice->VkHandle(), stagingBufferMemory, nullptr);
+        vmaDestroyBuffer(m_logicalDevice->AllocatorHandle(), stagingBuffer, stagingBufAlloc);
+
         m_vkHandle = m_logicalDevice->CreateImageView(
                 m_vkImage, format,
                 VK_IMAGE_ASPECT_COLOR_BIT
         );
     }
 
-    ImageView::ImageView(LogicalDevice* logicalDevice, VkImageView vkHandle, VkImage vkImage, VkDeviceMemory deviceMemory):
-            m_logicalDevice(logicalDevice), m_vkHandle(vkHandle), m_vkImage(vkImage), m_deviceMemory(deviceMemory) {
+    ImageView::ImageView(LogicalDevice* logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation):
+            m_logicalDevice(logicalDevice), m_vkHandle(vkHandle), m_vkImage(vkImage), m_allocation(allocation) {
 
     }
 
     ImageView::ImageView(LogicalDevice* logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
                          VkImageAspectFlags aspectFlags, VkImageLayout layout):
             m_logicalDevice(logicalDevice){
-        m_logicalDevice->CreateImage(m_vkImage, m_deviceMemory, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
-                                     VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        
+        m_logicalDevice->CreateImage(
+            m_vkImage, m_allocation, size.width, size.height,
+            format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
+            usage
+        );
+
+       
         m_vkHandle = m_logicalDevice->CreateImageView(m_vkImage, format, aspectFlags);
         m_logicalDevice->TransitionImageLayout( m_vkImage, format,VK_IMAGE_LAYOUT_UNDEFINED, layout,
                                                 aspectFlags);
@@ -74,14 +78,14 @@ namespace vzt {
             m_logicalDevice(original.m_logicalDevice) {
         m_vkImage = std::exchange(original.m_vkImage, static_cast<decltype(m_vkImage)>(VK_NULL_HANDLE));
         m_vkHandle = std::exchange(original.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
-        m_deviceMemory = std::exchange(original.m_deviceMemory, static_cast<decltype(m_deviceMemory)>(VK_NULL_HANDLE));
+        m_allocation = std::exchange(original.m_allocation, static_cast<decltype(m_allocation)>(VK_NULL_HANDLE));
     }
 
     ImageView& ImageView::operator=(ImageView&& original) noexcept {
         m_logicalDevice = original.m_logicalDevice;
         std::swap(m_vkImage, original.m_vkImage);
         std::swap(m_vkHandle, original.m_vkHandle);
-        std::swap(m_deviceMemory, original.m_deviceMemory);
+        std::swap(m_allocation, original.m_allocation);
 
         return *this;
     }
@@ -89,15 +93,15 @@ namespace vzt {
     ImageView::~ImageView() {
         if (m_vkHandle != VK_NULL_HANDLE){
             vkDestroyImageView(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+            m_vkHandle = VK_NULL_HANDLE;
         }
 
-        if (m_vkImage != VK_NULL_HANDLE) {
-            vkDestroyImage(m_logicalDevice->VkHandle(), m_vkImage, nullptr);
+        if (m_vkImage != VK_NULL_HANDLE)
+        {
+            vmaDestroyImage(m_logicalDevice->AllocatorHandle(), m_vkImage, m_allocation);
+            m_vkImage = VK_NULL_HANDLE;
         }
 
-        if (m_deviceMemory != VK_NULL_HANDLE) {
-            vkFreeMemory(m_logicalDevice->VkHandle(), m_deviceMemory, nullptr);
-        }
     }
 
     Sampler::Sampler(LogicalDevice* logicalDevice) :

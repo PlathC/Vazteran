@@ -2,11 +2,28 @@
 #include <stdexcept>
 #include <vector>
 
+#define VMA_IMPLEMENTATION
+
 #include "Vazteran/Vulkan/Instance.hpp"
 #include "Vazteran/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Vulkan/PhysicalDevice.hpp"
 
 namespace vzt {
+
+    static constexpr uint32_t GetVulkanApiVersion()
+    {
+#if VMA_VULKAN_VERSION == 1002000
+        return VK_API_VERSION_1_2;
+#elif VMA_VULKAN_VERSION == 1001000
+        return VK_API_VERSION_1_1;
+#elif VMA_VULKAN_VERSION == 1000000
+        return VK_API_VERSION_1_0;
+#else
+#error Invalid VMA_VULKAN_VERSION.
+        return UINT32_MAX;
+#endif
+    }
+
     LogicalDevice::LogicalDevice(vzt::Instance* instance, vzt::PhysicalDevice* parent, VkSurfaceKHR surface):
             m_parent(parent) {
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -54,11 +71,26 @@ namespace vzt {
 
         vkGetDeviceQueue(m_vkHandle, m_queueFamilyIndices.graphicsFamily.value(), 0, &m_graphicsQueue);
         vkGetDeviceQueue(m_vkHandle, m_queueFamilyIndices.presentFamily.value(), 0, &m_presentQueue);
+
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo = {};
+
+        allocatorInfo.physicalDevice = m_parent->VkHandle();
+        allocatorInfo.device = m_vkHandle;
+        allocatorInfo.instance = instance->VkHandle();
+        allocatorInfo.vulkanApiVersion = GetVulkanApiVersion();
+        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
+        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+
+        if (vmaCreateAllocator(&allocatorInfo, &m_allocator) != VK_SUCCESS) {
+            throw std::runtime_error("Can't create VMA allocator");
+        }
     }
 
     LogicalDevice::LogicalDevice(LogicalDevice&& other) noexcept {
         std::swap(other.m_parent, m_parent);
         m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+        m_allocator = std::exchange(other.m_allocator, static_cast<decltype(m_allocator)>(VK_NULL_HANDLE));
         std::swap(m_deviceFeatures, other.m_deviceFeatures);
         std::swap(m_graphicsQueue, other.m_graphicsQueue);
         std::swap(m_presentQueue, other.m_presentQueue);
@@ -68,6 +100,7 @@ namespace vzt {
     LogicalDevice& LogicalDevice::operator=(LogicalDevice&& other) noexcept {
         std::swap(m_parent, other.m_parent);
         std::swap(m_vkHandle, other.m_vkHandle);
+        std::swap(m_allocator, other.m_allocator);
         std::swap(m_deviceFeatures, other.m_deviceFeatures);
         std::swap(m_graphicsQueue, other.m_graphicsQueue);
         std::swap(m_presentQueue, other.m_presentQueue);
@@ -76,24 +109,26 @@ namespace vzt {
         return *this;
     }
 
-    void LogicalDevice::CreateBuffer(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkDeviceSize size,
-                                     VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) {
-        VkBufferCreateInfo bufferInfo{};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    void LogicalDevice::CreateBuffer(VkBuffer& buffer, VmaAllocation& bufferAllocation, VkDeviceSize size,
+                                     VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags) {
+        VkBufferCreateInfo bufferInfo = { VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
         bufferInfo.size = size;
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        if (vkCreateBuffer(m_vkHandle, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
+
+        VmaAllocationCreateInfo allocInfo = {};
+        allocInfo.usage = memoryUsage;
+        // allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        allocInfo.preferredFlags = preferredFlags;
+
+        if (vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo, &buffer, &bufferAllocation, nullptr) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create vertex buffer!");
         }
-
-        AllocateMemory(buffer, bufferMemory, properties);
-        vkBindBufferMemory(m_vkHandle, buffer, bufferMemory, 0);
     }
 
-    void LogicalDevice::CreateImage(VkImage& image, VkDeviceMemory& imageMemory, uint32_t width, uint32_t height,
+    void LogicalDevice::CreateImage(VkImage& image, VmaAllocation& allocation, uint32_t width, uint32_t height,
                                     VkFormat format, VkSampleCountFlagBits numSamples, VkImageTiling tiling,
-                                    VkImageUsageFlags usage, VkMemoryPropertyFlags properties) {
+                                    VkImageUsageFlags usage) {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -109,23 +144,13 @@ namespace vzt {
         imageInfo.samples = numSamples;
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateImage(m_vkHandle, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create image!");
+        VmaAllocationCreateInfo imageAllocCreateInfo = {};
+        imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        if (vmaCreateImage(m_allocator, &imageInfo, &imageAllocCreateInfo, &image, &allocation, nullptr)
+            != VK_SUCCESS) {
+            throw std::runtime_error("Can't allocate image.");
         }
-
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_vkHandle, image, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        if (vkAllocateMemory(m_vkHandle, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to allocate image memory!");
-        }
-
-        vkBindImageMemory(m_vkHandle, image, imageMemory, 0);
     }
 
     VkImageView LogicalDevice::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags) {
@@ -280,23 +305,6 @@ namespace vzt {
         vkDestroyCommandPool(m_vkHandle, transferCommandPool, nullptr);
     }
 
-    void LogicalDevice::AllocateMemory(VkBuffer& buffer, VkDeviceMemory& bufferMemory, VkMemoryPropertyFlags properties) {
-        VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(m_vkHandle, buffer, &memRequirements);
-
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(m_parent->VkHandle(), &memProperties);
-
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        if (vkAllocateMemory(m_vkHandle, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate vertex buffer memory!");
-        }
-    }
-
     uint32_t LogicalDevice::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
         VkPhysicalDeviceMemoryProperties memProperties;
         vkGetPhysicalDeviceMemoryProperties(m_parent->VkHandle(), &memProperties);
@@ -311,8 +319,14 @@ namespace vzt {
     }
 
     LogicalDevice::~LogicalDevice() {
+        if (m_allocator != VK_NULL_HANDLE) {
+            vmaDestroyAllocator(m_allocator);
+            m_allocator = VK_NULL_HANDLE;
+        }
+
         if (m_vkHandle != VK_NULL_HANDLE) {
             vkDestroyDevice(m_vkHandle, nullptr);
+            m_vkHandle = VK_NULL_HANDLE;
         }
     }
 }

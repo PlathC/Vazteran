@@ -6,6 +6,7 @@
 #include <vulkan/vulkan.h>
 
 namespace vzt {
+    // TODO: Integrate PhysicalDevice within LogicalDevice
     class Instance;
 
     struct QueueFamilyIndices {

@@ -6,45 +6,39 @@ namespace vzt {
             m_device(device), m_size(data.size()) {
 
         VkDeviceSize bufferSize = sizeof(data[0]) * data.size();
+        VkBuffer stagingBuffer = VK_NULL_HANDLE;
+        VmaAllocation stagingBufferAlloc = VK_NULL_HANDLE;
+       
+        m_device->CreateBuffer(stagingBuffer, stagingBufferAlloc, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VMA_MEMORY_USAGE_CPU_ONLY);
 
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
-        m_device->CreateBuffer(
-                stagingBuffer, stagingBufferMemory, bufferSize,
-                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-        );
+        void* tempstagingData;
+        vmaMapMemory(m_device->AllocatorHandle(), stagingBufferAlloc, &tempstagingData);
+        memcpy(tempstagingData, data.data(), static_cast<std::size_t>(bufferSize));
+        vmaUnmapMemory(m_device->AllocatorHandle(), stagingBufferAlloc);
 
-        void* dataPtr;
-        vkMapMemory(m_device->VkHandle(), stagingBufferMemory, 0, bufferSize, 0, &dataPtr);
-            memcpy(dataPtr, data.data(), static_cast<std::size_t>(bufferSize));
-        vkUnmapMemory(m_device->VkHandle(), stagingBufferMemory);
-
-        m_device->CreateBuffer(
-                m_vkHandle, m_bufferMemory, bufferSize,
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
-                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-        );
+        m_device->CreateBuffer(m_vkHandle, m_allocation, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
+            VMA_MEMORY_USAGE_GPU_ONLY);
 
         m_device->CopyBuffer(stagingBuffer, m_vkHandle, bufferSize);
 
-        vkDestroyBuffer(m_device->VkHandle(), stagingBuffer, nullptr);
-        vkFreeMemory(m_device->VkHandle(), stagingBufferMemory, nullptr);
+        vmaDestroyBuffer(m_device->AllocatorHandle(), stagingBuffer, stagingBufferAlloc);
     }
-
+    
     template<class Type>
-    Buffer<Type>::Buffer(vzt::LogicalDevice* device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                         std::size_t size):
-            m_device(device), m_size(size) {
+    Buffer<Type>::Buffer(vzt::LogicalDevice* device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, std::size_t size) :
+        m_device(device), m_size(size) {
         VkDeviceSize bufferSize = m_size * sizeof(Type);
-        m_device->CreateBuffer( m_vkHandle, m_bufferMemory, bufferSize, usage, properties);
+
+        m_device->CreateBuffer(m_vkHandle, m_allocation, bufferSize, usage,
+            VMA_MEMORY_USAGE_GPU_ONLY, properties);
     }
 
     template<class Type>
     Buffer<Type>::Buffer(Buffer<Type>&& other) noexcept {
         m_device = std::exchange(other.m_device, nullptr);
         m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
-        m_bufferMemory = std::exchange(other.m_bufferMemory, static_cast<decltype(m_bufferMemory)>(VK_NULL_HANDLE));
+        m_allocation = std::exchange(other.m_allocation, static_cast<decltype(m_allocation)>(VK_NULL_HANDLE));
         m_size = std::exchange(other.m_size, 0);
     }
 
@@ -52,7 +46,7 @@ namespace vzt {
     Buffer<Type>& Buffer<Type>::operator=(Buffer<Type>&& other) noexcept {
         std::swap(m_device, other.m_device);
         std::swap(m_vkHandle, other.m_vkHandle);
-        std::swap(m_bufferMemory, other.m_bufferMemory);
+        std::swap(m_allocation, other.m_allocation);
         std::swap(m_size, other.m_size);
     }
 
@@ -63,18 +57,18 @@ namespace vzt {
         m_size = newData.size();
 
         void* data;
-        vkMapMemory(m_device->VkHandle(), m_bufferMemory, 0, bufferSize, 0, &data);
+        vmaMapMemory(m_device->AllocatorHandle(), m_allocation, &data);
         memcpy(data, newData.data(), static_cast<std::size_t>(bufferSize));
-        vkUnmapMemory(m_device->VkHandle(), m_bufferMemory);
+        vmaUnmapMemory(m_device->AllocatorHandle(), m_allocation);
     }
+
 
     template<class Type>
     Buffer<Type>::~Buffer() {
-        if (m_vkHandle != VK_NULL_HANDLE)
-            vkDestroyBuffer(m_device->VkHandle(), m_vkHandle, nullptr);
-
-        if (m_bufferMemory != VK_NULL_HANDLE)
-            vkFreeMemory(m_device->VkHandle(), m_bufferMemory, nullptr);
+        if (m_vkHandle != VK_NULL_HANDLE) {
+            vmaDestroyBuffer(m_device->AllocatorHandle(), m_vkHandle, m_allocation);
+            m_vkHandle = VK_NULL_HANDLE;
+        }
     }
 
 }

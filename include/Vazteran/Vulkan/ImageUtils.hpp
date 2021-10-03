@@ -1,6 +1,7 @@
 #ifndef VAZTERAN_IMAGEUTILS_HPP
 #define VAZTERAN_IMAGEUTILS_HPP
 
+#include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Data/Image.hpp"
@@ -13,7 +14,7 @@ namespace vzt {
     public:
         // TODO: add format to vzt::Image
         ImageView(vzt::LogicalDevice* logicalDevice, vzt::Image image, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB);
-        ImageView(LogicalDevice* logicalDevice, VkImageView vkHandle, VkImage vkImage, VkDeviceMemory deviceMemory);
+        ImageView(LogicalDevice* logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation);
         ImageView(LogicalDevice* logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
                   VkImageAspectFlags aspectFlags, VkImageLayout layout);
 
@@ -31,7 +32,8 @@ namespace vzt {
         vzt::LogicalDevice* m_logicalDevice;
 
         VkImage m_vkImage = VK_NULL_HANDLE;
-        VkDeviceMemory m_deviceMemory;
+        // VkDeviceMemory m_deviceMemory;
+        VmaAllocation m_allocation = VK_NULL_HANDLE;
         VkImageView m_vkHandle = VK_NULL_HANDLE;
     };
 
