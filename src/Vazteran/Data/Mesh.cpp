@@ -23,7 +23,7 @@ namespace vzt {
 
         // First material is default one in case of shape "-1" material index
         m_materials.emplace_back();
-        for (std::size_t materialId = 0; materialId < materials.size(); materialId++) {
+        for (int materialId = 0; materialId < materials.size(); materialId++) {
             tinyObjToVazteranMaterialIndices[materialId] = static_cast<uint32_t>(m_materials.size());
             auto currentMaterial = materials[materialId];
 

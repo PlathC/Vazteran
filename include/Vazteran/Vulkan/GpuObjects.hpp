@@ -11,7 +11,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Vazteran/Math.hpp"
+#include "Vazteran/Core/Math.hpp"
 
 namespace vzt {
     struct MaterialInfo {

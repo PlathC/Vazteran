@@ -1,8 +1,8 @@
 #include "Vazteran/Data/Camera.hpp"
 
 namespace vzt {
-    Camera Camera::FromModel(const vzt::AABB& referenceBoundingBox, float aspectRatio, float fov, glm::vec3 upVector,
-                             float nearClipping, float farClipping) {
+    Camera Camera::FromBoundingBox(const vzt::AABB& referenceBoundingBox, float fov, glm::vec3 upVector,
+                             float nearClipping, float farClipping, float aspectRatio) {
         glm::length_t upIndex = 0;
         if (upVector[1] == 1.f) { upIndex = 1; }
         else if (upVector[2] == 1.f) { upIndex = 2; }
@@ -13,10 +13,10 @@ namespace vzt {
         return vzt::Camera {
             modelCenter - glm::vec3(0., 1.25, 0.) * distance,
             modelCenter,
-            aspectRatio,
             fov,
             nearClipping,
-            farClipping
+            farClipping,
+            aspectRatio
         };
     }
 }

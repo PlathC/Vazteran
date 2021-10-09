@@ -1,6 +1,6 @@
 #include <glm/gtx/hash.hpp>
 
-#include "Vazteran/Math.hpp"
+#include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Vertex.hpp"
 
 namespace vzt {

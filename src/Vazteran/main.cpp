@@ -1,12 +1,18 @@
 #include <cstdlib>
 #include <iostream>
+#include <memory>
+
+#include <glm/gtc/random.hpp>
 
 #include "Vazteran/Application.hpp"
+#include "Vazteran/Core/Utils.hpp"
+#include "Vazteran/Data/Model.hpp"
+#include "Vazteran/Data/Scene.hpp"
 
-int main(int /* args */, char*[]/* argv */ )
+
+int main(int /* args */, char*[] /* argv */ )
 {
-    auto app = vzt::Application{"Vazteran"};
-
+    auto app = vzt::Application("Vazteran", vzt::Scene::Default(vzt::Scene::DefaultScene::CrounchingBoys) );
     try {
         app.Run();
     } catch (const std::exception& e) {

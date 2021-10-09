@@ -16,8 +16,7 @@ namespace vzt {
         }
 
         // Use one vertex buffer for the whole mesh
-        m_vertexBuffer = std::make_unique<vzt::VertexBuffer>(logicalDevice, model->CMesh().CVertices(),
-                                                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        m_vertexBuffer = std::make_unique<vzt::VertexBuffer>(logicalDevice, model->CMesh().CVertices(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
         // Handle submesh indices
         auto subMeshRawIndices = model->CMesh().VertexIndices();

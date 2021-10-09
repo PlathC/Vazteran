@@ -52,29 +52,14 @@ namespace vzt {
         m_minimum = aabbs[0].m_minimum;
         m_maximum = aabbs[0].m_maximum;
         for (const auto& aabb: aabbs) {
-            if (aabb.m_minimum.x < m_minimum.x) {
-                m_minimum.x = aabb.m_minimum.x;
-            }
+            m_minimum.x = std::min(aabb.m_minimum.x, m_minimum.x);
+            m_minimum.y = std::min(aabb.m_minimum.y, m_minimum.y);
+            m_minimum.z = std::min(aabb.m_minimum.z, m_minimum.z);
 
-            if (aabb.m_minimum.y < m_minimum.y) {
-                m_minimum.y = aabb.m_minimum.y;
-            }
+            m_maximum.x = std::max(aabb.m_maximum.x, m_maximum.x);
+            m_maximum.y = std::max(aabb.m_maximum.y, m_maximum.y);
+            m_maximum.z = std::max(aabb.m_maximum.z, m_maximum.z);
 
-            if (aabb.m_minimum.z < m_minimum.z) {
-                m_minimum.z = aabb.m_minimum.z;
-            }
-
-            if (aabb.m_maximum.x > m_maximum.x) {
-                m_maximum.x = aabb.m_maximum.x;
-            }
-
-            if (aabb.m_maximum.y > m_maximum.y) {
-                m_maximum.y = aabb.m_maximum.y;
-            }
-
-            if (aabb.m_maximum.z > m_maximum.z) {
-                m_maximum.z = aabb.m_maximum.z;
-            }
         }
 
         m_vertices = std::array<glm::vec3, 8>{
@@ -90,6 +75,31 @@ namespace vzt {
                 glm::vec3{ m_minimum.x, m_maximum.y, m_maximum.z },
                 glm::vec3{ m_maximum.x, m_maximum.y, m_maximum.z },
         };
+    }
+
+    void AABB::Extend(const AABB& other) {
+        m_minimum.x = std::min(other.m_minimum.x, m_minimum.x);
+        m_minimum.y = std::min(other.m_minimum.y, m_minimum.y);
+        m_minimum.z = std::min(other.m_minimum.z, m_minimum.z);
+
+        m_maximum.x = std::max(other.m_maximum.x, m_maximum.x);
+        m_maximum.y = std::max(other.m_maximum.y, m_maximum.y);
+        m_maximum.z = std::max(other.m_maximum.z, m_maximum.z);
+
+        m_vertices = std::array<glm::vec3, 8>{
+            // Bottom
+            glm::vec3{ m_minimum.x, m_minimum.y, m_minimum.z },
+                glm::vec3{ m_maximum.x, m_minimum.y, m_minimum.z },
+                glm::vec3{ m_minimum.x, m_maximum.y, m_minimum.z },
+                glm::vec3{ m_maximum.x, m_maximum.y, m_minimum.z },
+
+                // Top
+                glm::vec3{ m_minimum.x, m_minimum.y, m_maximum.z },
+                glm::vec3{ m_maximum.x, m_minimum.y, m_maximum.z },
+                glm::vec3{ m_minimum.x, m_maximum.y, m_maximum.z },
+                glm::vec3{ m_maximum.x, m_maximum.y, m_maximum.z },
+        };
+
     }
 
     void AABB::Refresh() {

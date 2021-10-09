@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <fstream>
 
+#include <random>
+
 namespace fs = std::filesystem;
 
 namespace vzt {

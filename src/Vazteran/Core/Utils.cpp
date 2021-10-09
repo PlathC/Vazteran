@@ -1,4 +1,4 @@
-#include "Vazteran/Utils.hpp"
+#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt {
     std::vector<char> ReadFile(const fs::path& filename) {

@@ -8,7 +8,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Vazteran/Data/Types.hpp"
-#include "Vazteran/Utils.hpp"
+#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt {
     class Instance;

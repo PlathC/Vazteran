@@ -6,7 +6,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Vazteran/Utils.hpp"
+#include "Vazteran/Core/Utils.hpp"
 #include "Vazteran/Vulkan/Buffer.hpp"
 #include "Vazteran/Vulkan/ImageUtils.hpp"
 #include "Vazteran/Vulkan/GpuObjects.hpp"

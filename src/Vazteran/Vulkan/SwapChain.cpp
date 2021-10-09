@@ -233,7 +233,7 @@ namespace vzt {
         m_commandPool->AllocateCommandBuffers(m_imageCount);
 
         auto tempImageData = std::vector<uint8_t>(m_swapChainExtent.width * m_swapChainExtent.height * 4, 0);
-        for (size_t i = 0; i < m_imageCount; i++) {
+        for (std::size_t i = 0; i < m_imageCount; i++) {
             // TODO: Handle CommandBuffer in a CommandPool class
             VkImageView handle = m_logicalDevice->CreateImageView(swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
@@ -242,7 +242,7 @@ namespace vzt {
                                                 m_swapChainExtent.width, m_swapChainExtent.height);
 
             m_frames.emplace_back(std::move(frameBuffer));
-            m_commandPool->RecordBuffer(m_swapChainExtent, m_graphicPipelines[0].get(), m_frames[i], i);
+            m_commandPool->RecordBuffer(m_swapChainExtent, m_graphicPipelines[0].get(), m_frames[i], static_cast<uint32_t>(i));
         }
     }
 
@@ -258,7 +258,7 @@ namespace vzt {
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < m_maxFrameInFlight; i++) {
+        for (std::size_t i = 0; i < m_maxFrameInFlight; i++) {
             if (vkCreateSemaphore(m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) != VK_SUCCESS
                 || vkCreateSemaphore(m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) != VK_SUCCESS
                 || vkCreateFence(m_logicalDevice->VkHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS){

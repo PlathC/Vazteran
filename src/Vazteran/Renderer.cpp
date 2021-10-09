@@ -9,7 +9,6 @@ namespace vzt {
             m_logicalDevice(std::make_unique<vzt::LogicalDevice>(instance, m_physicalDevice.get(), m_surface)),
             m_commandPool(m_logicalDevice.get(), MaxFramesInFlight)
     {
-
         m_swapChain = std::make_unique<vzt::SwapChain>(
             m_logicalDevice.get(), surface, size, &m_commandPool, MaxFramesInFlight
         );

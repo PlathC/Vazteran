@@ -2,9 +2,11 @@
 #ifndef VAZTERAN_APPLICATION_HPP
 #define VAZTERAN_APPLICATION_HPP
 
+#include <functional>
 #include <string>
 
 #include "Vazteran/Data/Camera.hpp"
+#include "Vazteran/Data/Scene.hpp"
 
 namespace vzt{
     class Instance;
@@ -14,7 +16,7 @@ namespace vzt{
 
     class Application {
     public:
-        explicit Application(std::string_view name);
+        explicit Application(std::string_view name, vzt::Scene scene);
 
         void Run();
 
@@ -25,7 +27,7 @@ namespace vzt{
         std::unique_ptr<vzt::Window> m_window;
         std::unique_ptr<vzt::Renderer> m_renderer;
 
-        std::vector<std::unique_ptr<vzt::Model>> m_models;
+        Scene m_scene;
     };
 }
 

@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Vazteran/Utils.hpp"
+#include "Vazteran/Core/Utils.hpp"
 #include "Vazteran/Data/Camera.hpp"
 #include "Vazteran/Vulkan/Buffer.hpp"
 #include "Vazteran/Vulkan/CommandPool.hpp"
