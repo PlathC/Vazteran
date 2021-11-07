@@ -10,8 +10,9 @@
 
 namespace vzt{
     class Instance;
-    class Renderer;
     class Model;
+    class Renderer;
+    class UiRenderer;
     class Window;
 
     class Application {

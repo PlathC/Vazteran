@@ -43,13 +43,13 @@ namespace vzt {
         VkQueue GraphicsQueue() const { return m_graphicsQueue; }
         VkQueue PresentQueue() const { return m_presentQueue; }
         vzt::QueueFamilyIndices DeviceQueueFamilyIndices() const { return m_queueFamilyIndices; };
-        vzt::PhysicalDevice* Parent() const { return m_parent; }
+        vzt::PhysicalDevice* ChosenPhysicalDevice() const { return m_physicalDevice; }
 
         ~LogicalDevice();
 
     private:
         VmaAllocator m_allocator;
-        vzt::PhysicalDevice* m_parent;
+        vzt::PhysicalDevice* m_physicalDevice;
         VkDevice m_vkHandle{};
         VkPhysicalDeviceFeatures m_deviceFeatures{};
         VkQueue m_graphicsQueue{};

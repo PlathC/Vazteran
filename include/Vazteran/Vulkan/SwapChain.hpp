@@ -13,20 +13,20 @@
 #include "Vazteran/Data/Material.hpp"
 
 #include "Vazteran/Vulkan/Buffer.hpp"
+#include "Vazteran/Vulkan/CommandPool.hpp"
 #include "Vazteran/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Vulkan/Shader.hpp"
 #include "Vazteran/Vulkan/ImageUtils.hpp"
 
 namespace vzt {
-    class CommandPool;
     class GraphicPipeline;
     class LogicalDevice;
 
     class SwapChain {
     public:
-        SwapChain(vzt::LogicalDevice* logicalDevice, VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize,
-                  CommandPool* commandPool, uint32_t maxFrameInFlight);
+        SwapChain(vzt::LogicalDevice* logicalDevice, std::vector<std::unique_ptr<vzt::GraphicPipeline>> graphicPipelines,
+            VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize);
 
         SwapChain(const SwapChain&) = delete;
         SwapChain& operator=(const SwapChain&) = delete;
@@ -51,7 +51,7 @@ namespace vzt {
 
         void Cleanup();
 
-        uint32_t m_maxFrameInFlight;
+        constexpr static uint32_t MaxFramesInFlight = 2;
 
         static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
         VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
@@ -59,7 +59,7 @@ namespace vzt {
 
         vzt::LogicalDevice* m_logicalDevice;
         VkSwapchainKHR m_vkHandle;
-        std::vector<std::unique_ptr<vzt::GraphicPipeline>> m_graphicPipelines;
+        std::vector<std::unique_ptr<vzt::GraphicPipeline>> m_graphicPipelines = {};
 
         std::size_t m_currentFrame = 0;
         bool m_framebufferResized = false;
@@ -70,8 +70,7 @@ namespace vzt {
         VkFormat m_swapChainImageFormat;
         VkExtent2D m_swapChainExtent;
 
-        // Might requires to be changed to std::reference_wrapper<vzt::CommandPool>
-        vzt::CommandPool* m_commandPool;
+        std::unique_ptr<vzt::CommandPool> m_commandPool;
         std::vector<VkSemaphore> m_imageAvailableSemaphores;
         std::vector<VkSemaphore> m_renderFinishedSemaphores;
         std::vector<VkFence> m_inFlightFences;

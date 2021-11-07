@@ -36,7 +36,7 @@ namespace vzt {
     public:
         Shader(const fs::path& compiled_file, vzt::ShaderStage shaderStage);
 
-        VkShaderModuleCreateInfo ShaderModuleCreateInfo() const { return m_shaderModuleCreateInfo; }
+        VkShaderModuleCreateInfo ShaderModuleCreateInfo() const;
         vzt::ShaderStage Stage() const { return m_shaderStage; }
 
         void SetSamplerDescriptorSet(uint32_t binding);
@@ -55,7 +55,6 @@ namespace vzt {
 
     private:
         std::vector<char> m_compiledSource;
-        VkShaderModuleCreateInfo m_shaderModuleCreateInfo{};
         vzt::ShaderStage m_shaderStage;
         std::vector<SamplerDescriptorSet> m_samplerDescriptorSets{};
         std::vector<SizedDescriptorSet> m_uniformDescriptorSets{};

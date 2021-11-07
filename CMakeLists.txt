@@ -18,8 +18,6 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(extern/glfw)
-add_subdirectory(extern/glm)
 
 # Based on https://github.com/SaschaWillems/Vulkan/blob/master/CMakeLists.txt
 # Use FindVulkan module added with CMAKE 3.7
@@ -55,6 +53,10 @@ IF (NOT Vulkan_FOUND)
 ELSE()
     message(STATUS ${Vulkan_LIBRARY})
 ENDIF()
+
+add_subdirectory(extern/glfw)
+add_subdirectory(extern/glm)
+add_subdirectory(extern/imgui)
 
 # Based on https://github.com/lefticus/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
 if (CMAKE_COMPILER_IS_GNUCC)
@@ -152,7 +154,6 @@ endif ()
 
 set(HEADERS
         include/Vazteran/Application.hpp
-        include/Vazteran/Renderer.hpp
         include/Vazteran/Window.hpp
         include/Vazteran/Core/Math.hpp
         include/Vazteran/Core/Utils.hpp
@@ -179,42 +180,44 @@ set(HEADERS
         include/Vazteran/Vulkan/RenderObject.hpp
         include/Vazteran/Vulkan/Shader.hpp
         include/Vazteran/Vulkan/SwapChain.hpp
+        include/Vazteran/Vulkan/UiRenderer.hpp
+        include/Vazteran/Vulkan/VkRenderer.hpp
         )
 
 set(SOURCES
-        src/Vazteran/main.cpp
-        src/Vazteran/Application.cpp
-        src/Vazteran/Renderer.cpp
-        src/Vazteran/Window.cpp
-        src/Vazteran/Core/Utils.cpp
-        src/Vazteran/Data/Aabb.cpp
-        src/Vazteran/Data/Camera.cpp
-        src/Vazteran/Data/Image.cpp
-        src/Vazteran/Data/Material.cpp
-        src/Vazteran/Data/Mesh.cpp
-        src/Vazteran/Data/Model.cpp
-        src/Vazteran/Data/Scene.cpp
-        src/Vazteran/Data/Types.cpp
-        src/Vazteran/Data/Vertex.cpp
-        src/Vazteran/Vulkan/CommandPool.cpp
-        src/Vazteran/Vulkan/Instance.cpp
-        src/Vazteran/Vulkan/GraphicPipeline.cpp
-        src/Vazteran/Vulkan/ImageUtils.cpp
-        src/Vazteran/Vulkan/FrameBuffer.cpp
-        src/Vazteran/Vulkan/LogicalDevice.cpp
-        src/Vazteran/Vulkan/PhysicalDevice.cpp
-        src/Vazteran/Vulkan/RenderPass.cpp
-        src/Vazteran/Vulkan/RenderObject.cpp
-        src/Vazteran/Vulkan/Shader.cpp
-        src/Vazteran/Vulkan/SwapChain.cpp
-        )
+        src/main.cpp
+        src/Application.cpp
+        src/Window.cpp
+        src/Core/Utils.cpp
+        src/Data/Aabb.cpp
+        src/Data/Camera.cpp
+        src/Data/Image.cpp
+        src/Data/Material.cpp
+        src/Data/Mesh.cpp
+        src/Data/Model.cpp
+        src/Data/Scene.cpp
+        src/Data/Types.cpp
+        src/Data/Vertex.cpp
+        src/Vulkan/CommandPool.cpp
+        src/Vulkan/Instance.cpp
+        src/Vulkan/GraphicPipeline.cpp
+        src/Vulkan/ImageUtils.cpp
+        src/Vulkan/FrameBuffer.cpp
+        src/Vulkan/LogicalDevice.cpp
+        src/Vulkan/PhysicalDevice.cpp
+        src/Vulkan/RenderPass.cpp
+        src/Vulkan/RenderObject.cpp
+        src/Vulkan/Shader.cpp
+        src/Vulkan/SwapChain.cpp
+        src/Vulkan/UiRenderer.cpp
+        src/Vulkan/VkRenderer.cpp
+)
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 
 if (CMAKE_COMPILER_IS_GNUCC)
     target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
 endif ()
-
 
 target_compile_options(${PROJECT_NAME} PUBLIC ${VAZTERAN_COMPILATION_FLAGS})
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${VAZTERAN_LINKER_FLAGS})
@@ -224,11 +227,14 @@ target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_BINARY
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/stb)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/tinyobj)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/vma)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/imgui)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         glfw
         glm::glm
-        Vulkan::Vulkan)
+        Vulkan::Vulkan
+        imgui
+)
 
 # Based on https://www.reddit.com/r/vulkan/comments/kbaxlz/what_is_your_workflow_when_compiling_shader_files/gfg0s3s?utm_source=share&utm_medium=web2x&context=3
 function(add_shader TARGET SHADER)

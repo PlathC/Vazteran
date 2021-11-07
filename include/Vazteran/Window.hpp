@@ -34,9 +34,10 @@ namespace vzt {
 
         void FrameBufferResized() const;
         vzt::Size2D<int> FrameBufferSize() const;
+        GLFWwindow* Handle() const { return m_window.get(); }
+        bool Update() const;
         bool ShouldClose() const { return glfwWindowShouldClose(m_window.get()); }
         VkSurfaceKHR Surface(vzt::Instance* instance);
-        bool Update() const;
         std::vector<const char*> VkExtensions() const;
 
         ~Window();

@@ -25,7 +25,7 @@ namespace vzt {
 
         vzt::Model* Model() const { return m_model; }
 
-        void Render(VkCommandBuffer commandBuffer, vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount);
+        void Render(VkCommandBuffer commandBuffer, const vzt::GraphicPipeline* graphicPipeline, uint32_t imageCount);
         void UpdateDescriptorSet(VkDescriptorSet descriptorSet, VkBuffer uniformBuffer,
                                  const std::unordered_map<uint32_t, vzt::ImageHandler>& textureHandlers);
         void UpdatePushConstants(const vzt::Transforms& objectData);
