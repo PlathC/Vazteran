@@ -11,7 +11,7 @@ namespace vzt
 {
 
 	class GraphicPipeline;
-	class LogicalDevice;
+	class Device;
 	class ImageView;
 	class RenderPass;
 	class Sampler;
@@ -35,7 +35,7 @@ namespace vzt
 	class GraphicPipeline
 	{
 	  public:
-		GraphicPipeline(vzt::LogicalDevice *logicalDevice, RenderFunction renderFunction = {});
+		GraphicPipeline(vzt::Device *logicalDevice, RenderFunction renderFunction = {});
 
 		GraphicPipeline(const GraphicPipeline &) = delete;
 		GraphicPipeline &operator=(const GraphicPipeline &) = delete;
@@ -76,7 +76,7 @@ namespace vzt
 		~GraphicPipeline();
 
 	  private:
-		vzt::LogicalDevice *m_logicalDevice;
+		vzt::Device *m_logicalDevice;
 		RenderFunction m_renderFunction;
 
 		VkPipeline m_vkHandle = VK_NULL_HANDLE;

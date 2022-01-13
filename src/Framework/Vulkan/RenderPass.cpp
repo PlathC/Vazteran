@@ -1,13 +1,12 @@
 #include <array>
 #include <stdexcept>
 
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
-	RenderPass::RenderPass(vzt::LogicalDevice *logicalDevice, VkFormat colorImageFormat)
-	    : m_logicalDevice(logicalDevice)
+	RenderPass::RenderPass(vzt::Device *device, VkFormat colorImageFormat) : m_device(device)
 	{
 		VkAttachmentDescription colorAttachment{};
 		colorAttachment.format = colorImageFormat;
@@ -24,7 +23,7 @@ namespace vzt
 		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = m_logicalDevice->ChosenPhysicalDevice()->FindDepthFormat();
+		depthAttachment.format = m_device->ChosenPhysicalDevice()->FindDepthFormat();
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -62,7 +61,7 @@ namespace vzt
 		renderPassInfo.dependencyCount = 1;
 		renderPassInfo.pDependencies = &dependency;
 
-		if (vkCreateRenderPass(m_logicalDevice->VkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateRenderPass(m_device->VkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create render pass!");
 		}
@@ -71,13 +70,13 @@ namespace vzt
 	RenderPass::RenderPass(RenderPass &&other) noexcept
 	{
 		m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
-		m_logicalDevice = std::exchange(other.m_logicalDevice, nullptr);
+		m_device = std::exchange(other.m_device, nullptr);
 	}
 
 	RenderPass &RenderPass::operator=(RenderPass &&other) noexcept
 	{
 		std::swap(m_vkHandle, other.m_vkHandle);
-		std::swap(m_logicalDevice, other.m_logicalDevice);
+		std::swap(m_device, other.m_device);
 
 		return *this;
 	}
@@ -86,7 +85,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyRenderPass(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyRenderPass(m_device->VkHandle(), m_vkHandle, nullptr);
 		}
 	}
 } // namespace vzt

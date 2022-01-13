@@ -1,6 +1,6 @@
 #include <utility>
 
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/Shader.hpp"
 
 namespace vzt
@@ -83,10 +83,9 @@ namespace vzt
 		return pushConstants;
 	}
 
-	ShaderModule::ShaderModule(vzt::LogicalDevice *logicalDevice, VkShaderModuleCreateInfo createInfo)
-	    : m_logicalDevice(logicalDevice)
+	ShaderModule::ShaderModule(vzt::Device *device, VkShaderModuleCreateInfo createInfo) : m_device(device)
 	{
-		if (vkCreateShaderModule(m_logicalDevice->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateShaderModule(m_device->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create shader module!");
 		}
@@ -95,13 +94,13 @@ namespace vzt
 	ShaderModule::ShaderModule(ShaderModule &&other) noexcept
 	{
 		m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
-		std::swap(m_logicalDevice, other.m_logicalDevice);
+		std::swap(m_device, other.m_device);
 	}
 
 	ShaderModule &ShaderModule::operator=(ShaderModule &&other) noexcept
 	{
 		std::swap(m_vkHandle, other.m_vkHandle);
-		std::swap(m_logicalDevice, other.m_logicalDevice);
+		std::swap(m_device, other.m_device);
 
 		return *this;
 	}
@@ -110,7 +109,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyShaderModule(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyShaderModule(m_device->VkHandle(), m_vkHandle, nullptr);
 		}
 	}
 } // namespace vzt

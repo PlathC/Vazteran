@@ -13,14 +13,13 @@
 namespace vzt
 {
 	class GraphicPipeline;
-	class LogicalDevice;
+	class Device;
 
 	class RenderObject
 	{
 	  public:
 		RenderObject(
-		    vzt::LogicalDevice *logicalDevice, vzt::GraphicPipeline *graphicPipeline, vzt::Model *model,
-		    uint32_t imageCount);
+		    vzt::Device *logicalDevice, vzt::GraphicPipeline *graphicPipeline, vzt::Model *model, uint32_t imageCount);
 
 		RenderObject(const RenderObject &) = delete;
 		RenderObject &operator=(const RenderObject &) = delete;
@@ -43,7 +42,7 @@ namespace vzt
 
 	  private:
 		uint32_t m_imageCount{};
-		LogicalDevice *m_logicalDevice = nullptr;
+		vzt::Device *m_device = nullptr;
 		vzt::Model *m_model;
 
 		std::unique_ptr<vzt::VertexBuffer> m_vertexBuffer;

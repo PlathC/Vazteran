@@ -9,16 +9,16 @@
 
 namespace vzt
 {
-	class LogicalDevice;
+	class Device;
 
 	class ImageView
 	{
 	  public:
 		// TODO: add format to vzt::Image
-		ImageView(vzt::LogicalDevice *logicalDevice, vzt::Image image, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB);
-		ImageView(LogicalDevice *logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation);
+		ImageView(vzt::Device *logicalDevice, vzt::Image image, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB);
+		ImageView(Device *logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation);
 		ImageView(
-		    LogicalDevice *logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
+		    Device *logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
 		    VkImageAspectFlags aspectFlags, VkImageLayout layout);
 
 		ImageView(const ImageView &) = delete;
@@ -35,7 +35,7 @@ namespace vzt
 		~ImageView();
 
 	  private:
-		vzt::LogicalDevice *m_logicalDevice;
+		vzt::Device *m_logicalDevice;
 
 		VkImage m_vkImage = VK_NULL_HANDLE;
 		// VkDeviceMemory m_deviceMemory;
@@ -46,7 +46,7 @@ namespace vzt
 	class Sampler
 	{
 	  public:
-		explicit Sampler(vzt::LogicalDevice *logicalDevice);
+		explicit Sampler(vzt::Device *logicalDevice);
 
 		Sampler(const Sampler &) = delete;
 		Sampler &operator=(const Sampler &) = delete;
@@ -62,7 +62,7 @@ namespace vzt
 		~Sampler();
 
 	  private:
-		vzt::LogicalDevice *m_logicalDevice;
+		vzt::Device *m_logicalDevice;
 		VkSampler m_vkHandle;
 	};
 

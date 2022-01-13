@@ -2,13 +2,12 @@
 #include <utility>
 
 #include "Vazteran/Core/Utils.hpp"
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/ImageUtils.hpp"
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
 
 namespace vzt
 {
-	ImageView::ImageView(LogicalDevice *logicalDevice, vzt::Image image, VkFormat format)
-	    : m_logicalDevice(logicalDevice)
+	ImageView::ImageView(Device *logicalDevice, vzt::Image image, VkFormat format) : m_logicalDevice(logicalDevice)
 	{
 		VkBuffer stagingBuffer = VK_NULL_HANDLE;
 		VmaAllocation stagingBufAlloc = VK_NULL_HANDLE;
@@ -41,13 +40,13 @@ namespace vzt
 		m_vkHandle = m_logicalDevice->CreateImageView(m_vkImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
-	ImageView::ImageView(LogicalDevice *logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation)
+	ImageView::ImageView(Device *logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation)
 	    : m_logicalDevice(logicalDevice), m_vkHandle(vkHandle), m_vkImage(vkImage), m_allocation(allocation)
 	{
 	}
 
 	ImageView::ImageView(
-	    LogicalDevice *logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
+	    Device *logicalDevice, Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
 	    VkImageAspectFlags aspectFlags, VkImageLayout layout)
 	    : m_logicalDevice(logicalDevice)
 	{
@@ -92,7 +91,7 @@ namespace vzt
 		}
 	}
 
-	Sampler::Sampler(LogicalDevice *logicalDevice) : m_logicalDevice(logicalDevice)
+	Sampler::Sampler(Device *logicalDevice) : m_logicalDevice(logicalDevice)
 	{
 		VkPhysicalDeviceProperties properties{};
 		vkGetPhysicalDeviceProperties(m_logicalDevice->ChosenPhysicalDevice()->VkHandle(), &properties);

@@ -4,7 +4,6 @@
 
 #include "Vazteran/Application.hpp"
 #include "Vazteran/Data/Scene.hpp"
-#include "Vazteran/Framework/Vulkan/UiRenderer.hpp"
 #include "Vazteran/Framework/Vulkan/VkRenderer.hpp"
 #include "Vazteran/Window.hpp"
 

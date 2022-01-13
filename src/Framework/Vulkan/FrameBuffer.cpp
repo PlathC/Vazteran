@@ -3,13 +3,13 @@
 
 #include <vulkan/vulkan.h>
 
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/FrameBuffer.hpp"
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
 
 namespace vzt
 {
 	FrameBuffer::FrameBuffer(
-	    vzt::LogicalDevice *logicalDevice, VkImage image, VkImageView imageView, VkRenderPass renderPass,
+	    vzt::Device *logicalDevice, VkImage image, VkImageView imageView, VkRenderPass renderPass,
 	    std::vector<VkImageView> attachments, uint32_t width, uint32_t height)
 	    : m_logicalDevice(logicalDevice), m_image(image), m_imageView(imageView)
 	{

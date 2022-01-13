@@ -1,11 +1,11 @@
 #include "Vazteran/Framework/Vulkan/GraphicPipeline.hpp"
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/GpuObjects.hpp"
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Framework/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
-	GraphicPipeline::GraphicPipeline(vzt::LogicalDevice *logicalDevice, RenderFunction renderFunction)
+	GraphicPipeline::GraphicPipeline(vzt::Device *logicalDevice, RenderFunction renderFunction)
 	    : m_logicalDevice(logicalDevice), m_renderFunction(renderFunction)
 	{
 	}

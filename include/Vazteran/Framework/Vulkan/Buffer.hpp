@@ -9,14 +9,14 @@
 
 namespace vzt
 {
-	class LogicalDevice;
+	class Device;
 
 	template <class Type> class Buffer
 	{
 	  public:
-		Buffer(LogicalDevice *device, const std::vector<Type> &data, VkBufferUsageFlags usage);
+		Buffer(Device *device, const std::vector<Type> &data, VkBufferUsageFlags usage);
 		Buffer(
-		    vzt::LogicalDevice *device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+		    vzt::Device *device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
 		    std::size_t size = 1);
 
 		Buffer(const Buffer &) = delete;
@@ -39,7 +39,7 @@ namespace vzt
 		~Buffer();
 
 	  private:
-		vzt::LogicalDevice *m_device = nullptr;
+		vzt::Device *m_device = nullptr;
 		VkBuffer m_vkHandle = VK_NULL_HANDLE;
 		VmaAllocation m_allocation;
 		std::size_t m_size = 0;

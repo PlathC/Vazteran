@@ -1,15 +1,227 @@
 #include <set>
 #include <stdexcept>
-#include <vector>
+#include <string>
 
 #define VMA_IMPLEMENTATION
 
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/Instance.hpp"
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
-#include "Vazteran/Framework/Vulkan/PhysicalDevice.hpp"
 
 namespace vzt
 {
+	const std::vector<const char *> PhysicalDevice::DefaultDeviceExtensions = {
+	    VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+	    VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME};
+
+	VkPhysicalDevice PhysicalDevice::FindBestDevice(
+	    vzt::Instance *instance, VkSurfaceKHR surface, const std::vector<const char *> &deviceExtensions)
+	{
+		std::vector<VkPhysicalDevice> physicalDevices = instance->EnumeratePhysicalDevice();
+		for (const auto &device : physicalDevices)
+		{
+			if (IsDeviceSuitable(device, surface, deviceExtensions))
+			{
+				return device;
+			}
+		}
+		return VK_NULL_HANDLE;
+	}
+
+	PhysicalDevice::PhysicalDevice(
+	    vzt::Instance *instance, VkSurfaceKHR surface, const std::vector<const char *> &deviceExtensions)
+	    : m_vkHandle(FindBestDevice(instance, surface, deviceExtensions)), m_extensions(deviceExtensions)
+	{
+		if (m_vkHandle == VK_NULL_HANDLE)
+		{
+			throw std::runtime_error("Failed to find a suitable GPU!");
+		}
+	}
+
+	SwapChainSupportDetails PhysicalDevice::QuerySwapChainSupport(VkSurfaceKHR surface) const
+	{
+		return vzt::QuerySwapChainSupport(m_vkHandle, surface);
+	}
+
+	QueueFamilyIndices PhysicalDevice::FindQueueFamilies(VkSurfaceKHR surface) const
+	{
+		return vzt::FindQueueFamilies(m_vkHandle, surface);
+	}
+
+	VkFormat PhysicalDevice::FindDepthFormat()
+	{
+		return FindSupportedFormat(
+		    {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, VK_IMAGE_TILING_OPTIMAL,
+		    VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	}
+
+	VkFormat PhysicalDevice::FindSupportedFormat(
+	    const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+	{
+		for (VkFormat format : candidates)
+		{
+			VkFormatProperties props;
+			vkGetPhysicalDeviceFormatProperties(m_vkHandle, format, &props);
+
+			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+			{
+				return format;
+			}
+			else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+			{
+				return format;
+			}
+		}
+
+		throw std::runtime_error("Failed to find supported format!");
+	}
+
+	VkSampleCountFlagBits PhysicalDevice::MaxUsableSampleCount()
+	{
+		return vzt::MaxUsableSampleCount(m_vkHandle);
+	}
+
+	PhysicalDevice::~PhysicalDevice()
+	{
+	}
+
+	static bool IsDeviceSuitable(
+	    VkPhysicalDevice device, VkSurfaceKHR surface, const std::vector<const char *> &deviceExtensions)
+	{
+		QueueFamilyIndices indices = vzt::FindQueueFamilies(device, surface);
+
+		bool extensionsSupported = vzt::CheckDeviceExtensionSupport(device, deviceExtensions);
+		bool swapChainAdequate = false;
+		if (extensionsSupported)
+		{
+			vzt::SwapChainSupportDetails swapChainSupport = vzt::QuerySwapChainSupport(device, surface);
+			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+		}
+
+		VkPhysicalDeviceFeatures supportedFeatures;
+		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+		return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+	}
+
+	static vzt::SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+	{
+		vzt::SwapChainSupportDetails details{};
+		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+		uint32_t formatCount;
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+		if (formatCount != 0)
+		{
+			details.formats.resize(formatCount);
+			vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+		}
+
+		uint32_t presentModeCount;
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+		if (presentModeCount != 0)
+		{
+			details.presentModes.resize(presentModeCount);
+			vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+		}
+
+		return details;
+	}
+
+	static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
+	{
+		vzt::QueueFamilyIndices indices{};
+
+		uint32_t queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+		auto queueFamilies = std::vector<VkQueueFamilyProperties>(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+		int i = 0;
+		for (const auto &queueFamily : queueFamilies)
+		{
+			if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			{
+				indices.graphicsFamily = i;
+			}
+
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+			if (presentSupport)
+			{
+				indices.presentFamily = i;
+			}
+
+			if (indices.IsComplete())
+			{
+				break;
+			}
+
+			i++;
+		}
+
+		return indices;
+	}
+
+	static bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char *> &deviceExtensions)
+	{
+		uint32_t extensionCount;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+		std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+		std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+		for (const auto &extension : availableExtensions)
+		{
+			requiredExtensions.erase(extension.extensionName);
+		}
+
+		return requiredExtensions.empty();
+	}
+
+	static bool HasStencilComponent(VkFormat format)
+	{
+		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+	}
+
+	static VkSampleCountFlagBits MaxUsableSampleCount(VkPhysicalDevice physicalDevice)
+	{
+		VkPhysicalDeviceProperties physicalDeviceProperties;
+		vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+
+		VkSampleCountFlags counts = physicalDeviceProperties.limits.framebufferColorSampleCounts &
+		                            physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+		if (counts & VK_SAMPLE_COUNT_64_BIT)
+		{
+			return VK_SAMPLE_COUNT_64_BIT;
+		}
+		if (counts & VK_SAMPLE_COUNT_32_BIT)
+		{
+			return VK_SAMPLE_COUNT_32_BIT;
+		}
+		if (counts & VK_SAMPLE_COUNT_16_BIT)
+		{
+			return VK_SAMPLE_COUNT_16_BIT;
+		}
+		if (counts & VK_SAMPLE_COUNT_8_BIT)
+		{
+			return VK_SAMPLE_COUNT_8_BIT;
+		}
+		if (counts & VK_SAMPLE_COUNT_4_BIT)
+		{
+			return VK_SAMPLE_COUNT_4_BIT;
+		}
+		if (counts & VK_SAMPLE_COUNT_2_BIT)
+		{
+			return VK_SAMPLE_COUNT_2_BIT;
+		}
+
+		return VK_SAMPLE_COUNT_1_BIT;
+	}
 
 	static constexpr uint32_t GetVulkanApiVersion()
 	{
@@ -25,11 +237,11 @@ namespace vzt
 #endif
 	}
 
-	LogicalDevice::LogicalDevice(vzt::Instance *instance, vzt::PhysicalDevice *parent, VkSurfaceKHR surface)
-	    : m_physicalDevice(parent)
+	Device::Device(vzt::Instance *instance, VkSurfaceKHR surface)
+	    : m_physicalDevice(std::make_unique<vzt::PhysicalDevice>(instance, surface))
 	{
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		m_queueFamilyIndices = parent->FindQueueFamilies(surface);
+		m_queueFamilyIndices = m_physicalDevice->FindQueueFamilies(surface);
 		std::set<uint32_t> uniqueQueueFamilies = {
 		    m_queueFamilyIndices.graphicsFamily.value(), m_queueFamilyIndices.presentFamily.value()};
 
@@ -54,7 +266,7 @@ namespace vzt
 
 		createInfo.pEnabledFeatures = &m_deviceFeatures;
 
-		auto deviceExtensions = parent->Extensions();
+		auto deviceExtensions = m_physicalDevice->Extensions();
 		createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
@@ -93,7 +305,7 @@ namespace vzt
 		}
 	}
 
-	LogicalDevice::LogicalDevice(LogicalDevice &&other) noexcept
+	Device::Device(Device &&other) noexcept
 	{
 		std::swap(other.m_physicalDevice, m_physicalDevice);
 		m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
@@ -104,7 +316,7 @@ namespace vzt
 		std::swap(m_queueFamilyIndices, other.m_queueFamilyIndices);
 	}
 
-	LogicalDevice &LogicalDevice::operator=(LogicalDevice &&other) noexcept
+	Device &Device::operator=(Device &&other) noexcept
 	{
 		std::swap(m_physicalDevice, other.m_physicalDevice);
 		std::swap(m_vkHandle, other.m_vkHandle);
@@ -117,7 +329,7 @@ namespace vzt
 		return *this;
 	}
 
-	void LogicalDevice::CreateBuffer(
+	void Device::CreateBuffer(
 	    VkBuffer &buffer, VmaAllocation &bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
 	    VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags)
 	{
@@ -137,7 +349,7 @@ namespace vzt
 		}
 	}
 
-	void LogicalDevice::CreateImage(
+	void Device::CreateImage(
 	    VkImage &image, VmaAllocation &allocation, uint32_t width, uint32_t height, VkFormat format,
 	    VkSampleCountFlagBits numSamples, VkImageTiling tiling, VkImageUsageFlags usage)
 	{
@@ -165,7 +377,7 @@ namespace vzt
 		}
 	}
 
-	VkImageView LogicalDevice::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	VkImageView Device::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -187,7 +399,7 @@ namespace vzt
 		return imageView;
 	}
 
-	void LogicalDevice::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	void Device::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
 		SingleTimeCommand([&srcBuffer, &dstBuffer, &size](VkCommandBuffer commandBuffer) {
 			VkBufferCopy copyRegion{};
@@ -196,7 +408,7 @@ namespace vzt
 		});
 	}
 
-	void LogicalDevice::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height)
+	void Device::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height)
 	{
 		SingleTimeCommand([&srcBuffer, &dstImage, width, height](VkCommandBuffer commandBuffer) {
 			VkBufferImageCopy region{};
@@ -217,7 +429,7 @@ namespace vzt
 		});
 	}
 
-	void LogicalDevice::TransitionImageLayout(
+	void Device::TransitionImageLayout(
 	    VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
 	    VkImageAspectFlags aspectFlags)
 	{
@@ -276,7 +488,7 @@ namespace vzt
 		});
 	}
 
-	void LogicalDevice::SingleTimeCommand(const vzt::SingleTimeCommandFunction &singleTimeCommandFunction)
+	void Device::SingleTimeCommand(const vzt::Device::SingleTimeCommandFunction &singleTimeCommandFunction)
 	{
 		VkCommandPool transferCommandPool;
 
@@ -318,22 +530,7 @@ namespace vzt
 		vkDestroyCommandPool(m_vkHandle, transferCommandPool, nullptr);
 	}
 
-	uint32_t LogicalDevice::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
-	{
-		VkPhysicalDeviceMemoryProperties memProperties;
-		vkGetPhysicalDeviceMemoryProperties(m_physicalDevice->VkHandle(), &memProperties);
-		for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
-		{
-			if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-			{
-				return i;
-			}
-		}
-
-		throw std::runtime_error("Failed to find suitable memory type!");
-	}
-
-	LogicalDevice::~LogicalDevice()
+	Device::~Device()
 	{
 		if (m_allocator != VK_NULL_HANDLE)
 		{

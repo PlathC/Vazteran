@@ -3,13 +3,13 @@
 #include <utility>
 
 #include "Vazteran/Framework/Vulkan/CommandPool.hpp"
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Framework/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
-	CommandPool::CommandPool(LogicalDevice *logicalDevice, uint32_t bufferCount)
+	CommandPool::CommandPool(Device *logicalDevice, uint32_t bufferCount)
 	    : m_logicalDevice(logicalDevice), m_bufferCount(bufferCount)
 	{
 

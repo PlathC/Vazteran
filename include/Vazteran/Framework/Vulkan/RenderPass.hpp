@@ -6,12 +6,12 @@
 
 namespace vzt
 {
-	class LogicalDevice;
+	class Device;
 
 	class RenderPass
 	{
 	  public:
-		RenderPass(vzt::LogicalDevice *logicalDevice, VkFormat colorImageFormat);
+		RenderPass(vzt::Device *device, VkFormat colorImageFormat);
 
 		RenderPass(const RenderPass &) = delete;
 		RenderPass &operator=(const RenderPass &) = delete;
@@ -28,7 +28,7 @@ namespace vzt
 
 	  private:
 		VkRenderPass m_vkHandle;
-		vzt::LogicalDevice *m_logicalDevice;
+		vzt::Device *m_device;
 	};
 } // namespace vzt
 

@@ -5,14 +5,14 @@
 
 namespace vzt
 {
-	class LogicalDevice;
+	class Device;
 	class SwapChain;
 
 	class FrameBuffer
 	{
 	  public:
 		FrameBuffer(
-		    vzt::LogicalDevice *logicalDevice, VkImage colorImage, VkImageView colorImageView, VkRenderPass renderPass,
+		    vzt::Device *logicalDevice, VkImage colorImage, VkImageView colorImageView, VkRenderPass renderPass,
 		    std::vector<VkImageView> attachments, uint32_t width, uint32_t height);
 
 		FrameBuffer(const FrameBuffer &) = delete;
@@ -29,7 +29,7 @@ namespace vzt
 		~FrameBuffer();
 
 	  private:
-		vzt::LogicalDevice *m_logicalDevice;
+		vzt::Device *m_logicalDevice;
 		VkFramebuffer m_vkHandle = VK_NULL_HANDLE;
 
 		VkImage m_image;

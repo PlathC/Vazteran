@@ -11,13 +11,13 @@
 
 namespace vzt
 {
-	class LogicalDevice;
+	class Device;
 	class GraphicPipeline;
 
 	class CommandPool
 	{
 	  public:
-		CommandPool(LogicalDevice *logicalDevice, uint32_t bufferCount);
+		CommandPool(Device *logicalDevice, uint32_t bufferCount);
 
 		CommandPool(CommandPool &) = delete;
 		CommandPool &operator=(const CommandPool &) = delete;
@@ -35,7 +35,7 @@ namespace vzt
 		~CommandPool();
 
 	  private:
-		LogicalDevice *m_logicalDevice;
+		Device *m_logicalDevice;
 		VkCommandPool m_vkHandle;
 		std::vector<VkCommandBuffer> m_commandBuffers;
 		uint32_t m_bufferCount;

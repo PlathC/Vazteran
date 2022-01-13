@@ -13,7 +13,7 @@
 
 namespace vzt
 {
-	class LogicalDevice;
+	class Device;
 
 	enum class ShaderStage
 	{
@@ -88,7 +88,7 @@ namespace vzt
 	class ShaderModule
 	{
 	  public:
-		ShaderModule(vzt::LogicalDevice *logicalDevice, VkShaderModuleCreateInfo createInfo);
+		ShaderModule(vzt::Device *logicalDevice, VkShaderModuleCreateInfo createInfo);
 
 		ShaderModule(const ShaderModule &) = delete;
 		ShaderModule &operator=(const ShaderModule &) = delete;
@@ -105,7 +105,7 @@ namespace vzt
 
 	  private:
 		VkShaderModule m_vkHandle;
-		vzt::LogicalDevice *m_logicalDevice;
+		vzt::Device *m_device;
 	};
 } // namespace vzt
 

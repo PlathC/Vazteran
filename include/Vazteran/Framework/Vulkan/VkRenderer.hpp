@@ -17,11 +17,10 @@ namespace vzt
 {
 	class GraphicPipeline;
 	class ImageView;
-	class LogicalDevice;
+	class Device;
 	class Model;
 	class PhysicalDevice;
 	class RenderPass;
-	class UiRenderer;
 
 	class Renderer
 	{
@@ -31,9 +30,9 @@ namespace vzt
 		    vzt::Camera camera, std::vector<vzt::Model *> models = {});
 
 		void Draw();
-		vzt::LogicalDevice *Device() const
+		vzt::Device *Device() const
 		{
-			return m_logicalDevice.get();
+			return m_device.get();
 		}
 		RenderPass *FinalPass() const;
 		void FrameBufferResized(vzt::Size2D<int> newSize);
@@ -41,10 +40,8 @@ namespace vzt
 	  private:
 		VkSurfaceKHR m_surface;
 
-		std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;
-		std::unique_ptr<vzt::LogicalDevice> m_logicalDevice;
+		std::unique_ptr<vzt::Device> m_device;
 		std::unique_ptr<vzt::SwapChain> m_swapChain;
-		std::unique_ptr<vzt::UiRenderer> m_uiRenderer;
 
 		std::vector<std::unique_ptr<vzt::RenderObject>> m_objects;
 		vzt::Camera m_camera;

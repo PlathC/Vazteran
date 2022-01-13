@@ -22,13 +22,13 @@
 namespace vzt
 {
 	class GraphicPipeline;
-	class LogicalDevice;
+	class Device;
 
 	class SwapChain
 	{
 	  public:
 		SwapChain(
-		    vzt::LogicalDevice *logicalDevice, std::vector<std::unique_ptr<vzt::GraphicPipeline>> graphicPipelines,
+		    vzt::Device *device, std::vector<std::unique_ptr<vzt::GraphicPipeline>> graphicPipelines,
 		    VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize);
 
 		SwapChain(const SwapChain &) = delete;
@@ -66,7 +66,7 @@ namespace vzt
 		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
 		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
 
-		vzt::LogicalDevice *m_logicalDevice;
+		vzt::Device *m_device;
 		VkSwapchainKHR m_vkHandle;
 		std::vector<std::unique_ptr<vzt::GraphicPipeline>> m_graphicPipelines = {};
 

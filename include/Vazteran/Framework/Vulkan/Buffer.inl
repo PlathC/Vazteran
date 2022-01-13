@@ -1,9 +1,9 @@
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 
 namespace vzt
 {
 	template <class Type>
-	Buffer<Type>::Buffer(vzt::LogicalDevice *device, const std::vector<Type> &data, VkBufferUsageFlags usage)
+	Buffer<Type>::Buffer(vzt::Device *device, const std::vector<Type> &data, VkBufferUsageFlags usage)
 	    : m_device(device), m_size(data.size())
 	{
 
@@ -29,7 +29,7 @@ namespace vzt
 
 	template <class Type>
 	Buffer<Type>::Buffer(
-	    vzt::LogicalDevice *device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, std::size_t size)
+	    vzt::Device *device, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, std::size_t size)
 	    : m_device(device), m_size(size)
 	{
 		VkDeviceSize bufferSize = m_size * sizeof(Type);

@@ -4,9 +4,8 @@
 namespace vzt
 {
 	RenderObject::RenderObject(
-	    vzt::LogicalDevice *logicalDevice, vzt::GraphicPipeline *graphicPipeline, vzt::Model *model,
-	    uint32_t imageCount)
-	    : m_imageCount(imageCount), m_logicalDevice(logicalDevice), m_model(model)
+	    vzt::Device *device, vzt::GraphicPipeline *graphicPipeline, vzt::Model *model, uint32_t imageCount)
+	    : m_imageCount(imageCount), m_device(device), m_model(model)
 	{
 
 		// Create descriptor pools
@@ -21,7 +20,7 @@ namespace vzt
 
 		// Use one vertex buffer for the whole mesh
 		m_vertexBuffer = std::make_unique<vzt::VertexBuffer>(
-		    logicalDevice, model->CMesh().CVertices(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		    m_device, model->CMesh().CVertices(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
 		// Handle submesh indices
 		auto subMeshRawIndices = model->CMesh().VertexIndices();
@@ -36,7 +35,7 @@ namespace vzt
 			indices.insert(indices.end(), subMeshRawIndices[i].begin(), subMeshRawIndices[i].end());
 		}
 		m_subMeshesIndexBuffer =
-		    std::make_unique<vzt::IndexBuffer>(logicalDevice, indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+		    std::make_unique<vzt::IndexBuffer>(m_device, indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 		auto materials = model->CMesh().CMaterials();
 		m_descriptorPools.resize(materials.size());
@@ -60,7 +59,7 @@ namespace vzt
 					descriptorPoolInfo.maxSets = static_cast<uint32_t>(m_imageCount);
 
 					if (vkCreateDescriptorPool(
-					        logicalDevice->VkHandle(), &descriptorPoolInfo, nullptr, &m_descriptorPools[materialId]) !=
+					        m_device->VkHandle(), &descriptorPoolInfo, nullptr, &m_descriptorPools[materialId]) !=
 					    VK_SUCCESS)
 					{
 						throw std::runtime_error("Failed to create descriptor pool!");
@@ -76,21 +75,21 @@ namespace vzt
 
 					std::unordered_map<uint32_t, vzt::ImageHandler> textureHandlers;
 					vzt::ImageHandler ambientImage = {
-					    vzt::ImageView(m_logicalDevice, materials[materialId].ambientMap, VK_FORMAT_R8G8B8A8_SRGB),
-					    vzt::Sampler(m_logicalDevice)};
+					    vzt::ImageView(m_device, materials[materialId].ambientMap, VK_FORMAT_R8G8B8A8_SRGB),
+					    vzt::Sampler(m_device)};
 					textureHandlers.insert({samplerDescriptorSets[0].binding, std::move(ambientImage)});
 					vzt::ImageHandler diffuseImage = {
-					    vzt::ImageView(m_logicalDevice, materials[materialId].diffuseMap, VK_FORMAT_R8G8B8A8_SRGB),
-					    vzt::Sampler(m_logicalDevice)};
+					    vzt::ImageView(m_device, materials[materialId].diffuseMap, VK_FORMAT_R8G8B8A8_SRGB),
+					    vzt::Sampler(m_device)};
 					textureHandlers.insert({samplerDescriptorSets[1].binding, std::move(diffuseImage)});
 					vzt::ImageHandler specularImage = {
-					    vzt::ImageView(m_logicalDevice, materials[materialId].specularMap, VK_FORMAT_R8G8B8A8_SRGB),
-					    vzt::Sampler(m_logicalDevice)};
+					    vzt::ImageView(m_device, materials[materialId].specularMap, VK_FORMAT_R8G8B8A8_SRGB),
+					    vzt::Sampler(m_device)};
 					textureHandlers.insert({samplerDescriptorSets[2].binding, std::move(specularImage)});
 
 					auto descriptorSets = std::vector<VkDescriptorSet>(m_imageCount);
-					if (vkAllocateDescriptorSets(
-					        logicalDevice->VkHandle(), &descriptorSetAllocInfo, descriptorSets.data()) != VK_SUCCESS)
+					if (vkAllocateDescriptorSets(device->VkHandle(), &descriptorSetAllocInfo, descriptorSets.data()) !=
+					    VK_SUCCESS)
 					{
 						throw std::runtime_error("Failed to allocate descriptor sets!");
 					}
@@ -103,12 +102,12 @@ namespace vzt
 					for (std::size_t i = 0; i < descriptorSets.size(); i++)
 					{
 						uniformBuffers.emplace_back(vzt::Buffer<vzt::MaterialInfo>(
-						    m_logicalDevice, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+						    m_device, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 						    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT));
 
 						UpdateDescriptorSet(descriptorSets[i], uniformBuffers[i].VkHandle(), textureHandlers);
 
-						vkDeviceWaitIdle(m_logicalDevice->VkHandle());
+						vkDeviceWaitIdle(m_device->VkHandle());
 						uniformBuffers[i].Update<vzt::MaterialInfo>({materialInfo});
 					}
 
@@ -191,8 +190,7 @@ namespace vzt
 		}
 
 		vkUpdateDescriptorSets(
-		    m_logicalDevice->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0,
-		    nullptr);
+		    m_device->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 
 	void RenderObject::UpdatePushConstants(const vzt::Transforms &objectData)
@@ -204,7 +202,7 @@ namespace vzt
 	{
 		for (const auto &descriptorPool : m_descriptorPools)
 		{
-			vkDestroyDescriptorPool(m_logicalDevice->VkHandle(), descriptorPool, nullptr);
+			vkDestroyDescriptorPool(m_device->VkHandle(), descriptorPool, nullptr);
 		}
 	};
 } // namespace vzt

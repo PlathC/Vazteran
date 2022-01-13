@@ -2,19 +2,19 @@
 #include <utility>
 #include <vector>
 
+#include "Vazteran/Framework/Vulkan/Device.hpp"
 #include "Vazteran/Framework/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Framework/Vulkan/LogicalDevice.hpp"
 #include "Vazteran/Framework/Vulkan/RenderPass.hpp"
 #include "Vazteran/Framework/Vulkan/SwapChain.hpp"
 
 namespace vzt
 {
 	SwapChain::SwapChain(
-	    vzt::LogicalDevice *logicalDevice, std::vector<std::unique_ptr<vzt::GraphicPipeline>> graphicPipelines,
-	    VkSurfaceKHR surface, vzt::Size2D<int> frameBufferSize)
-	    : m_frameBufferSize(std::move(frameBufferSize)), m_surface(surface), m_logicalDevice(logicalDevice),
+	    vzt::Device *device, std::vector<std::unique_ptr<vzt::GraphicPipeline>> graphicPipelines, VkSurfaceKHR surface,
+	    vzt::Size2D<int> frameBufferSize)
+	    : m_frameBufferSize(std::move(frameBufferSize)), m_surface(surface), m_device(device),
 	      m_graphicPipelines(std::move(graphicPipelines)),
-	      m_commandPool(std::make_unique<vzt::CommandPool>(m_logicalDevice, MaxFramesInFlight))
+	      m_commandPool(std::make_unique<vzt::CommandPool>(m_device, MaxFramesInFlight))
 	{
 		assert(!m_graphicPipelines.empty() && "The swapchain needs be atleast one graphic pipeline.");
 
@@ -34,7 +34,7 @@ namespace vzt
 		m_depthImage = std::exchange(other.m_depthImage, nullptr);
 
 		std::swap(m_surface, other.m_surface);
-		std::swap(m_logicalDevice, other.m_logicalDevice);
+		std::swap(m_device, other.m_device);
 		std::swap(m_graphicPipelines, other.m_graphicPipelines);
 		std::swap(m_swapChainExtent, other.m_swapChainExtent);
 		std::swap(m_imageAvailableSemaphores, other.m_imageAvailableSemaphores);
@@ -47,7 +47,7 @@ namespace vzt
 
 	SwapChain &SwapChain::operator=(SwapChain &&other) noexcept
 	{
-		std::swap(m_logicalDevice, other.m_logicalDevice);
+		std::swap(m_device, other.m_device);
 		std::swap(m_graphicPipelines, other.m_graphicPipelines);
 		std::swap(m_vkHandle, other.m_vkHandle);
 		std::swap(m_currentFrame, other.m_currentFrame);
@@ -70,12 +70,12 @@ namespace vzt
 
 	bool SwapChain::DrawFrame()
 	{
-		vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+		vkWaitForFences(m_device->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
 		uint32_t imageIndex;
 		VkResult result = vkAcquireNextImageKHR(
-		    m_logicalDevice->VkHandle(), m_vkHandle, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame],
-		    VK_NULL_HANDLE, &imageIndex);
+		    m_device->VkHandle(), m_vkHandle, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE,
+		    &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
 			return true;
@@ -88,7 +88,7 @@ namespace vzt
 		// Check if a previous frame is using this image (i.e. there is its fence to wait on)
 		if (m_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
 		{
-			vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+			vkWaitForFences(m_device->VkHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
 		}
 		// Mark the image as now being in use by this frame
 		m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
@@ -111,10 +111,9 @@ namespace vzt
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = signalSemaphores;
 
-		vkResetFences(m_logicalDevice->VkHandle(), 1, &m_inFlightFences[m_currentFrame]);
+		vkResetFences(m_device->VkHandle(), 1, &m_inFlightFences[m_currentFrame]);
 
-		if (vkQueueSubmit(m_logicalDevice->GraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) !=
-		    VK_SUCCESS)
+		if (vkQueueSubmit(m_device->GraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to submit draw command buffer!");
 		}
@@ -130,7 +129,7 @@ namespace vzt
 		presentInfo.pImageIndices = &imageIndex;
 		presentInfo.pResults = nullptr; // Optional
 
-		result = vkQueuePresentKHR(m_logicalDevice->PresentQueue(), &presentInfo);
+		result = vkQueuePresentKHR(m_device->PresentQueue(), &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
 		{
 			m_framebufferResized = false;
@@ -171,9 +170,9 @@ namespace vzt
 	{
 		for (std::size_t i = 0; i < MaxFramesInFlight; i++)
 		{
-			vkDestroySemaphore(m_logicalDevice->VkHandle(), m_renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(m_logicalDevice->VkHandle(), m_imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(m_logicalDevice->VkHandle(), m_inFlightFences[i], nullptr);
+			vkDestroySemaphore(m_device->VkHandle(), m_renderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(m_device->VkHandle(), m_imageAvailableSemaphores[i], nullptr);
+			vkDestroyFence(m_device->VkHandle(), m_inFlightFences[i], nullptr);
 		}
 
 		for (auto &imageInFlight : m_imagesInFlight)
@@ -184,8 +183,7 @@ namespace vzt
 
 	void SwapChain::CreateSwapChain()
 	{
-		SwapChainSupportDetails swapChainSupport =
-		    m_logicalDevice->ChosenPhysicalDevice()->QuerySwapChainSupport(m_surface);
+		SwapChainSupportDetails swapChainSupport = m_device->ChosenPhysicalDevice()->QuerySwapChainSupport(m_surface);
 
 		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
 		VkPresentModeKHR m_presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
@@ -210,7 +208,7 @@ namespace vzt
 		m_swapChainImageFormat = surfaceFormat.format;
 		m_swapChainExtent = extent;
 
-		QueueFamilyIndices indices = m_logicalDevice->DeviceQueueFamilyIndices();
+		QueueFamilyIndices indices = m_device->DeviceQueueFamilyIndices();
 		uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 		if (indices.graphicsFamily != indices.presentFamily)
@@ -232,7 +230,7 @@ namespace vzt
 		createInfo.clipped = VK_TRUE;
 		createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(m_logicalDevice->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(m_device->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create swapchain!");
 		}
@@ -245,21 +243,21 @@ namespace vzt
 
 	void SwapChain::CreateDepthResources()
 	{
-		VkFormat depthFormat = m_logicalDevice->ChosenPhysicalDevice()->FindDepthFormat();
+		VkFormat depthFormat = m_device->ChosenPhysicalDevice()->FindDepthFormat();
 		m_depthImage = std::make_unique<vzt::ImageHandler>(vzt::ImageHandler{
 		    vzt::ImageView(
-		        m_logicalDevice, Size2D<uint32_t>{m_swapChainExtent.width, m_swapChainExtent.height}, depthFormat,
+		        m_device, Size2D<uint32_t>{m_swapChainExtent.width, m_swapChainExtent.height}, depthFormat,
 		        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT,
 		        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
-		    Sampler(m_logicalDevice)});
+		    Sampler(m_device)});
 	}
 
 	void SwapChain::CreateRenderSupport()
 	{
-		vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, nullptr);
+		vkGetSwapchainImagesKHR(m_device->VkHandle(), m_vkHandle, &m_imageCount, nullptr);
 		auto swapChainImages = std::vector<VkImage>(m_imageCount);
 		m_frames.reserve(m_imageCount);
-		vkGetSwapchainImagesKHR(m_logicalDevice->VkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
+		vkGetSwapchainImagesKHR(m_device->VkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
 		m_commandPool->AllocateCommandBuffers(m_imageCount);
 
 		auto tempImageData = std::vector<uint8_t>(m_swapChainExtent.width * m_swapChainExtent.height * 4, 0);
@@ -267,10 +265,10 @@ namespace vzt
 		{
 			// TODO: Handle CommandBuffer in a CommandPool class
 			VkImageView handle =
-			    m_logicalDevice->CreateImageView(swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+			    m_device->CreateImageView(swapChainImages[i], m_swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
 
 			auto frameBuffer = vzt::FrameBuffer(
-			    m_logicalDevice, swapChainImages[i], handle,
+			    m_device, swapChainImages[i], handle,
 			    m_graphicPipelines[m_graphicPipelines.size() - 1]->RenderPass()->VkHandle(),
 			    std::vector<VkImageView>({handle, m_depthImage->imageView.VkHandle()}), m_swapChainExtent.width,
 			    m_swapChainExtent.height);
@@ -297,13 +295,11 @@ namespace vzt
 
 		for (std::size_t i = 0; i < MaxFramesInFlight; i++)
 		{
-			if (vkCreateSemaphore(
-			        m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) !=
+			if (vkCreateSemaphore(m_device->VkHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) !=
 			        VK_SUCCESS ||
-			    vkCreateSemaphore(
-			        m_logicalDevice->VkHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) !=
+			    vkCreateSemaphore(m_device->VkHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) !=
 			        VK_SUCCESS ||
-			    vkCreateFence(m_logicalDevice->VkHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
+			    vkCreateFence(m_device->VkHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to create synchronization objects for a frame!");
 			}
@@ -316,13 +312,13 @@ namespace vzt
 		{
 			if (m_imagesInFlight[i] != VK_NULL_HANDLE)
 			{
-				vkWaitForFences(m_logicalDevice->VkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
+				vkWaitForFences(m_device->VkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
 			}
 		}
 		m_frames.clear();
 		m_depthImage.reset();
 
-		vkDestroySwapchainKHR(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+		vkDestroySwapchainKHR(m_device->VkHandle(), m_vkHandle, nullptr);
 	}
 
 	VkSurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats)
