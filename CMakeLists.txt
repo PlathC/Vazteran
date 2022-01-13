@@ -156,8 +156,8 @@ set(HEADERS
         include/Vazteran/Application.hpp
         include/Vazteran/Window.hpp
         include/Vazteran/Core/Math.hpp
+        include/Vazteran/Core/Math/Aabb.hpp
         include/Vazteran/Core/Utils.hpp
-        include/Vazteran/Data/Aabb.hpp
         include/Vazteran/Data/Camera.hpp
         include/Vazteran/Data/Image.hpp
         include/Vazteran/Data/Material.hpp
@@ -166,30 +166,30 @@ set(HEADERS
         include/Vazteran/Data/Scene.hpp
         include/Vazteran/Data/Types.hpp
         include/Vazteran/Data/Vertex.hpp
-        include/Vazteran/Vulkan/Buffer.hpp
-        include/Vazteran/Vulkan/Buffer.inl
-        include/Vazteran/Vulkan/CommandPool.hpp
-        include/Vazteran/Vulkan/FrameBuffer.hpp
-        include/Vazteran/Vulkan/GpuObjects.hpp
-        include/Vazteran/Vulkan/GraphicPipeline.hpp
-        include/Vazteran/Vulkan/ImageUtils.hpp
-        include/Vazteran/Vulkan/Instance.hpp
-        include/Vazteran/Vulkan/LogicalDevice.hpp
-        include/Vazteran/Vulkan/PhysicalDevice.hpp
-        include/Vazteran/Vulkan/RenderPass.hpp
-        include/Vazteran/Vulkan/RenderObject.hpp
-        include/Vazteran/Vulkan/Shader.hpp
-        include/Vazteran/Vulkan/SwapChain.hpp
-        include/Vazteran/Vulkan/UiRenderer.hpp
-        include/Vazteran/Vulkan/VkRenderer.hpp
+        include/Vazteran/Framework/Vulkan/Buffer.hpp
+        include/Vazteran/Framework/Vulkan/Buffer.inl
+        include/Vazteran/Framework/Vulkan/CommandPool.hpp
+        include/Vazteran/Framework/Vulkan/FrameBuffer.hpp
+        include/Vazteran/Framework/Vulkan/GpuObjects.hpp
+        include/Vazteran/Framework/Vulkan/GraphicPipeline.hpp
+        include/Vazteran/Framework/Vulkan/ImageUtils.hpp
+        include/Vazteran/Framework/Vulkan/Instance.hpp
+        include/Vazteran/Framework/Vulkan/LogicalDevice.hpp
+        include/Vazteran/Framework/Vulkan/PhysicalDevice.hpp
+        include/Vazteran/Framework/Vulkan/RenderPass.hpp
+        include/Vazteran/Framework/Vulkan/RenderObject.hpp
+        include/Vazteran/Framework/Vulkan/Shader.hpp
+        include/Vazteran/Framework/Vulkan/SwapChain.hpp
+        include/Vazteran/Framework/Vulkan/UiRenderer.hpp
+        include/Vazteran/Framework/Vulkan/VkRenderer.hpp
         )
 
 set(SOURCES
         src/main.cpp
         src/Application.cpp
         src/Window.cpp
+        src/Core/Math/Aabb.cpp
         src/Core/Utils.cpp
-        src/Data/Aabb.cpp
         src/Data/Camera.cpp
         src/Data/Image.cpp
         src/Data/Material.cpp
@@ -198,19 +198,19 @@ set(SOURCES
         src/Data/Scene.cpp
         src/Data/Types.cpp
         src/Data/Vertex.cpp
-        src/Vulkan/CommandPool.cpp
-        src/Vulkan/Instance.cpp
-        src/Vulkan/GraphicPipeline.cpp
-        src/Vulkan/ImageUtils.cpp
-        src/Vulkan/FrameBuffer.cpp
-        src/Vulkan/LogicalDevice.cpp
-        src/Vulkan/PhysicalDevice.cpp
-        src/Vulkan/RenderPass.cpp
-        src/Vulkan/RenderObject.cpp
-        src/Vulkan/Shader.cpp
-        src/Vulkan/SwapChain.cpp
-        src/Vulkan/UiRenderer.cpp
-        src/Vulkan/VkRenderer.cpp
+        src/Framework/Vulkan/CommandPool.cpp
+        src/Framework/Vulkan/Instance.cpp
+        src/Framework/Vulkan/GraphicPipeline.cpp
+        src/Framework/Vulkan/ImageUtils.cpp
+        src/Framework/Vulkan/FrameBuffer.cpp
+        src/Framework/Vulkan/LogicalDevice.cpp
+        src/Framework/Vulkan/PhysicalDevice.cpp
+        src/Framework/Vulkan/RenderPass.cpp
+        src/Framework/Vulkan/RenderObject.cpp
+        src/Framework/Vulkan/Shader.cpp
+        src/Framework/Vulkan/SwapChain.cpp
+        src/Framework/Vulkan/UiRenderer.cpp
+        src/Framework/Vulkan/VkRenderer.cpp
 )
 
 add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})

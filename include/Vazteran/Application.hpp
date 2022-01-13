@@ -8,29 +8,30 @@
 #include "Vazteran/Data/Camera.hpp"
 #include "Vazteran/Data/Scene.hpp"
 
-namespace vzt{
-    class Instance;
-    class Model;
-    class Renderer;
-    class UiRenderer;
-    class Window;
+namespace vzt
+{
+	class Instance;
+	class Model;
+	class Renderer;
+	class UiRenderer;
+	class Window;
 
-    class Application {
-    public:
-        explicit Application(std::string_view name, vzt::Scene scene);
+	class Application
+	{
+	  public:
+		explicit Application(std::string_view name, vzt::Scene scene);
 
-        void Run();
+		void Run();
 
-        ~Application();
+		~Application();
 
-    private:
-        std::unique_ptr<vzt::Instance> m_instance;
-        std::unique_ptr<vzt::Window> m_window;
-        std::unique_ptr<vzt::Renderer> m_renderer;
+	  private:
+		std::unique_ptr<vzt::Instance> m_instance;
+		std::unique_ptr<vzt::Window> m_window;
+		std::unique_ptr<vzt::Renderer> m_renderer;
 
-        Scene m_scene;
-    };
-}
+		Scene m_scene;
+	};
+} // namespace vzt
 
-
-#endif //VAZTERAN_APPLICATION_HPP
+#endif // VAZTERAN_APPLICATION_HPP

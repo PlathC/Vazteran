@@ -1,0 +1,8 @@
+﻿---
+BasedOnStyle: Microsoft
+AlignAfterOpenBracket: AlwaysBreak
+Cpp11BracedListStyle: 'true'
+NamespaceIndentation: All
+UseTab: ForIndentation
+
+...

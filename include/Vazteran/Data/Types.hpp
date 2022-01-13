@@ -6,15 +6,15 @@
 
 #include <glm/glm.hpp>
 
-namespace vzt {
-    template<typename Type>
-    struct Size2D {
-        Type width;
-        Type height;
-    };
+namespace vzt
+{
+	template <typename Type> struct Size2D
+	{
+		Type width;
+		Type height;
+	};
 
-    using Color = glm::vec4;
-}
+	using Color = glm::vec4;
+} // namespace vzt
 
-
-#endif //VAZTERAN_TYPES_HPP
+#endif // VAZTERAN_TYPES_HPP

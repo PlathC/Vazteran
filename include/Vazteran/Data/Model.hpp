@@ -10,26 +10,46 @@ namespace fs = std::filesystem;
 #include "Vazteran/Data/Mesh.hpp"
 #include "Vazteran/Data/Vertex.hpp"
 
-namespace vzt {
-    class Model {
-    public:
-        Model(const fs::path& modelPath);
-        vzt::AABB BoundingBox() const;
-        vzt::Mesh& Mesh() { return m_mesh; };
-        const vzt::Mesh& CMesh() const { return m_mesh; };
+namespace vzt
+{
+	class Model
+	{
+	  public:
+		Model(const fs::path &modelPath);
+		vzt::AABB BoundingBox() const;
+		vzt::Mesh &Mesh()
+		{
+			return m_mesh;
+		};
+		const vzt::Mesh &CMesh() const
+		{
+			return m_mesh;
+		};
 
-        glm::mat4 ModelMatrix() const;
-        glm::vec3& Rotation() { return m_rotation; }
-        glm::vec3 CRotation() const { return m_rotation; }
-        glm::vec3& Position() { return m_position; }
-        glm::vec3 CPosition() const { return m_position; }
+		glm::mat4 ModelMatrix() const;
+		glm::vec3 &Rotation()
+		{
+			return m_rotation;
+		}
+		glm::vec3 CRotation() const
+		{
+			return m_rotation;
+		}
+		glm::vec3 &Position()
+		{
+			return m_position;
+		}
+		glm::vec3 CPosition() const
+		{
+			return m_position;
+		}
 
-    private:
-        vzt::Mesh m_mesh;
+	  private:
+		vzt::Mesh m_mesh;
 
-        glm::vec3 m_position = {0.f, 0.f, 0.f};
-        glm::vec3 m_rotation = {0.f, 0.f, 0.f};
-    };
-}
+		glm::vec3 m_position = {0.f, 0.f, 0.f};
+		glm::vec3 m_rotation = {0.f, 0.f, 0.f};
+	};
+} // namespace vzt
 
-#endif //VAZTERAN_MODEL_HPP
+#endif // VAZTERAN_MODEL_HPP

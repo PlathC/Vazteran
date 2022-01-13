@@ -7,28 +7,42 @@ namespace fs = std::filesystem;
 
 #include <glm/glm.hpp>
 
-namespace vzt {
-    class Image {
-    public:
-        Image();
-        Image(const fs::path& imagePath);
-        Image(std::vector<uint8_t> imageData, uint32_t width, uint32_t height, uint8_t channels);
-        Image(glm::vec4 color);
+namespace vzt
+{
+	class Image
+	{
+	  public:
+		Image();
+		Image(const fs::path &imagePath);
+		Image(std::vector<uint8_t> imageData, uint32_t width, uint32_t height, uint8_t channels);
+		Image(glm::vec4 color);
 
-        Image& operator=(const fs::path& imagePath);
-        Image& operator=(glm::vec4 color);
+		Image &operator=(const fs::path &imagePath);
+		Image &operator=(glm::vec4 color);
 
-        const std::vector<uint8_t>& Data() { return m_data; }
-        uint32_t Width() const { return m_width; }
-        uint32_t Height() const { return m_height; }
-        uint8_t Channels() const { return m_channels; }
-    private:
-        std::vector<uint8_t> m_data;
-        uint32_t m_width;
-        uint32_t m_height;
-        uint8_t m_channels;
-    };
-}
+		const std::vector<uint8_t> &Data()
+		{
+			return m_data;
+		}
+		uint32_t Width() const
+		{
+			return m_width;
+		}
+		uint32_t Height() const
+		{
+			return m_height;
+		}
+		uint8_t Channels() const
+		{
+			return m_channels;
+		}
 
+	  private:
+		std::vector<uint8_t> m_data;
+		uint32_t m_width;
+		uint32_t m_height;
+		uint8_t m_channels;
+	};
+} // namespace vzt
 
-#endif //VAZTERAN_IMAGE_HPP
+#endif // VAZTERAN_IMAGE_HPP
