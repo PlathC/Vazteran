@@ -42,5 +42,8 @@ namespace vzt
 		m_swapChain->SetFrameBufferSize(std::move(newSize));
 		m_swapChain->Recreate(m_surface);
 		m_meshView->Configure(m_swapChain->GetSettings());
+		m_swapChain->Record([&](uint32_t i, VkCommandBuffer commandBuffer, const vzt::RenderPass* const renderPass) {
+			m_meshView->Record(i, commandBuffer, renderPass);
+		});
 	}
 } // namespace vzt

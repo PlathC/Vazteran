@@ -49,7 +49,7 @@ namespace vzt
 		bool DrawFrame();
 
 		vzt::PipelineSettings GetSettings() const { return {m_swapChainImageFormat, m_swapChainSize}; }
-		vzt::Size2D<uint32_t> FrameBufferSize() const { return m_frameBufferSize; }
+		vzt::Size2D<uint32_t> FrameBufferSize() const { return m_swapChainSize; }
 		uint32_t              ImageCount() const { return m_imageCount; }
 
 		~SwapChain();
@@ -74,7 +74,6 @@ namespace vzt
 		std::size_t m_currentFrame       = 0;
 		bool        m_framebufferResized = false;
 
-		vzt::Size2D<uint32_t> m_frameBufferSize;
 		VkSurfaceKHR          m_surface;
 		uint32_t              m_imageCount;
 		VkFormat              m_swapChainImageFormat;

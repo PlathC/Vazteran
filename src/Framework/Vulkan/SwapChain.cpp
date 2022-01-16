@@ -101,7 +101,7 @@ namespace vzt
 
 	void SwapChain::SetFrameBufferSize(vzt::Size2D<uint32_t> newSize)
 	{
-		m_frameBufferSize    = newSize;
+		m_swapChainSize      = newSize;
 		m_framebufferResized = true;
 	};
 
@@ -168,7 +168,6 @@ namespace vzt
 		createInfo.imageArrayLayers = 1;
 		createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 		m_swapChainImageFormat      = surfaceFormat.format;
-		m_frameBufferSize           = {extent.width, extent.height};
 
 		QueueFamilyIndices indices              = m_device->DeviceQueueFamilyIndices();
 		uint32_t           queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -299,7 +298,7 @@ namespace vzt
 		}
 		else
 		{
-			return {static_cast<uint32_t>(m_frameBufferSize.width), static_cast<uint32_t>(m_frameBufferSize.height)};
+			return {static_cast<uint32_t>(m_swapChainSize.width), static_cast<uint32_t>(m_swapChainSize.height)};
 		}
 	}
 } // namespace vzt

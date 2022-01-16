@@ -43,16 +43,3 @@ namespace vzt
 		return attributeDescriptions;
 	}
 } // namespace vzt
-
-namespace std
-{
-	size_t hash<vzt::BlinnPhongVertexInput>::operator()(vzt::BlinnPhongVertexInput const& vertex) const
-	{
-		std::size_t res = 0;
-		vzt::HashCombine(res, vertex.position);
-		vzt::HashCombine(res, vertex.textureCoordinates);
-		vzt::HashCombine(res, vertex.normal);
-
-		return res;
-	}
-} // namespace std
