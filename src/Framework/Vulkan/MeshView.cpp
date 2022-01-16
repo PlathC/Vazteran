@@ -128,9 +128,9 @@ namespace vzt
 		                reinterpret_cast<uint8_t*>(submeshIndices.data()), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 		IndexedUniform<vzt::BufferDescriptor> bufferDescriptors;
-		const uint32_t                        transformOffset = m_models.size() * m_transformOffsetSize;
-		bufferDescriptors[m_transformDescriptor.binding]      = {transformOffset, m_transformDescriptor.size,
-                                                            &m_transformBuffer};
+		bufferDescriptors[m_transformDescriptor.binding] = {
+		    static_cast<uint32_t>(m_models.size() * m_transformOffsetSize), m_transformDescriptor.size,
+		    &m_transformBuffer};
 
 		auto materials = model->CMesh().CMaterials();
 		for (std::size_t materialId = 0; materialId < materials.size(); materialId++)

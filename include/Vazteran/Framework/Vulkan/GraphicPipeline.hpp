@@ -66,16 +66,15 @@ namespace vzt
 		void Cleanup();
 
 	  private:
-		vzt::Device*                m_device;
-		vzt::VertexInputDescription m_vertexInputDescription;
+		vzt::Device* m_device;
 
 		VkPipeline       m_vkHandle       = VK_NULL_HANDLE;
 		VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-		vzt::Program          m_program;
-		vzt::PipelineSettings m_settings{};
-
-		vzt::RenderPass const* m_boundRenderPass = nullptr;
+		vzt::VertexInputDescription m_vertexInputDescription;
+		vzt::Program                m_program;
+		vzt::PipelineSettings       m_settings{};
+		vzt::RenderPass const*      m_boundRenderPass = nullptr;
 	};
 } // namespace vzt
 
