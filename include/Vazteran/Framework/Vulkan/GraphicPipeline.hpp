@@ -7,7 +7,6 @@
 
 #include "Vazteran/Framework/Vulkan/Descriptor.hpp"
 #include "Vazteran/Framework/Vulkan/Shader.hpp"
-#include "Vazteran/Framework/Vulkan/VertexInput.hpp"
 
 namespace vzt
 {
@@ -30,6 +29,15 @@ namespace vzt
 		VkFormat              swapChainImageFormat;
 		vzt::Size2D<uint32_t> swapChainExtent;
 		vzt::DrawType         drawType = DrawType::Fill;
+	};
+
+	using BindingDescription   = VkVertexInputBindingDescription;
+	using AttributeDescription = std::vector<VkVertexInputAttributeDescription>;
+
+	struct VertexInputDescription
+	{
+		BindingDescription   binding;
+		AttributeDescription attribute;
 	};
 
 	class GraphicPipeline

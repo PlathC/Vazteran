@@ -16,6 +16,16 @@ namespace vzt
 	class GraphicPipeline;
 	class FrameBuffer;
 
+	struct BlinnPhongVertexInput
+	{
+		vzt::Vec3 position;
+		vzt::Vec2 textureCoordinates;
+		vzt::Vec3 normal;
+
+		static VkVertexInputBindingDescription                GetBindingDescription();
+		static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription();
+	};
+
 	class MeshView
 	{
 	  public:
@@ -41,7 +51,6 @@ namespace vzt
 		// Rendering objects
 		vzt::Device*                          m_device;
 		std::unique_ptr<vzt::GraphicPipeline> m_graphicPipeline;
-
 		struct SubMeshData
 		{
 			uint32_t minOffset;

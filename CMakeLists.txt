@@ -179,7 +179,7 @@ set(HEADERS
         include/Vazteran/Framework/Vulkan/RenderPass.hpp
         include/Vazteran/Framework/Vulkan/Shader.hpp
         include/Vazteran/Framework/Vulkan/SwapChain.hpp
-        include/Vazteran/Framework/Vulkan/VertexInput.hpp
+        
         include/Vazteran/Framework/Vulkan/VkRenderer.hpp
         )
 
@@ -208,7 +208,7 @@ set(SOURCES
         src/Framework/Vulkan/RenderPass.cpp
         src/Framework/Vulkan/Shader.cpp
         src/Framework/Vulkan/SwapChain.cpp
-        src/Framework/Vulkan/VertexInput.cpp
+        
         
         src/Framework/Vulkan/VkRenderer.cpp
 )
