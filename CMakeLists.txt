@@ -164,22 +164,22 @@ set(HEADERS
         include/Vazteran/Data/Mesh.hpp
         include/Vazteran/Data/Model.hpp
         include/Vazteran/Data/Scene.hpp
-        include/Vazteran/Data/Types.hpp
-        include/Vazteran/Data/Vertex.hpp
+        
         include/Vazteran/Framework/Vulkan/Buffer.hpp
         include/Vazteran/Framework/Vulkan/Buffer.inl
         include/Vazteran/Framework/Vulkan/CommandPool.hpp
+        include/Vazteran/Framework/Vulkan/Descriptor.hpp
         include/Vazteran/Framework/Vulkan/Device.hpp
         include/Vazteran/Framework/Vulkan/FrameBuffer.hpp
         include/Vazteran/Framework/Vulkan/GpuObjects.hpp
         include/Vazteran/Framework/Vulkan/GraphicPipeline.hpp
         include/Vazteran/Framework/Vulkan/ImageUtils.hpp
         include/Vazteran/Framework/Vulkan/Instance.hpp
+        include/Vazteran/Framework/Vulkan/MeshView.hpp
         include/Vazteran/Framework/Vulkan/RenderPass.hpp
-        include/Vazteran/Framework/Vulkan/RenderObject.hpp
         include/Vazteran/Framework/Vulkan/Shader.hpp
         include/Vazteran/Framework/Vulkan/SwapChain.hpp
-        
+        include/Vazteran/Framework/Vulkan/VertexInput.hpp
         include/Vazteran/Framework/Vulkan/VkRenderer.hpp
         )
 
@@ -195,18 +195,20 @@ set(SOURCES
         src/Data/Mesh.cpp
         src/Data/Model.cpp
         src/Data/Scene.cpp
-        src/Data/Types.cpp
-        src/Data/Vertex.cpp
+        
+        src/Framework/Vulkan/Buffer.cpp
         src/Framework/Vulkan/CommandPool.cpp
+        src/Framework/Vulkan/Descriptor.cpp
         src/Framework/Vulkan/Device.cpp
         src/Framework/Vulkan/Instance.cpp
         src/Framework/Vulkan/GraphicPipeline.cpp
         src/Framework/Vulkan/ImageUtils.cpp
         src/Framework/Vulkan/FrameBuffer.cpp
+        src/Framework/Vulkan/MeshView.cpp
         src/Framework/Vulkan/RenderPass.cpp
-        src/Framework/Vulkan/RenderObject.cpp
         src/Framework/Vulkan/Shader.cpp
         src/Framework/Vulkan/SwapChain.cpp
+        src/Framework/Vulkan/VertexInput.cpp
         
         src/Framework/Vulkan/VkRenderer.cpp
 )

@@ -12,12 +12,14 @@ namespace vzt
 	{
 	}
 
-	std::vector<Model *> Scene::Models() const
+	Scene ::~Scene() = default;
+
+	std::vector<Model*> Scene::Models() const
 	{
-		auto result = std::vector<Model *>();
+		auto result = std::vector<Model*>();
 		result.reserve(m_models.size());
 
-		for (const auto &model : m_models)
+		for (const auto& model : m_models)
 			result.emplace_back(model.get());
 
 		return result;
@@ -25,7 +27,7 @@ namespace vzt
 
 	void Scene::Update() const
 	{
-		for (const auto &model : m_models)
+		for (const auto& model : m_models)
 		{
 			m_callback(model.get());
 		}
@@ -40,9 +42,9 @@ namespace vzt
 			models.reserve(128);
 			models.emplace_back(std::make_unique<vzt::Model>("./samples/TheCrounchingBoy.obj"));
 			vzt::AABB fullBoundingBox = models[0]->BoundingBox();
-			for (std::size_t i = 1; i < 128; i++)
+			for (std::size_t i = 1; i < 64; i++)
 			{
-				auto moved = std::make_unique<vzt::Model>(*models[0]);
+				auto moved    = std::make_unique<vzt::Model>(*models[0]);
 				auto movement = glm::sphericalRand(5.f);
 				moved->Position() += movement;
 				moved->Mesh().Materials()[0].ambientColor = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.);
@@ -51,10 +53,10 @@ namespace vzt
 				models.emplace_back(std::move(moved));
 			}
 
-			return Scene(std::move(models), Camera::FromBoundingBox(fullBoundingBox), [](Model *model) {
+			return Scene(std::move(models), Camera::FromBoundingBox(fullBoundingBox), [](Model* model) {
 				static auto startTime = std::chrono::high_resolution_clock::now();
 
-				auto currentTime = std::chrono::high_resolution_clock::now();
+				auto  currentTime = std::chrono::high_resolution_clock::now();
 				float time =
 				    std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 				model->Rotation() = time * glm::radians(45.f) * glm::vec3(0.0f, 0.0f, 1.0f);

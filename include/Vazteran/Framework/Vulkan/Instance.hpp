@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_INSTANCE_HPP
-#define VAZTERAN_INSTANCE_HPP
+#ifndef VAZTERAN_FRAMEWORK_VULKAN_INSTANCE_HPP
+#define VAZTERAN_FRAMEWORK_VULKAN_INSTANCE_HPP
 
 #include <string>
 #include <vector>
@@ -53,4 +53,4 @@ namespace vzt
 	    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData);
 } // namespace vzt
 
-#endif // VAZTERAN_INSTANCE_HPP
+#endif // VAZTERAN_FRAMEWORK_VULKAN_INSTANCE_HPP

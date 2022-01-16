@@ -1,11 +1,10 @@
 #ifndef VAZTERAN_AABB_HPP
 #define VAZTERAN_AABB_HPP
 
-#include <glm/glm.hpp>
+#include <array>
 #include <vector>
 
 #include "Vazteran/Core/Math.hpp"
-#include "Vazteran/Data/Vertex.hpp"
 
 namespace vzt
 {
@@ -13,7 +12,7 @@ namespace vzt
 	{
 	  public:
 		AABB() = default;
-		AABB(const std::vector<vzt::Vertex> &vertices);
+		AABB(const std::vector<vzt::Vec3> &vertices);
 		AABB(const std::vector<vzt::AABB> &aabbs);
 
 		void Extend(const AABB &other);
@@ -27,19 +26,19 @@ namespace vzt
 		{
 			return m_maximum;
 		}
-		const std::array<glm::vec3, 8> &CVertices() const
+		const std::array<vzt::Vec3, 8> &CVertices() const
 		{
 			return m_vertices;
 		}
-		std::array<glm::vec3, 8> &Vertices()
+		std::array<vzt::Vec3, 8> &Vertices()
 		{
 			return m_vertices;
 		}
 
 	  private:
-		std::array<glm::vec3, 8> m_vertices;
-		glm::vec3 m_minimum = glm::vec3(vzt::Max<float>);
-		glm::vec3 m_maximum = glm::vec3(vzt::Min<float>);
+		std::array<vzt::Vec3, 8> m_vertices;
+		glm::vec3 m_minimum = vzt::Vec3(vzt::Max<float>);
+		glm::vec3 m_maximum = vzt::Vec3(vzt::Min<float>);
 	};
 } // namespace vzt
 

@@ -1,33 +1,28 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout(push_constant) uniform Model {
-    mat4 model;
-    mat4 view;
-    mat4 projection;
-    vec3 viewPosition;
-} model;
+layout( binding = 0 ) uniform Model {
+    mat4 modelViewMatrix;
+    mat4 projectionMatrix;
+    mat4 normalMatrix;
+} ubo;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTextureCoordinates;
 layout(location = 2) in vec3 inNormal;
 
-layout(location = 0) out vec3 fragmentPosition;
-layout(location = 1) out vec2 fragmentTextureCoordinates;
+layout(location = 0) out vec3 vsPosition;
+layout(location = 1) out vec2 uv;
 layout(location = 2) out vec3 normal;
-layout(location = 3) out vec3 viewPosition;
-layout(location = 4) out vec3 vertPosition;
 
 
 void main() {
-    gl_Position = model.projection * model.view * model.model * vec4(inPosition, 1.f);
-    fragmentPosition = vec3(model.model * vec4(inPosition, 1.f));
-    fragmentTextureCoordinates = inTextureCoordinates;
+    uv     = inTextureCoordinates;
+    normal = normalize((ubo.normalMatrix * vec4(inNormal, 1.0f)).xyz);
 
-    mat4 modelViewMatrix = model.view * model.model;
-    mat4 normalMatrix = transpose(inverse(modelViewMatrix));
-    normal = normalize((normalMatrix * vec4(inNormal, 0.0f)).xyz);
+    const vec4 viewSpacePosition = ubo.modelViewMatrix * vec4(inPosition, 1.0f);
 
-    vec4 vertPosition4 = modelViewMatrix * vec4(inPosition, 1.0f);
-    vertPosition = vec3(vertPosition4) / vertPosition4.w;
+    vsPosition  =  viewSpacePosition.xyz;
+    gl_Position =  ubo.projectionMatrix * viewSpacePosition;
+    gl_Position /= gl_Position.w;
 }

@@ -23,12 +23,12 @@ namespace vzt
 
 		m_instance = std::make_unique<vzt::Instance>(name, m_window->VkExtensions());
 
-		const auto size = m_window->FrameBufferSize();
+		const auto size                   = m_window->FrameBufferSize();
 		m_scene.SceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
 
-		m_renderer = std::make_unique<vzt::Renderer>(
-		    m_instance.get(), m_window->Handle(), m_window->Surface(m_instance.get()), m_window->FrameBufferSize(),
-		    m_scene.SceneCamera(), m_scene.Models());
+		m_renderer = std::make_unique<vzt::Renderer>(m_instance.get(), m_window->Handle(),
+		                                             m_window->Surface(m_instance.get()), m_window->FrameBufferSize());
+		m_renderer->SetScene(&m_scene);
 	}
 
 	void Application::Run()
@@ -36,14 +36,11 @@ namespace vzt
 		while (!m_window->Update())
 		{
 			m_scene.Update();
-			m_renderer->Draw();
+			m_renderer->Draw(m_scene.SceneCamera());
 		}
 
 		vkDeviceWaitIdle(m_renderer->Device()->VkHandle());
 	}
 
-	Application::~Application()
-	{
-		glfwTerminate();
-	}
+	Application::~Application() { glfwTerminate(); }
 } // namespace vzt

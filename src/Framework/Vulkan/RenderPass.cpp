@@ -2,44 +2,46 @@
 #include <stdexcept>
 
 #include "Vazteran/Framework/Vulkan/Device.hpp"
+#include "Vazteran/Framework/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Framework/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
-	RenderPass::RenderPass(vzt::Device *device, VkFormat colorImageFormat) : m_device(device)
+	RenderPass::RenderPass(vzt::Device* device, vzt::Size2D<uint32_t> size, VkFormat colorImageFormat)
+	    : m_device(device), m_size(std::move(size))
 	{
 		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = colorImageFormat;
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.format         = colorImageFormat;
+		colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 		VkAttachmentReference colorAttachmentRef{};
 		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = m_device->ChosenPhysicalDevice()->FindDepthFormat();
-		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		depthAttachment.format         = m_device->ChosenPhysicalDevice()->FindDepthFormat();
+		depthAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+		depthAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		depthAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+		depthAttachment.finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentReference depthAttachmentRef{};
 		depthAttachmentRef.attachment = 1;
-		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		depthAttachmentRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
+		subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount    = 1;
+		subpass.pColorAttachments       = &colorAttachmentRef;
 		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 		VkSubpassDependency dependency{};
@@ -52,14 +54,14 @@ namespace vzt
 		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
 		std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-		VkRenderPassCreateInfo renderPassInfo{};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		VkRenderPassCreateInfo                 renderPassInfo{};
+		renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		renderPassInfo.pAttachments = attachments.data();
-		renderPassInfo.subpassCount = 1;
-		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.pAttachments    = attachments.data();
+		renderPassInfo.subpassCount    = 1;
+		renderPassInfo.pSubpasses      = &subpass;
 		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies = &dependency;
+		renderPassInfo.pDependencies   = &dependency;
 
 		if (vkCreateRenderPass(m_device->VkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
@@ -67,13 +69,13 @@ namespace vzt
 		}
 	}
 
-	RenderPass::RenderPass(RenderPass &&other) noexcept
+	RenderPass::RenderPass(RenderPass&& other) noexcept
 	{
-		m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
-		m_device = std::exchange(other.m_device, nullptr);
+		std::swap(m_vkHandle, other.m_vkHandle);
+		std::swap(m_device, other.m_device);
 	}
 
-	RenderPass &RenderPass::operator=(RenderPass &&other) noexcept
+	RenderPass& RenderPass::operator=(RenderPass&& other) noexcept
 	{
 		std::swap(m_vkHandle, other.m_vkHandle);
 		std::swap(m_device, other.m_device);
@@ -88,4 +90,26 @@ namespace vzt
 			vkDestroyRenderPass(m_device->VkHandle(), m_vkHandle, nullptr);
 		}
 	}
+
+	void RenderPass::Bind(VkCommandBuffer commandBuffer, const vzt::FrameBuffer* const frameBuffer) const
+	{
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass        = m_vkHandle;
+		renderPassInfo.framebuffer       = frameBuffer->VkHandle();
+		renderPassInfo.renderArea.offset = {0, 0};
+
+		const auto fbSize                = frameBuffer->Size();
+		renderPassInfo.renderArea.extent = VkExtent2D{fbSize.width, fbSize.height};
+
+		std::array<VkClearValue, 2> clearValues{};
+		clearValues[0].color           = {0.0f, 0.0f, 0.0f, 1.0f};
+		clearValues[1].depthStencil    = {1.0f, 0};
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues    = clearValues.data();
+
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	}
+
+	void RenderPass::Unbind(VkCommandBuffer commandBuffer) const { vkCmdEndRenderPass(commandBuffer); }
 } // namespace vzt

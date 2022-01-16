@@ -10,14 +10,13 @@ namespace vzt
 {
 	Mesh::Mesh(const fs::path &modelPath)
 	{
-		tinyobj::attrib_t attrib;
-		std::vector<tinyobj::shape_t> shapes;
+		tinyobj::attrib_t                attrib;
+		std::vector<tinyobj::shape_t>    shapes;
 		std::vector<tinyobj::material_t> materials;
-		std::string errorMessage;
+		std::string                      errorMessage;
 
-		if (!tinyobj::LoadObj(
-		        &attrib, &shapes, &materials, &errorMessage, modelPath.string().c_str(),
-		        (modelPath.parent_path().string() + "/").c_str()))
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &errorMessage, modelPath.string().c_str(),
+		                      (modelPath.parent_path().string() + "/").c_str()))
 		{
 			throw std::runtime_error(errorMessage);
 		}
@@ -30,7 +29,7 @@ namespace vzt
 		for (int materialId = 0; materialId < materials.size(); materialId++)
 		{
 			tinyObjToVazteranMaterialIndices[materialId] = static_cast<uint32_t>(m_materials.size());
-			auto currentMaterial = materials[materialId];
+			auto currentMaterial                         = materials[materialId];
 
 			if (currentMaterial.name == "None")
 			{
@@ -50,10 +49,10 @@ namespace vzt
 
 				m_materials.emplace_back(vzt::Material{
 				    ambientTexture, diffuseTexture, specularTexture,
-				    vzt::Color{currentMaterial.ambient[0], currentMaterial.ambient[1], currentMaterial.ambient[2], 1.f},
-				    vzt::Color{currentMaterial.diffuse[0], currentMaterial.diffuse[1], currentMaterial.diffuse[2], 1.f},
-				    vzt::Color{
-				        currentMaterial.specular[0], currentMaterial.specular[1], currentMaterial.specular[2], 1.f},
+				    vzt::Vec4{currentMaterial.ambient[0], currentMaterial.ambient[1], currentMaterial.ambient[2], 1.f},
+				    vzt::Vec4{currentMaterial.diffuse[0], currentMaterial.diffuse[1], currentMaterial.diffuse[2], 1.f},
+				    vzt::Vec4{currentMaterial.specular[0], currentMaterial.specular[1], currentMaterial.specular[2],
+				              1.f},
 				    currentMaterial.shininess});
 			}
 		}
@@ -74,30 +73,30 @@ namespace vzt
 					if (tinyObjToVazteranVertexIndices.find(index.vertex_index) == tinyObjToVazteranVertexIndices.end())
 					{
 						tinyObjToVazteranVertexIndices[index.vertex_index] = static_cast<uint32_t>(m_vertices.size());
-						vzt::Vertex vertex{};
-						vertex.position = {
-						    attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 0],
-						    attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 1],
-						    attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 2]};
+						vzt::Vec3 vertex{attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 0],
+						                 attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 1],
+						                 attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 2]};
 
 						// Check if `normal_index` is zero or positive. negative = no normal data
+						vzt::Vec3 normal{};
 						if (index.normal_index >= 0)
 						{
-							vertex.normal = {
-							    attrib.normals[3 * static_cast<size_t>(index.normal_index) + 0],
-							    attrib.normals[3 * static_cast<size_t>(index.normal_index) + 1],
-							    attrib.normals[3 * static_cast<size_t>(index.normal_index) + 2]};
+							normal.x = attrib.normals[3 * static_cast<size_t>(index.normal_index) + 0];
+							normal.y = attrib.normals[3 * static_cast<size_t>(index.normal_index) + 1];
+							normal.z = attrib.normals[3 * static_cast<size_t>(index.normal_index) + 2];
 						}
 
 						// Check if `texcoord_index` is zero or positive. negative = no texcoord data
+						vzt::Vec2 texCoord{};
 						if (index.texcoord_index >= 0)
 						{
-							vertex.textureCoordinates = {
-							    attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 0],
-							    attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 1]};
+							texCoord.x = attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 0];
+							texCoord.y = attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 1];
 						}
 
 						m_vertices.emplace_back(vertex);
+						m_normals.emplace_back(normal);
+						m_uvs.emplace_back(texCoord);
 					}
 					subMeshVertexIndices.push_back(tinyObjToVazteranVertexIndices[index.vertex_index]);
 				}
@@ -112,16 +111,17 @@ namespace vzt
 		m_aabb = vzt::AABB(m_vertices);
 	}
 
-	Mesh::Mesh(std::vector<vzt::Vertex> vertices, std::vector<uint32_t> vertexIndices, const vzt::Material &material)
+	Mesh::Mesh(std::vector<vzt::Vec3> vertices, std::vector<vzt::Vec3> normals, std::vector<vzt::Vec2> uvs,
+	           std::vector<uint32_t> vertexIndices, const vzt::Material &material)
 	    : m_subMeshes({vzt::SubMesh{0, std::move(vertexIndices)}}), m_vertices(std::move(vertices)),
-	      m_materials({material})
+	      m_normals(std::move(normals)), m_uvs(std::move(uvs)), m_materials({material})
 	{
 	}
 
-	Mesh::Mesh(
-	    std::vector<vzt::SubMesh> subMeshes, std::vector<vzt::Vertex> vertices, std::vector<vzt::Material> materials)
-	    : m_subMeshes(std::move(subMeshes)), m_vertices(std::move(vertices)), m_materials(std::move(materials)),
-	      m_aabb(m_vertices)
+	Mesh::Mesh(std::vector<vzt::SubMesh> subMeshes, std::vector<vzt::Vec3> vertices, std::vector<vzt::Vec3> normals,
+	           std::vector<vzt::Vec2> uvs, std::vector<vzt::Material> materials)
+	    : m_subMeshes(std::move(subMeshes)), m_vertices(std::move(vertices)), m_normals(std::move(normals)),
+	      m_uvs(std::move(uvs)), m_materials(std::move(materials)), m_aabb(m_vertices)
 	{
 	}
 

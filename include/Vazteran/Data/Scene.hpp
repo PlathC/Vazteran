@@ -5,12 +5,11 @@
 #include <vector>
 
 #include "Vazteran/Data/Camera.hpp"
+#include "Vazteran/Data/Model.hpp"
 
 namespace vzt
 {
-	class Model;
-
-	using ModelUpdateCallback = std::function<void(Model *)>;
+	using ModelUpdateCallback = std::function<void(Model*)>;
 
 	class Scene
 	{
@@ -21,27 +20,27 @@ namespace vzt
 		};
 
 	  public:
-		Scene(
-		    std::vector<std::unique_ptr<Model>> models, Camera camera,
-		    ModelUpdateCallback callback = ModelUpdateCallback());
+		Scene(std::vector<std::unique_ptr<Model>> models, Camera camera,
+		      ModelUpdateCallback callback = ModelUpdateCallback());
+		~Scene();
 
-		Camera &SceneCamera()
-		{
-			return m_camera;
-		};
-		Camera CSceneCamera() const
-		{
-			return m_camera;
-		};
-		std::vector<Model *> Models() const;
-		void Update() const;
+		Scene(Scene&) noexcept = delete;
+		Scene& operator=(Scene&) noexcept = delete;
+
+		Scene(Scene&&) noexcept = default;
+		Scene& operator=(Scene&&) noexcept = default;
+
+		Camera&             SceneCamera() { return m_camera; };
+		Camera              CSceneCamera() const { return m_camera; };
+		std::vector<Model*> Models() const;
+		void                Update() const;
 
 		static Scene Default(DefaultScene defaultScene);
 
 	  private:
 		std::vector<std::unique_ptr<Model>> m_models;
-		ModelUpdateCallback m_callback;
-		Camera m_camera;
+		ModelUpdateCallback                 m_callback;
+		Camera                              m_camera;
 	};
 } // namespace vzt
 

@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_GPUOBJECTS_HPP
-#define VAZTERAN_GPUOBJECTS_HPP
+#ifndef VAZTERAN_FRAMEWORK_VULKAN_GPUOBJECTS_HPP
+#define VAZTERAN_FRAMEWORK_VULKAN_GPUOBJECTS_HPP
 
 #include <array>
 #include <vector>
@@ -17,20 +17,19 @@ namespace vzt
 {
 	struct MaterialInfo
 	{
-		glm::vec4 ambientColor;
-		glm::vec4 diffuseColor;
-		glm::vec4 specularColor;
+		vzt::Vec4 ambientColor;
+		vzt::Vec4 diffuseColor;
+		vzt::Vec4 specularColor;
 
 		float shininess;
 	};
 
 	struct Transforms
 	{
-		glm::mat4 model;
-		glm::mat4 view;
-		glm::mat4 projection;
-		glm::vec3 viewPosition;
+		vzt::Mat4 modelViewMatrix;
+		vzt::Mat4 projectionMatrix;
+		vzt::Mat4 normalMatrix;
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_GPUOBJECTS_HPP
+#endif // VAZTERAN_FRAMEWORK_VULKAN_GPUOBJECTS_HPP

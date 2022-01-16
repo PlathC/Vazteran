@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_RENDERER_HPP
-#define VAZTERAN_RENDERER_HPP
+#ifndef VAZTERAN_FRAMEWORK_VULKAN_RENDERER_HPP
+#define VAZTERAN_FRAMEWORK_VULKAN_RENDERER_HPP
 
 #include <vulkan/vulkan.h>
 
@@ -8,7 +8,6 @@
 #include "Vazteran/Framework/Vulkan/Buffer.hpp"
 #include "Vazteran/Framework/Vulkan/CommandPool.hpp"
 #include "Vazteran/Framework/Vulkan/Instance.hpp"
-#include "Vazteran/Framework/Vulkan/RenderObject.hpp"
 #include "Vazteran/Framework/Vulkan/SwapChain.hpp"
 
 struct GLFWwindow;
@@ -18,34 +17,28 @@ namespace vzt
 	class GraphicPipeline;
 	class ImageView;
 	class Device;
-	class Model;
-	class PhysicalDevice;
+	class MeshView;
 	class RenderPass;
+	class Scene;
 
 	class Renderer
 	{
 	  public:
-		Renderer(
-		    vzt::Instance *instance, GLFWwindow *window, VkSurfaceKHR surface, vzt::Size2D<int> size,
-		    vzt::Camera camera, std::vector<vzt::Model *> models = {});
+		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size);
+		~Renderer();
 
-		void Draw();
-		vzt::Device *Device() const
-		{
-			return m_device.get();
-		}
-		RenderPass *FinalPass() const;
-		void FrameBufferResized(vzt::Size2D<int> newSize);
+		void         SetScene(vzt::Scene* scene);
+		void         Draw(const vzt::Camera& camera);
+		vzt::Device* Device() const { return m_device.get(); }
+		void         FrameBufferResized(vzt::Size2D<uint32_t> newSize);
 
 	  private:
 		VkSurfaceKHR m_surface;
 
-		std::unique_ptr<vzt::Device> m_device;
+		std::unique_ptr<vzt::Device>    m_device;
 		std::unique_ptr<vzt::SwapChain> m_swapChain;
-
-		std::vector<std::unique_ptr<vzt::RenderObject>> m_objects;
-		vzt::Camera m_camera;
+		std::unique_ptr<vzt::MeshView>  m_meshView;
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_RENDERER_HPP
+#endif // VAZTERAN_FRAMEWORK_VULKAN_RENDERER_HPP

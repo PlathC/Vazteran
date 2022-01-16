@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_COMMANDPOOL_HPP
-#define VAZTERAN_COMMANDPOOL_HPP
+#ifndef VAZTERAN_FRAMEWORK_VULKAN_COMMAND_POOL_HPP
+#define VAZTERAN_FRAMEWORK_VULKAN_COMMAND_POOL_HPP
 
 #include <array>
 #include <cstdint>
@@ -14,6 +14,8 @@ namespace vzt
 	class Device;
 	class GraphicPipeline;
 
+	using Command = std::function<void(VkCommandBuffer /*commandBuffer*/)>;
+
 	class CommandPool
 	{
 	  public:
@@ -26,20 +28,18 @@ namespace vzt
 		CommandPool &operator=(CommandPool &&other) noexcept;
 
 		void AllocateCommandBuffers(uint32_t count);
-		void RecordBuffer(
-		    const VkExtent2D &swapChainExtent, vzt::GraphicPipeline *graphicPipeline, const FrameBuffer &frameBuffer,
-		    uint32_t bufferNumber) const;
+		void RecordBuffer(uint32_t bufferNumber, Command command) const;
 
 		VkCommandBuffer &operator[](uint32_t bufferNumber);
 
 		~CommandPool();
 
 	  private:
-		Device *m_logicalDevice;
-		VkCommandPool m_vkHandle;
+		Device                      *m_logicalDevice;
+		VkCommandPool                m_vkHandle;
 		std::vector<VkCommandBuffer> m_commandBuffers;
-		uint32_t m_bufferCount;
+		uint32_t                     m_bufferCount;
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_COMMANDPOOL_HPP
+#endif // VAZTERAN_FRAMEWORK_VULKAN_COMMAND_POOL_HPP
