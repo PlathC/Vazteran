@@ -1,4 +1,5 @@
 #include <set>
+#include <unordered_map>
 #include <utility>
 
 #define TINYOBJLOADER_IMPLEMENTATION
@@ -8,7 +9,7 @@
 
 namespace vzt
 {
-	Mesh::Mesh(const fs::path &modelPath)
+	Mesh::Mesh(const fs::path& modelPath)
 	{
 		tinyobj::attrib_t                attrib;
 		std::vector<tinyobj::shape_t>    shapes;
@@ -57,7 +58,7 @@ namespace vzt
 			}
 		}
 
-		for (const auto &shape : shapes)
+		for (const auto& shape : shapes)
 		{
 			std::size_t index_offset = 0;
 
@@ -112,7 +113,7 @@ namespace vzt
 	}
 
 	Mesh::Mesh(std::vector<vzt::Vec3> vertices, std::vector<vzt::Vec3> normals, std::vector<vzt::Vec2> uvs,
-	           std::vector<uint32_t> vertexIndices, const vzt::Material &material)
+	           std::vector<uint32_t> vertexIndices, const vzt::Material& material)
 	    : m_subMeshes({vzt::SubMesh{0, std::move(vertexIndices)}}), m_vertices(std::move(vertices)),
 	      m_normals(std::move(normals)), m_uvs(std::move(uvs)), m_materials({material})
 	{
@@ -129,7 +130,7 @@ namespace vzt
 	{
 		std::vector<std::vector<uint32_t>> indices;
 		indices.reserve(m_subMeshes.size());
-		for (const auto &subMesh : m_subMeshes)
+		for (const auto& subMesh : m_subMeshes)
 		{
 			indices.emplace_back(subMesh.vertexIndices.begin(), subMesh.vertexIndices.end());
 		}
@@ -139,7 +140,7 @@ namespace vzt
 	std::vector<uint32_t> Mesh::MaterialIndices() const
 	{
 		std::vector<uint32_t> indices(m_subMeshes.size());
-		for (const auto &subMesh : m_subMeshes)
+		for (const auto& subMesh : m_subMeshes)
 		{
 			indices.emplace_back(subMesh.materialIndex);
 		}

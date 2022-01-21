@@ -18,10 +18,13 @@ namespace vzt
 
 	using Vec2  = glm::vec2;
 	using Ivec2 = glm::ivec2;
+	using Dvec2 = glm::dvec2;
 	using Vec3  = glm::vec3;
 	using Ivec3 = glm::ivec3;
+	using Dvec3 = glm::dvec3;
 	using Vec4  = glm::vec4;
 	using Ivec4 = glm::ivec4;
+	using Dvec4 = glm::dvec4;
 
 	using Mat3 = glm::mat3;
 	using Mat4 = glm::mat4;

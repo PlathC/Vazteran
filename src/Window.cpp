@@ -3,12 +3,12 @@
 #include <stdexcept>
 #include <utility>
 
-#include "Vazteran/Framework/Vulkan/Instance.hpp"
+#include "Vazteran/Backend/Vulkan/Instance.hpp"
 #include "Vazteran/Window.hpp"
 
 namespace vzt
 {
-	SurfaceHandler::SurfaceHandler(vzt::Instance *instance, VkSurfaceKHR surface)
+	SurfaceHandler::SurfaceHandler(vzt::Instance* instance, VkSurfaceKHR surface)
 	    : m_instance(instance), m_surface(surface)
 	{
 	}
@@ -24,11 +24,11 @@ namespace vzt
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		m_window = GLFWwindowPtr(glfwCreateWindow(m_width, m_height, std::string(name).c_str(), nullptr, nullptr),
-		                         [](GLFWwindow *window) { glfwDestroyWindow(window); });
+		                         [](GLFWwindow* window) { glfwDestroyWindow(window); });
 
 		glfwSetWindowUserPointer(m_window.get(), this);
-		glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow *window, int width, int height) {
-			auto windowHandle = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
+		glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
+			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
 			windowHandle->FrameBufferResized();
 		});
 	}
@@ -47,7 +47,7 @@ namespace vzt
 		return {static_cast<uint32_t>(frameBufferWidth), static_cast<uint32_t>(frameBufferHeight)};
 	}
 
-	VkSurfaceKHR Window::Surface(vzt::Instance *instance)
+	VkSurfaceKHR Window::Surface(vzt::Instance* instance)
 	{
 		if (!m_surface)
 		{
@@ -62,20 +62,20 @@ namespace vzt
 		return m_surface->VkHandle();
 	}
 
-	bool Window::Update() const
+	bool Window::Update()
 	{
 		glfwPollEvents();
 
 		return ShouldClose();
 	}
 
-	std::vector<const char *> Window::VkExtensions() const
+	std::vector<const char*> Window::VkExtensions() const
 	{
 		uint32_t     glfwExtensionCount = 0;
-		const char **glfwExtensions;
+		const char** glfwExtensions;
 		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
-		std::vector<const char *> extensions;
+		std::vector<const char*> extensions;
 		extensions.assign(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
 		return extensions;
