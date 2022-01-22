@@ -16,7 +16,9 @@ namespace vzt
 	  public:
 		enum class DefaultScene
 		{
-			CrounchingBoys
+			CrounchingBoys,
+			VikingRoom,
+			MoriKnob
 		};
 
 	  public:

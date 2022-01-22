@@ -63,26 +63,21 @@ namespace vzt
 			constexpr float CameraSpeed = 1e-2f;
 			auto&           camera      = m_scene.SceneCamera();
 
-			if (action == vzt::KeyAction::Press || action == vzt::KeyAction::Repeat)
+			if (code == vzt::KeyCode::W)
 			{
-				if (code == vzt::KeyCode::W)
-				{
-					camera.position += camera.front * CameraSpeed * deltaTime;
-				}
-				else if (code == vzt::KeyCode::S)
-				{
-					camera.position -= camera.front * CameraSpeed * deltaTime;
-				}
-				else if (code == vzt::KeyCode::A)
-				{
-					camera.position -=
-					    glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
-				}
-				else if (code == vzt::KeyCode::D)
-				{
-					camera.position +=
-					    glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
-				}
+				camera.position += camera.front * CameraSpeed * deltaTime;
+			}
+			else if (code == vzt::KeyCode::S)
+			{
+				camera.position -= camera.front * CameraSpeed * deltaTime;
+			}
+			else if (code == vzt::KeyCode::A)
+			{
+				camera.position -= glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
+			}
+			else if (code == vzt::KeyCode::D)
+			{
+				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
 			}
 
 			if (code == vzt::KeyCode::LeftShift)

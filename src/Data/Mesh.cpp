@@ -139,7 +139,8 @@ namespace vzt
 
 	std::vector<uint32_t> Mesh::MaterialIndices() const
 	{
-		std::vector<uint32_t> indices(m_subMeshes.size());
+		std::vector<uint32_t> indices;
+		indices.reserve(m_subMeshes.size());
 		for (const auto& subMesh : m_subMeshes)
 		{
 			indices.emplace_back(subMesh.materialIndex);

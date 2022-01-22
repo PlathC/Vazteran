@@ -56,7 +56,7 @@ namespace vzt
 		return static_cast<KeyModifier>(~vzt::ToUnderlying(m));
 	}
 
-	enum class KeyCode : uint32_t
+	enum class KeyCode : int32_t
 	{
 		Unknown    = GLFW_KEY_UNKNOWN,
 		Space      = GLFW_KEY_SPACE,
