@@ -32,6 +32,7 @@ namespace vzt
 	using OnMousePosChangedCallback = std::function<void(const vzt::Dvec2 pos)>;
 	using OnMouseButtonCallback =
 	    std::function<void(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers)>;
+
 	class Window
 	{
 	  public:

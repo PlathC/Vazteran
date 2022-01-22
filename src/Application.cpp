@@ -53,36 +53,29 @@ namespace vzt
 		});
 
 		m_window->SetOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
-			static auto startTime = std::chrono::high_resolution_clock::now();
-
-			auto currentTime = std::chrono::high_resolution_clock::now();
-
-			float deltaTime =
-			    std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
-			float cameraSpeed = 1e-2f;
+			float cameraSpeed = 5e-2f;
 			auto& camera      = m_scene.SceneCamera();
 
 			if ((modifiers & vzt::KeyModifier::Shift) == vzt::KeyModifier::Shift)
 			{
-				cameraSpeed *= 10.f;
+				cameraSpeed *= 5.f;
 			}
 
 			if (code == vzt::KeyCode::W)
 			{
-				camera.position += camera.front * cameraSpeed * deltaTime;
+				camera.position += camera.front * cameraSpeed;
 			}
 			else if (code == vzt::KeyCode::S)
 			{
-				camera.position -= camera.front * cameraSpeed * deltaTime;
+				camera.position -= camera.front * cameraSpeed;
 			}
 			else if (code == vzt::KeyCode::A)
 			{
-				camera.position -= glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed * deltaTime;
+				camera.position -= glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed;
 			}
 			else if (code == vzt::KeyCode::D)
 			{
-				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed * deltaTime;
+				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed;
 			}
 		});
 
