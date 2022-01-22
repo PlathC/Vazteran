@@ -2,8 +2,12 @@
 #ifndef VAZTERAN_MATH_HPP
 #define VAZTERAN_MATH_HPP
 
-#include <glm/glm.hpp>
 #include <limits>
+
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
+#include <glm/glm.hpp>
+#include <glm/gtc/random.hpp>
 
 namespace vzt
 {
@@ -35,6 +39,9 @@ namespace vzt
 		Type width;
 		Type height;
 	};
+
+	constexpr float ToRadians(float degrees) { return degrees * vzt::Pi / 180.f; }
+	constexpr float ToDegrees(float radians) { return radians * 180.f / vzt::Pi; }
 } // namespace vzt
 
 #include "Vazteran/Core/Math/Aabb.hpp"

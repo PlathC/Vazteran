@@ -3,7 +3,10 @@
 
 namespace vzt
 {
-	Model::Model(const fs::path &modelPath) : m_mesh(modelPath) {}
+	Model::Model(const fs::path& modelPath, vzt::ModelUpdateCallback callback)
+	    : m_mesh(modelPath), m_updateCallback(std::move(callback))
+	{
+	}
 
 	Model::~Model() = default;
 
@@ -11,7 +14,7 @@ namespace vzt
 	{
 		auto      movedAABB            = m_mesh.BoundingBox();
 		glm::mat4 transformationMatrix = ModelMatrix();
-		for (auto &position : movedAABB.Vertices())
+		for (auto& position : movedAABB.Vertices())
 		{
 			position = (transformationMatrix * glm::vec4(position, 1.f));
 		}
@@ -26,5 +29,13 @@ namespace vzt
 		auto translatedRotateX  = glm::rotate(translated, m_rotation.x, vzt::Vec3(1., 0., 0.));
 		auto translatedRotateXY = glm::rotate(translatedRotateX, m_rotation.y, vzt::Vec3(0., 1., 0.));
 		return glm::rotate(translatedRotateXY, m_rotation.z, vzt::Vec3(0., 0., 1.));
+	}
+
+	void Model::Update()
+	{
+		if (m_updateCallback)
+		{
+			m_updateCallback(this);
+		}
 	}
 } // namespace vzt

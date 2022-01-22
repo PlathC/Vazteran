@@ -47,6 +47,9 @@ namespace vzt
 
 		std::unique_ptr<vzt::MeshView>     m_meshView;
 		std::unique_ptr<vzt::VkUiRenderer> m_ui;
+
+		vzt::Instance* m_instance;
+		GLFWwindow*    m_window;
 	};
 } // namespace vzt
 

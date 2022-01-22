@@ -2,9 +2,8 @@
 
 namespace vzt
 {
-	Camera Camera::FromBoundingBox(
-	    const vzt::AABB &referenceBoundingBox, float fov, glm::vec3 upVector, float nearClipping, float farClipping,
-	    float aspectRatio)
+	Camera Camera::FromBoundingBox(const vzt::AABB& referenceBoundingBox, float fov, glm::vec3 upVector,
+	                               float nearClipping, float farClipping, float aspectRatio)
 	{
 		glm::length_t upIndex = 0;
 		if (upVector[1] == 1.f)
@@ -16,10 +15,12 @@ namespace vzt
 			upIndex = 2;
 		}
 
-		const float modelHeight = referenceBoundingBox.Max()[upIndex] - referenceBoundingBox.Min()[upIndex];
-		const auto modelCenter = (referenceBoundingBox.Max() + referenceBoundingBox.Min()) / 2.f;
-		const float distance = modelHeight / 2.f / std::tan(fov / 2.f);
+		const float     modelHeight = referenceBoundingBox.Max()[upIndex] - referenceBoundingBox.Min()[upIndex];
+		const auto      modelCenter = (referenceBoundingBox.Max() + referenceBoundingBox.Min()) / 2.f;
+		const float     distance    = modelHeight / 2.f / std::tan(fov / 2.f);
+		const vzt::Vec3 cameraPos   = modelCenter - glm::vec3(0., 1.25, 0.) * distance;
+
 		return vzt::Camera{
-		    modelCenter - glm::vec3(0., 1.25, 0.) * distance, modelCenter, fov, nearClipping, farClipping, aspectRatio};
+		    cameraPos, glm::normalize(modelCenter - cameraPos), fov, nearClipping, farClipping, aspectRatio, upVector};
 	}
 } // namespace vzt

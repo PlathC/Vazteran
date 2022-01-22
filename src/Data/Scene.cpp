@@ -1,5 +1,4 @@
-#include <glm/glm.hpp>
-#include <glm/gtc/random.hpp>
+#include <iostream>
 
 #include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Model.hpp"
@@ -7,16 +6,16 @@
 
 namespace vzt
 {
-	Scene::Scene(std::vector<std::unique_ptr<Model>> models, Camera camera, ModelUpdateCallback callback)
-	    : m_models(std::move(models)), m_callback(callback), m_camera(std::move(camera))
+	Scene::Scene(std::vector<std::unique_ptr<Model>> models, Camera camera)
+	    : m_models(std::move(models)), m_camera(std::move(camera))
 	{
 	}
 
 	Scene ::~Scene() = default;
 
-	std::vector<Model*> Scene::Models() const
+	std::vector<vzt::Model*> Scene::CModels() const
 	{
-		auto result = std::vector<Model*>();
+		auto result = std::vector<vzt::Model*>();
 		result.reserve(m_models.size());
 
 		for (const auto& model : m_models)
@@ -29,7 +28,7 @@ namespace vzt
 	{
 		for (const auto& model : m_models)
 		{
-			m_callback(model.get());
+			model->Update();
 		}
 	}
 
@@ -38,33 +37,57 @@ namespace vzt
 		switch (defaultScene)
 		{
 		case DefaultScene::CrounchingBoys: {
+			constexpr std::size_t ModelNb = 64;
+
 			std::vector<std::unique_ptr<vzt::Model>> models;
-			models.reserve(128);
+			models.reserve(ModelNb);
+
 			models.emplace_back(std::make_unique<vzt::Model>("./samples/TheCrounchingBoy.obj"));
 			vzt::AABB fullBoundingBox = models[0]->BoundingBox();
-			for (std::size_t i = 1; i < 64; i++)
-			{
-				auto moved    = std::make_unique<vzt::Model>(*models[0]);
-				auto movement = glm::sphericalRand(5.f);
-				moved->Position() += movement;
-				moved->Mesh().Materials()[0].ambientColor = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.);
-				fullBoundingBox.Extend(moved->BoundingBox());
 
-				models.emplace_back(std::move(moved));
-			}
-
-			return Scene(std::move(models), Camera::FromBoundingBox(fullBoundingBox), [](Model* model) {
+			vzt::ModelUpdateCallback modelUpdate = [](Model* model) {
 				static auto startTime = std::chrono::high_resolution_clock::now();
 
 				auto  currentTime = std::chrono::high_resolution_clock::now();
 				float time =
 				    std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 				model->Rotation() = time * glm::radians(45.f) * glm::vec3(0.0f, 0.0f, 1.0f);
-			});
+			};
+			models[0]->SetUpdateCallback(modelUpdate);
+
+			for (std::size_t i = 1; i < ModelNb; i++)
+			{
+				auto moved    = std::make_unique<vzt::Model>(*models[0]);
+				auto movement = glm::sphericalRand(5.f);
+
+				moved->Position() += movement;
+				moved->Mesh().Materials()[0].ambientColor = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.);
+				moved->SetUpdateCallback(modelUpdate);
+
+				fullBoundingBox.Extend(moved->BoundingBox());
+				models.emplace_back(std::move(moved));
+			}
+
+			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
+			fileMenuField.AddItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
+
+			vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
+			brdfMenuField.AddItem(
+			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
+
+			vzt::ui::MainMenuBar mainMenuBar;
+			mainMenuBar.AddMenu(std::move(fileMenuField));
+			mainMenuBar.AddMenu(std::move(brdfMenuField));
+
+			vzt::ui::UiManager uiManager;
+			uiManager.SetMainMenuBar(mainMenuBar);
+
+			auto crounchingBoysScene      = Scene(std::move(models), Camera::FromBoundingBox(fullBoundingBox));
+			crounchingBoysScene.SceneUi() = std::move(uiManager);
+
+			return std::move(crounchingBoysScene);
 		}
-		default: {
-			throw std::runtime_error("The specified scene is not currently implemented.");
-		}
+		default: throw std::runtime_error("The specified scene is not currently implemented.");
 		}
 	}
 } // namespace vzt

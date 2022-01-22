@@ -29,6 +29,67 @@ namespace vzt
 		m_renderer = std::make_unique<vzt::Renderer>(m_instance.get(), m_window->Handle(),
 		                                             m_window->Surface(m_instance.get()), m_window->FrameBufferSize());
 		m_renderer->SetScene(&m_scene);
+
+		static bool isMouseEnable = false;
+		m_window->SetOnMousePosChangedCallback([&](vzt::Dvec2 deltaPos) {
+			if (!isMouseEnable)
+				return;
+
+			static float    yaw         = 90.f;
+			static float    pitch       = 0.f;
+			constexpr float sensitivity = .5f;
+
+			yaw += deltaPos.x * sensitivity;
+			pitch += deltaPos.y * sensitivity;
+
+			pitch = std::max(std::min(pitch, 89.f), -89.f);
+
+			vzt::Vec3 direction;
+			direction.x = -std::cos(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
+			direction.y = std::sin(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
+			direction.z = std::sin(vzt::ToRadians(pitch));
+
+			m_scene.SceneCamera().front = glm::normalize(direction);
+		});
+
+		m_window->SetOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
+			static auto startTime = std::chrono::high_resolution_clock::now();
+
+			auto currentTime = std::chrono::high_resolution_clock::now();
+
+			float deltaTime =
+			    std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+			constexpr float CameraSpeed = 1e-2f;
+			auto&           camera      = m_scene.SceneCamera();
+
+			if (action == vzt::KeyAction::Press || action == vzt::KeyAction::Repeat)
+			{
+				if (code == vzt::KeyCode::W)
+				{
+					camera.position += camera.front * CameraSpeed * deltaTime;
+				}
+				else if (code == vzt::KeyCode::S)
+				{
+					camera.position -= camera.front * CameraSpeed * deltaTime;
+				}
+				else if (code == vzt::KeyCode::A)
+				{
+					camera.position -=
+					    glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
+				}
+				else if (code == vzt::KeyCode::D)
+				{
+					camera.position +=
+					    glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
+				}
+			}
+
+			if (code == vzt::KeyCode::LeftShift)
+			{
+				isMouseEnable = action == vzt::KeyAction::Press || action == vzt::KeyAction::Repeat;
+			}
+		});
 	}
 
 	void Application::Run()

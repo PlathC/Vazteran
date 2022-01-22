@@ -6,10 +6,7 @@
 #include <unordered_set>
 #include <vector>
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
+#include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Material.hpp"
 
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"

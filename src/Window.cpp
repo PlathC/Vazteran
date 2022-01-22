@@ -16,8 +16,8 @@ namespace vzt
 	SurfaceHandler::~SurfaceHandler() { vkDestroySurfaceKHR(m_instance->VkHandle(), m_surface, nullptr); }
 
 	Window::Window(std::string_view name, const uint32_t width, const uint32_t height,
-	               FrameBufferResizedCallback fbResizedCallback)
-	    : m_width(width), m_height(height), m_fbResizedCallback(std::move(fbResizedCallback))
+	               vzt::OnFrameBufferChangedCallback onFrameBufferChangedCallback)
+	    : m_width(width), m_height(height), m_onFrameBufferChangedCallback(std::move(onFrameBufferChangedCallback))
 	{
 		if (!glfwInit())
 			throw std::runtime_error("Failed to load glfw.");
@@ -29,11 +29,53 @@ namespace vzt
 		glfwSetWindowUserPointer(m_window.get(), this);
 		glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
 			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->FrameBufferResized();
+			windowHandle->OnFramebufferSizeChanged();
+		});
+
+		glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos) {
+			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
+			windowHandle->OnMousePosChanged(vzt::Dvec2{xPos, yPos});
+		});
+
+		glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
+			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
+			windowHandle->OnKeyAction(static_cast<vzt::KeyCode>(key), static_cast<vzt::KeyAction>(action),
+			                          static_cast<vzt::KeyModifier>(mods));
 		});
 	}
 
-	void Window::FrameBufferResized() const { m_fbResizedCallback(); }
+	Window::~Window() = default;
+
+	void Window::OnFramebufferSizeChanged() const { m_onFrameBufferChangedCallback(); }
+
+	void Window::OnKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers)
+	{
+		if (m_onKeyActionCallback)
+		{
+			m_onKeyActionCallback(code, action, modifiers);
+		}
+	}
+
+	void Window::OnMousePosChanged(const vzt::Dvec2 pos)
+	{
+		static bool firstChange = true;
+		if (firstChange)
+		{
+			firstChange    = false;
+			m_lastMousePos = pos;
+		}
+
+		m_onMousePosChangedCallback(vzt::Dvec2{pos.x - m_lastMousePos.x, m_lastMousePos.y - pos.y});
+
+		m_lastMousePos = pos;
+	}
+
+	void Window::SetOnKeyActionCallback(OnKeyActionCallback callback) { m_onKeyActionCallback = callback; }
+
+	void Window::SetOnMousePosChangedCallback(OnMousePosChangedCallback callback)
+	{
+		m_onMousePosChangedCallback = callback;
+	}
 
 	vzt::Size2D<uint32_t> Window::FrameBufferSize() const
 	{
@@ -81,5 +123,4 @@ namespace vzt
 		return extensions;
 	}
 
-	Window::~Window() = default;
 } // namespace vzt

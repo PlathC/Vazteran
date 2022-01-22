@@ -3,8 +3,6 @@
 
 #include <optional>
 
-#include <glm/glm.hpp>
-
 #include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Image.hpp"
 

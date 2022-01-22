@@ -155,6 +155,7 @@ endif ()
 set(HEADERS
         "include/Vazteran/Application.hpp"
         "include/Vazteran/Window.hpp"
+        "include/Vazteran/WindowType.hpp"
         "include/Vazteran/Core/Math.hpp"
         "include/Vazteran/Core/Math/Aabb.hpp"
         "include/Vazteran/Core/Utils.hpp"

@@ -2,15 +2,15 @@
 #define VAZTERAN_SCENE_HPP
 
 #include <functional>
+#include <optional>
 #include <vector>
 
 #include "Vazteran/Data/Camera.hpp"
 #include "Vazteran/Data/Model.hpp"
+#include "Vazteran/Ui/UiManager.hpp"
 
 namespace vzt
 {
-	using ModelUpdateCallback = std::function<void(Model*)>;
-
 	class Scene
 	{
 	  public:
@@ -20,27 +20,29 @@ namespace vzt
 		};
 
 	  public:
-		Scene(std::vector<std::unique_ptr<Model>> models, Camera camera,
-		      ModelUpdateCallback callback = ModelUpdateCallback());
+		Scene(std::vector<std::unique_ptr<Model>> models, Camera camera);
 		~Scene();
 
-		Scene(Scene&) noexcept = delete;
-		Scene& operator=(Scene&) noexcept = delete;
+		Scene(const Scene&) = delete;
+		Scene& operator=(const Scene&) = delete;
 
-		Scene(Scene&&) noexcept = default;
-		Scene& operator=(Scene&&) noexcept = default;
+		Scene(Scene&&) = default;
+		Scene& operator=(Scene&&) = default;
 
-		Camera&             SceneCamera() { return m_camera; };
-		Camera              CSceneCamera() const { return m_camera; };
-		std::vector<Model*> Models() const;
-		void                Update() const;
+		std::vector<vzt::Model*>           CModels() const;
+		std::optional<vzt::ui::UiManager>& SceneUi() { return m_uiManager; }
+		std::optional<vzt::ui::UiManager>  CSceneUi() const { return m_uiManager; }
+		vzt::Camera&                       SceneCamera() { return m_camera; };
+		vzt::Camera                        CSceneCamera() const { return m_camera; };
+
+		void Update() const;
 
 		static Scene Default(DefaultScene defaultScene);
 
 	  private:
-		std::vector<std::unique_ptr<Model>> m_models;
-		ModelUpdateCallback                 m_callback;
-		Camera                              m_camera;
+		vzt::Camera                              m_camera;
+		std::vector<std::unique_ptr<vzt::Model>> m_models;
+		std::optional<vzt::ui::UiManager>        m_uiManager;
 	};
 } // namespace vzt
 

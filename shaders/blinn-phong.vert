@@ -22,7 +22,6 @@ void main() {
 
     const vec4 viewSpacePosition = ubo.modelViewMatrix * vec4(inPosition, 1.0f);
 
-    vsPosition  =  viewSpacePosition.xyz;
-    gl_Position =  ubo.projectionMatrix * viewSpacePosition;
-    gl_Position /= gl_Position.w;
+    vsPosition  = viewSpacePosition.xyz;
+    gl_Position = ubo.projectionMatrix * viewSpacePosition;
 }
