@@ -30,6 +30,8 @@ namespace vzt
 	using OnKeyActionCallback =
 	    std::function<void(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers)>;
 	using OnMousePosChangedCallback = std::function<void(const vzt::Dvec2 pos)>;
+	using OnMouseButtonCallback =
+	    std::function<void(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers)>;
 	class Window
 	{
 	  public:
@@ -39,9 +41,11 @@ namespace vzt
 		void OnFramebufferSizeChanged() const;
 		void OnKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers);
 		void OnMousePosChanged(const vzt::Dvec2 pos);
+		void OnMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers);
 
 		void SetOnKeyActionCallback(OnKeyActionCallback callback);
 		void SetOnMousePosChangedCallback(OnMousePosChangedCallback callback);
+		void SetOnMouseButtonCallback(OnMouseButtonCallback callback);
 
 		vzt::Size2D<uint32_t>    FrameBufferSize() const;
 		GLFWwindow*              Handle() const { return m_window.get(); }
@@ -62,6 +66,7 @@ namespace vzt
 		OnFrameBufferChangedCallback m_onFrameBufferChangedCallback;
 		OnKeyActionCallback          m_onKeyActionCallback;
 		OnMousePosChangedCallback    m_onMousePosChangedCallback;
+		OnMouseButtonCallback        m_onMouseButtonCallback;
 
 		vzt::Dvec2 m_lastMousePos;
 	};

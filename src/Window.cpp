@@ -42,6 +42,12 @@ namespace vzt
 			windowHandle->OnKeyAction(static_cast<vzt::KeyCode>(key), static_cast<vzt::KeyAction>(action),
 			                          static_cast<vzt::KeyModifier>(mods));
 		});
+
+		glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int key, int action, int mods) {
+			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
+			windowHandle->OnMouseButton(static_cast<vzt::MouseButton>(key), static_cast<vzt::KeyAction>(action),
+			                            static_cast<vzt::KeyModifier>(mods));
+		});
 	}
 
 	Window::~Window() = default;
@@ -65,9 +71,20 @@ namespace vzt
 			m_lastMousePos = pos;
 		}
 
-		m_onMousePosChangedCallback(vzt::Dvec2{pos.x - m_lastMousePos.x, m_lastMousePos.y - pos.y});
+		if (m_onMousePosChangedCallback)
+		{
+			m_onMousePosChangedCallback(vzt::Dvec2{pos.x - m_lastMousePos.x, m_lastMousePos.y - pos.y});
+		}
 
 		m_lastMousePos = pos;
+	}
+
+	void Window::OnMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers)
+	{
+		if (m_onMouseButtonCallback)
+		{
+			m_onMouseButtonCallback(code, action, modifiers);
+		}
 	}
 
 	void Window::SetOnKeyActionCallback(OnKeyActionCallback callback) { m_onKeyActionCallback = callback; }
@@ -76,6 +93,8 @@ namespace vzt
 	{
 		m_onMousePosChangedCallback = callback;
 	}
+
+	void Window::SetOnMouseButtonCallback(OnMouseButtonCallback callback) { m_onMouseButtonCallback = callback; }
 
 	vzt::Size2D<uint32_t> Window::FrameBufferSize() const
 	{

@@ -9,7 +9,7 @@
 
 namespace vzt
 {
-	enum class MouseBoutto : uint8_t
+	enum class MouseButton : uint8_t
 	{
 		Button1 = GLFW_MOUSE_BUTTON_1,
 		Button2 = GLFW_MOUSE_BUTTON_2,

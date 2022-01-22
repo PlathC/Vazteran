@@ -60,31 +60,39 @@ namespace vzt
 			float deltaTime =
 			    std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-			constexpr float CameraSpeed = 1e-2f;
-			auto&           camera      = m_scene.SceneCamera();
+			float cameraSpeed = 1e-2f;
+			auto& camera      = m_scene.SceneCamera();
+
+			if ((modifiers & vzt::KeyModifier::Shift) == vzt::KeyModifier::Shift)
+			{
+				cameraSpeed *= 10.f;
+			}
 
 			if (code == vzt::KeyCode::W)
 			{
-				camera.position += camera.front * CameraSpeed * deltaTime;
+				camera.position += camera.front * cameraSpeed * deltaTime;
 			}
 			else if (code == vzt::KeyCode::S)
 			{
-				camera.position -= camera.front * CameraSpeed * deltaTime;
+				camera.position -= camera.front * cameraSpeed * deltaTime;
 			}
 			else if (code == vzt::KeyCode::A)
 			{
-				camera.position -= glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
+				camera.position -= glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed * deltaTime;
 			}
 			else if (code == vzt::KeyCode::D)
 			{
-				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * CameraSpeed * deltaTime;
-			}
-
-			if (code == vzt::KeyCode::LeftShift)
-			{
-				isMouseEnable = action == vzt::KeyAction::Press || action == vzt::KeyAction::Repeat;
+				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed * deltaTime;
 			}
 		});
+
+		m_window->SetOnMouseButtonCallback(
+		    [](vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
+			    if (code == vzt::MouseButton::Left)
+			    {
+				    isMouseEnable = action == vzt::KeyAction::Press || action == vzt::KeyAction::Repeat;
+			    }
+		    });
 	}
 
 	void Application::Run()
