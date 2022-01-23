@@ -4,6 +4,7 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
+#include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/CommandPool.hpp"
 #include "Vazteran/Backend/Vulkan/Descriptor.hpp"
 #include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
@@ -62,8 +63,8 @@ namespace vzt
 
 		struct MaterialData
 		{
-			std::vector<std::pair<vzt::ImageView, vzt::Sampler>> textures;
-			uint32_t                                             descriptorIndex;
+			std::vector<vzt::Attachment> textures;
+			uint32_t                     descriptorIndex;
 		};
 
 		struct ModelDisplayInformation

@@ -11,16 +11,11 @@
 
 namespace vzt
 {
+	class Attachment;
 	class Device;
 
 	template <class Type>
 	using IndexedUniform = std::unordered_map<uint32_t, Type>;
-
-	struct ImageDescriptor
-	{
-		ImageView* imageView;
-		Sampler*   sampler;
-	};
 
 	struct BufferDescriptor
 	{
@@ -64,11 +59,11 @@ namespace vzt
 		          VkPipelineLayout pipelineLayout) const;
 
 		void Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
-		            const IndexedUniform<vzt::ImageDescriptor>& imageDescriptors);
+		            const IndexedUniform<vzt::Attachment*>& imageDescriptors);
 		void Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
 
 		void UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
-		               const IndexedUniform<vzt::ImageDescriptor>&  imageDescriptors);
+		               const IndexedUniform<vzt::Attachment*>&      imageDescriptors);
 		void UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
 
 		uint32_t         Remaining() const { return static_cast<uint32_t>(m_maxSetNb - m_descriptors.size()); }

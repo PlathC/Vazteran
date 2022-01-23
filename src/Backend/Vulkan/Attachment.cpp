@@ -2,6 +2,12 @@
 
 namespace vzt
 {
+	Attachment::Attachment(vzt::Device* device, const vzt::Image& image, vzt::Format format)
+	    : m_device(device), m_format(format), m_sampler(device),
+	      m_imageView(std::make_unique<vzt::ImageView>(m_device, image, format))
+	{
+	}
+
 	Attachment::Attachment(vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage)
 	    : m_device(device), m_format(format), m_sampler(device)
 	{

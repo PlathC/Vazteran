@@ -139,23 +139,14 @@ namespace vzt
 		{
 			MaterialData materialData{};
 
-			materialData.textures.emplace_back(std::pair<vzt::ImageView, vzt::Sampler>{
-			    vzt::ImageView(m_device, materials[materialId].diffuseMap, vzt::Format::R8G8B8A8SRGB),
-			    vzt::Sampler(m_device)});
-			materialData.textures.emplace_back(std::pair<vzt::ImageView, vzt::Sampler>{
-			    vzt::ImageView(m_device, materials[materialId].ambientMap, vzt::Format::R8G8B8A8SRGB),
-			    vzt::Sampler(m_device)});
-			materialData.textures.emplace_back(std::pair<vzt::ImageView, vzt::Sampler>{
-			    vzt::ImageView(m_device, materials[materialId].specularMap, vzt::Format::R8G8B8A8SRGB),
-			    vzt::Sampler(m_device)});
+			materialData.textures.emplace_back(m_device, materials[materialId].diffuseMap, vzt::Format::R8G8B8A8SRGB);
+			materialData.textures.emplace_back(m_device, materials[materialId].ambientMap, vzt::Format::R8G8B8A8SRGB);
+			materialData.textures.emplace_back(m_device, materials[materialId].specularMap, vzt::Format::R8G8B8A8SRGB);
 
-			IndexedUniform<vzt::ImageDescriptor> texturesDescriptors;
-			texturesDescriptors[m_samplersDescriptors[0].binding] = {&materialData.textures[0].first,
-			                                                         &materialData.textures[0].second};
-			texturesDescriptors[m_samplersDescriptors[1].binding] = {&materialData.textures[1].first,
-			                                                         &materialData.textures[1].second};
-			texturesDescriptors[m_samplersDescriptors[2].binding] = {&materialData.textures[2].first,
-			                                                         &materialData.textures[2].second};
+			IndexedUniform<vzt::Attachment*> texturesDescriptors;
+			texturesDescriptors[m_samplersDescriptors[0].binding] = &materialData.textures[0];
+			texturesDescriptors[m_samplersDescriptors[1].binding] = &materialData.textures[1];
+			texturesDescriptors[m_samplersDescriptors[2].binding] = &materialData.textures[2];
 
 			bufferDescriptors[m_materialDescriptors.binding] = BufferDescriptor{
 			    m_materialNb * m_materialInfoOffsetSize, m_materialDescriptors.size, &m_materialInfoBuffer};

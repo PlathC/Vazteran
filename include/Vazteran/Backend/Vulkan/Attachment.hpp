@@ -13,6 +13,7 @@ namespace vzt
 	class Attachment
 	{
 	  public:
+		Attachment(vzt::Device* device, const vzt::Image& image, vzt::Format format);
 		Attachment(vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage);
 		Attachment(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect);
 		~Attachment() = default;

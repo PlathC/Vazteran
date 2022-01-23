@@ -1,4 +1,5 @@
 #include "Vazteran/Backend/Vulkan/Descriptor.hpp"
+#include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Core/Utils.hpp"
 
@@ -73,7 +74,7 @@ namespace vzt
 	}
 
 	void DescriptorPool::UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
-	                               const IndexedUniform<vzt::ImageDescriptor>&  textureHandlers)
+	                               const IndexedUniform<vzt::Attachment*>&      textureHandlers)
 	{
 		for (std::size_t i = 0; i < m_descriptors.size(); i++)
 		{
@@ -89,7 +90,7 @@ namespace vzt
 	}
 
 	void DescriptorPool::Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
-	                            const IndexedUniform<vzt::ImageDescriptor>& imageDescriptors)
+	                            const IndexedUniform<vzt::Attachment*>& imageDescriptors)
 	{
 		assert(i < m_descriptors.size() && "i must be less than Size()");
 
@@ -120,8 +121,8 @@ namespace vzt
 		for (const auto& imageDescriptor : imageDescriptors)
 		{
 			descriptorImageInfo[bufferIdx].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second.imageView->VkHandle();
-			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second.sampler->VkHandle();
+			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second->View()->VkHandle();
+			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second->Sampler()->VkHandle();
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
