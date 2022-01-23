@@ -23,8 +23,7 @@ namespace vzt
 	class GraphicPipeline;
 	class Device;
 
-	using RenderFunction = std::function<std::vector<VkCommandBuffer>(
-	    uint32_t /* id of current rendered image */, const vzt::FrameBuffer* const /* current framebuffer */)>;
+	using RenderFunction = std::function<std::vector<VkCommandBuffer>(uint32_t /* id of current rendered image */)>;
 
 	class SwapChain
 	{
@@ -37,36 +36,30 @@ namespace vzt
 		SwapChain(SwapChain&& other) noexcept = default;
 		SwapChain& operator=(SwapChain&& other) noexcept = default;
 
-		// Configuration
 		void SetFrameBufferSize(vzt::Size2D<uint32_t> newSize);
 		void SetRenderPassTemplate(const vzt::RenderPass* const renderPassTemplate);
 
 		void Recreate(VkSurfaceKHR surface);
 		bool DrawFrame(RenderFunction renderFunction);
 
-		vzt::PipelineSettings GetSettings() const
-		{
-			return {m_renderPassTemplate, m_swapChainImageFormat, m_swapChainSize};
-		}
-		vzt::Size2D<uint32_t> FrameBufferSize() const { return m_swapChainSize; }
-		uint32_t              ImageCount() const { return m_imageCount; }
-		VkFormat              GetImageFormat() const { return m_swapChainImageFormat; }
+		std::vector<VkImage>  GetImagesKHR();
+		vzt::Size2D<uint32_t> GetFrameBufferSize() const { return m_swapChainSize; }
+		uint32_t              GetImageCount() const { return m_imageCount; }
+		vzt::Format           GetImageFormat() const { return m_swapChainImageFormat; }
 
 		~SwapChain();
 
 	  private:
 		void CreateSwapChain();
-		void CreateDepthResources();
-		void CreateRenderSupport();
 		void CreateSynchronizationObjects();
-
 		void Cleanup();
-
-		constexpr static uint32_t MaxFramesInFlight = 2;
 
 		static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		VkPresentModeKHR          ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D                ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+	  private:
+		constexpr static uint32_t MaxFramesInFlight = 2;
 
 		vzt::Device*   m_device;
 		VkSwapchainKHR m_vkHandle;
@@ -76,14 +69,8 @@ namespace vzt
 
 		VkSurfaceKHR          m_surface;
 		uint32_t              m_imageCount;
-		VkFormat              m_swapChainImageFormat;
+		vzt::Format           m_swapChainImageFormat;
 		vzt::Size2D<uint32_t> m_swapChainSize;
-
-		// https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VkFramebufferCreateInfo.html
-		//  what render passes the framebuffer will be compatible with
-		const vzt::RenderPass*                                 m_renderPassTemplate = nullptr;
-		std::vector<vzt::FrameBuffer>                          m_frames;
-		std::optional<std::pair<vzt::ImageView, vzt::Sampler>> m_depthImageData;
 
 		std::vector<VkSemaphore> m_imageAvailableSemaphores;
 		std::vector<VkSemaphore> m_renderFinishedSemaphores;

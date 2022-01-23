@@ -41,7 +41,7 @@ namespace vzt
 		~MeshView();
 
 		void AddModel(const vzt::Model* const model);
-		void Configure(vzt::PipelineSettings settings);
+		void Configure(vzt::PipelineContextSettings settings);
 
 		void Record(uint32_t imageCount, VkCommandBuffer commandBuffer, const vzt::RenderPass* renderPass);
 

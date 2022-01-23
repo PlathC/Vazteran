@@ -3,20 +3,20 @@
 
 #include <vector>
 
+#include "Vazteran/Backend/Vulkan/ImageTypes.hpp"
 #include "Vazteran/Core/Math.hpp"
 
 namespace vzt
 {
+	class Attachment;
 	class Device;
-	class ImageView;
 	class RenderPass;
-	class SwapChain;
 
 	class FrameBuffer
 	{
 	  public:
-		FrameBuffer(vzt::Device* device, const RenderPass* const renderPass, VkImage target,
-		            const vzt::ImageView* const depthImage, VkFormat imageFormat, vzt::Size2D<uint32_t> size);
+		FrameBuffer(vzt::Device* device, const RenderPass* const renderPass,
+		            const std::vector<const vzt::Attachment*>& attachments, vzt::Size2D<uint32_t> size);
 
 		FrameBuffer(const FrameBuffer&) = delete;
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
@@ -35,8 +35,6 @@ namespace vzt
 		VkFramebuffer m_vkHandle = VK_NULL_HANDLE;
 
 		vzt::Size2D<uint32_t> m_size;
-		VkImage               m_target;
-		VkImageView           m_imageView = VK_NULL_HANDLE;
 	};
 } // namespace vzt
 

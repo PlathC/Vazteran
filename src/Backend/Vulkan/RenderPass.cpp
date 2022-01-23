@@ -8,10 +8,10 @@
 
 namespace vzt
 {
-	RenderPass::RenderPass(vzt::Device* device, VkFormat colorImageFormat) : m_device(device)
+	RenderPass::RenderPass(vzt::Device* device, vzt::Format colorImageFormat) : m_device(device)
 	{
 		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format  = colorImageFormat;
+		colorAttachment.format  = static_cast<VkFormat>(vzt::ToUnderlying(colorImageFormat));
 		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		colorAttachment.loadOp  = static_cast<VkAttachmentLoadOp>(vzt::ToUnderlying(vzt::LoadOperation::Clear));
 		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -19,15 +19,15 @@ namespace vzt
 		    static_cast<VkAttachmentLoadOp>(vzt::ToUnderlying(vzt::LoadOperation::DontCare));
 		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		colorAttachment.initialLayout  = static_cast<VkImageLayout>(vzt::ToUnderlying(vzt::ImageLayout::Undefined));
-		colorAttachment.finalLayout =
-		    static_cast<VkImageLayout>(vzt::ToUnderlying(vzt::ImageLayout::LayoutPresentSrcKHR));
+		colorAttachment.finalLayout    = static_cast<VkImageLayout>(vzt::ToUnderlying(vzt::ImageLayout::PresentSrcKHR));
 
 		VkAttachmentReference colorAttachmentRef{};
 		colorAttachmentRef.attachment = 0;
 		colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format  = m_device->ChosenPhysicalDevice()->FindDepthFormat();
+		depthAttachment.format =
+		    static_cast<VkFormat>(vzt::ToUnderlying(m_device->ChosenPhysicalDevice()->FindDepthFormat()));
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depthAttachment.loadOp  = static_cast<VkAttachmentLoadOp>(vzt::ToUnderlying(vzt::LoadOperation::Clear));
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

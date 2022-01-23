@@ -155,7 +155,8 @@ endif ()
 set(HEADERS
         "include/Vazteran/Application.hpp"
         "include/Vazteran/Window.hpp"
-        "include/Vazteran/WindowType.hpp"
+        "include/Vazteran/WindowTypes.hpp"
+
         "include/Vazteran/Core/Math.hpp"
         "include/Vazteran/Core/Math/Aabb.hpp"
         "include/Vazteran/Core/Utils.hpp"
@@ -172,6 +173,7 @@ set(HEADERS
 
         "include/Vazteran/Views/MeshView.hpp"
 
+        "include/Vazteran/Backend/Vulkan/Attachment.hpp"
         "include/Vazteran/Backend/Vulkan/Buffer.hpp"
         "include/Vazteran/Backend/Vulkan/Buffer.inl"
         "include/Vazteran/Backend/Vulkan/CommandPool.hpp"
@@ -180,6 +182,7 @@ set(HEADERS
         "include/Vazteran/Backend/Vulkan/FrameBuffer.hpp"
         "include/Vazteran/Backend/Vulkan/GpuObjects.hpp"
         "include/Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
+        "include/Vazteran/Backend/Vulkan/ImageTypes.hpp"
         "include/Vazteran/Backend/Vulkan/ImageUtils.hpp"
         "include/Vazteran/Backend/Vulkan/Instance.hpp"
         "include/Vazteran/Backend/Vulkan/RenderPass.hpp"
@@ -208,6 +211,7 @@ set(SOURCES
 
         "src/Views/MeshView.cpp"
 
+        "src/Backend/Vulkan/Attachment.cpp"
         "src/Backend/Vulkan/Buffer.cpp"
         "src/Backend/Vulkan/CommandPool.cpp"
         "src/Backend/Vulkan/Descriptor.cpp"

@@ -8,6 +8,9 @@
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
+#include "Vazteran/Backend/Vulkan/ImageTypes.hpp"
+#include "Vazteran/Core/Utils.hpp"
+
 namespace vzt
 {
 	class Instance;
@@ -41,10 +44,10 @@ namespace vzt
 		std::vector<const char*>     Extensions() { return m_extensions; }
 		vzt::SwapChainSupportDetails QuerySwapChainSupport(VkSurfaceKHR surface) const;
 		vzt::QueueFamilyIndices      FindQueueFamilies(VkSurfaceKHR surface) const;
-		VkFormat                     FindDepthFormat();
-		VkFormat                     FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
-		                                                 VkFormatFeatureFlags features);
-		VkSampleCountFlagBits        MaxUsableSampleCount();
+		vzt::Format                  FindDepthFormat();
+		vzt::Format           FindSupportedFormat(const std::vector<vzt::Format>& candidates, VkImageTiling tiling,
+		                                          VkFormatFeatureFlags features);
+		VkSampleCountFlagBits MaxUsableSampleCount();
 
 		~PhysicalDevice();
 
@@ -57,7 +60,7 @@ namespace vzt
 		std::vector<const char*> m_extensions;
 	};
 
-	static bool HasStencilComponent(VkFormat format);
+	static bool HasStencilComponent(vzt::Format format);
 
 	static bool                    IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface,
 	                                                const std::vector<const char*>& deviceExtensions);
@@ -74,22 +77,21 @@ namespace vzt
 		Device(const Device&) = delete;
 		Device& operator=(const Device&) = delete;
 
-		Device(Device&&) noexcept = default;
-		Device& operator=(Device&&) noexcept = default;
+		Device(Device&& other) noexcept;
+		Device& operator=(Device&& other) noexcept;
 
 		~Device();
 
-		void CreateBuffer(VkBuffer& buffer, VmaAllocation& bufferAllocation, VkDeviceSize size,
-		                  VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-		                  VkMemoryPropertyFlags preferredFlags = 0);
-		void CreateImage(VkImage& image, VmaAllocation& allocation, uint32_t width, uint32_t height, VkFormat format,
-		                 VkSampleCountFlagBits numSamples, VkImageTiling tiling, VkImageUsageFlags usage);
-		VkImageView CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+		VkBuffer    CreateBuffer(VmaAllocation& bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
+		                         VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags = 0);
+		VkImage     CreateImage(VmaAllocation& allocation, uint32_t width, uint32_t height, vzt::Format format,
+		                        VkSampleCountFlagBits numSamples, VkImageTiling tiling, vzt::ImageUsage usage);
+		VkImageView CreateImageView(VkImage image, vzt::Format format, vzt::ImageAspect aspectFlags);
 
 		void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 		void CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height);
-		void TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
-		                           VkImageAspectFlags aspectFlags);
+		void TransitionImageLayout(VkImage image, vzt::ImageLayout oldLayout, vzt::ImageLayout newLayout,
+		                           vzt::ImageAspect aspectFlags);
 
 		using SingleTimeCommandFunction = std::function<void(VkCommandBuffer)>;
 		void SingleTimeCommand(const SingleTimeCommandFunction& singleTimeCommandFunction);
@@ -106,8 +108,8 @@ namespace vzt
 	  private:
 		std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;
 
-		VmaAllocator             m_allocator;
-		VkDevice                 m_vkHandle{};
+		VmaAllocator             m_allocator = VK_NULL_HANDLE;
+		VkDevice                 m_vkHandle  = VK_NULL_HANDLE;
 		VkPhysicalDeviceFeatures m_deviceFeatures{};
 		VkQueue                  m_graphicsQueue{};
 		VkQueue                  m_presentQueue{};

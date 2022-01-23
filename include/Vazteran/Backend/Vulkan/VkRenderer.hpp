@@ -6,6 +6,7 @@
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
 #include "Vazteran/Backend/Vulkan/CommandPool.hpp"
 #include "Vazteran/Backend/Vulkan/Device.hpp"
+#include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
 #include "Vazteran/Backend/Vulkan/SwapChain.hpp"
 #include "Vazteran/Core/Utils.hpp"
@@ -34,7 +35,7 @@ namespace vzt
 		void               FrameBufferResized(vzt::Size2D<uint32_t> newSize);
 
 	  private:
-		std::vector<VkCommandBuffer> Record(uint32_t imageId, const vzt::FrameBuffer* const frameBuffer);
+		std::vector<VkCommandBuffer> Record(uint32_t imageId);
 
 	  private:
 		VkSurfaceKHR m_surface;
@@ -47,6 +48,11 @@ namespace vzt
 
 		std::unique_ptr<vzt::MeshView>     m_meshView;
 		std::unique_ptr<vzt::VkUiRenderer> m_ui;
+
+		std::vector<vzt::FrameBuffer> m_frames;
+
+		std::vector<vzt::Attachment>     m_colorAttachments;
+		std::unique_ptr<vzt::Attachment> m_depthAttachment;
 
 		vzt::Instance* m_instance;
 		GLFWwindow*    m_window;

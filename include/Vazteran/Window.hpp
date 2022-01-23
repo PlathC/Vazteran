@@ -9,7 +9,7 @@
 #include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Core/Utils.hpp"
 
-#include "Vazteran/WindowType.hpp"
+#include "Vazteran/WindowTypes.hpp"
 
 namespace vzt
 {

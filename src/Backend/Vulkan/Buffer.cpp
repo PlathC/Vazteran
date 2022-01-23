@@ -68,16 +68,16 @@ namespace vzt
 			VkBuffer      stagingBuffer      = VK_NULL_HANDLE;
 			VmaAllocation stagingBufferAlloc = VK_NULL_HANDLE;
 
-			m_device->CreateBuffer(stagingBuffer, stagingBufferAlloc, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-			                       VMA_MEMORY_USAGE_CPU_ONLY);
+			stagingBuffer = m_device->CreateBuffer(stagingBufferAlloc, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			                                       VMA_MEMORY_USAGE_CPU_ONLY);
 
 			void* tempstagingData;
 			vmaMapMemory(m_device->AllocatorHandle(), stagingBufferAlloc, &tempstagingData);
 			memcpy(tempstagingData, data, size);
 			vmaUnmapMemory(m_device->AllocatorHandle(), stagingBufferAlloc);
 
-			m_device->CreateBuffer(m_vkHandle, m_allocation, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
-			                       static_cast<VmaMemoryUsage>(vzt::ToUnderlying(memoryUsage)));
+			m_vkHandle = m_device->CreateBuffer(m_allocation, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage,
+			                                    static_cast<VmaMemoryUsage>(vzt::ToUnderlying(memoryUsage)));
 
 			m_device->CopyBuffer(stagingBuffer, m_vkHandle, bufferSize);
 
@@ -85,8 +85,8 @@ namespace vzt
 		}
 		else if (memoryUsage == MemoryUsage::CPU_TO_GPU)
 		{
-			m_device->CreateBuffer(m_vkHandle, m_allocation, bufferSize, usage,
-			                       static_cast<VmaMemoryUsage>(vzt::ToUnderlying(memoryUsage)));
+			m_vkHandle = m_device->CreateBuffer(m_allocation, bufferSize, usage,
+			                                    static_cast<VmaMemoryUsage>(vzt::ToUnderlying(memoryUsage)));
 
 			void* tempstagingData;
 			vmaMapMemory(m_device->AllocatorHandle(), m_allocation, &tempstagingData);

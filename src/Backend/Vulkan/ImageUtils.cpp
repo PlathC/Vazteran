@@ -7,67 +7,65 @@
 
 namespace vzt
 {
-	ImageView::ImageView(Device *logicalDevice, vzt::Image image, VkFormat format) : m_logicalDevice(logicalDevice)
+	ImageView::ImageView(Device* device, vzt::Image image, vzt::Format format) : m_device(device)
 	{
-		VkBuffer stagingBuffer = VK_NULL_HANDLE;
+		VkBuffer      stagingBuffer   = VK_NULL_HANDLE;
 		VmaAllocation stagingBufAlloc = VK_NULL_HANDLE;
-		VkDeviceSize imageSize = image.Width() * image.Height() * image.Channels();
+		VkDeviceSize  imageSize       = image.Width() * image.Height() * image.Channels();
 
-		m_logicalDevice->CreateBuffer(
-		    stagingBuffer, stagingBufAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+		stagingBuffer = m_device->CreateBuffer(stagingBufAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		                                       VMA_MEMORY_USAGE_CPU_ONLY);
 
-		void *data;
-		auto imageData = image.Data();
-		vmaMapMemory(m_logicalDevice->AllocatorHandle(), stagingBufAlloc, &data);
+		void* data;
+		auto  imageData = image.Data();
+		vmaMapMemory(m_device->AllocatorHandle(), stagingBufAlloc, &data);
 		memcpy(data, imageData.data(), static_cast<size_t>(imageSize));
-		vmaUnmapMemory(m_logicalDevice->AllocatorHandle(), stagingBufAlloc);
-		m_logicalDevice->CreateImage(
-		    m_vkImage, m_allocation, image.Width(), image.Height(), format, VK_SAMPLE_COUNT_1_BIT,
-		    VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		vmaUnmapMemory(m_device->AllocatorHandle(), stagingBufAlloc);
+		m_vkImage =
+		    m_device->CreateImage(m_allocation, image.Width(), image.Height(), format, VK_SAMPLE_COUNT_1_BIT,
+		                          VK_IMAGE_TILING_OPTIMAL, vzt::ImageUsage::TransferDst | vzt::ImageUsage::Sampled);
 
-		m_logicalDevice->TransitionImageLayout(
-		    m_vkImage, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		    VK_IMAGE_ASPECT_COLOR_BIT);
+		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::Undefined, vzt::ImageLayout::TransferDstOptimal,
+		                                vzt::ImageAspect::Color);
 
-		m_logicalDevice->CopyBufferToImage(stagingBuffer, m_vkImage, image.Width(), image.Height());
+		m_device->CopyBufferToImage(stagingBuffer, m_vkImage, image.Width(), image.Height());
 
-		m_logicalDevice->TransitionImageLayout(
-		    m_vkImage, format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		    VK_IMAGE_ASPECT_COLOR_BIT);
+		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::TransferDstOptimal,
+		                                vzt::ImageLayout::ShaderReadOnlyOptimal, vzt::ImageAspect::Color);
 
-		vmaDestroyBuffer(m_logicalDevice->AllocatorHandle(), stagingBuffer, stagingBufAlloc);
+		vmaDestroyBuffer(m_device->AllocatorHandle(), stagingBuffer, stagingBufAlloc);
 
-		m_vkHandle = m_logicalDevice->CreateImageView(m_vkImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+		m_vkHandle = m_device->CreateImageView(m_vkImage, format, vzt::ImageAspect::Color);
 	}
 
-	ImageView::ImageView(Device *logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation)
-	    : m_logicalDevice(logicalDevice), m_vkHandle(vkHandle), m_vkImage(vkImage), m_allocation(allocation)
+	ImageView::ImageView(Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
+	                     vzt::ImageAspect aspectFlags, vzt::ImageLayout layout)
+	    : m_device(device)
 	{
+
+		m_vkImage = m_device->CreateImage(m_allocation, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
+		                                  VK_IMAGE_TILING_OPTIMAL, usage);
+
+		m_vkHandle = m_device->CreateImageView(m_vkImage, format, aspectFlags);
+		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::Undefined, layout, aspectFlags);
 	}
 
-	ImageView::ImageView(Device *logicalDevice, vzt::Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
-	                     VkImageAspectFlags aspectFlags, VkImageLayout layout)
-	    : m_logicalDevice(logicalDevice)
+	ImageView::ImageView(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
+	    : m_device(device)
 	{
-
-		m_logicalDevice->CreateImage(
-		    m_vkImage, m_allocation, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
-		    usage);
-
-		m_vkHandle = m_logicalDevice->CreateImageView(m_vkImage, format, aspectFlags);
-		m_logicalDevice->TransitionImageLayout(m_vkImage, format, VK_IMAGE_LAYOUT_UNDEFINED, layout, aspectFlags);
+		m_vkHandle = m_device->CreateImageView(image, format, aspect);
 	}
 
-	ImageView::ImageView(ImageView &&original) noexcept : m_logicalDevice(original.m_logicalDevice)
+	ImageView::ImageView(ImageView&& original) noexcept : m_device(original.m_device)
 	{
-		m_vkImage = std::exchange(original.m_vkImage, static_cast<decltype(m_vkImage)>(VK_NULL_HANDLE));
-		m_vkHandle = std::exchange(original.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+		m_vkImage    = std::exchange(original.m_vkImage, static_cast<decltype(m_vkImage)>(VK_NULL_HANDLE));
+		m_vkHandle   = std::exchange(original.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
 		m_allocation = std::exchange(original.m_allocation, static_cast<decltype(m_allocation)>(VK_NULL_HANDLE));
 	}
 
-	ImageView &ImageView::operator=(ImageView &&original) noexcept
+	ImageView& ImageView::operator=(ImageView&& original) noexcept
 	{
-		m_logicalDevice = original.m_logicalDevice;
+		m_device = original.m_device;
 		std::swap(m_vkImage, original.m_vkImage);
 		std::swap(m_vkHandle, original.m_vkHandle);
 		std::swap(m_allocation, original.m_allocation);
@@ -79,36 +77,36 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyImageView(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyImageView(m_device->VkHandle(), m_vkHandle, nullptr);
 			m_vkHandle = VK_NULL_HANDLE;
 		}
 
 		if (m_vkImage != VK_NULL_HANDLE)
 		{
-			vmaDestroyImage(m_logicalDevice->AllocatorHandle(), m_vkImage, m_allocation);
+			vmaDestroyImage(m_device->AllocatorHandle(), m_vkImage, m_allocation);
 			m_vkImage = VK_NULL_HANDLE;
 		}
 	}
 
-	Sampler::Sampler(Device *logicalDevice) : m_logicalDevice(logicalDevice)
+	Sampler::Sampler(Device* logicalDevice) : m_logicalDevice(logicalDevice)
 	{
 		VkPhysicalDeviceProperties properties{};
 		vkGetPhysicalDeviceProperties(m_logicalDevice->ChosenPhysicalDevice()->VkHandle(), &properties);
 
 		VkSamplerCreateInfo samplerInfo{};
-		samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter = VK_FILTER_LINEAR;
-		samplerInfo.minFilter = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.anisotropyEnable = VK_TRUE;
-		samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-		samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+		samplerInfo.magFilter               = VK_FILTER_LINEAR;
+		samplerInfo.minFilter               = VK_FILTER_LINEAR;
+		samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.anisotropyEnable        = VK_TRUE;
+		samplerInfo.maxAnisotropy           = properties.limits.maxSamplerAnisotropy;
+		samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
 		samplerInfo.unnormalizedCoordinates = VK_FALSE;
-		samplerInfo.compareEnable = VK_FALSE;
-		samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.compareEnable           = VK_FALSE;
+		samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+		samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
 		if (vkCreateSampler(m_logicalDevice->VkHandle(), &samplerInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
@@ -116,13 +114,13 @@ namespace vzt
 		}
 	}
 
-	Sampler::Sampler(Sampler &&other) noexcept
+	Sampler::Sampler(Sampler&& other) noexcept
 	{
 		m_logicalDevice = std::exchange(other.m_logicalDevice, nullptr);
-		m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+		m_vkHandle      = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
 	}
 
-	Sampler &Sampler::operator=(Sampler &&other) noexcept
+	Sampler& Sampler::operator=(Sampler&& other) noexcept
 	{
 		std::swap(m_logicalDevice, other.m_logicalDevice);
 		std::swap(m_vkHandle, other.m_vkHandle);

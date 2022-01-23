@@ -47,19 +47,19 @@ namespace vzt
 		return vzt::FindQueueFamilies(m_vkHandle, surface);
 	}
 
-	VkFormat PhysicalDevice::FindDepthFormat()
+	vzt::Format PhysicalDevice::FindDepthFormat()
 	{
-		return FindSupportedFormat({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+		return FindSupportedFormat({vzt::Format::D32SFloat, vzt::Format::D32SFloatS8UInt, vzt::Format::D24UNormS8UInt},
 		                           VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 
-	VkFormat PhysicalDevice::FindSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling,
-	                                             VkFormatFeatureFlags features)
+	vzt::Format PhysicalDevice::FindSupportedFormat(const std::vector<vzt::Format>& candidates, VkImageTiling tiling,
+	                                                VkFormatFeatureFlags features)
 	{
-		for (VkFormat format : candidates)
+		for (vzt::Format format : candidates)
 		{
 			VkFormatProperties props;
-			vkGetPhysicalDeviceFormatProperties(m_vkHandle, format, &props);
+			vkGetPhysicalDeviceFormatProperties(m_vkHandle, static_cast<VkFormat>(vzt::ToUnderlying(format)), &props);
 
 			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
 			{
@@ -177,9 +177,10 @@ namespace vzt
 		return requiredExtensions.empty();
 	}
 
-	static bool HasStencilComponent(VkFormat format)
+	static bool HasStencilComponent(vzt::Format format)
 	{
-		return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+		return vzt::ToUnderlying(format) == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+		       vzt::ToUnderlying(format) == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 
 	static VkSampleCountFlagBits MaxUsableSampleCount(VkPhysicalDevice physicalDevice)
@@ -299,6 +300,30 @@ namespace vzt
 		}
 	}
 
+	Device::Device(Device&& other) noexcept
+	{
+		std::swap(m_physicalDevice, other.m_physicalDevice);
+		std::swap(m_allocator, other.m_allocator);
+		std::swap(m_vkHandle, other.m_vkHandle);
+		std::swap(m_deviceFeatures, other.m_deviceFeatures);
+		std::swap(m_graphicsQueue, other.m_graphicsQueue);
+		std::swap(m_presentQueue, other.m_presentQueue);
+		std::swap(m_queueFamilyIndices, other.m_queueFamilyIndices);
+	}
+
+	Device& Device::operator=(Device&& other) noexcept
+	{
+		std::swap(m_physicalDevice, other.m_physicalDevice);
+		std::swap(m_allocator, other.m_allocator);
+		std::swap(m_vkHandle, other.m_vkHandle);
+		std::swap(m_deviceFeatures, other.m_deviceFeatures);
+		std::swap(m_graphicsQueue, other.m_graphicsQueue);
+		std::swap(m_presentQueue, other.m_presentQueue);
+		std::swap(m_queueFamilyIndices, other.m_queueFamilyIndices);
+
+		return *this;
+	}
+
 	Device::~Device()
 	{
 		if (m_allocator != VK_NULL_HANDLE)
@@ -314,9 +339,8 @@ namespace vzt
 		}
 	}
 
-	void Device::CreateBuffer(VkBuffer& buffer, VmaAllocation& bufferAllocation, VkDeviceSize size,
-	                          VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage,
-	                          VkMemoryPropertyFlags preferredFlags)
+	VkBuffer Device::CreateBuffer(VmaAllocation& bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
+	                              VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags)
 	{
 		VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
 		bufferInfo.size               = size;
@@ -328,15 +352,17 @@ namespace vzt
 		// allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		allocInfo.preferredFlags = preferredFlags;
 
+		VkBuffer buffer;
 		if (vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo, &buffer, &bufferAllocation, nullptr) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create vertex buffer!");
 		}
+
+		return buffer;
 	}
 
-	void Device::CreateImage(VkImage& image, VmaAllocation& allocation, uint32_t width, uint32_t height,
-	                         VkFormat format, VkSampleCountFlagBits numSamples, VkImageTiling tiling,
-	                         VkImageUsageFlags usage)
+	VkImage Device::CreateImage(VmaAllocation& allocation, uint32_t width, uint32_t height, vzt::Format format,
+	                            VkSampleCountFlagBits numSamples, VkImageTiling tiling, vzt::ImageUsage usage)
 	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -346,30 +372,33 @@ namespace vzt
 		imageInfo.extent.depth  = 1;
 		imageInfo.mipLevels     = 1;
 		imageInfo.arrayLayers   = 1;
-		imageInfo.format        = format;
+		imageInfo.format        = static_cast<VkFormat>(vzt::ToUnderlying(format));
 		imageInfo.tiling        = tiling;
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imageInfo.usage         = usage;
+		imageInfo.usage         = static_cast<VkImageUsageFlags>(usage | vzt::ImageUsage::Sampled);
 		imageInfo.samples       = numSamples;
 		imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
 
 		VmaAllocationCreateInfo imageAllocCreateInfo = {};
 		imageAllocCreateInfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
 
+		VkImage image;
 		if (vmaCreateImage(m_allocator, &imageInfo, &imageAllocCreateInfo, &image, &allocation, nullptr) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Can't allocate image.");
 		}
+
+		return image;
 	}
 
-	VkImageView Device::CreateImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+	VkImageView Device::CreateImageView(VkImage image, vzt::Format format, vzt::ImageAspect aspectFlags)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		viewInfo.image                           = image;
 		viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format                          = format;
-		viewInfo.subresourceRange.aspectMask     = aspectFlags;
+		viewInfo.format                          = static_cast<VkFormat>(vzt::ToUnderlying(format));
+		viewInfo.subresourceRange.aspectMask     = static_cast<VkImageAspectFlags>(aspectFlags);
 		viewInfo.subresourceRange.baseMipLevel   = 0;
 		viewInfo.subresourceRange.levelCount     = 1;
 		viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -401,7 +430,7 @@ namespace vzt
 			region.bufferRowLength   = 0;
 			region.bufferImageHeight = 0;
 
-			region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+			region.imageSubresource.aspectMask     = static_cast<VkImageAspectFlags>(vzt::ImageAspect::Color);
 			region.imageSubresource.mipLevel       = 0;
 			region.imageSubresource.baseArrayLayer = 0;
 			region.imageSubresource.layerCount     = 1;
@@ -414,19 +443,19 @@ namespace vzt
 		});
 	}
 
-	void Device::TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
-	                                   VkImageAspectFlags aspectFlags)
+	void Device::TransitionImageLayout(VkImage image, vzt::ImageLayout oldLayout, vzt::ImageLayout newLayout,
+	                                   vzt::ImageAspect aspectFlags)
 	{
 		SingleTimeCommand([&](VkCommandBuffer commandBuffer) {
 			VkImageMemoryBarrier barrier{};
 			barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-			barrier.oldLayout           = oldLayout;
-			barrier.newLayout           = newLayout;
+			barrier.oldLayout           = static_cast<VkImageLayout>(oldLayout);
+			barrier.newLayout           = static_cast<VkImageLayout>(newLayout);
 			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
 			barrier.image                           = image;
-			barrier.subresourceRange.aspectMask     = aspectFlags;
+			barrier.subresourceRange.aspectMask     = static_cast<VkImageAspectFlags>(aspectFlags);
 			barrier.subresourceRange.baseMipLevel   = 0;
 			barrier.subresourceRange.levelCount     = 1;
 			barrier.subresourceRange.baseArrayLayer = 0;
@@ -435,7 +464,7 @@ namespace vzt
 			VkPipelineStageFlags sourceStage;
 			VkPipelineStageFlags destinationStage;
 
-			if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+			if (oldLayout == vzt::ImageLayout::Undefined && newLayout == vzt::ImageLayout::TransferDstOptimal)
 			{
 				barrier.srcAccessMask = 0;
 				barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -443,8 +472,8 @@ namespace vzt
 				sourceStage      = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 				destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 			}
-			else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
-			         newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+			else if (oldLayout == vzt::ImageLayout::TransferDstOptimal &&
+			         newLayout == vzt::ImageLayout::ShaderReadOnlyOptimal)
 			{
 				barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 				barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -452,8 +481,8 @@ namespace vzt
 				sourceStage      = VK_PIPELINE_STAGE_TRANSFER_BIT;
 				destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			}
-			else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
-			         newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+			else if (oldLayout == vzt::ImageLayout::Undefined &&
+			         newLayout == vzt::ImageLayout::DepthStencilAttachmentOptimal)
 			{
 				barrier.srcAccessMask = 0;
 				barrier.dstAccessMask =

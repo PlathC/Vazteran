@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_WINDOWTYPE_HPP
-#define VAZTERAN_WINDOWTYPE_HPP
+#ifndef VAZTERAN_WINDOWTYPES_HPP
+#define VAZTERAN_WINDOWTYPES_HPP
 
 #include <type_traits>
 
@@ -189,4 +189,4 @@ namespace vzt
 
 } // namespace vzt
 
-#endif // VAZTERAN_WINDOWTYPE_HPP
+#endif // VAZTERAN_WINDOWTYPES_HPP

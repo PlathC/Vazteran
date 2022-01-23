@@ -17,19 +17,11 @@ namespace vzt
 	class RenderPass;
 	class Sampler;
 
-	enum class DrawType
-	{
-		Fill  = VK_POLYGON_MODE_FILL,
-		Line  = VK_POLYGON_MODE_LINE,
-		Point = VK_POLYGON_MODE_POINT
-	};
-
-	struct PipelineSettings
+	struct PipelineContextSettings
 	{
 		const vzt::RenderPass* renderPassTemplate;
-		VkFormat               swapChainImageFormat;
+		vzt::Format            swapChainImageFormat;
 		vzt::Size2D<uint32_t>  swapChainExtent;
-		vzt::DrawType          drawType = DrawType::Fill;
 	};
 
 	using BindingDescription   = VkVertexInputBindingDescription;
@@ -39,6 +31,35 @@ namespace vzt
 	{
 		BindingDescription   binding;
 		AttributeDescription attribute;
+	};
+
+	enum class DrawType : uint32_t
+	{
+		Fill          = VK_POLYGON_MODE_FILL,
+		Line          = VK_POLYGON_MODE_LINE,
+		Point         = VK_POLYGON_MODE_POINT,
+		FillRectangle = VK_POLYGON_MODE_FILL_RECTANGLE_NV
+	};
+
+	enum class CullMode : uint32_t
+	{
+		None         = VK_CULL_MODE_NONE,
+		Front        = VK_CULL_MODE_FRONT_BIT,
+		Back         = VK_CULL_MODE_BACK_BIT,
+		FrontAndBack = VK_CULL_MODE_FRONT_AND_BACK
+	};
+
+	enum class FrontFace : uint32_t
+	{
+		CounterClockwise = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+		Clockwise        = VK_FRONT_FACE_CLOCKWISE
+	};
+
+	struct RasterizationOptions
+	{
+		vzt::DrawType  drawType  = vzt::DrawType::Fill;
+		vzt::CullMode  cullMode  = vzt::CullMode::Back;
+		vzt::FrontFace frontFace = vzt::FrontFace::CounterClockwise;
 	};
 
 	class GraphicPipeline
@@ -54,7 +75,10 @@ namespace vzt
 		GraphicPipeline& operator=(GraphicPipeline&& other) noexcept = default;
 
 		void Bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass);
-		void Configure(vzt::PipelineSettings settings);
+		void Configure(vzt::PipelineContextSettings settings);
+
+		vzt::RasterizationOptions& RasterOptions() { return m_rasterOptions; }
+		vzt::RasterizationOptions  CRasterOptions() const { return m_rasterOptions; }
 
 		const vzt::Program& Program() const { return m_program; };
 		VkPipelineLayout    Layout() const { return m_pipelineLayout; }
@@ -72,9 +96,10 @@ namespace vzt
 		VkPipeline       m_vkHandle       = VK_NULL_HANDLE;
 		VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-		vzt::VertexInputDescription m_vertexInputDescription;
-		vzt::Program                m_program;
-		vzt::PipelineSettings       m_settings{};
+		vzt::VertexInputDescription  m_vertexInputDescription;
+		vzt::Program                 m_program;
+		vzt::PipelineContextSettings m_settings{};
+		vzt::RasterizationOptions    m_rasterOptions{};
 	};
 } // namespace vzt
 

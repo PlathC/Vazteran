@@ -140,13 +140,13 @@ namespace vzt
 			MaterialData materialData{};
 
 			materialData.textures.emplace_back(std::pair<vzt::ImageView, vzt::Sampler>{
-			    vzt::ImageView(m_device, materials[materialId].diffuseMap, VK_FORMAT_R8G8B8A8_SRGB),
+			    vzt::ImageView(m_device, materials[materialId].diffuseMap, vzt::Format::R8G8B8A8SRGB),
 			    vzt::Sampler(m_device)});
 			materialData.textures.emplace_back(std::pair<vzt::ImageView, vzt::Sampler>{
-			    vzt::ImageView(m_device, materials[materialId].ambientMap, VK_FORMAT_R8G8B8A8_SRGB),
+			    vzt::ImageView(m_device, materials[materialId].ambientMap, vzt::Format::R8G8B8A8SRGB),
 			    vzt::Sampler(m_device)});
 			materialData.textures.emplace_back(std::pair<vzt::ImageView, vzt::Sampler>{
-			    vzt::ImageView(m_device, materials[materialId].specularMap, VK_FORMAT_R8G8B8A8_SRGB),
+			    vzt::ImageView(m_device, materials[materialId].specularMap, vzt::Format::R8G8B8A8SRGB),
 			    vzt::Sampler(m_device)});
 
 			IndexedUniform<vzt::ImageDescriptor> texturesDescriptors;
@@ -181,7 +181,7 @@ namespace vzt
 		m_models.emplace_back(std::move(modelDisplayInfo));
 	}
 
-	void MeshView::Configure(vzt::PipelineSettings settings) { m_graphicPipeline->Configure(settings); }
+	void MeshView::Configure(vzt::PipelineContextSettings settings) { m_graphicPipeline->Configure(settings); }
 
 	void MeshView::Record(uint32_t imageCount, VkCommandBuffer commandBuffer, const vzt::RenderPass* renderPass)
 	{

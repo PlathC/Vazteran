@@ -14,8 +14,6 @@ namespace vzt
 	    : m_surface(surface), m_device(device), m_swapChainSize(swapChainSize)
 	{
 		CreateSwapChain();
-		CreateDepthResources();
-		CreateRenderSupport();
 
 		CreateSynchronizationObjects();
 	}
@@ -50,10 +48,7 @@ namespace vzt
 		// Mark the image as now being in use by this frame
 		m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
 
-		if (m_frames.size() <= imageIndex)
-			return false;
-
-		auto commands = renderFunction(imageIndex, &m_frames[imageIndex]);
+		auto commands = renderFunction(imageIndex);
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -63,8 +58,8 @@ namespace vzt
 		submitInfo.waitSemaphoreCount         = 1;
 		submitInfo.pWaitSemaphores            = waitSemaphores;
 		submitInfo.pWaitDstStageMask          = waitStages;
-		submitInfo.commandBufferCount         = commands.size();
-		submitInfo.pCommandBuffers            = commands.data(); //&(*m_commandPool)[imageIndex];
+		submitInfo.commandBufferCount         = static_cast<uint32_t>(commands.size());
+		submitInfo.pCommandBuffers            = commands.data();
 
 		VkSemaphore signalSemaphores[]  = {m_renderFinishedSemaphores[m_currentFrame]};
 		submitInfo.signalSemaphoreCount = 1;
@@ -109,12 +104,6 @@ namespace vzt
 		m_framebufferResized = true;
 	};
 
-	void SwapChain::SetRenderPassTemplate(const vzt::RenderPass* renderPassTemplate)
-	{
-		m_renderPassTemplate = renderPassTemplate;
-		CreateRenderSupport();
-	}
-
 	void SwapChain::Recreate(VkSurfaceKHR surface)
 	{
 		Cleanup();
@@ -122,8 +111,6 @@ namespace vzt
 		m_surface = surface;
 
 		CreateSwapChain();
-		CreateDepthResources();
-		CreateRenderSupport();
 	}
 
 	SwapChain::~SwapChain()
@@ -149,7 +136,7 @@ namespace vzt
 		VkPresentModeKHR   m_presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
 		VkExtent2D         extent        = ChooseSwapExtent(swapChainSupport.capabilities);
 
-		m_swapChainImageFormat = surfaceFormat.format;
+		m_swapChainImageFormat = static_cast<vzt::Format>(surfaceFormat.format);
 
 		m_imageCount = swapChainSupport.capabilities.minImageCount + 1;
 		if (swapChainSupport.capabilities.maxImageCount > 0 &&
@@ -166,7 +153,7 @@ namespace vzt
 		createInfo.imageColorSpace  = surfaceFormat.colorSpace;
 		createInfo.imageExtent      = extent;
 		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		createInfo.imageUsage = static_cast<VkImageUsageFlags>(vzt::ToUnderlying(vzt::ImageUsage::ColorAttachment));
 
 		QueueFamilyIndices indices              = m_device->DeviceQueueFamilyIndices();
 		uint32_t           queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -196,30 +183,12 @@ namespace vzt
 		}
 	}
 
-	void SwapChain::CreateDepthResources()
-	{
-		VkFormat depthFormat = m_device->ChosenPhysicalDevice()->FindDepthFormat();
-		m_depthImageData     = {vzt::ImageView(m_device, m_swapChainSize, depthFormat,
-		                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT,
-		                                       VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL),
-                            Sampler(m_device)};
-	}
-
-	void SwapChain::CreateRenderSupport()
+	std::vector<VkImage> SwapChain::GetImagesKHR()
 	{
 		auto swapChainImages = std::vector<VkImage>(m_imageCount);
 		vkGetSwapchainImagesKHR(m_device->VkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
 
-		m_frames.reserve(m_imageCount);
-
-		if (!m_renderPassTemplate)
-			return;
-
-		for (std::size_t i = 0; i < m_imageCount; i++)
-		{
-			m_frames.emplace_back(m_device, m_renderPassTemplate, swapChainImages[i], &m_depthImageData.value().first,
-			                      m_swapChainImageFormat, m_swapChainSize);
-		}
+		return swapChainImages;
 	}
 
 	void SwapChain::CreateSynchronizationObjects()
@@ -250,16 +219,13 @@ namespace vzt
 
 	void SwapChain::Cleanup()
 	{
-		for (std::size_t i = 0; i < m_frames.size(); i++)
+		for (std::size_t i = 0; i < m_imagesInFlight.size(); i++)
 		{
 			if (m_imagesInFlight[i] != VK_NULL_HANDLE)
 			{
 				vkWaitForFences(m_device->VkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
 			}
 		}
-
-		m_frames.clear();
-		m_depthImageData.reset();
 
 		vkDestroySwapchainKHR(m_device->VkHandle(), m_vkHandle, nullptr);
 	}

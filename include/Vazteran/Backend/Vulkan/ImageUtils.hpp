@@ -4,6 +4,7 @@
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
 
+#include "Vazteran/Backend/Vulkan/ImageTypes.hpp"
 #include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Image.hpp"
 
@@ -14,11 +15,10 @@ namespace vzt
 	class ImageView
 	{
 	  public:
-		// TODO: add format to vzt::Image
-		ImageView(vzt::Device* logicalDevice, vzt::Image image, VkFormat format = VK_FORMAT_B8G8R8A8_SRGB);
-		ImageView(Device* logicalDevice, VkImageView vkHandle, VkImage vkImage, VmaAllocation allocation);
-		ImageView(Device* logicalDevice, vzt::Size2D<uint32_t> size, VkFormat format, VkImageUsageFlags usage,
-		          VkImageAspectFlags aspectFlags, VkImageLayout layout);
+		ImageView(vzt::Device* device, vzt::Image image, vzt::Format format = vzt::Format::B8G8R8A8SRGB);
+		ImageView(vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
+		          vzt::ImageAspect aspectFlags, vzt::ImageLayout layout);
+		ImageView(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect);
 
 		ImageView(const ImageView&) = delete;
 		ImageView& operator=(const ImageView&) = delete;
@@ -31,7 +31,7 @@ namespace vzt
 		~ImageView();
 
 	  private:
-		vzt::Device* m_logicalDevice;
+		vzt::Device* m_device;
 
 		VkImage m_vkImage = VK_NULL_HANDLE;
 		// VkDeviceMemory m_deviceMemory;

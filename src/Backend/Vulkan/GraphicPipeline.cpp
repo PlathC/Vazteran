@@ -60,10 +60,10 @@ namespace vzt
 		rasterizer.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		rasterizer.depthClampEnable        = VK_FALSE;
 		rasterizer.rasterizerDiscardEnable = VK_FALSE;
-		rasterizer.polygonMode             = static_cast<VkPolygonMode>(m_settings.drawType);
+		rasterizer.polygonMode             = static_cast<VkPolygonMode>(m_rasterOptions.drawType);
 		rasterizer.lineWidth               = 1.0f;
-		rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
-		rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		rasterizer.cullMode                = static_cast<VkCullModeFlags>(m_rasterOptions.cullMode);
+		rasterizer.frontFace               = static_cast<VkFrontFace>(m_rasterOptions.frontFace);
 		rasterizer.depthBiasEnable         = VK_FALSE;
 		rasterizer.depthBiasConstantFactor = 0.0f; // Optional
 		rasterizer.depthBiasClamp          = 0.0f; // Optional
@@ -140,7 +140,7 @@ namespace vzt
 		vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
 	}
 
-	void GraphicPipeline::Configure(vzt::PipelineSettings settings)
+	void GraphicPipeline::Configure(vzt::PipelineContextSettings settings)
 	{
 		m_settings = settings;
 		Create();
