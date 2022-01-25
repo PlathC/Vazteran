@@ -29,6 +29,12 @@ namespace vzt
 		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size);
 		~Renderer();
 
+		Renderer(const Renderer&) = delete;
+		Renderer& operator=(const Renderer&) = delete;
+
+		Renderer(Renderer&&) = default;
+		Renderer& operator=(Renderer&&) = default;
+
 		void               SetScene(vzt::Scene* scene);
 		void               Draw(const vzt::Camera& camera);
 		const vzt::Device* Device() const { return &m_device; }
@@ -43,16 +49,12 @@ namespace vzt
 		vzt::Device    m_device;
 		vzt::SwapChain m_swapChain;
 
-		std::unique_ptr<vzt::RenderPass> m_renderPass;
-		vzt::CommandPool                 m_commandPool;
+		vzt::CommandPool m_commandPool;
 
 		std::unique_ptr<vzt::MeshView>     m_meshView;
 		std::unique_ptr<vzt::VkUiRenderer> m_ui;
 
 		std::vector<vzt::FrameBuffer> m_frames;
-
-		std::vector<vzt::Attachment>     m_colorAttachments;
-		std::unique_ptr<vzt::Attachment> m_depthAttachment;
 
 		vzt::Instance* m_instance;
 		GLFWwindow*    m_window;

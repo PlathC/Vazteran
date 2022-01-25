@@ -63,8 +63,8 @@ namespace vzt
 
 		struct MaterialData
 		{
-			std::vector<vzt::Attachment> textures;
-			uint32_t                     descriptorIndex;
+			std::vector<vzt::Texture> textures;
+			uint32_t                  descriptorIndex;
 		};
 
 		struct ModelDisplayInformation

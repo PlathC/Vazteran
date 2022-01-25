@@ -7,7 +7,8 @@
 
 namespace vzt
 {
-	ImageView::ImageView(Device* device, vzt::Image image, vzt::Format format) : m_device(device)
+	ImageView::ImageView(Device* device, vzt::Image image, vzt::Format format, vzt::ImageLayout layout)
+	    : m_device(device), m_format(format), m_layout(layout)
 	{
 		VkBuffer      stagingBuffer   = VK_NULL_HANDLE;
 		VmaAllocation stagingBufAlloc = VK_NULL_HANDLE;
@@ -30,8 +31,8 @@ namespace vzt
 
 		m_device->CopyBufferToImage(stagingBuffer, m_vkImage, image.Width(), image.Height());
 
-		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::TransferDstOptimal,
-		                                vzt::ImageLayout::ShaderReadOnlyOptimal, vzt::ImageAspect::Color);
+		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::TransferDstOptimal, layout,
+		                                vzt::ImageAspect::Color);
 
 		vmaDestroyBuffer(m_device->AllocatorHandle(), stagingBuffer, stagingBufAlloc);
 
@@ -40,7 +41,7 @@ namespace vzt
 
 	ImageView::ImageView(Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
 	                     vzt::ImageAspect aspectFlags, vzt::ImageLayout layout)
-	    : m_device(device)
+	    : m_device(device), m_format(format), m_layout(layout)
 	{
 
 		m_vkImage = m_device->CreateImage(m_allocation, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
@@ -51,7 +52,7 @@ namespace vzt
 	}
 
 	ImageView::ImageView(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
-	    : m_device(device)
+	    : m_device(device), m_format(format)
 	{
 		m_vkHandle = m_device->CreateImageView(image, format, aspect);
 	}
@@ -135,4 +136,10 @@ namespace vzt
 			vkDestroySampler(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
 		}
 	}
+
+	Texture::Texture(vzt::Device* device, const vzt::Image& image, vzt::Format format)
+	    : m_format(format), m_sampler(device), m_imageView(std::make_unique<vzt::ImageView>(device, image, format))
+	{
+	}
+
 } // namespace vzt

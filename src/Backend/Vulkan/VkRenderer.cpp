@@ -15,29 +15,32 @@ namespace vzt
 		const auto     swapChainImageFormat = m_swapChain.GetImageFormat();
 		const auto     swapChainSize        = m_swapChain.GetFrameBufferSize();
 
-		m_renderPass            = std::make_unique<vzt::RenderPass>(&m_device, swapChainImageFormat);
-		vzt::Format depthFormat = m_device.ChosenPhysicalDevice()->FindDepthFormat();
-
-		m_depthAttachment = std::make_unique<vzt::Attachment>(&m_device, swapChainSize, depthFormat,
-		                                                      vzt::ImageUsage::DepthStencilAttachment);
-
-		auto swapChainImages = m_swapChain.GetImagesKHR();
+		vzt::Format depthFormat     = m_device.ChosenPhysicalDevice()->FindDepthFormat();
+		const auto  swapChainImages = m_swapChain.GetImagesKHR();
 		m_frames.reserve(imageCount);
 		for (std::size_t i = 0; i < imageCount; i++)
 		{
-			m_colorAttachments.emplace_back(&m_device, swapChainImages[i], swapChainImageFormat,
-			                                vzt::ImageAspect::Color);
+			std::vector<std::unique_ptr<vzt::Attachment>> currentAttachments;
+			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(
+			    &m_device, swapChainImages[i], swapChainImageFormat, vzt::ImageAspect::Color));
+			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(&m_device, swapChainSize, depthFormat,
+			                                                                  vzt::ImageUsage::DepthStencilAttachment));
+			currentAttachments[1]->SetFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
 
-			std::vector<const vzt::Attachment*> currentAttachments = {
-			    &m_colorAttachments[m_colorAttachments.size() - 1], m_depthAttachment.get()};
+			VkSubpassDependency mainSubpassDependency = {
+			    VK_SUBPASS_EXTERNAL, 0,
+			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT};
 
-			m_frames.emplace_back(&m_device, m_renderPass.get(), currentAttachments, swapChainSize);
+			m_frames.emplace_back(&m_device, std::vector<VkSubpassDependency>{mainSubpassDependency},
+			                      std::move(currentAttachments), swapChainSize);
 		}
 
 		m_commandPool.AllocateCommandBuffers(imageCount);
 
 		m_meshView = std::make_unique<vzt::MeshView>(&m_device, imageCount);
-		m_meshView->Configure({m_renderPass.get(), swapChainImageFormat, swapChainSize});
+		m_meshView->Configure({m_frames[0].RenderPass(), swapChainImageFormat, swapChainSize});
 	}
 
 	Renderer::~Renderer() = default;
@@ -48,7 +51,7 @@ namespace vzt
 		if (uiData.has_value())
 		{
 			m_ui = std::make_unique<vzt::VkUiRenderer>(m_instance, &m_device, m_window, m_swapChain.GetImageCount(),
-			                                           m_renderPass.get(), uiData.value());
+			                                           m_frames[0].RenderPass(), uiData.value());
 		}
 
 		auto sceneModels = scene->CModels();
@@ -72,44 +75,47 @@ namespace vzt
 		m_swapChain.SetFrameBufferSize(std::move(newSize));
 		m_swapChain.Recreate(m_surface);
 
-		m_colorAttachments.clear();
 		m_frames.clear();
 
 		const uint32_t imageCount           = m_swapChain.GetImageCount();
 		const auto     swapChainImageFormat = m_swapChain.GetImageFormat();
 		const auto     swapChainSize        = m_swapChain.GetFrameBufferSize();
 
-		vzt::Format depthFormat = m_device.ChosenPhysicalDevice()->FindDepthFormat();
-
-		m_depthAttachment = std::make_unique<vzt::Attachment>(&m_device, swapChainSize, depthFormat,
-		                                                      vzt::ImageUsage::DepthStencilAttachment);
-
-		auto swapChainImages = m_swapChain.GetImagesKHR();
+		vzt::Format depthFormat     = m_device.ChosenPhysicalDevice()->FindDepthFormat();
+		const auto  swapChainImages = m_swapChain.GetImagesKHR();
 		for (std::size_t i = 0; i < imageCount; i++)
 		{
-			m_colorAttachments.emplace_back(&m_device, swapChainImages[i], swapChainImageFormat,
-			                                vzt::ImageAspect::Color);
+			std::vector<std::unique_ptr<vzt::Attachment>> currentAttachments;
+			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(
+			    &m_device, swapChainImages[i], swapChainImageFormat, vzt::ImageAspect::Color));
+			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(&m_device, swapChainSize, depthFormat,
+			                                                                  vzt::ImageUsage::DepthStencilAttachment));
+			currentAttachments[1]->SetFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
 
-			std::vector<const vzt::Attachment*> currentAttachments = {
-			    &m_colorAttachments[m_colorAttachments.size() - 1], m_depthAttachment.get()};
+			VkSubpassDependency mainSubpassDependency = {
+			    VK_SUBPASS_EXTERNAL, 0,
+			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT};
 
-			m_frames.emplace_back(&m_device, m_renderPass.get(), currentAttachments, swapChainSize);
+			m_frames.emplace_back(&m_device, std::vector<VkSubpassDependency>{mainSubpassDependency},
+			                      std::move(currentAttachments), swapChainSize);
 		}
 
-		m_meshView->Configure({m_renderPass.get(), swapChainImageFormat, swapChainSize});
+		m_meshView->Configure({m_frames[0].RenderPass(), swapChainImageFormat, swapChainSize});
 	} // namespace vzt
 
 	std::vector<VkCommandBuffer> Renderer::Record(uint32_t imageId)
 	{
 		m_commandPool.RecordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
-			m_renderPass->Bind(commandBuffer, &m_frames[imageId]);
-			m_meshView->Record(imageId, commandBuffer, m_renderPass.get());
+			m_frames[imageId].Bind(commandBuffer);
+			m_meshView->Record(imageId, commandBuffer, m_frames[imageId].RenderPass());
 
 			if (m_ui)
 			{
-				m_ui->Record(imageId, commandBuffer, m_renderPass.get());
+				m_ui->Record(imageId, commandBuffer, m_frames[imageId].RenderPass());
 			}
-			m_renderPass->Unbind(commandBuffer);
+			m_frames[imageId].Unbind(commandBuffer);
 		});
 
 		return {(m_commandPool[imageId])};

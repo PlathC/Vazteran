@@ -74,7 +74,7 @@ namespace vzt
 	}
 
 	void DescriptorPool::UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
-	                               const IndexedUniform<vzt::Attachment*>&      textureHandlers)
+	                               const IndexedUniform<vzt::Texture*>&         textureHandlers)
 	{
 		for (std::size_t i = 0; i < m_descriptors.size(); i++)
 		{
@@ -90,7 +90,7 @@ namespace vzt
 	}
 
 	void DescriptorPool::Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
-	                            const IndexedUniform<vzt::Attachment*>& imageDescriptors)
+	                            const IndexedUniform<vzt::Texture*>& imageDescriptors)
 	{
 		assert(i < m_descriptors.size() && "i must be less than Size()");
 

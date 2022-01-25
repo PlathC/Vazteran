@@ -1,6 +1,7 @@
 #include <array>
 #include <stdexcept>
 
+#include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
@@ -8,64 +9,88 @@
 
 namespace vzt
 {
-	RenderPass::RenderPass(vzt::Device* device, vzt::Format colorImageFormat) : m_device(device)
+	// Subpass::Subpass(vzt::PipelineBindPoint bindPoint) : m_bindPoint(bindPoint) {}
+
+	/*void Subpass::AddAttachment(uint32_t attachmentIdx, const vzt::ImageLayout attachmentLayout)
 	{
-		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format  = static_cast<VkFormat>(vzt::ToUnderlying(colorImageFormat));
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp  = static_cast<VkAttachmentLoadOp>(vzt::ToUnderlying(vzt::LoadOperation::Clear));
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp =
-		    static_cast<VkAttachmentLoadOp>(vzt::ToUnderlying(vzt::LoadOperation::DontCare));
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout  = static_cast<VkImageLayout>(vzt::ToUnderlying(vzt::ImageLayout::Undefined));
-		colorAttachment.finalLayout    = static_cast<VkImageLayout>(vzt::ToUnderlying(vzt::ImageLayout::PresentSrcKHR));
+	    if (attachmentLayout == vzt::ImageLayout::ColorAttachmentOptimal ||
+	        attachmentLayout == vzt::ImageLayout::PresentSrcKHR)
+	    {
+	        m_colorReferences.emplace_back(
+	            VkAttachmentReference{attachmentIdx, static_cast<VkImageLayout>(attachmentLayout)});
+	    }
+	    else if (attachmentLayout == vzt::ImageLayout::DepthAttachmentOptimal ||
+	             attachmentLayout == vzt::ImageLayout::DepthStencilAttachmentOptimal)
+	    {
+	        m_depthReferences = VkAttachmentReference{attachmentIdx, static_cast<VkImageLayout>(attachmentLayout)};
+	    }
+	}
 
-		VkAttachmentReference colorAttachmentRef{};
-		colorAttachmentRef.attachment = 0;
-		colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	VkSubpassDescription Subpass::Description() const
+	{
+	    VkSubpassDescription subpass{};
+	    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	    subpass.colorAttachmentCount    = m_colorReferences.size();
+	    subpass.pColorAttachments       = m_colorReferences.data();
+	    subpass.pDepthStencilAttachment = nullptr;
+	    if (m_depthReferences.has_value())
+	        subpass.pDepthStencilAttachment = &m_depthReferences.value();
 
-		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format =
-		    static_cast<VkFormat>(vzt::ToUnderlying(m_device->ChosenPhysicalDevice()->FindDepthFormat()));
-		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp  = static_cast<VkAttachmentLoadOp>(vzt::ToUnderlying(vzt::LoadOperation::Clear));
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.stencilLoadOp =
-		    static_cast<VkAttachmentLoadOp>(vzt::ToUnderlying(vzt::LoadOperation::DontCare));
-		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.initialLayout  = static_cast<VkImageLayout>(vzt::ToUnderlying(vzt::ImageLayout::Undefined));
-		depthAttachment.finalLayout =
-		    static_cast<VkImageLayout>(vzt::ToUnderlying(vzt::ImageLayout::DepthStencilAttachmentOptimal));
+	    return subpass;
+	}*/
 
-		VkAttachmentReference depthAttachmentRef{};
-		depthAttachmentRef.attachment = 1;
-		depthAttachmentRef.layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	RenderPass::RenderPass(vzt::Device* device, std::vector<VkSubpassDependency>&& subpasses,
+	                       const std::vector<vzt::Attachment*>& attachments)
+	    : m_device(device), m_subpassDependencies(std::move(subpasses))
+	{
+		std::vector<VkAttachmentDescription> attachmentDescriptions;
+		attachmentDescriptions.reserve(attachments.size());
 
-		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount    = 1;
-		subpass.pColorAttachments       = &colorAttachmentRef;
-		subpass.pDepthStencilAttachment = &depthAttachmentRef;
+		m_colorRefs.reserve(attachments.size() - 1);
+		for (std::size_t i = 0; i < attachments.size(); i++)
+		{
+			const auto& attachment = attachments[i];
+			attachmentDescriptions.emplace_back(attachment->Description());
 
-		VkSubpassDependency dependency{};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask =
-		    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.dstStageMask =
-		    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			const auto attachmentLayout = attachment->Description().finalLayout;
 
-		std::array<VkAttachmentDescription, 2> attachments = {colorAttachment, depthAttachment};
-		VkRenderPassCreateInfo                 renderPassInfo{};
+			VkAttachmentReference currentAttachmentRef{};
+			currentAttachmentRef.attachment = i;
+			currentAttachmentRef.layout     = attachmentLayout;
+
+			if (attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::ColorAttachmentOptimal) ||
+			    attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::PresentSrcKHR))
+			{
+				m_colorRefs.emplace_back(currentAttachmentRef);
+			}
+			else if (attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::DepthAttachmentOptimal) ||
+			         attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::DepthStencilAttachmentOptimal))
+			{
+				m_depthRef = currentAttachmentRef;
+			}
+		}
+
+		m_subpassDescriptions.reserve(m_subpassDependencies.size());
+		for (std::size_t i = 0; i < m_subpassDependencies.size(); i++)
+		{
+			VkSubpassDescription subpass{};
+			subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			subpass.colorAttachmentCount    = m_colorRefs.size();
+			subpass.pColorAttachments       = m_colorRefs.data();
+			subpass.pDepthStencilAttachment = nullptr;
+			subpass.pDepthStencilAttachment = &m_depthRef;
+
+			m_subpassDescriptions.emplace_back(subpass);
+		}
+
+		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-		renderPassInfo.pAttachments    = attachments.data();
-		renderPassInfo.subpassCount    = 1;
-		renderPassInfo.pSubpasses      = &subpass;
-		renderPassInfo.dependencyCount = 1;
-		renderPassInfo.pDependencies   = &dependency;
+		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
+		renderPassInfo.pAttachments    = attachmentDescriptions.data();
+		renderPassInfo.subpassCount    = m_subpassDescriptions.size();
+		renderPassInfo.pSubpasses      = m_subpassDescriptions.data();
+		renderPassInfo.dependencyCount = m_subpassDependencies.size();
+		renderPassInfo.pDependencies   = m_subpassDependencies.data();
 
 		if (vkCreateRenderPass(m_device->VkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
