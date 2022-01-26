@@ -6,23 +6,23 @@ namespace vzt
 	    : m_device(device), m_format(format), m_sampler(device)
 	{
 		vzt::ImageAspect aspect;
-		vzt::ImageLayout layout;
 		if ((usage & vzt::ImageUsage::ColorAttachment) == vzt::ImageUsage::ColorAttachment)
 		{
-			aspect = vzt::ImageAspect::Color;
-			layout = vzt::ImageLayout::ColorAttachmentOptimal;
+			aspect   = vzt::ImageAspect::Color;
+			m_layout = vzt::ImageLayout::ColorAttachmentOptimal;
 		}
 		else if ((usage & vzt::ImageUsage::DepthStencilAttachment) == vzt::ImageUsage::DepthStencilAttachment)
 		{
-			aspect = vzt::ImageAspect::Depth;
-			layout = vzt::ImageLayout::DepthStencilAttachmentOptimal;
+			aspect   = vzt::ImageAspect::Depth;
+			m_layout = vzt::ImageLayout::DepthStencilAttachmentOptimal;
 		}
 
-		m_imageView = std::make_unique<vzt::ImageView>(m_device, size, format, usage, aspect, layout);
+		m_imageView = std::make_unique<vzt::ImageView>(m_device, size, format, usage, aspect, m_layout);
 	}
 
-	Attachment::Attachment(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
-	    : m_device(device), m_format(format), m_sampler(device)
+	Attachment::Attachment(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageLayout layout,
+	                       vzt::ImageAspect aspect)
+	    : m_device(device), m_format(format), m_layout(layout), m_sampler(device)
 	{
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, image, format, aspect);
 	}

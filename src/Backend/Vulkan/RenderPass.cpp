@@ -52,19 +52,18 @@ namespace vzt
 			const auto& attachment = attachments[i];
 			attachmentDescriptions.emplace_back(attachment->Description());
 
-			const auto attachmentLayout = attachment->Description().finalLayout;
+			const auto attachmentLayout = attachment->Layout();
 
 			VkAttachmentReference currentAttachmentRef{};
 			currentAttachmentRef.attachment = i;
-			currentAttachmentRef.layout     = attachmentLayout;
+			currentAttachmentRef.layout     = static_cast<VkImageLayout>(attachmentLayout);
 
-			if (attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::ColorAttachmentOptimal) ||
-			    attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::PresentSrcKHR))
+			if (attachmentLayout == vzt::ImageLayout::ColorAttachmentOptimal)
 			{
 				m_colorRefs.emplace_back(currentAttachmentRef);
 			}
-			else if (attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::DepthAttachmentOptimal) ||
-			         attachmentLayout == static_cast<VkImageLayout>(vzt::ImageLayout::DepthStencilAttachmentOptimal))
+			else if (attachmentLayout == vzt::ImageLayout::DepthAttachmentOptimal ||
+			         attachmentLayout == vzt::ImageLayout::DepthStencilAttachmentOptimal)
 			{
 				m_depthRef = currentAttachmentRef;
 			}

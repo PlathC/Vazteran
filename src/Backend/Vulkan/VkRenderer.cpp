@@ -21,16 +21,19 @@ namespace vzt
 		for (std::size_t i = 0; i < imageCount; i++)
 		{
 			std::vector<std::unique_ptr<vzt::Attachment>> currentAttachments;
-			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(
-			    &m_device, swapChainImages[i], swapChainImageFormat, vzt::ImageAspect::Color));
+			currentAttachments.emplace_back(
+			    std::make_unique<vzt::Attachment>(&m_device, swapChainImages[i], swapChainImageFormat,
+			                                      vzt::ImageLayout::ColorAttachmentOptimal, vzt::ImageAspect::Color));
 			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(&m_device, swapChainSize, depthFormat,
 			                                                                  vzt::ImageUsage::DepthStencilAttachment));
 			currentAttachments[1]->SetFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
 
 			VkSubpassDependency mainSubpassDependency = {
-			    VK_SUBPASS_EXTERNAL, 0,
+			    VK_SUBPASS_EXTERNAL,
+			    0,
 			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
 			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			    0,
 			    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT};
 
 			m_frames.emplace_back(&m_device, std::vector<VkSubpassDependency>{mainSubpassDependency},
@@ -86,16 +89,19 @@ namespace vzt
 		for (std::size_t i = 0; i < imageCount; i++)
 		{
 			std::vector<std::unique_ptr<vzt::Attachment>> currentAttachments;
-			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(
-			    &m_device, swapChainImages[i], swapChainImageFormat, vzt::ImageAspect::Color));
+			currentAttachments.emplace_back(
+			    std::make_unique<vzt::Attachment>(&m_device, swapChainImages[i], swapChainImageFormat,
+			                                      vzt::ImageLayout::ColorAttachmentOptimal, vzt::ImageAspect::Color));
 			currentAttachments.emplace_back(std::make_unique<vzt::Attachment>(&m_device, swapChainSize, depthFormat,
 			                                                                  vzt::ImageUsage::DepthStencilAttachment));
 			currentAttachments[1]->SetFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
 
 			VkSubpassDependency mainSubpassDependency = {
-			    VK_SUBPASS_EXTERNAL, 0,
+			    VK_SUBPASS_EXTERNAL,
+			    0,
 			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
 			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			    0,
 			    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT};
 
 			m_frames.emplace_back(&m_device, std::vector<VkSubpassDependency>{mainSubpassDependency},
