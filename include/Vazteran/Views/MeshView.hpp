@@ -18,7 +18,7 @@ namespace vzt
 	class Device;
 	class GraphicPipeline;
 
-	struct BlinnPhongVertexInput
+	struct TriangleVertexInput
 	{
 		vzt::Vec3 position;
 		vzt::Vec2 textureCoordinates;
@@ -42,9 +42,10 @@ namespace vzt
 		~MeshView();
 
 		void AddModel(const vzt::Model* const model);
+		void SetOutputTextures(const std::vector<vzt::Texture*>& outputTextures);
 		void Configure(vzt::PipelineContextSettings settings);
 
-		void Record(uint32_t imageCount, VkCommandBuffer commandBuffer, const vzt::RenderPass* renderPass);
+		VkCommandBuffer GetCommandBuffer(uint32_t imageCount, const vzt::FrameBuffer* frameBuffer);
 
 		void Update(const vzt::Camera& camera);
 
@@ -63,8 +64,9 @@ namespace vzt
 
 		struct MaterialData
 		{
-			std::vector<vzt::Texture> textures;
-			uint32_t                  descriptorIndex;
+			std::vector<vzt::ImageView> imageViews;
+			std::vector<vzt::Texture>   textures;
+			uint32_t                    descriptorIndex;
 		};
 
 		struct ModelDisplayInformation
@@ -78,7 +80,9 @@ namespace vzt
 			std::vector<MaterialData> materialsData;
 		};
 
-		vzt::DescriptorPool m_descriptorPool;
+		std::vector<vzt::Texture*> m_outputTextures;
+		vzt::DescriptorPool        m_descriptorPool;
+		vzt::CommandPool           m_commandPool;
 
 		vzt::Buffer m_materialInfoBuffer;
 		uint32_t    m_materialNb             = 0;

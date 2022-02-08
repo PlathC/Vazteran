@@ -3,7 +3,7 @@
 namespace vzt
 {
 	Attachment::Attachment(vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage)
-	    : m_device(device), m_format(format), m_sampler(device)
+	    : m_device(device), m_format(format)
 	{
 		vzt::ImageAspect aspect;
 		if ((usage & vzt::ImageUsage::ColorAttachment) == vzt::ImageUsage::ColorAttachment)
@@ -22,9 +22,20 @@ namespace vzt
 
 	Attachment::Attachment(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageLayout layout,
 	                       vzt::ImageAspect aspect)
-	    : m_device(device), m_format(format), m_layout(layout), m_sampler(device)
+	    : m_device(device), m_format(format), m_layout(layout)
 	{
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, image, format, aspect);
+	}
+
+	vzt::Texture* Attachment::AsTexture()
+	{
+		if (!m_textureRepresentation)
+		{
+			vzt::SamplerSettings samplerSettings{vzt::Filter::Nearest, vzt::AddressMode::ClampToEdge,
+			                                     vzt::MipmapMode::Linear, vzt::BorderColor::FloatOpaqueWhite};
+			m_textureRepresentation = std::make_unique<vzt::Texture>(m_device, m_imageView.get(), samplerSettings);
+		}
+		return m_textureRepresentation.get();
 	}
 
 	VkAttachmentDescription Attachment::Description() const

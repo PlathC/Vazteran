@@ -23,7 +23,8 @@ namespace vzt
 	class GraphicPipeline;
 	class Device;
 
-	using RenderFunction = std::function<std::vector<VkCommandBuffer>(uint32_t /* id of current rendered image */)>;
+	using SubmitFunction = std::function<void(uint32_t /* imageId */, VkSemaphore /* imageAvailable */,
+	                                          VkSemaphore /* renderComplete */, VkFence /*inFlightFence*/)>;
 
 	class SwapChain
 	{
@@ -40,7 +41,7 @@ namespace vzt
 		void SetRenderPassTemplate(const vzt::RenderPass* const renderPassTemplate);
 
 		void Recreate(VkSurfaceKHR surface);
-		bool DrawFrame(RenderFunction renderFunction);
+		bool RenderFrame(const SubmitFunction submitFunction);
 
 		std::vector<VkImage>  GetImagesKHR();
 		vzt::Size2D<uint32_t> GetFrameBufferSize() const { return m_swapChainSize; }

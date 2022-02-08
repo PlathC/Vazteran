@@ -37,7 +37,7 @@ namespace vzt
 
 		~VkUiRenderer();
 
-		void Record(uint32_t imageCount, VkCommandBuffer commandBuffer, const vzt::RenderPass* renderPass);
+		VkCommandBuffer GetcommandBuffer(uint32_t imageCount, const vzt::FrameBuffer* frameBuffer);
 
 	  private:
 		vzt::Device*        m_device;

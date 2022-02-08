@@ -27,13 +27,14 @@ namespace vzt
 	{
 	  public:
 		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size);
-		~Renderer();
 
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
-		Renderer(Renderer&&) = default;
-		Renderer& operator=(Renderer&&) = default;
+		Renderer(Renderer&&);
+		Renderer& operator=(Renderer&&);
+
+		~Renderer();
 
 		void               SetScene(vzt::Scene* scene);
 		void               Draw(const vzt::Camera& camera);
@@ -41,7 +42,7 @@ namespace vzt
 		void               FrameBufferResized(vzt::Size2D<uint32_t> newSize);
 
 	  private:
-		std::vector<VkCommandBuffer> Record(uint32_t imageId);
+		void BuildRenderingSupports();
 
 	  private:
 		VkSurfaceKHR m_surface;
@@ -49,12 +50,21 @@ namespace vzt
 		vzt::Device    m_device;
 		vzt::SwapChain m_swapChain;
 
-		vzt::CommandPool m_commandPool;
-
 		std::unique_ptr<vzt::MeshView>     m_meshView;
 		std::unique_ptr<vzt::VkUiRenderer> m_ui;
 
+		std::vector<VkSemaphore>      m_offscreenSemaphores{};
+		std::vector<vzt::FrameBuffer> m_offscreenFrames;
+		VkDescriptorSetLayout         m_offscreenDescriptorLayout;
+		vzt::DescriptorPool           m_offscreenDescriptors;
 		std::vector<vzt::FrameBuffer> m_frames;
+
+		vzt::CommandPool m_deferredCommandPool;
+
+		VkDescriptorSetLayout                  m_fsDescriptorSetLayout;
+		std::unique_ptr<vzt::GraphicPipeline>  m_compositionPipeline;
+		std::vector<vzt::SamplerDescriptorSet> m_samplersDescriptors;
+		vzt::DescriptorPool                    m_deferredDescriptorPool;
 
 		vzt::Instance* m_instance;
 		GLFWwindow*    m_window;

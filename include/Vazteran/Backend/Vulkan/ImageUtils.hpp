@@ -44,10 +44,18 @@ namespace vzt
 		vzt::Format      m_format;
 	};
 
+	struct SamplerSettings
+	{
+		vzt::Filter      filter      = vzt::Filter::Linear;
+		vzt::AddressMode addressMode = vzt::AddressMode::Repeat;
+		vzt::MipmapMode  mipmapMode  = vzt::MipmapMode::Linear;
+		vzt::BorderColor borderColor = vzt::BorderColor::IntOpaqueBlack;
+	};
+
 	class Sampler
 	{
 	  public:
-		explicit Sampler(vzt::Device* logicalDevice);
+		explicit Sampler(vzt::Device* logicalDevice, const SamplerSettings& samplerSettings = {});
 
 		Sampler(const Sampler&) = delete;
 		Sampler& operator=(const Sampler&) = delete;
@@ -67,16 +75,15 @@ namespace vzt
 	class Texture
 	{
 	  public:
-		Texture(vzt::Device* device, const vzt::Image& image, vzt::Format format);
+		Texture(vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings = {});
 
-		const vzt::ImageView* View() const { return m_imageView.get(); }
+		const vzt::ImageView* View() const { return m_imageView; }
 		const vzt::Sampler*   Sampler() const { return &m_sampler; }
-		const vzt::Format     Format() const { return m_format; }
+		const vzt::Format     Format() const { return m_imageView->Format(); }
 
 	  private:
-		vzt::Format                     m_format;
-		vzt::Sampler                    m_sampler;
-		std::unique_ptr<vzt::ImageView> m_imageView;
+		vzt::Sampler          m_sampler;
+		const vzt::ImageView* m_imageView;
 	};
 
 } // namespace vzt

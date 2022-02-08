@@ -61,10 +61,12 @@ namespace vzt
 		void Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
 		            const IndexedUniform<vzt::Texture*>& imageDescriptors);
 		void Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
+		void Update(const std::size_t i, const IndexedUniform<vzt::Texture*>& imageDescriptors);
 
 		void UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
 		               const IndexedUniform<vzt::Texture*>&         imageDescriptors);
 		void UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
+		void UpdateAll(const IndexedUniform<vzt::Texture*>& imageDescriptors);
 
 		uint32_t         Remaining() const { return static_cast<uint32_t>(m_maxSetNb - m_descriptors.size()); }
 		uint32_t         MaxSetNb() const { return m_maxSetNb; }

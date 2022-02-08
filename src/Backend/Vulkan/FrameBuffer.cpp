@@ -11,21 +11,23 @@
 
 namespace vzt
 {
-	FrameBuffer::FrameBuffer(vzt::Device* device, std::vector<VkSubpassDependency>&& subpasses,
-	                         std::vector<std::unique_ptr<vzt::Attachment>>&& attachments, vzt::Size2D<uint32_t> size)
+	FrameBuffer::FrameBuffer(vzt::Device* device, std::size_t subpassCount,
+	                         std::vector<VkSubpassDependency>&& subpassDependencies,
+	                         std::vector<vzt::Attachment>&& attachments, vzt::Size2D<uint32_t> size)
 	    : m_device(std::move(device)), m_size(std::move(size)), m_attachments(std::move(attachments))
 	{
 		std::vector<vzt::Attachment*> attachmentCopy;
 		attachmentCopy.reserve(m_attachments.size());
 		std::vector<VkImageView> attachmentsViews;
 		attachmentsViews.reserve(m_attachments.size());
-		for (const auto& attachment : m_attachments)
+		for (auto& attachment : m_attachments)
 		{
-			attachmentsViews.emplace_back(attachment->View()->VkHandle());
-			attachmentCopy.emplace_back(attachment.get());
+			attachmentsViews.emplace_back(attachment.View()->VkHandle());
+			attachmentCopy.emplace_back(&attachment);
 		}
 
-		m_renderPass = std::make_unique<vzt::RenderPass>(m_device, std::move(subpasses), attachmentCopy);
+		m_renderPass =
+		    std::make_unique<vzt::RenderPass>(m_device, subpassCount, std::move(subpassDependencies), attachmentCopy);
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -70,6 +72,23 @@ namespace vzt
 		}
 	}
 
-	void FrameBuffer::Bind(VkCommandBuffer commandBuffer) { m_renderPass->Bind(commandBuffer, this); }
-	void FrameBuffer::Unbind(VkCommandBuffer commandBuffer) { m_renderPass->Unbind(commandBuffer); }
+	void FrameBuffer::Bind(VkCommandBuffer commandBuffer) const
+	{
+		m_renderPass->Bind(commandBuffer, this);
+		VkViewport viewport;
+		viewport.x        = 0.f;
+		viewport.y        = 0.f;
+		viewport.width    = static_cast<float>(m_size.width);
+		viewport.height   = static_cast<float>(m_size.height);
+		viewport.minDepth = 0.f;
+		viewport.maxDepth = 1.f;
+		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+		VkRect2D scissor;
+		scissor.extent = {m_size.width, m_size.height};
+		scissor.offset = {0, 0};
+		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	}
+
+	void FrameBuffer::Unbind(VkCommandBuffer commandBuffer) const { m_renderPass->Unbind(commandBuffer); }
 } // namespace vzt

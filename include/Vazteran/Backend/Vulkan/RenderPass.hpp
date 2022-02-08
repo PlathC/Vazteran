@@ -20,7 +20,7 @@ namespace vzt
 	class RenderPass
 	{
 	  public:
-		RenderPass(vzt::Device* device, std::vector<VkSubpassDependency>&& subpasses,
+		RenderPass(vzt::Device* device, std::size_t subpassCount, std::vector<VkSubpassDependency>&& subpasses,
 		           const std::vector<vzt::Attachment*>& attachments);
 
 		RenderPass(const RenderPass&) = delete;

@@ -41,9 +41,12 @@ namespace vzt
 		Attachment& operator=(Attachment&&) = default;
 
 		const vzt::ImageView*  View() const { return m_imageView.get(); }
-		const vzt::Sampler*    Sampler() const { return &m_sampler; }
 		const vzt::Format      Format() const { return m_format; }
 		const vzt::ImageLayout Layout() const { return m_layout; }
+
+		void SetSamplerSettings();
+
+		vzt::Texture* AsTexture();
 
 		void SetLoadOperation(vzt::LoadOperation loadOp) { m_loadOp = loadOp; }
 		void SetStoreOperation(vzt::StoreOperation storeOp) { m_storeOp = storeOp; }
@@ -60,7 +63,6 @@ namespace vzt
 		vzt::Device*                    m_device;
 		vzt::Format                     m_format;
 		vzt::ImageLayout                m_layout;
-		vzt::Sampler                    m_sampler;
 		std::unique_ptr<vzt::ImageView> m_imageView;
 
 		vzt::LoadOperation  m_loadOp  = LoadOperation::Clear;
@@ -71,6 +73,8 @@ namespace vzt
 
 		vzt::ImageLayout m_initialLayout = vzt::ImageLayout::Undefined;
 		vzt::ImageLayout m_finalLayout   = vzt::ImageLayout::PresentSrcKHR;
+
+		std::unique_ptr<vzt::Texture> m_textureRepresentation;
 	};
 } // namespace vzt
 

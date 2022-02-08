@@ -5,17 +5,17 @@
 
 namespace vzt
 {
-	VkVertexInputBindingDescription BlinnPhongVertexInput::GetBindingDescription()
+	VkVertexInputBindingDescription TriangleVertexInput::GetBindingDescription()
 	{
 		VkVertexInputBindingDescription bindingDescription{};
 		bindingDescription.binding   = 0;
-		bindingDescription.stride    = sizeof(vzt::BlinnPhongVertexInput);
+		bindingDescription.stride    = sizeof(vzt::TriangleVertexInput);
 		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 		return bindingDescription;
 	}
 
-	std::vector<VkVertexInputAttributeDescription> BlinnPhongVertexInput::GetAttributeDescription()
+	std::vector<VkVertexInputAttributeDescription> TriangleVertexInput::GetAttributeDescription()
 	{
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions =
 		    std::vector<VkVertexInputAttributeDescription>(3);
@@ -23,50 +23,59 @@ namespace vzt
 		attributeDescriptions[0].binding  = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[0].offset   = offsetof(vzt::BlinnPhongVertexInput, position);
+		attributeDescriptions[0].offset   = offsetof(vzt::TriangleVertexInput, position);
 
 		attributeDescriptions[1].binding  = 0;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format   = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[1].offset   = offsetof(vzt::BlinnPhongVertexInput, textureCoordinates);
+		attributeDescriptions[1].offset   = offsetof(vzt::TriangleVertexInput, textureCoordinates);
 
 		attributeDescriptions[2].binding  = 0;
 		attributeDescriptions[2].location = 2;
 		attributeDescriptions[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[2].offset   = offsetof(vzt::BlinnPhongVertexInput, normal);
+		attributeDescriptions[2].offset   = offsetof(vzt::TriangleVertexInput, normal);
 
 		return attributeDescriptions;
 	}
 
-	MeshView::MeshView(vzt::Device* device, uint32_t imageCount) : m_imageCount(imageCount), m_device(device)
+	MeshView::MeshView(vzt::Device* device, uint32_t imageCount)
+	    : m_imageCount(imageCount), m_device(device), m_commandPool(m_device), m_outputTextures()
 	{
-		vzt::Program blinnPhongProgram = vzt::Program(device);
+		vzt::Program triangleProgram = vzt::Program(device);
 
-		auto vtxShader  = vzt::Shader("./shaders/blinn-phong.vert.spv", ShaderStage::VertexShader);
-		auto fragShader = vzt::Shader("./shaders/blinn-phong.frag.spv", ShaderStage::FragmentShader);
+		auto vtxShader  = vzt::Shader("./shaders/triangle.vert.spv", ShaderStage::VertexShader);
+		auto fragShader = vzt::Shader("./shaders/triangle.frag.spv", ShaderStage::FragmentShader);
 
 		// vtxShader.(sizeof(vzt::Transforms));
 		vtxShader.SetUniformDescriptorSet(0, sizeof(vzt::Transforms));
 		m_transformDescriptor = vtxShader.UniformDescriptorSets()[0];
-		blinnPhongProgram.SetShader(std::move(vtxShader));
+		triangleProgram.SetShader(std::move(vtxShader));
 
 		fragShader.SetUniformDescriptorSet(1, sizeof(vzt::MaterialInfo));
 		fragShader.SetSamplerDescriptorSet(2);
 		fragShader.SetSamplerDescriptorSet(3);
 		fragShader.SetSamplerDescriptorSet(4);
+		// Position
+		fragShader.SetSamplerDescriptorSet(5);
+		// Normals
+		fragShader.SetSamplerDescriptorSet(6);
+		// Albedo
+		fragShader.SetSamplerDescriptorSet(7);
+
 		m_materialDescriptors = fragShader.UniformDescriptorSets()[0];
 		m_samplersDescriptors = fragShader.SamplerDescriptorSets();
 
-		blinnPhongProgram.SetShader(std::move(fragShader));
+		triangleProgram.SetShader(std::move(fragShader));
 
-		blinnPhongProgram.Compile();
+		triangleProgram.Compile();
 
-		m_descriptorPool = vzt::DescriptorPool(m_device, blinnPhongProgram.DescriptorTypes(), 1000);
+		m_descriptorPool = vzt::DescriptorPool(m_device, triangleProgram.DescriptorTypes());
 
 		m_graphicPipeline = std::make_unique<vzt::GraphicPipeline>(
-		    m_device, std::move(blinnPhongProgram),
-		    vzt::VertexInputDescription{BlinnPhongVertexInput::GetBindingDescription(),
-		                                BlinnPhongVertexInput::GetAttributeDescription()});
+		    m_device, std::move(triangleProgram),
+		    vzt::VertexInputDescription{TriangleVertexInput::GetBindingDescription(),
+		                                TriangleVertexInput::GetAttributeDescription()},
+		    3);
 
 		const uint32_t minOffset = static_cast<uint32_t>(m_device->MinUniformOffsetAligment());
 
@@ -86,6 +95,8 @@ namespace vzt
 		}
 		m_materialInfoBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_materialInfoOffsetSize),
 		                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
+
+		m_commandPool.AllocateCommandBuffers(imageCount);
 	}
 
 	MeshView::~MeshView() = default;
@@ -102,11 +113,11 @@ namespace vzt
 		const auto& normals  = model->CMesh().CNormals();
 		const auto& uvs      = model->CMesh().CUvs();
 
-		std::vector<vzt::BlinnPhongVertexInput> verticesData;
+		std::vector<vzt::TriangleVertexInput> verticesData;
 		verticesData.reserve(vertices.size());
 		for (std::size_t i = 0; i < vertices.size(); i++)
 		{
-			verticesData.emplace_back(vzt::BlinnPhongVertexInput{vertices[i], uvs[i], normals[i]});
+			verticesData.emplace_back(vzt::TriangleVertexInput{vertices[i], uvs[i], normals[i]});
 		}
 
 		modelDisplayInfo.vertexBuffer = vzt::Buffer(m_device, verticesData, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -139,9 +150,14 @@ namespace vzt
 		{
 			MaterialData materialData{};
 
-			materialData.textures.emplace_back(m_device, materials[materialId].diffuseMap, vzt::Format::R8G8B8A8SRGB);
-			materialData.textures.emplace_back(m_device, materials[materialId].ambientMap, vzt::Format::R8G8B8A8SRGB);
-			materialData.textures.emplace_back(m_device, materials[materialId].specularMap, vzt::Format::R8G8B8A8SRGB);
+			materialData.imageViews.emplace_back(m_device, materials[materialId].diffuseMap, vzt::Format::R8G8B8A8SRGB);
+			materialData.imageViews.emplace_back(m_device, materials[materialId].ambientMap, vzt::Format::R8G8B8A8SRGB);
+			materialData.imageViews.emplace_back(m_device, materials[materialId].specularMap,
+			                                     vzt::Format::R8G8B8A8SRGB);
+
+			materialData.textures.emplace_back(m_device, &materialData.imageViews[0]);
+			materialData.textures.emplace_back(m_device, &materialData.imageViews[1]);
+			materialData.textures.emplace_back(m_device, &materialData.imageViews[2]);
 
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
 			texturesDescriptors[m_samplersDescriptors[0].binding] = &materialData.textures[0];
@@ -162,6 +178,10 @@ namespace vzt
 			m_descriptorPool.Allocate(m_imageCount, program.DescriptorSetLayout());
 			for (std::size_t i = 0; i < m_imageCount; i++)
 			{
+				texturesDescriptors[m_samplersDescriptors[3].binding] = m_outputTextures[i * m_imageCount + 0];
+				texturesDescriptors[m_samplersDescriptors[4].binding] = m_outputTextures[i * m_imageCount + 1];
+				texturesDescriptors[m_samplersDescriptors[5].binding] = m_outputTextures[i * m_imageCount + 2];
+
 				m_descriptorPool.Update(m_materialNb * m_imageCount + i, bufferDescriptors, texturesDescriptors);
 			}
 
@@ -172,31 +192,58 @@ namespace vzt
 		m_models.emplace_back(std::move(modelDisplayInfo));
 	}
 
-	void MeshView::Configure(vzt::PipelineContextSettings settings) { m_graphicPipeline->Configure(settings); }
-
-	void MeshView::Record(uint32_t imageCount, VkCommandBuffer commandBuffer, const vzt::RenderPass* renderPass)
+	void MeshView::SetOutputTextures(const std::vector<vzt::Texture*>& outputTextures)
 	{
-		m_graphicPipeline->Bind(commandBuffer, renderPass);
-		for (const auto& model : m_models)
+		m_outputTextures = outputTextures;
+
+		for (std::size_t i = 0; i < m_imageCount; i++)
 		{
-			VkBuffer     vertexBuffers[] = {model.vertexBuffer.VkHandle()};
-			VkDeviceSize offsets[]       = {0};
+			IndexedUniform<vzt::Texture*> texturesDescriptors;
 
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-			const auto& indexBuffer = model.subMeshesIndexBuffer;
-			const auto& submeshes   = model.subMeshData;
-			for (const auto& subMesh : submeshes)
+			texturesDescriptors[m_samplersDescriptors[3].binding] = m_outputTextures[i * m_imageCount + 0];
+			texturesDescriptors[m_samplersDescriptors[4].binding] = m_outputTextures[i * m_imageCount + 1];
+			texturesDescriptors[m_samplersDescriptors[5].binding] = m_outputTextures[i * m_imageCount + 2];
+
+			for (std::size_t material = 0; material < m_materialNb; material++)
 			{
-				vkCmdBindIndexBuffer(commandBuffer, indexBuffer.VkHandle(), subMesh.minOffset * sizeof(uint32_t),
-				                     VK_INDEX_TYPE_UINT32);
-
-				m_descriptorPool.Bind(model.materialsData[subMesh.materialDataIndex].descriptorIndex * m_imageCount +
-				                          imageCount,
-				                      commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->Layout());
-
-				vkCmdDrawIndexed(commandBuffer, subMesh.maxOffset - subMesh.minOffset, 1, 0, 0, 0);
+				m_descriptorPool.Update(material * m_imageCount + i, texturesDescriptors);
 			}
 		}
+	}
+
+	void MeshView::Configure(vzt::PipelineContextSettings settings) { m_graphicPipeline->Configure(settings); }
+
+	VkCommandBuffer MeshView::GetCommandBuffer(uint32_t imageCount, const vzt::FrameBuffer* frameBuffer)
+	{
+		m_commandPool.RecordBuffer(imageCount, [&](VkCommandBuffer commandBuffer) {
+			frameBuffer->Bind(commandBuffer);
+
+			m_graphicPipeline->Bind(commandBuffer, frameBuffer->RenderPass());
+			for (const auto& model : m_models)
+			{
+				VkBuffer     vertexBuffers[] = {model.vertexBuffer.VkHandle()};
+				VkDeviceSize offsets[]       = {0};
+
+				vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+				const auto& indexBuffer = model.subMeshesIndexBuffer;
+				const auto& submeshes   = model.subMeshData;
+				for (const auto& subMesh : submeshes)
+				{
+					vkCmdBindIndexBuffer(commandBuffer, indexBuffer.VkHandle(), subMesh.minOffset * sizeof(uint32_t),
+					                     VK_INDEX_TYPE_UINT32);
+
+					m_descriptorPool.Bind(
+					    model.materialsData[subMesh.materialDataIndex].descriptorIndex * m_imageCount + imageCount,
+					    commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->Layout());
+
+					vkCmdDrawIndexed(commandBuffer, subMesh.maxOffset - subMesh.minOffset, 1, 0, 0, 0);
+				}
+			}
+
+			frameBuffer->Unbind(commandBuffer);
+		});
+
+		return m_commandPool[imageCount];
 	}
 
 	void MeshView::Update(const vzt::Camera& camera)

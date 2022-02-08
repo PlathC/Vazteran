@@ -55,14 +55,12 @@ namespace vzt
 		descriptorTypes.reserve(m_samplerDescriptorSets.size() + m_uniformDescriptorSets.size());
 		for (const auto& samplerDescriptorSet : m_samplerDescriptorSets)
 		{
-			descriptorTypes.emplace_back(samplerDescriptorSet.binding,
-			                             static_cast<vzt::DescriptorType>(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER));
+			descriptorTypes.emplace_back(samplerDescriptorSet.binding, vzt::DescriptorType::CombinedSampler);
 		}
 
 		for (const auto& uniformDescriptorSet : m_uniformDescriptorSets)
 		{
-			descriptorTypes.emplace_back(uniformDescriptorSet.binding,
-			                             static_cast<vzt::DescriptorType>(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER));
+			descriptorTypes.emplace_back(uniformDescriptorSet.binding, vzt::DescriptorType::UniformBuffer);
 		}
 
 		return descriptorTypes;

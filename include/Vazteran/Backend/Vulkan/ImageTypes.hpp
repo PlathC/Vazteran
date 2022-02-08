@@ -382,6 +382,42 @@ namespace vzt
 		G16B16R162Plane422UNormKHR              = VK_FORMAT_G16_B16R16_2PLANE_422_UNORM_KHR,
 		G16B16R163Plane444UNormKHR              = VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM_KHR,
 	};
+
+	enum class Filter : uint32_t
+	{
+		Nearest  = VK_FILTER_NEAREST,
+		Linear   = VK_FILTER_LINEAR,
+		CubicImg = VK_FILTER_CUBIC_IMG,
+		CubicExt = VK_FILTER_CUBIC_EXT
+	};
+
+	enum class AddressMode : uint32_t
+	{
+		Repeat               = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		MirroredRepeat       = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT,
+		ClampToEdge          = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+		ClampToBorder        = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,
+		MirrorClampToEdge    = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE,
+		MirrorClampToEdgeKHR = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE_KHR,
+	};
+
+	enum class MipmapMode : uint32_t
+	{
+		Nearest = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+		Linear  = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+	};
+
+	enum class BorderColor : uint32_t
+	{
+		FloatTransparentBlack = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,
+		IntTransparentBlack   = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK,
+		FloatOpaqueBlack      = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
+		IntOpaqueBlack        = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
+		FloatOpaqueWhite      = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE,
+		IntOpaqueWhite        = VK_BORDER_COLOR_INT_OPAQUE_WHITE,
+		FloatCustomExt        = VK_BORDER_COLOR_FLOAT_CUSTOM_EXT,
+		IntCustomExt          = VK_BORDER_COLOR_INT_CUSTOM_EXT
+	};
 } // namespace vzt
 
 #endif // VAZTERAN_BACKEND_VULKAN_IMAGETYPES_HPP

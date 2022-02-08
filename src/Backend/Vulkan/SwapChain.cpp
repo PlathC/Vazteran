@@ -18,13 +18,9 @@ namespace vzt
 		CreateSynchronizationObjects();
 	}
 
-	bool SwapChain::DrawFrame(RenderFunction renderFunction)
+	bool SwapChain::RenderFrame(const SubmitFunction submitFunction)
 	{
-		if (vkWaitForFences(m_device->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX) !=
-		    VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to wait for fence " + std::to_string(m_currentFrame) + "!");
-		}
+		vkWaitForFences(m_device->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
 		uint32_t imageIndex;
 		VkResult result =
@@ -48,34 +44,13 @@ namespace vzt
 		// Mark the image as now being in use by this frame
 		m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
 
-		auto commands = renderFunction(imageIndex);
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-		VkSemaphore          waitSemaphores[] = {m_imageAvailableSemaphores[m_currentFrame]};
-		VkPipelineStageFlags waitStages[]     = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-		submitInfo.waitSemaphoreCount         = 1;
-		submitInfo.pWaitSemaphores            = waitSemaphores;
-		submitInfo.pWaitDstStageMask          = waitStages;
-		submitInfo.commandBufferCount         = static_cast<uint32_t>(commands.size());
-		submitInfo.pCommandBuffers            = commands.data();
-
-		VkSemaphore signalSemaphores[]  = {m_renderFinishedSemaphores[m_currentFrame]};
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores    = signalSemaphores;
-
-		vkResetFences(m_device->VkHandle(), 1, &m_inFlightFences[m_currentFrame]);
-
-		if (vkQueueSubmit(m_device->GraphicsQueue(), 1, &submitInfo, m_inFlightFences[m_currentFrame]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to submit command buffer!");
-		}
+		submitFunction(imageIndex, m_imageAvailableSemaphores[m_currentFrame],
+		               m_renderFinishedSemaphores[m_currentFrame], m_inFlightFences[m_currentFrame]);
 
 		VkPresentInfoKHR presentInfo{};
 		presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 		presentInfo.waitSemaphoreCount = 1;
-		presentInfo.pWaitSemaphores    = signalSemaphores;
+		presentInfo.pWaitSemaphores    = &m_renderFinishedSemaphores[m_currentFrame];
 
 		VkSwapchainKHR swapChains[] = {m_vkHandle};
 		presentInfo.swapchainCount  = 1;

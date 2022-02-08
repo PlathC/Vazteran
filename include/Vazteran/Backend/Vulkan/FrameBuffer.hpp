@@ -15,8 +15,9 @@ namespace vzt
 	class FrameBuffer
 	{
 	  public:
-		FrameBuffer(vzt::Device* device, std::vector<VkSubpassDependency>&& subpasses,
-		            std::vector<std::unique_ptr<vzt::Attachment>>&& attachments, vzt::Size2D<uint32_t> size);
+		FrameBuffer(vzt::Device* device, std::size_t subpassCount,
+		            std::vector<VkSubpassDependency>&& subpassDependencies, std::vector<vzt::Attachment>&& attachments,
+		            vzt::Size2D<uint32_t> size);
 
 		FrameBuffer(const FrameBuffer&) = delete;
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
@@ -26,10 +27,10 @@ namespace vzt
 
 		~FrameBuffer();
 
-		vzt::RenderPass* RenderPass() { return m_renderPass.get(); }
+		const vzt::RenderPass* RenderPass() const { return m_renderPass.get(); }
 
-		void Bind(VkCommandBuffer commandBuffer);
-		void Unbind(VkCommandBuffer commandBuffer);
+		void Bind(VkCommandBuffer commandBuffer) const;
+		void Unbind(VkCommandBuffer commandBuffer) const;
 
 		vzt::Size2D<uint32_t> Size() const { return m_size; }
 		VkFramebuffer         VkHandle() const { return m_vkHandle; }
@@ -40,8 +41,8 @@ namespace vzt
 
 		vzt::Size2D<uint32_t> m_size;
 
-		std::vector<std::unique_ptr<vzt::Attachment>> m_attachments;
-		std::unique_ptr<vzt::RenderPass>              m_renderPass;
+		std::vector<vzt::Attachment>     m_attachments;
+		std::unique_ptr<vzt::RenderPass> m_renderPass;
 	};
 } // namespace vzt
 

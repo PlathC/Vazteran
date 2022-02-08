@@ -48,7 +48,6 @@ namespace vzt
 		                                  VK_IMAGE_TILING_OPTIMAL, usage);
 
 		m_vkHandle = m_device->CreateImageView(m_vkImage, format, aspectFlags);
-		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::Undefined, layout, aspectFlags);
 	}
 
 	ImageView::ImageView(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
@@ -89,25 +88,25 @@ namespace vzt
 		}
 	}
 
-	Sampler::Sampler(Device* logicalDevice) : m_logicalDevice(logicalDevice)
+	Sampler::Sampler(vzt::Device* device, const SamplerSettings& samplerSettings) : m_logicalDevice(device)
 	{
 		VkPhysicalDeviceProperties properties{};
 		vkGetPhysicalDeviceProperties(m_logicalDevice->ChosenPhysicalDevice()->VkHandle(), &properties);
 
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-		samplerInfo.magFilter               = VK_FILTER_LINEAR;
-		samplerInfo.minFilter               = VK_FILTER_LINEAR;
-		samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerInfo.magFilter               = static_cast<VkFilter>(samplerSettings.filter);
+		samplerInfo.minFilter               = static_cast<VkFilter>(samplerSettings.filter);
+		samplerInfo.addressModeU            = static_cast<VkSamplerAddressMode>(samplerSettings.addressMode);
+		samplerInfo.addressModeV            = static_cast<VkSamplerAddressMode>(samplerSettings.addressMode);
+		samplerInfo.addressModeW            = static_cast<VkSamplerAddressMode>(samplerSettings.addressMode);
 		samplerInfo.anisotropyEnable        = VK_TRUE;
 		samplerInfo.maxAnisotropy           = properties.limits.maxSamplerAnisotropy;
-		samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+		samplerInfo.borderColor             = static_cast<VkBorderColor>(samplerSettings.borderColor);
 		samplerInfo.unnormalizedCoordinates = VK_FALSE;
 		samplerInfo.compareEnable           = VK_FALSE;
 		samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
-		samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		samplerInfo.mipmapMode              = static_cast<VkSamplerMipmapMode>(samplerSettings.mipmapMode);
 
 		if (vkCreateSampler(m_logicalDevice->VkHandle(), &samplerInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
@@ -137,8 +136,8 @@ namespace vzt
 		}
 	}
 
-	Texture::Texture(vzt::Device* device, const vzt::Image& image, vzt::Format format)
-	    : m_format(format), m_sampler(device), m_imageView(std::make_unique<vzt::ImageView>(device, image, format))
+	Texture::Texture(vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings)
+	    : m_sampler(device, samplerSettings), m_imageView(imageView)
 	{
 	}
 

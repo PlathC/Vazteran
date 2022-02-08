@@ -9,37 +9,7 @@
 
 namespace vzt
 {
-	// Subpass::Subpass(vzt::PipelineBindPoint bindPoint) : m_bindPoint(bindPoint) {}
-
-	/*void Subpass::AddAttachment(uint32_t attachmentIdx, const vzt::ImageLayout attachmentLayout)
-	{
-	    if (attachmentLayout == vzt::ImageLayout::ColorAttachmentOptimal ||
-	        attachmentLayout == vzt::ImageLayout::PresentSrcKHR)
-	    {
-	        m_colorReferences.emplace_back(
-	            VkAttachmentReference{attachmentIdx, static_cast<VkImageLayout>(attachmentLayout)});
-	    }
-	    else if (attachmentLayout == vzt::ImageLayout::DepthAttachmentOptimal ||
-	             attachmentLayout == vzt::ImageLayout::DepthStencilAttachmentOptimal)
-	    {
-	        m_depthReferences = VkAttachmentReference{attachmentIdx, static_cast<VkImageLayout>(attachmentLayout)};
-	    }
-	}
-
-	VkSubpassDescription Subpass::Description() const
-	{
-	    VkSubpassDescription subpass{};
-	    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	    subpass.colorAttachmentCount    = m_colorReferences.size();
-	    subpass.pColorAttachments       = m_colorReferences.data();
-	    subpass.pDepthStencilAttachment = nullptr;
-	    if (m_depthReferences.has_value())
-	        subpass.pDepthStencilAttachment = &m_depthReferences.value();
-
-	    return subpass;
-	}*/
-
-	RenderPass::RenderPass(vzt::Device* device, std::vector<VkSubpassDependency>&& subpasses,
+	RenderPass::RenderPass(vzt::Device* device, std::size_t subpassCount, std::vector<VkSubpassDependency>&& subpasses,
 	                       const std::vector<vzt::Attachment*>& attachments)
 	    : m_device(device), m_subpassDependencies(std::move(subpasses))
 	{
@@ -69,14 +39,13 @@ namespace vzt
 			}
 		}
 
-		m_subpassDescriptions.reserve(m_subpassDependencies.size());
-		for (std::size_t i = 0; i < m_subpassDependencies.size(); i++)
+		m_subpassDescriptions.reserve(subpassCount);
+		for (std::size_t i = 0; i < subpassCount; i++)
 		{
 			VkSubpassDescription subpass{};
 			subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
 			subpass.colorAttachmentCount    = m_colorRefs.size();
 			subpass.pColorAttachments       = m_colorRefs.data();
-			subpass.pDepthStencilAttachment = nullptr;
 			subpass.pDepthStencilAttachment = &m_depthRef;
 
 			m_subpassDescriptions.emplace_back(subpass);
@@ -130,9 +99,14 @@ namespace vzt
 		const auto fbSize                = frameBuffer->Size();
 		renderPassInfo.renderArea.extent = VkExtent2D{fbSize.width, fbSize.height};
 
-		std::array<VkClearValue, 2> clearValues{};
-		clearValues[0].color           = {0.0f, 0.0f, 0.0f, 1.0f};
-		clearValues[1].depthStencil    = {1.0f, 0};
+		std::vector<VkClearValue> clearValues;
+		clearValues.resize(m_colorRefs.size() + 1);
+		for (std::size_t i = 0; i < m_colorRefs.size(); i++)
+		{
+			clearValues[m_colorRefs[i].attachment].color = {0.0f, 0.0f, 0.0f, 1.0f};
+		}
+		clearValues[m_depthRef.attachment].depthStencil = {1.0f, 0};
+
 		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 		renderPassInfo.pClearValues    = clearValues.data();
 

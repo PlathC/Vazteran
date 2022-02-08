@@ -81,6 +81,15 @@ namespace vzt
 			Update(i, bufferDescriptors, textureHandlers);
 		}
 	}
+
+	void DescriptorPool::UpdateAll(const IndexedUniform<vzt::Texture*>& imageDescriptors)
+	{
+		for (std::size_t i = 0; i < m_descriptors.size(); i++)
+		{
+			Update(i, imageDescriptors);
+		}
+	}
+
 	void DescriptorPool::UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors)
 	{
 		for (std::size_t i = 0; i < m_descriptors.size(); i++)
@@ -144,13 +153,14 @@ namespace vzt
 	{
 		assert(i < m_descriptors.size() && "i must be less than Size()");
 
-		auto descriptorWrites     = std::vector<VkWriteDescriptorSet>();
-		auto descriptorBufferInfo = std::vector<VkDescriptorBufferInfo>(bufferDescriptors.size());
+		auto        descriptorWrites     = std::vector<VkWriteDescriptorSet>();
+		auto        descriptorBufferInfo = std::vector<VkDescriptorBufferInfo>(bufferDescriptors.size());
+		std::size_t bufferIdx            = 0;
 		for (const auto& bufferDescriptor : bufferDescriptors)
 		{
-			descriptorBufferInfo[i].buffer = bufferDescriptor.second.buffer->VkHandle();
-			descriptorBufferInfo[i].offset = bufferDescriptor.second.offset;
-			descriptorBufferInfo[i].range  = bufferDescriptor.second.range;
+			descriptorBufferInfo[bufferIdx].buffer = bufferDescriptor.second.buffer->VkHandle();
+			descriptorBufferInfo[bufferIdx].offset = bufferDescriptor.second.offset;
+			descriptorBufferInfo[bufferIdx].range  = bufferDescriptor.second.range;
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -159,8 +169,38 @@ namespace vzt
 			descriptorWrite.dstArrayElement = 0;
 			descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			descriptorWrite.descriptorCount = 1;
-			descriptorWrite.pBufferInfo     = &descriptorBufferInfo[i];
+			descriptorWrite.pBufferInfo     = &descriptorBufferInfo[bufferIdx];
 			descriptorWrites.emplace_back(descriptorWrite);
+			bufferIdx++;
+		}
+
+		vkUpdateDescriptorSets(m_device->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()),
+		                       descriptorWrites.data(), 0, nullptr);
+	}
+
+	void DescriptorPool::Update(const std::size_t i, const IndexedUniform<vzt::Texture*>& imageDescriptors)
+	{
+		assert(i < m_descriptors.size() && "i must be less than Size()");
+
+		std::size_t bufferIdx           = 0;
+		auto        descriptorWrites    = std::vector<VkWriteDescriptorSet>();
+		auto        descriptorImageInfo = std::vector<VkDescriptorImageInfo>(imageDescriptors.size());
+		for (const auto& imageDescriptor : imageDescriptors)
+		{
+			descriptorImageInfo[bufferIdx].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second->View()->VkHandle();
+			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second->Sampler()->VkHandle();
+
+			VkWriteDescriptorSet descriptorWrite{};
+			descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.dstSet          = m_descriptors[i];
+			descriptorWrite.dstBinding      = imageDescriptor.first;
+			descriptorWrite.dstArrayElement = 0;
+			descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.pImageInfo      = &descriptorImageInfo[bufferIdx];
+			descriptorWrites.emplace_back(descriptorWrite);
+			bufferIdx++;
 		}
 
 		vkUpdateDescriptorSets(m_device->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()),

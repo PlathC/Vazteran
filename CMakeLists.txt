@@ -274,6 +274,8 @@ function(add_shader TARGET SHADER)
 endfunction(add_shader)
 
 
-add_shader(${PROJECT_NAME} shaders/blinn-phong.vert)
-add_shader(${PROJECT_NAME} shaders/blinn-phong.frag)
+add_shader(${PROJECT_NAME} shaders/fs_triangle.vert)
+add_shader(${PROJECT_NAME} shaders/blinn_phong.frag)
+add_shader(${PROJECT_NAME} shaders/triangle.vert)
+add_shader(${PROJECT_NAME} shaders/triangle.frag)
 file(COPY samples DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

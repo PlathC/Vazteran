@@ -52,6 +52,8 @@ namespace vzt
 
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 		ImGui_ImplVulkan_SetMinImageCount(imageCount);
+
+		m_commandPool.AllocateCommandBuffers(imageCount);
 	}
 
 	VkUiRenderer::~VkUiRenderer()
@@ -61,17 +63,21 @@ namespace vzt
 		ImGui::DestroyContext();
 	}
 
-	void VkUiRenderer::Record(uint32_t imageCount, VkCommandBuffer commandBuffer, const vzt::RenderPass* renderPass)
+	VkCommandBuffer VkUiRenderer::GetcommandBuffer(uint32_t imageCount, const vzt::FrameBuffer* frameBuffer)
 	{
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		m_commandPool.RecordBuffer(imageCount, [&](VkCommandBuffer commandBuffer) {
+			ImGui_ImplVulkan_NewFrame();
+			ImGui_ImplGlfw_NewFrame();
+			ImGui::NewFrame();
 
-		m_uiManager.Draw();
+			m_uiManager.Draw();
 
-		ImGui::Render();
-		ImDrawData* draw_data = ImGui::GetDrawData();
+			ImGui::Render();
+			ImDrawData* draw_data = ImGui::GetDrawData();
 
-		ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
+			ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
+		});
+
+		return m_commandPool[imageCount];
 	}
 } // namespace vzt

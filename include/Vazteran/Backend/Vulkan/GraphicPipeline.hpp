@@ -17,13 +17,6 @@ namespace vzt
 	class RenderPass;
 	class Sampler;
 
-	struct PipelineContextSettings
-	{
-		const vzt::RenderPass* renderPassTemplate;
-		vzt::Format            swapChainImageFormat;
-		vzt::Size2D<uint32_t>  swapChainExtent;
-	};
-
 	using BindingDescription   = VkVertexInputBindingDescription;
 	using AttributeDescription = std::vector<VkVertexInputAttributeDescription>;
 
@@ -55,6 +48,13 @@ namespace vzt
 		Clockwise        = VK_FRONT_FACE_CLOCKWISE
 	};
 
+	struct PipelineContextSettings
+	{
+		const vzt::RenderPass* renderPassTemplate;
+		vzt::Format            targetFormat;
+		vzt::Size2D<uint32_t>  targetSize;
+	};
+
 	struct RasterizationOptions
 	{
 		vzt::DrawType  drawType  = vzt::DrawType::Fill;
@@ -66,7 +66,9 @@ namespace vzt
 	{
 	  public:
 		GraphicPipeline(vzt::Device* device, vzt::Program&& program,
-		                vzt::VertexInputDescription vertexInputDescription);
+		                std::optional<vzt::VertexInputDescription> vertexInputDescription =
+		                    std::optional<vzt::VertexInputDescription>(),
+		                uint32_t attachmentCount = 1);
 
 		GraphicPipeline(const GraphicPipeline&) = delete;
 		GraphicPipeline& operator=(const GraphicPipeline&) = delete;
@@ -96,10 +98,11 @@ namespace vzt
 		VkPipeline       m_vkHandle       = VK_NULL_HANDLE;
 		VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-		vzt::VertexInputDescription  m_vertexInputDescription;
-		vzt::Program                 m_program;
-		vzt::PipelineContextSettings m_settings{};
-		vzt::RasterizationOptions    m_rasterOptions{};
+		std::optional<vzt::VertexInputDescription> m_vertexInputDescription;
+		vzt::Program                               m_program;
+		vzt::PipelineContextSettings               m_settings{};
+		vzt::RasterizationOptions                  m_rasterOptions{};
+		uint32_t                                   m_attachmentCount;
 	};
 } // namespace vzt
 
