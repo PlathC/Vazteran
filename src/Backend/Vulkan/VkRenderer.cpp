@@ -173,24 +173,19 @@ namespace vzt
 				// Final composition as full screen quad
 				vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
+				if (m_ui)
+				{
+					m_ui->Record(commandBuffer);
+				}
+
 				m_frames[imageId].Unbind(commandBuffer);
 			});
-
-			std::vector<VkCommandBuffer> fullScreenCommandBuffers;
-			fullScreenCommandBuffers.emplace_back(m_deferredCommandPool[imageId]);
-
-			// Must be declare in another subpass
-			/*if (m_ui)
-			{
-			    VkCommandBuffer uiCommandBuffer = m_ui->GetcommandBuffer(imageId, &m_frames[imageId]);
-			    fullScreenCommandBuffers.emplace_back(uiCommandBuffer);
-			}*/
 
 			submitInfo.waitSemaphoreCount = 1;
 			submitInfo.pWaitSemaphores    = &m_offscreenSemaphores[imageId];
 			submitInfo.pWaitDstStageMask  = waitStages;
-			submitInfo.commandBufferCount = fullScreenCommandBuffers.size();
-			submitInfo.pCommandBuffers    = fullScreenCommandBuffers.data();
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers    = &m_deferredCommandPool[imageId];
 
 			submitInfo.signalSemaphoreCount = 1;
 			submitInfo.pSignalSemaphores    = &renderComplete;

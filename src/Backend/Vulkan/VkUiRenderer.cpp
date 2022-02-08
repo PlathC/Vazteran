@@ -63,21 +63,17 @@ namespace vzt
 		ImGui::DestroyContext();
 	}
 
-	VkCommandBuffer VkUiRenderer::GetcommandBuffer(uint32_t imageCount, const vzt::FrameBuffer* frameBuffer)
+	void VkUiRenderer::Record(VkCommandBuffer commandBuffer)
 	{
-		m_commandPool.RecordBuffer(imageCount, [&](VkCommandBuffer commandBuffer) {
-			ImGui_ImplVulkan_NewFrame();
-			ImGui_ImplGlfw_NewFrame();
-			ImGui::NewFrame();
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
 
-			m_uiManager.Draw();
+		m_uiManager.Draw();
 
-			ImGui::Render();
-			ImDrawData* draw_data = ImGui::GetDrawData();
+		ImGui::Render();
+		ImDrawData* draw_data = ImGui::GetDrawData();
 
-			ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
-		});
-
-		return m_commandPool[imageCount];
+		ImGui_ImplVulkan_RenderDrawData(draw_data, commandBuffer);
 	}
 } // namespace vzt
