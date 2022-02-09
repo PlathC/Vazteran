@@ -55,7 +55,7 @@ namespace vzt
 	class Sampler
 	{
 	  public:
-		explicit Sampler(vzt::Device* logicalDevice, const SamplerSettings& samplerSettings = {});
+		explicit Sampler(const vzt::Device* logicalDevice, const SamplerSettings& samplerSettings = {});
 
 		Sampler(const Sampler&) = delete;
 		Sampler& operator=(const Sampler&) = delete;
@@ -68,14 +68,14 @@ namespace vzt
 		~Sampler();
 
 	  private:
-		vzt::Device* m_logicalDevice;
-		VkSampler    m_vkHandle;
+		const vzt::Device* m_device;
+		VkSampler          m_vkHandle;
 	};
 
 	class Texture
 	{
 	  public:
-		Texture(vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings = {});
+		Texture(const vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings = {});
 
 		const vzt::ImageView* View() const { return m_imageView; }
 		const vzt::Sampler*   Sampler() const { return &m_sampler; }

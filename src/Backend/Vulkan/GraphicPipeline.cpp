@@ -6,6 +6,7 @@
 namespace vzt
 {
 	GraphicPipeline::GraphicPipeline(vzt::Device* device, vzt::Program&& program,
+	                                 vzt::DescriptorLayout                      descriptorLayout,
 	                                 std::optional<vzt::VertexInputDescription> vertexInputDescription,
 	                                 uint32_t                                   attachmentCount)
 	    : m_device(device), m_program(std::move(program)), m_vertexInputDescription(std::move(vertexInputDescription)),
@@ -14,7 +15,7 @@ namespace vzt
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts    = &m_program.DescriptorSetLayout();
+		pipelineLayoutInfo.pSetLayouts    = &descriptorLayout.VkHandle();
 
 		if (vkCreatePipelineLayout(m_device->VkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 		{
@@ -106,7 +107,7 @@ namespace vzt
 		colorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 		colorBlending.logicOpEnable     = VK_FALSE;
 		colorBlending.logicOp           = VK_LOGIC_OP_COPY; // Optional
-		colorBlending.attachmentCount   = colorBlendAttachments.size();
+		colorBlending.attachmentCount   = static_cast<uint32_t>(colorBlendAttachments.size());
 		colorBlending.pAttachments      = colorBlendAttachments.data();
 		colorBlending.blendConstants[0] = 0.0f; // Optional
 		colorBlending.blendConstants[1] = 0.0f; // Optional

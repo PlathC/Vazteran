@@ -8,11 +8,11 @@
 
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
+#include "Vazteran/Backend/Vulkan/Shader.hpp"
 
 namespace vzt
 {
 	class Attachment;
-	class Device;
 
 	template <class Type>
 	using IndexedUniform = std::unordered_map<uint32_t, Type>;
@@ -39,12 +39,37 @@ namespace vzt
 		InputAttachment      = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
 	};
 
+	class DescriptorLayout
+	{
+	  public:
+		DescriptorLayout(const vzt::Device* const device);
+
+		DescriptorLayout(const DescriptorLayout& other);
+		DescriptorLayout& operator=(const DescriptorLayout& other);
+
+		DescriptorLayout(DescriptorLayout&& other) noexcept;
+		DescriptorLayout& operator=(DescriptorLayout&& other) noexcept;
+
+		~DescriptorLayout();
+
+		void AddBinding(const vzt::ShaderStage bindingStage, const uint32_t binding, const vzt::DescriptorType type);
+
+		const VkDescriptorSetLayout& VkHandle() const;
+
+	  private:
+		const vzt::Device*            m_device = nullptr;
+		mutable VkDescriptorSetLayout m_handle = VK_NULL_HANDLE;
+
+		using Binding = std::tuple<uint32_t /*binding*/, vzt::ShaderStage /* stage */, vzt::DescriptorType /*type */>;
+		std::vector<vzt::DescriptorLayout::Binding> m_bindings;
+	};
+
 	class DescriptorPool
 	{
 	  public:
 		DescriptorPool() = default;
-		DescriptorPool(Device* device, const std::vector<DescriptorType> descriptorTypes, uint32_t maxSetNb = 64,
-		               VkDescriptorPoolCreateFlags flags = 0);
+		DescriptorPool(const vzt::Device* const device, const std::vector<DescriptorType> descriptorTypes,
+		               uint32_t maxSetNb = 64, VkDescriptorPoolCreateFlags flags = 0);
 
 		DescriptorPool(const DescriptorPool&) = delete;
 		DescriptorPool& operator=(const DescriptorPool&) = delete;
@@ -54,7 +79,7 @@ namespace vzt
 
 		~DescriptorPool();
 
-		void Allocate(uint32_t count, VkDescriptorSetLayout layout);
+		void Allocate(uint32_t count, const vzt::DescriptorLayout& layout);
 		void Bind(uint32_t i, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
 		          VkPipelineLayout pipelineLayout) const;
 
@@ -73,7 +98,7 @@ namespace vzt
 		VkDescriptorPool VkHandle() const { return m_vkHandle; }
 
 	  private:
-		vzt::Device*                 m_device   = nullptr;
+		const vzt::Device*           m_device   = nullptr;
 		VkDescriptorPool             m_vkHandle = VK_NULL_HANDLE;
 		std::vector<VkDescriptorSet> m_descriptors;
 

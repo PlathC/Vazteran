@@ -65,7 +65,7 @@ namespace vzt
 	class GraphicPipeline
 	{
 	  public:
-		GraphicPipeline(vzt::Device* device, vzt::Program&& program,
+		GraphicPipeline(vzt::Device* device, vzt::Program&& program, vzt::DescriptorLayout descriptorLayout,
 		                std::optional<vzt::VertexInputDescription> vertexInputDescription =
 		                    std::optional<vzt::VertexInputDescription>(),
 		                uint32_t attachmentCount = 1);

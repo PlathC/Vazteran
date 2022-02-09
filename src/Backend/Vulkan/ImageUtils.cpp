@@ -88,10 +88,10 @@ namespace vzt
 		}
 	}
 
-	Sampler::Sampler(vzt::Device* device, const SamplerSettings& samplerSettings) : m_logicalDevice(device)
+	Sampler::Sampler(const vzt::Device* device, const SamplerSettings& samplerSettings) : m_device(device)
 	{
 		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(m_logicalDevice->ChosenPhysicalDevice()->VkHandle(), &properties);
+		vkGetPhysicalDeviceProperties(m_device->ChosenPhysicalDevice()->VkHandle(), &properties);
 
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -108,7 +108,7 @@ namespace vzt
 		samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
 		samplerInfo.mipmapMode              = static_cast<VkSamplerMipmapMode>(samplerSettings.mipmapMode);
 
-		if (vkCreateSampler(m_logicalDevice->VkHandle(), &samplerInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateSampler(m_device->VkHandle(), &samplerInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create texture sampler!");
 		}
@@ -116,13 +116,13 @@ namespace vzt
 
 	Sampler::Sampler(Sampler&& other) noexcept
 	{
-		m_logicalDevice = std::exchange(other.m_logicalDevice, nullptr);
-		m_vkHandle      = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
+		m_device   = std::exchange(other.m_device, nullptr);
+		m_vkHandle = std::exchange(other.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
 	}
 
 	Sampler& Sampler::operator=(Sampler&& other) noexcept
 	{
-		std::swap(m_logicalDevice, other.m_logicalDevice);
+		std::swap(m_device, other.m_device);
 		std::swap(m_vkHandle, other.m_vkHandle);
 
 		return *this;
@@ -132,11 +132,12 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroySampler(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+			vkDestroySampler(m_device->VkHandle(), m_vkHandle, nullptr);
+			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}
 
-	Texture::Texture(vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings)
+	Texture::Texture(const vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings)
 	    : m_sampler(device, samplerSettings), m_imageView(imageView)
 	{
 	}

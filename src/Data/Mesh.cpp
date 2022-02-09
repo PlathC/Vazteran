@@ -49,11 +49,8 @@ namespace vzt
 					specularTexture = vzt::Image(currentMaterial.specular_texname);
 
 				m_materials.emplace_back(vzt::Material{
-				    ambientTexture, diffuseTexture, specularTexture,
-				    vzt::Vec4{currentMaterial.ambient[0], currentMaterial.ambient[1], currentMaterial.ambient[2], 1.f},
+				    diffuseTexture,
 				    vzt::Vec4{currentMaterial.diffuse[0], currentMaterial.diffuse[1], currentMaterial.diffuse[2], 1.f},
-				    vzt::Vec4{currentMaterial.specular[0], currentMaterial.specular[1], currentMaterial.specular[2],
-				              1.f},
 				    currentMaterial.shininess});
 			}
 		}

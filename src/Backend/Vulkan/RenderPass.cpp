@@ -25,7 +25,7 @@ namespace vzt
 			const auto attachmentLayout = attachment->Layout();
 
 			VkAttachmentReference currentAttachmentRef{};
-			currentAttachmentRef.attachment = i;
+			currentAttachmentRef.attachment = static_cast<uint32_t>(i);
 			currentAttachmentRef.layout     = static_cast<VkImageLayout>(attachmentLayout);
 
 			if (attachmentLayout == vzt::ImageLayout::ColorAttachmentOptimal)
@@ -44,7 +44,7 @@ namespace vzt
 		{
 			VkSubpassDescription subpass{};
 			subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			subpass.colorAttachmentCount    = m_colorRefs.size();
+			subpass.colorAttachmentCount    = static_cast<uint32_t>(m_colorRefs.size());
 			subpass.pColorAttachments       = m_colorRefs.data();
 			subpass.pDepthStencilAttachment = &m_depthRef;
 
@@ -55,9 +55,9 @@ namespace vzt
 		renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
 		renderPassInfo.pAttachments    = attachmentDescriptions.data();
-		renderPassInfo.subpassCount    = m_subpassDescriptions.size();
+		renderPassInfo.subpassCount    = static_cast<uint32_t>(m_subpassDescriptions.size());
 		renderPassInfo.pSubpasses      = m_subpassDescriptions.data();
-		renderPassInfo.dependencyCount = m_subpassDependencies.size();
+		renderPassInfo.dependencyCount = static_cast<uint32_t>(m_subpassDependencies.size());
 		renderPassInfo.pDependencies   = m_subpassDependencies.data();
 
 		if (vkCreateRenderPass(m_device->VkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)

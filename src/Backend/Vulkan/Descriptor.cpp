@@ -5,8 +5,91 @@
 
 namespace vzt
 {
-	DescriptorPool::DescriptorPool(Device* device, const std::vector<DescriptorType> descriptorTypes, uint32_t maxSetNb,
-	                               const VkDescriptorPoolCreateFlags flags)
+	DescriptorLayout::DescriptorLayout(const vzt::Device* const device) : m_device(device) {}
+
+	DescriptorLayout::DescriptorLayout(const DescriptorLayout& other)
+	{
+		m_device   = other.m_device;
+		m_bindings = other.m_bindings;
+	}
+
+	DescriptorLayout& DescriptorLayout::operator=(const DescriptorLayout& other)
+	{
+		if (m_handle != VK_NULL_HANDLE)
+		{
+			vkDestroyDescriptorSetLayout(m_device->VkHandle(), m_handle, nullptr);
+			m_handle = VK_NULL_HANDLE;
+		}
+		m_device   = other.m_device;
+		m_bindings = other.m_bindings;
+
+		return *this;
+	}
+
+	DescriptorLayout::DescriptorLayout(DescriptorLayout&& other) noexcept
+	{
+		std::swap(m_device, other.m_device);
+		std::swap(m_handle, other.m_handle);
+		std::swap(m_bindings, other.m_bindings);
+	}
+
+	DescriptorLayout& DescriptorLayout::operator=(DescriptorLayout&& other) noexcept
+	{
+		std::swap(m_device, other.m_device);
+		std::swap(m_handle, other.m_handle);
+		std::swap(m_bindings, other.m_bindings);
+
+		return *this;
+	}
+
+	void DescriptorLayout::AddBinding(const vzt::ShaderStage bindingStage, const uint32_t binding,
+	                                  const vzt::DescriptorType type)
+	{
+		m_bindings.emplace_back(Binding{binding, bindingStage, type});
+	}
+
+	const VkDescriptorSetLayout& DescriptorLayout::VkHandle() const
+	{
+		if (m_handle == VK_NULL_HANDLE)
+		{
+			std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+			layoutBindings.reserve(m_bindings.size());
+			for (const auto& descriptor : m_bindings)
+			{
+				VkDescriptorSetLayoutBinding layoutBinding{};
+				layoutBinding.binding            = std::get<0>(descriptor);
+				layoutBinding.descriptorCount    = 1;
+				layoutBinding.pImmutableSamplers = nullptr; // Optional
+				layoutBinding.stageFlags         = static_cast<VkShaderStageFlags>(std::get<1>(descriptor));
+				layoutBinding.descriptorType     = static_cast<VkDescriptorType>(std::get<2>(descriptor));
+				layoutBindings.emplace_back(layoutBinding);
+			}
+
+			VkDescriptorSetLayoutCreateInfo layoutInfo{};
+			layoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+			layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+			layoutInfo.pBindings    = layoutBindings.data();
+
+			if (vkCreateDescriptorSetLayout(m_device->VkHandle(), &layoutInfo, nullptr, &m_handle) != VK_SUCCESS)
+			{
+				throw std::runtime_error("Failed to create descriptor set layout!");
+			}
+		}
+
+		return m_handle;
+	}
+
+	DescriptorLayout::~DescriptorLayout()
+	{
+		if (m_handle != VK_NULL_HANDLE)
+		{
+			vkDestroyDescriptorSetLayout(m_device->VkHandle(), m_handle, nullptr);
+			m_handle = VK_NULL_HANDLE;
+		}
+	}
+
+	DescriptorPool::DescriptorPool(const vzt::Device* const device, const std::vector<DescriptorType> descriptorTypes,
+	                               const uint32_t maxSetNb, const VkDescriptorPoolCreateFlags flags)
 	    : m_device(device), m_maxSetNb(maxSetNb)
 	{
 		std::vector<VkDescriptorPoolSize> sizes;
@@ -47,9 +130,9 @@ namespace vzt
 		return *this;
 	}
 
-	void DescriptorPool::Allocate(uint32_t count, VkDescriptorSetLayout layout)
+	void DescriptorPool::Allocate(uint32_t count, const vzt::DescriptorLayout& layout)
 	{
-		const auto layouts = std::vector<VkDescriptorSetLayout>(count, layout);
+		const auto layouts = std::vector<VkDescriptorSetLayout>(count, layout.VkHandle());
 
 		VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
 		descriptorSetAllocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

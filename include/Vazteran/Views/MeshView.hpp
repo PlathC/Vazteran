@@ -42,10 +42,9 @@ namespace vzt
 		~MeshView();
 
 		void AddModel(const vzt::Model* const model);
-		void SetOutputTextures(const std::vector<vzt::Texture*>& outputTextures);
 		void Configure(vzt::PipelineContextSettings settings);
 
-		VkCommandBuffer GetCommandBuffer(uint32_t imageCount, const vzt::FrameBuffer* frameBuffer);
+		void Record(uint32_t imageCount, const vzt::RenderPass* const renderPass, VkCommandBuffer commandBuffer);
 
 		void Update(const vzt::Camera& camera);
 
@@ -62,11 +61,10 @@ namespace vzt
 			uint32_t materialDataIndex;
 		};
 
-		struct MaterialData
+		struct TextureData
 		{
-			std::vector<vzt::ImageView> imageViews;
-			std::vector<vzt::Texture>   textures;
-			uint32_t                    descriptorIndex;
+			std::unique_ptr<vzt::ImageView> imageView;
+			std::unique_ptr<vzt::Texture>   texture;
 		};
 
 		struct ModelDisplayInformation
@@ -76,13 +74,12 @@ namespace vzt
 			vzt::Buffer vertexBuffer;
 			vzt::Buffer subMeshesIndexBuffer;
 
-			std::vector<SubMeshData>  subMeshData;
-			std::vector<MaterialData> materialsData;
+			std::vector<TextureData> textureData;
+			std::vector<SubMeshData> subMeshData;
 		};
 
-		std::vector<vzt::Texture*> m_outputTextures;
-		vzt::DescriptorPool        m_descriptorPool;
-		vzt::CommandPool           m_commandPool;
+		vzt::DescriptorPool m_descriptorPool;
+		vzt::CommandPool    m_commandPool;
 
 		vzt::Buffer m_materialInfoBuffer;
 		uint32_t    m_materialNb             = 0;
@@ -91,9 +88,7 @@ namespace vzt
 		vzt::Buffer m_transformBuffer;
 		uint32_t    m_transformOffsetSize = 0;
 
-		vzt::SizedDescriptorSet                m_transformDescriptor;
-		vzt::SizedDescriptorSet                m_materialDescriptors;
-		std::vector<vzt::SamplerDescriptorSet> m_samplersDescriptors;
+		vzt::DescriptorLayout m_meshDescriptorLayout;
 
 		std::vector<ModelDisplayInformation> m_models;
 		uint32_t                             m_imageCount = 0;

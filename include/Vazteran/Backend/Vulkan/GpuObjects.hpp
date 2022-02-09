@@ -7,16 +7,15 @@
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Core/Math.hpp"
+#include "Vazteran/Data/Material.hpp"
 
 namespace vzt
 {
-	struct MaterialInfo
+	struct GenericMaterial
 	{
-		vzt::Vec4 ambientColor;
-		vzt::Vec4 diffuseColor;
-		vzt::Vec4 specularColor;
+		vzt::Vec4 diffuse; // diffuse + shininess
 
-		float shininess;
+		static GenericMaterial FromMaterial(const vzt::Material& original);
 	};
 
 	struct Transforms

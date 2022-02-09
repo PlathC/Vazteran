@@ -109,6 +109,7 @@ if (CMAKE_COMPILER_IS_GNUCC)
 elseif (MSVC)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         set(VAZTERAN_COMPILATION_FLAGS
+                /WX
                 /permissive
                 /w14242
                 /w14254
@@ -126,7 +127,9 @@ elseif (MSVC)
                 /w14619
                 /w14640
                 /w14826
-                /w14928)
+                /w14928
+                
+                /wd4296)
         set(VAZTERAN_LINKER_FLAGS
                 -DNOMINMAX -D_USE_MATH_DEFINES)
     else()
@@ -218,6 +221,7 @@ set(SOURCES
         "src/Backend/Vulkan/Device.cpp"
         "src/Backend/Vulkan/Instance.cpp"
         "src/Backend/Vulkan/GraphicPipeline.cpp"
+        "src/Backend/Vulkan/GpuObjects.cpp"
         "src/Backend/Vulkan/ImageUtils.cpp"
         "src/Backend/Vulkan/FrameBuffer.cpp"
         "src/Backend/Vulkan/RenderPass.cpp"
@@ -249,6 +253,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         Vulkan::Vulkan
         imgui
 )
+
+if(WIN32)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
+endif()
 
 # Based on https://www.reddit.com/r/vulkan/comments/kbaxlz/what_is_your_workflow_when_compiling_shader_files/gfg0s3s?utm_source=share&utm_medium=web2x&context=3
 function(add_shader TARGET SHADER)

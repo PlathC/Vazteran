@@ -8,8 +8,9 @@
 namespace vzt
 {
 	Renderer::Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size)
-	    : m_surface(surface), m_device(instance, m_surface), m_deferredCommandPool(&m_device),
-	      m_swapChain(&m_device, surface, size), m_instance(instance), m_window(window)
+	    : m_surface(surface), m_device(instance, m_surface), m_offscreenCommandPool(&m_device),
+	      m_fsCommandPool(&m_device), m_swapChain(&m_device, surface, size), m_instance(instance), m_window(window),
+	      m_fsDescriptorSetLayout(&m_device)
 	{
 		const uint32_t imageCount           = m_swapChain.GetImageCount();
 		const auto     swapChainImageFormat = m_swapChain.GetImageFormat();
@@ -19,35 +20,31 @@ namespace vzt
 
 		auto vtxShader  = vzt::Shader("./shaders/fs_triangle.vert.spv", ShaderStage::VertexShader);
 		auto fragShader = vzt::Shader("./shaders/blinn_phong.frag.spv", ShaderStage::FragmentShader);
-
-		// vtxShader.(sizeof(vzt::Transforms));
 		fsBlinnPhongProgram.SetShader(std::move(vtxShader));
-		// Position
-		fragShader.SetSamplerDescriptorSet(0);
-		// Normals
-		fragShader.SetSamplerDescriptorSet(1);
-		// Albedo
-		fragShader.SetSamplerDescriptorSet(2);
-
-		m_samplersDescriptors = fragShader.SamplerDescriptorSets();
-
 		fsBlinnPhongProgram.SetShader(std::move(fragShader));
 		fsBlinnPhongProgram.Compile();
 
-		m_fsDescriptorSetLayout = fsBlinnPhongProgram.DescriptorSetLayout();
+		// Position
+		m_fsDescriptorSetLayout.AddBinding(vzt::ShaderStage::FragmentShader, 0, vzt::DescriptorType::CombinedSampler);
+		// Normals
+		m_fsDescriptorSetLayout.AddBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::CombinedSampler);
+		// Albedo
+		m_fsDescriptorSetLayout.AddBinding(vzt::ShaderStage::FragmentShader, 2, vzt::DescriptorType::CombinedSampler);
 
-		m_deferredDescriptorPool = vzt::DescriptorPool(&m_device, fsBlinnPhongProgram.DescriptorTypes());
-		m_deferredDescriptorPool.Allocate(imageCount, m_fsDescriptorSetLayout);
+		m_fsDescriptorPool = vzt::DescriptorPool(&m_device, {vzt::DescriptorType::CombinedSampler});
+		m_fsDescriptorPool.Allocate(imageCount, m_fsDescriptorSetLayout);
 
-		m_compositionPipeline = std::make_unique<vzt::GraphicPipeline>(&m_device, std::move(fsBlinnPhongProgram));
-		m_meshView            = std::make_unique<vzt::MeshView>(&m_device, imageCount);
+		m_compositionPipeline =
+		    std::make_unique<vzt::GraphicPipeline>(&m_device, std::move(fsBlinnPhongProgram), m_fsDescriptorSetLayout);
+		m_meshView = std::make_unique<vzt::MeshView>(&m_device, imageCount);
 
 		m_compositionPipeline->RasterOptions().cullMode = vzt::CullMode::Front;
 
-		m_deferredCommandPool.AllocateCommandBuffers(imageCount);
+		m_offscreenCommandPool.AllocateCommandBuffers(imageCount);
+		m_fsCommandPool.AllocateCommandBuffers(imageCount);
+
 		VkSemaphoreCreateInfo semaphoreCreateInfo{};
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
 		m_offscreenSemaphores.resize(imageCount);
 		for (auto& semaphore : m_offscreenSemaphores)
 		{
@@ -62,7 +59,9 @@ namespace vzt
 
 	Renderer::Renderer(Renderer&& other)
 	    : m_device(std::move(other.m_device)), m_swapChain(std::move(other.m_swapChain)),
-	      m_deferredCommandPool(std::move(m_deferredCommandPool))
+	      m_offscreenCommandPool(std::move(m_offscreenCommandPool)), m_fsCommandPool(std::move(m_fsCommandPool)),
+	      m_fsDescriptorSetLayout(std::move(other.m_fsDescriptorSetLayout))
+
 	{
 		std::swap(m_surface, other.m_surface);
 
@@ -71,14 +70,11 @@ namespace vzt
 
 		std::swap(m_offscreenSemaphores, other.m_offscreenSemaphores);
 		std::swap(m_offscreenFrames, other.m_offscreenFrames);
-		std::swap(m_offscreenDescriptorLayout, other.m_offscreenDescriptorLayout);
-		std::swap(m_offscreenDescriptors, other.m_offscreenDescriptors);
 		std::swap(m_frames, other.m_frames);
 
-		std::swap(m_fsDescriptorSetLayout, other.m_fsDescriptorSetLayout);
+		std::swap(m_fsDescriptorPool, other.m_fsDescriptorPool);
 		std::swap(m_compositionPipeline, other.m_compositionPipeline);
 		std::swap(m_samplersDescriptors, other.m_samplersDescriptors);
-		std::swap(m_deferredDescriptorPool, other.m_deferredDescriptorPool);
 
 		std::swap(m_instance, other.m_instance);
 		std::swap(m_window, other.m_window);
@@ -95,16 +91,16 @@ namespace vzt
 		std::swap(m_ui, other.m_ui);
 
 		std::swap(m_offscreenSemaphores, other.m_offscreenSemaphores);
-		std::swap(m_deferredCommandPool, other.m_deferredCommandPool);
+		std::swap(m_offscreenCommandPool, other.m_offscreenCommandPool);
 		std::swap(m_offscreenFrames, other.m_offscreenFrames);
-		std::swap(m_offscreenDescriptorLayout, other.m_offscreenDescriptorLayout);
-		std::swap(m_offscreenDescriptors, other.m_offscreenDescriptors);
 		std::swap(m_frames, other.m_frames);
 
 		std::swap(m_fsDescriptorSetLayout, other.m_fsDescriptorSetLayout);
+		std::swap(m_fsDescriptorPool, other.m_fsDescriptorPool);
+		std::swap(m_fsCommandPool, other.m_fsCommandPool);
+
 		std::swap(m_compositionPipeline, other.m_compositionPipeline);
 		std::swap(m_samplersDescriptors, other.m_samplersDescriptors);
-		std::swap(m_deferredDescriptorPool, other.m_deferredDescriptorPool);
 
 		std::swap(m_instance, other.m_instance);
 		std::swap(m_window, other.m_window);
@@ -141,63 +137,67 @@ namespace vzt
 	{
 		m_meshView->Update(camera);
 
-		const bool recreate = m_swapChain.RenderFrame([&](uint32_t imageId, VkSemaphore imageAvailable,
-		                                                  VkSemaphore renderComplete, VkFence inFlightFence) {
-			VkCommandBuffer objectCommandBuffer = m_meshView->GetCommandBuffer(imageId, &m_offscreenFrames[imageId]);
+		const bool recreate = m_swapChain.RenderFrame(
+		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
+			    m_offscreenCommandPool.RecordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
+				    m_offscreenFrames[imageId].Bind(commandBuffer);
+				    m_meshView->Record(imageId, m_offscreenFrames[imageId].RenderPass(), commandBuffer);
 
-			VkSubmitInfo submitInfo{};
-			submitInfo.sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+				    m_offscreenFrames[imageId].Unbind(commandBuffer);
+			    });
 
-			submitInfo.waitSemaphoreCount = 1;
-			submitInfo.pWaitSemaphores    = &imageAvailable;
-			submitInfo.pWaitDstStageMask  = waitStages;
-			submitInfo.commandBufferCount = 1;
-			submitInfo.pCommandBuffers    = &objectCommandBuffer;
+			    VkSubmitInfo submitInfo{};
+			    submitInfo.sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
-			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores    = &m_offscreenSemaphores[imageId];
+			    submitInfo.waitSemaphoreCount = 1;
+			    submitInfo.pWaitSemaphores    = &imageAvailable;
+			    submitInfo.pWaitDstStageMask  = waitStages;
+			    submitInfo.commandBufferCount = 1;
+			    submitInfo.pCommandBuffers    = &m_offscreenCommandPool[imageId];
 
-			if (vkQueueSubmit(m_device.GraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
-			{
-				throw std::runtime_error("Failed to submit command buffer!");
-			}
+			    submitInfo.signalSemaphoreCount = 1;
+			    submitInfo.pSignalSemaphores    = &m_offscreenSemaphores[imageId];
 
-			m_deferredCommandPool.RecordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
-				m_frames[imageId].Bind(commandBuffer);
+			    if (vkQueueSubmit(m_device.GraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+			    {
+				    throw std::runtime_error("Failed to submit command buffer!");
+			    }
 
-				m_deferredDescriptorPool.Bind(imageId, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				                              m_compositionPipeline->Layout());
-				m_compositionPipeline->Bind(commandBuffer, m_frames[imageId].RenderPass());
+			    m_fsCommandPool.RecordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
+				    m_frames[imageId].Bind(commandBuffer);
 
-				// Final composition as full screen quad
-				vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+				    m_fsDescriptorPool.Bind(imageId, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				                            m_compositionPipeline->Layout());
+				    m_compositionPipeline->Bind(commandBuffer, m_frames[imageId].RenderPass());
 
-				if (m_ui)
-				{
-					m_ui->Record(commandBuffer);
-				}
+				    // Final composition as full screen quad
+				    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
-				m_frames[imageId].Unbind(commandBuffer);
-			});
+				    if (m_ui)
+				    {
+					    m_ui->Record(commandBuffer);
+				    }
 
-			submitInfo.waitSemaphoreCount = 1;
-			submitInfo.pWaitSemaphores    = &m_offscreenSemaphores[imageId];
-			submitInfo.pWaitDstStageMask  = waitStages;
-			submitInfo.commandBufferCount = 1;
-			submitInfo.pCommandBuffers    = &m_deferredCommandPool[imageId];
+				    m_frames[imageId].Unbind(commandBuffer);
+			    });
 
-			submitInfo.signalSemaphoreCount = 1;
-			submitInfo.pSignalSemaphores    = &renderComplete;
+			    submitInfo.waitSemaphoreCount = 1;
+			    submitInfo.pWaitSemaphores    = &m_offscreenSemaphores[imageId];
+			    submitInfo.pWaitDstStageMask  = waitStages;
+			    submitInfo.commandBufferCount = 1;
+			    submitInfo.pCommandBuffers    = &m_fsCommandPool[imageId];
 
-			vkResetFences(m_device.VkHandle(), 1, &inFlightFence);
-			if (vkQueueSubmit(m_device.GraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS)
-			{
-				throw std::runtime_error("Failed to submit command buffer!");
-			}
-		});
+			    submitInfo.signalSemaphoreCount = 1;
+			    submitInfo.pSignalSemaphores    = &renderComplete;
 
-		// m_inFlightFences[m_currentFrame]
+			    vkResetFences(m_device.VkHandle(), 1, &inFlightFence);
+			    if (vkQueueSubmit(m_device.GraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+			    {
+				    throw std::runtime_error("Failed to submit command buffer!");
+			    }
+		    });
+
 		if (recreate)
 		{
 			vkDeviceWaitIdle(m_device.VkHandle());
@@ -251,11 +251,11 @@ namespace vzt
 			offscreenAttachmentsTexture.emplace_back(offscreenAttachments[2].AsTexture());
 
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
-			texturesDescriptors[m_samplersDescriptors[0].binding] = offscreenAttachmentsTexture[0];
-			texturesDescriptors[m_samplersDescriptors[1].binding] = offscreenAttachmentsTexture[1];
-			texturesDescriptors[m_samplersDescriptors[2].binding] = offscreenAttachmentsTexture[2];
+			texturesDescriptors[0] = offscreenAttachmentsTexture[0];
+			texturesDescriptors[1] = offscreenAttachmentsTexture[1];
+			texturesDescriptors[2] = offscreenAttachmentsTexture[2];
 
-			m_deferredDescriptorPool.Update(i, texturesDescriptors);
+			m_fsDescriptorPool.Update(i, texturesDescriptors);
 
 			std::vector<VkSubpassDependency> dependencies = {
 			    {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -286,8 +286,6 @@ namespace vzt
 
 			m_frames.emplace_back(&m_device, 1, std::move(dependencies), std::move(screenAttachments), swapChainSize);
 		}
-
-		m_meshView->SetOutputTextures(offscreenAttachmentsTexture);
 
 		m_meshView->Configure({m_offscreenFrames[0].RenderPass(), swapChainImageFormat, swapChainSize});
 		m_compositionPipeline->Configure({m_frames[0].RenderPass(), swapChainImageFormat, swapChainSize});

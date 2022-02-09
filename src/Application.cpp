@@ -39,8 +39,8 @@ namespace vzt
 			static float    pitch       = 0.f;
 			constexpr float sensitivity = .5f;
 
-			yaw += deltaPos.x * sensitivity;
-			pitch += deltaPos.y * sensitivity;
+			yaw += static_cast<float>(deltaPos.x) * sensitivity;
+			pitch += static_cast<float>(deltaPos.y) * sensitivity;
 
 			pitch = std::max(std::min(pitch, 89.f), -89.f);
 

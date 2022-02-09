@@ -61,7 +61,7 @@ namespace vzt
 				auto movement = glm::sphericalRand(5.f);
 
 				moved->Position() += movement;
-				moved->Mesh().Materials()[1].ambientColor = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.);
+				moved->Mesh().Materials()[1].color = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.);
 				moved->SetUpdateCallback(modelUpdate);
 
 				fullBoundingBox.Extend(moved->BoundingBox());
@@ -93,9 +93,8 @@ namespace vzt
 
 			auto tex = vzt::Image("./samples/viking_room.png");
 
-			auto& mat      = vikingRoomModel->Mesh().Materials()[0];
-			mat.ambientMap = tex;
-			mat.diffuseMap = tex;
+			auto& mat   = vikingRoomModel->Mesh().Materials()[0];
+			mat.texture = tex;
 
 			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
 			fileMenuField.AddItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));

@@ -55,16 +55,15 @@ namespace vzt
 
 		std::vector<VkSemaphore>      m_offscreenSemaphores{};
 		std::vector<vzt::FrameBuffer> m_offscreenFrames;
-		VkDescriptorSetLayout         m_offscreenDescriptorLayout;
-		vzt::DescriptorPool           m_offscreenDescriptors;
+		vzt::CommandPool              m_offscreenCommandPool;
+
 		std::vector<vzt::FrameBuffer> m_frames;
+		vzt::CommandPool              m_fsCommandPool;
+		vzt::DescriptorLayout         m_fsDescriptorSetLayout;
+		vzt::DescriptorPool           m_fsDescriptorPool;
 
-		vzt::CommandPool m_deferredCommandPool;
-
-		VkDescriptorSetLayout                  m_fsDescriptorSetLayout;
 		std::unique_ptr<vzt::GraphicPipeline>  m_compositionPipeline;
 		std::vector<vzt::SamplerDescriptorSet> m_samplersDescriptors;
-		vzt::DescriptorPool                    m_deferredDescriptorPool;
 
 		vzt::Instance* m_instance;
 		GLFWwindow*    m_window;
