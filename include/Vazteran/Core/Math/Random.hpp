@@ -1,10 +1,12 @@
 #ifndef VAZTERAN_CORE_RANDOM_HPP
 #define VAZTERAN_CORE_RANDOM_HPP
 
+#include <random>
+
 namespace vzt
 {
-
-	template <class T> inline T Random(const T min, const T max)
+	template <class T>
+	inline T Random(const T min, const T max)
 	{
 		static thread_local std::mt19937 generator;
 

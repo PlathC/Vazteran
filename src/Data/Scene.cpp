@@ -61,7 +61,8 @@ namespace vzt
 				auto movement = glm::sphericalRand(5.f);
 
 				moved->Position() += movement;
-				moved->Mesh().Materials()[1].color = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.);
+				moved->Mesh().Materials()[1].color     = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.f);
+				moved->Mesh().Materials()[1].shininess = ((movement.z + 5.f) * 0.1f) * 200.f;
 				moved->SetUpdateCallback(modelUpdate);
 
 				fullBoundingBox.Extend(moved->BoundingBox());
@@ -76,8 +77,8 @@ namespace vzt
 			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
-			mainMenuBar.AddMenu(std::move(fileMenuField));
-			mainMenuBar.AddMenu(std::move(brdfMenuField));
+			mainMenuBar.AddMenu(fileMenuField);
+			mainMenuBar.AddMenu(brdfMenuField);
 
 			vzt::ui::UiManager uiManager;
 			uiManager.SetMainMenuBar(mainMenuBar);
@@ -104,8 +105,8 @@ namespace vzt
 			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
-			mainMenuBar.AddMenu(std::move(fileMenuField));
-			mainMenuBar.AddMenu(std::move(brdfMenuField));
+			mainMenuBar.AddMenu(fileMenuField);
+			mainMenuBar.AddMenu(brdfMenuField);
 
 			vzt::ui::UiManager uiManager;
 			uiManager.SetMainMenuBar(mainMenuBar);

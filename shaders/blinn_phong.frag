@@ -11,21 +11,21 @@ layout (location = 0) out vec4 outFragcolor;
 
 const vec3  LightPosition  = vec3( 1.0f, 1.0f, 1.0f );
 const vec3  LightIntensity = vec3( 1.0f, 1.0f, 1.0f );
-const float SpecularStrength = 0.5;
+const float Pi             = 3.14159265;
 
 void main() {
-    const vec3 vertPosition = texture(samplerPosition, inUV).rgb;
-    const vec3 normal       = texture(samplerNormal, inUV).rgb;
+    const vec4 fragPosition = texture(samplerPosition, inUV);
+    const vec3 normal       = texture(samplerNormal, inUV).xyz;
     const vec4 albedo       = texture(samplerAlbedo, inUV);
+    const float shininess   = fragPosition.w;
 
-    // Blinn-Phong model: https://en.wikipedia.org/wiki/Blinn%E2%80%93Phong_reflection_model
-    const vec3 lightDirection  = normalize( LightPosition - vertPosition );
-    const vec3 viewerDirection = normalize( vertPosition );
+    const vec3 lightDir = normalize( LightPosition - fragPosition.xyz );
+    const vec3 viewDir  = normalize( -fragPosition.xyz );
 
-    const float cosTheta = max(dot(lightDirection, normal), 0.0f);
+    const float cosTheta = max(dot(lightDir, normal), 0.0f);
     
-    const vec3 halfWay   = normalize(viewerDirection + lightDirection);
-    const float specular = SpecularStrength * pow(max(dot(normal, halfWay), 0.0f), 150.f);
+    const vec3 halfWay   = normalize(viewDir + lightDir);
+    const float specular = pow(max(dot(normal, halfWay), 0.0f), shininess);
 
     outFragcolor = vec4(albedo.rgb * LightIntensity * ( cosTheta + specular ), 1.0f);
 }

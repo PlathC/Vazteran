@@ -132,21 +132,20 @@ namespace vzt
 		                                             sizeof(vzt::Transforms), &m_transformBuffer};
 
 		const auto& materials = model->CMesh().CMaterials();
-		for (std::size_t materialId = 0; materialId < materials.size(); materialId++)
+		for (const auto& material : materials)
 		{
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
 			bufferDescriptors[1] = vzt::BufferDescriptor{m_materialNb * m_materialInfoOffsetSize,
 			                                             sizeof(vzt::GenericMaterial), &m_materialInfoBuffer};
-			auto genericMaterial = vzt::GenericMaterial::FromMaterial(materials[materialId]);
+			auto genericMaterial = vzt::GenericMaterial::FromMaterial(material);
 
 			m_materialInfoBuffer.Update(sizeof(vzt::GenericMaterial), m_materialNb * m_materialInfoOffsetSize,
 			                            reinterpret_cast<uint8_t*>(&genericMaterial));
 
-			if (materials[materialId].texture.has_value())
+			if (material.texture.has_value())
 			{
 				auto textureData = TextureData{
-				    std::make_unique<vzt::ImageView>(m_device, materials[materialId].texture.value(),
-				                                     vzt::Format::R8G8B8A8SRGB),
+				    std::make_unique<vzt::ImageView>(m_device, material.texture.value(), vzt::Format::R8G8B8A8SRGB),
 				};
 
 				textureData.texture    = std::make_unique<vzt::Texture>(m_device, textureData.imageView.get());

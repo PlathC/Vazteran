@@ -17,7 +17,7 @@ layout (location = 2) out vec4 outAlbedo;
 
 void main() 
 {
-    outPosition.xyz = vsPosition;
-    outAlbedo = vec4(texture(colorMap, uv).rgb * material.color.rgb, material.color.w);
+    outPosition = vec4(vsPosition, material.color.w);
+    outAlbedo = vec4(texture(colorMap, uv).rgb * material.color.rgb, 1.);
     outNormal.xyz = normal;
 }
