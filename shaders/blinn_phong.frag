@@ -14,17 +14,16 @@ const vec3  LightIntensity = vec3( 1.0f, 1.0f, 1.0f );
 const float Pi             = 3.14159265;
 
 void main() {
-    const vec4 fragPosition = texture(samplerPosition, inUV);
-    const vec3 normal       = texture(samplerNormal, inUV).xyz;
-    const vec4 albedo       = texture(samplerAlbedo, inUV);
-    const float shininess   = fragPosition.w;
+    const vec4  fragPosition = texture(samplerPosition, inUV);
+    const vec3  normal       = texture(samplerNormal, inUV).xyz;
+    const vec4  albedo       = texture(samplerAlbedo, inUV);
+    const float shininess    = fragPosition.w;
 
     const vec3 lightDir = normalize( LightPosition - fragPosition.xyz );
     const vec3 viewDir  = normalize( -fragPosition.xyz );
 
     const float cosTheta = max(dot(lightDir, normal), 0.0f);
-    
-    const vec3 halfWay   = normalize(viewDir + lightDir);
+    const vec3  halfWay  = normalize(viewDir + lightDir);
     const float specular = pow(max(dot(normal, halfWay), 0.0f), shininess);
 
     outFragcolor = vec4(albedo.rgb * LightIntensity * ( cosTheta + specular ), 1.0f);

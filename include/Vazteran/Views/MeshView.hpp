@@ -44,7 +44,7 @@ namespace vzt
 		void AddModel(const vzt::Model* const model);
 		void Configure(vzt::PipelineContextSettings settings);
 
-		void Record(uint32_t imageCount, const vzt::RenderPass* const renderPass, VkCommandBuffer commandBuffer);
+		void Record(uint32_t imageCount, const vzt::RenderPass* const renderPass, VkCommandBuffer commandBuffer) const;
 
 		void Update(const vzt::Camera& camera);
 

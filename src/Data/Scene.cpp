@@ -49,9 +49,12 @@ namespace vzt
 				static auto startTime = std::chrono::high_resolution_clock::now();
 
 				auto  currentTime = std::chrono::high_resolution_clock::now();
-				float time =
+				float deltaTime =
 				    std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-				model->Rotation() = time * glm::radians(45.f) * glm::vec3(0.0f, 0.0f, 1.0f);
+				model->Rotation() = deltaTime * glm::radians(45.f) * glm::vec3(0.0f, 0.0f, 1.0f);
+
+				const float timeValue =
+				    std::chrono::duration<float, std::chrono::seconds::period>(currentTime.time_since_epoch()).count();
 			};
 			models[0]->SetUpdateCallback(modelUpdate);
 

@@ -167,7 +167,8 @@ namespace vzt
 
 	void MeshView::Configure(vzt::PipelineContextSettings settings) { m_graphicPipeline->Configure(settings); }
 
-	void MeshView::Record(uint32_t imageCount, const vzt::RenderPass* const renderPass, VkCommandBuffer commandBuffer)
+	void MeshView::Record(uint32_t imageCount, const vzt::RenderPass* const renderPass,
+	                      VkCommandBuffer commandBuffer) const
 	{
 		m_graphicPipeline->Bind(commandBuffer, renderPass);
 		for (const auto& model : m_models)
@@ -197,6 +198,7 @@ namespace vzt
 		auto       projectionMatrix = camera.Projection();
 		projectionMatrix[1][1] *= -1;
 
+		std::size_t currentMaterialIndex = 0;
 		for (std::size_t i = 0; i < m_models.size(); i++)
 		{
 			const auto&     modelDisplayInfo = m_models[i];
@@ -209,6 +211,16 @@ namespace vzt
 
 			m_transformBuffer.Update(sizeof(vzt::Transforms), i * m_transformOffsetSize,
 			                         reinterpret_cast<const uint8_t* const>(&transforms));
+
+			const auto& materials = modelDisplayInfo.modelData->CMesh().CMaterials();
+			for (const auto& material : materials)
+			{
+				const auto genericMaterial = vzt::GenericMaterial::FromMaterial(material);
+				m_materialInfoBuffer.Update(sizeof(vzt::GenericMaterial),
+				                            currentMaterialIndex * m_materialInfoOffsetSize,
+				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
+				currentMaterialIndex++;
+			}
 		}
 	}
 } // namespace vzt
