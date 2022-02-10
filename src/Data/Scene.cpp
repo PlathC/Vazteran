@@ -86,7 +86,7 @@ namespace vzt
 			vzt::ui::UiManager uiManager;
 			uiManager.SetMainMenuBar(mainMenuBar);
 
-			auto crounchingBoysScene      = Scene(std::move(models), Camera::FromBoundingBox(fullBoundingBox));
+			auto crounchingBoysScene      = Scene(std::move(models), Camera(fullBoundingBox));
 			crounchingBoysScene.SceneUi() = std::move(uiManager);
 
 			return std::move(crounchingBoysScene);
@@ -117,7 +117,7 @@ namespace vzt
 			std::vector<std::unique_ptr<vzt::Model>> models;
 			models.emplace_back(std::move(vikingRoomModel));
 
-			auto vikingRoomScene      = Scene(std::move(models), Camera::FromBoundingBox(fullBoundingBox));
+			auto vikingRoomScene      = Scene(std::move(models), Camera(fullBoundingBox));
 			vikingRoomScene.SceneUi() = std::move(uiManager);
 
 			return std::move(vikingRoomScene);

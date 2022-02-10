@@ -59,7 +59,8 @@ namespace vzt
 
 	Renderer::Renderer(Renderer&& other)
 	    : m_device(std::move(other.m_device)), m_swapChain(std::move(other.m_swapChain)),
-	      m_offscreenCommandPool(std::move(m_offscreenCommandPool)), m_fsCommandPool(std::move(m_fsCommandPool)),
+	      m_offscreenCommandPool(std::move(other.m_offscreenCommandPool)),
+	      m_fsCommandPool(std::move(other.m_fsCommandPool)),
 	      m_fsDescriptorSetLayout(std::move(other.m_fsDescriptorSetLayout))
 
 	{

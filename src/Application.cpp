@@ -35,21 +35,7 @@ namespace vzt
 			if (!isMouseEnable)
 				return;
 
-			static float    yaw         = 90.f;
-			static float    pitch       = 0.f;
-			constexpr float sensitivity = .5f;
-
-			yaw += static_cast<float>(deltaPos.x) * sensitivity;
-			pitch += static_cast<float>(deltaPos.y) * sensitivity;
-
-			pitch = std::max(std::min(pitch, 89.f), -89.f);
-
-			vzt::Vec3 direction;
-			direction.x = -std::cos(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
-			direction.y = std::sin(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
-			direction.z = std::sin(vzt::ToRadians(pitch));
-
-			m_scene.SceneCamera().front = glm::normalize(direction);
+			m_scene.SceneCamera().Update(deltaPos);
 		});
 
 		m_window->SetOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {

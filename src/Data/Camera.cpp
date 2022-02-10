@@ -2,25 +2,55 @@
 
 namespace vzt
 {
-	Camera Camera::FromBoundingBox(const vzt::AABB& referenceBoundingBox, float fov, glm::vec3 upVector,
-	                               float nearClipping, float farClipping, float aspectRatio)
+	Camera::Camera(const vzt::AABB& referenceBoundingBox, const float fieldOfView, const glm::vec3& up,
+	               const float near, const float far, const float screenAspectRatio)
+	    : fov(fieldOfView), nearClipping(near), farClipping(far), aspectRatio(screenAspectRatio), upVector(up)
 	{
 		glm::length_t upIndex = 0;
-		if (upVector[1] == 1.f)
+		if (upVector.y == 1.f)
 		{
 			upIndex = 1;
 		}
-		else if (upVector[2] == 1.f)
+		else if (upVector.z == 1.f)
 		{
 			upIndex = 2;
 		}
 
-		const float     modelHeight = referenceBoundingBox.Max()[upIndex] - referenceBoundingBox.Min()[upIndex];
-		const auto      modelCenter = (referenceBoundingBox.Max() + referenceBoundingBox.Min()) / 2.f;
-		const float     distance    = modelHeight / 2.f / std::tan(fov / 2.f);
-		const vzt::Vec3 cameraPos   = modelCenter - glm::vec3(0., 1.25, 0.) * distance;
+		const float modelHeight = referenceBoundingBox.Max()[upIndex] - referenceBoundingBox.Min()[upIndex];
+		const auto  modelCenter = (referenceBoundingBox.Max() + referenceBoundingBox.Min()) * .5f;
+		const float distance    = modelHeight * .5f / std::tan(fov * .5f);
 
-		return vzt::Camera{
-		    cameraPos, glm::normalize(modelCenter - cameraPos), fov, nearClipping, farClipping, aspectRatio, upVector};
+		position    = modelCenter - glm::vec3(0.f, 1.25f, 0.f) * distance;
+		front       = glm::normalize(modelCenter - position);
+		m_updateFun = UpdateFirstPerson;
+	}
+
+	void Camera::SetUpdateFunction(const CameraUpdate updateFun) { m_updateFun = updateFun; }
+
+	void Camera::Update(const vzt::Dvec2 deltaCursorPosition)
+	{
+		if (m_updateFun)
+		{
+			m_updateFun(*this, deltaCursorPosition);
+		}
+	}
+
+	void Camera::UpdateFirstPerson(Camera& camera, const vzt::Dvec2 deltaCursorPosition)
+	{
+		static float    yaw         = 90.f;
+		static float    pitch       = 0.f;
+		constexpr float sensitivity = .5f;
+
+		yaw += static_cast<float>(deltaCursorPosition.x) * sensitivity;
+		pitch += static_cast<float>(deltaCursorPosition.y) * sensitivity;
+
+		pitch = std::max(std::min(pitch, 89.f), -89.f);
+
+		vzt::Vec3 direction;
+		direction.x = -std::cos(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
+		direction.y = std::sin(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
+		direction.z = std::sin(vzt::ToRadians(pitch));
+
+		camera.front = glm::normalize(direction);
 	}
 } // namespace vzt
