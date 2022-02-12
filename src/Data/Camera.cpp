@@ -37,6 +37,7 @@ namespace vzt
 
 	void Camera::UpdateFirstPerson(Camera& camera, const vzt::Dvec2 deltaCursorPosition)
 	{
+		// Adapted from https://learnopengl.com/Getting-started/Camera
 		static float    yaw         = 90.f;
 		static float    pitch       = 0.f;
 		constexpr float sensitivity = .5f;
