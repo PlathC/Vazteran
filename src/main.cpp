@@ -43,13 +43,16 @@ int main(int /* args */, char*[] /* argv */)
 	geometryBuffer.addColorOutput(normal, "Normal");
 	geometryBuffer.setDepthStencilOutput(depth, "Depth");
 
+	const vzt::AttachmentHandle composed = renderGraph.addAttachment({});
+
 	auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
 	deferredPass.addAttachmentInput(position, "G-Position");
 	deferredPass.addAttachmentInput(albedo, "G-Albedo");
 	deferredPass.addAttachmentInput(normal, "G-Normal");
 	deferredPass.setDepthStencilInput(depth, "G-Depth");
+	deferredPass.addAttachmentInput(composed, "Composed");
 
-	const vzt::AttachmentHandle composed = renderGraph.addAttachment({});
+	deferredPass.addAttachmentInput(albedo, "G-Albedo");
 	deferredPass.addColorOutput(composed, "Composed");
 
 	auto& uiPass = renderGraph.addPass("UI", vzt::QueueType::Graphic);
@@ -57,7 +60,14 @@ int main(int /* args */, char*[] /* argv */)
 
 	renderGraph.setBackBuffer(composed);
 
-	renderGraph.compile(vzt::Format::R8G8B8A8SRGB, vzt::Format::R8G8B8SNorm, vzt::Size2D<uint32_t>{1920, 1080});
+	try
+	{
+		renderGraph.compile(vzt::Format::R8G8B8A8SRGB, vzt::Format::R8G8B8SNorm, vzt::Size2D<uint32_t>{1920, 1080});
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
 
 	return EXIT_SUCCESS;
 }
