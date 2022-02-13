@@ -11,7 +11,7 @@ namespace vzt
 	                   const std::vector<const char*>& validationLayers)
 	    : m_validationLayers(validationLayers)
 	{
-		if (EnableValidationLayers && !CheckValidationLayerSupport(m_validationLayers))
+		if (EnableValidationLayers && !checkValidationLayerSupport(m_validationLayers))
 		{
 			throw std::runtime_error("validation layers requested, but not available!");
 		}
@@ -45,7 +45,7 @@ namespace vzt
 			createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 			                         VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 			                         VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-			createInfo.pfnUserCallback = DebugCallback;
+			createInfo.pfnUserCallback = debugCallback;
 		};
 
 		if constexpr (EnableValidationLayers)
@@ -100,7 +100,7 @@ namespace vzt
 		return *this;
 	}
 
-	std::vector<VkPhysicalDevice> Instance::EnumeratePhysicalDevice()
+	std::vector<VkPhysicalDevice> Instance::enumeratePhysicalDevice()
 	{
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
@@ -132,7 +132,7 @@ namespace vzt
 		}
 	}
 
-	bool Instance::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers)
+	bool Instance::checkValidationLayerSupport(const std::vector<const char*>& validationLayers)
 	{
 		uint32_t layerCount;
 		vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -162,7 +162,7 @@ namespace vzt
 		return true;
 	}
 
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
 	                                                    VkDebugUtilsMessageTypeFlagsEXT             messageType,
 	                                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 	                                                    void*                                       pUserData)

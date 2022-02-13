@@ -27,24 +27,21 @@ namespace vzt
 		Mesh(std::vector<vzt::SubMesh> subMeshes, std::vector<vzt::Vec3> vertices, std::vector<vzt::Vec3> normals,
 		     std::vector<vzt::Vec2> uvs, std::vector<vzt::Material> materials);
 
-		vzt::AABB BoundingBox() const { return m_aabb; }
+		vzt::AABB boundingBox() const { return m_aabb; }
 
 		// Per submesh data
-		std::vector<std::vector<uint32_t>> VertexIndices() const;
-		std::vector<uint32_t>              MaterialIndices() const;
+		std::vector<std::vector<uint32_t>> getVertexIndices() const;
+		std::vector<uint32_t>              getMaterialIndices() const;
 
 		// Per mesh data
-		std::vector<vzt::Vec3>&     Vertices() { return m_vertices; };
-		std::vector<vzt::Vec3>      CVertices() const { return m_vertices; };
-		std::vector<vzt::Vec3>&     Normals() { return m_normals; };
-		std::vector<vzt::Vec3>      CNormals() const { return m_normals; };
-		std::vector<vzt::Vec2>&     Uvs() { return m_uvs; };
-		std::vector<vzt::Vec2>      CUvs() const { return m_uvs; };
-		std::vector<vzt::Material>& Materials() { return m_materials; };
-		std::vector<vzt::Material>  CMaterials() const { return m_materials; };
-
-	  private:
-		void _createBuffers();
+		std::vector<vzt::Vec3>&     vertices() { return m_vertices; };
+		std::vector<vzt::Vec3>      cVertices() const { return m_vertices; };
+		std::vector<vzt::Vec3>&     normals() { return m_normals; };
+		std::vector<vzt::Vec3>      cNormals() const { return m_normals; };
+		std::vector<vzt::Vec2>&     uvs() { return m_uvs; };
+		std::vector<vzt::Vec2>      cUvs() const { return m_uvs; };
+		std::vector<vzt::Material>& materials() { return m_materials; };
+		std::vector<vzt::Material>  cMaterials() const { return m_materials; };
 
 	  private:
 		std::vector<vzt::SubMesh>  m_subMeshes;

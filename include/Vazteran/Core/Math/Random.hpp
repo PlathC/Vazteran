@@ -6,7 +6,7 @@
 namespace vzt
 {
 	template <class T>
-	inline T Random(const T min, const T max)
+	inline T random(const T min, const T max)
 	{
 		static thread_local std::mt19937 generator;
 

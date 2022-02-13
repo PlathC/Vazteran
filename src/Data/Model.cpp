@@ -10,20 +10,20 @@ namespace vzt
 
 	Model::~Model() = default;
 
-	vzt::AABB Model::BoundingBox() const
+	vzt::AABB Model::boundingBox() const
 	{
-		auto      movedAABB            = m_mesh.BoundingBox();
-		glm::mat4 transformationMatrix = ModelMatrix();
-		for (auto& position : movedAABB.Vertices())
+		auto      movedAABB            = m_mesh.boundingBox();
+		glm::mat4 transformationMatrix = getModelMatrix();
+		for (auto& position : movedAABB.getVertices())
 		{
 			position = (transformationMatrix * glm::vec4(position, 1.f));
 		}
-		movedAABB.Refresh();
+		movedAABB.refresh();
 
 		return movedAABB;
 	}
 
-	glm::mat4 Model::ModelMatrix() const
+	glm::mat4 Model::getModelMatrix() const
 	{
 		auto translated         = glm::translate(vzt::Mat4(1.0), m_position);
 		auto translatedRotateX  = glm::rotate(translated, m_rotation.x, vzt::Vec3(1., 0., 0.));
@@ -31,7 +31,7 @@ namespace vzt
 		return glm::rotate(translatedRotateXY, m_rotation.z, vzt::Vec3(0., 0., 1.));
 	}
 
-	void Model::Update()
+	void Model::update()
 	{
 		if (m_updateCallback)
 		{

@@ -20,10 +20,10 @@ namespace vzt
 		Image& operator=(const fs::path& imagePath);
 		Image& operator=(glm::vec4 color);
 
-		const std::vector<uint8_t>& Data() { return m_data; }
-		uint32_t                    Width() const { return m_width; }
-		uint32_t                    Height() const { return m_height; }
-		uint8_t                     Channels() const { return m_channels; }
+		const std::vector<uint8_t>& data() { return m_data; }
+		uint32_t                    width() const { return m_width; }
+		uint32_t                    height() const { return m_height; }
+		uint8_t                     channels() const { return m_channels; }
 
 	  private:
 		std::vector<uint8_t> m_data;

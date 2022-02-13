@@ -16,8 +16,8 @@ namespace vzt
 			upIndex = 2;
 		}
 
-		const float modelHeight = referenceBoundingBox.Max()[upIndex] - referenceBoundingBox.Min()[upIndex];
-		const auto  modelCenter = (referenceBoundingBox.Max() + referenceBoundingBox.Min()) * .5f;
+		const float modelHeight = referenceBoundingBox.maximum()[upIndex] - referenceBoundingBox.minimum()[upIndex];
+		const auto  modelCenter = (referenceBoundingBox.maximum() + referenceBoundingBox.minimum()) * .5f;
 		const float distance    = modelHeight * .5f / std::tan(fov * .5f);
 
 		position    = modelCenter - glm::vec3(0.f, 1.25f, 0.f) * distance;
@@ -25,9 +25,9 @@ namespace vzt
 		m_updateFun = UpdateFirstPerson;
 	}
 
-	void Camera::SetUpdateFunction(const CameraUpdate updateFun) { m_updateFun = updateFun; }
+	void Camera::setUpdateFunction(const CameraUpdate updateFun) { m_updateFun = updateFun; }
 
-	void Camera::Update(const vzt::Dvec2 deltaCursorPosition)
+	void Camera::update(const vzt::Dvec2 deltaCursorPosition)
 	{
 		if (m_updateFun)
 		{
@@ -48,9 +48,9 @@ namespace vzt
 		pitch = std::max(std::min(pitch, 89.f), -89.f);
 
 		vzt::Vec3 direction;
-		direction.x = -std::cos(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
-		direction.y = std::sin(vzt::ToRadians(yaw)) * std::cos(vzt::ToRadians(pitch));
-		direction.z = std::sin(vzt::ToRadians(pitch));
+		direction.x = -std::cos(vzt::toRadians(yaw)) * std::cos(vzt::toRadians(pitch));
+		direction.y = std::sin(vzt::toRadians(yaw)) * std::cos(vzt::toRadians(pitch));
+		direction.z = std::sin(vzt::toRadians(pitch));
 
 		camera.front = glm::normalize(direction);
 	}

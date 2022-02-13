@@ -27,13 +27,13 @@ namespace vzt
 
 		~FrameBuffer();
 
-		const vzt::RenderPass* RenderPass() const { return m_renderPass.get(); }
+		const vzt::RenderPass* getRenderPass() const { return m_renderPass.get(); }
+		vzt::Size2D<uint32_t>  size() const { return m_size; }
 
-		void Bind(VkCommandBuffer commandBuffer) const;
-		void Unbind(VkCommandBuffer commandBuffer) const;
+		void bind(VkCommandBuffer commandBuffer) const;
+		void unbind(VkCommandBuffer commandBuffer) const;
 
-		vzt::Size2D<uint32_t> Size() const { return m_size; }
-		VkFramebuffer         VkHandle() const { return m_vkHandle; }
+		VkFramebuffer vkHandle() const { return m_vkHandle; }
 
 	  private:
 		vzt::Device*  m_device;

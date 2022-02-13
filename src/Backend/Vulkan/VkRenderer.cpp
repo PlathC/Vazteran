@@ -12,36 +12,36 @@ namespace vzt
 	      m_fsCommandPool(&m_device), m_swapChain(&m_device, surface, size), m_instance(instance), m_window(window),
 	      m_fsDescriptorSetLayout(&m_device)
 	{
-		const uint32_t imageCount           = m_swapChain.GetImageCount();
-		const auto     swapChainImageFormat = m_swapChain.GetImageFormat();
-		const auto     swapChainSize        = m_swapChain.GetFrameBufferSize();
+		const uint32_t imageCount           = m_swapChain.imageCount();
+		const auto     swapChainImageFormat = m_swapChain.imageFormat();
+		const auto     swapChainSize        = m_swapChain.frameBufferSize();
 
 		vzt::Program fsBlinnPhongProgram = vzt::Program(&m_device);
 
 		auto vtxShader  = vzt::Shader("./shaders/fs_triangle.vert.spv", ShaderStage::VertexShader);
 		auto fragShader = vzt::Shader("./shaders/blinn_phong.frag.spv", ShaderStage::FragmentShader);
-		fsBlinnPhongProgram.SetShader(std::move(vtxShader));
-		fsBlinnPhongProgram.SetShader(std::move(fragShader));
-		fsBlinnPhongProgram.Compile();
+		fsBlinnPhongProgram.setShader(std::move(vtxShader));
+		fsBlinnPhongProgram.setShader(std::move(fragShader));
+		fsBlinnPhongProgram.compile();
 
 		// Position
-		m_fsDescriptorSetLayout.AddBinding(vzt::ShaderStage::FragmentShader, 0, vzt::DescriptorType::CombinedSampler);
+		m_fsDescriptorSetLayout.addBinding(vzt::ShaderStage::FragmentShader, 0, vzt::DescriptorType::CombinedSampler);
 		// Normals
-		m_fsDescriptorSetLayout.AddBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::CombinedSampler);
+		m_fsDescriptorSetLayout.addBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::CombinedSampler);
 		// Albedo
-		m_fsDescriptorSetLayout.AddBinding(vzt::ShaderStage::FragmentShader, 2, vzt::DescriptorType::CombinedSampler);
+		m_fsDescriptorSetLayout.addBinding(vzt::ShaderStage::FragmentShader, 2, vzt::DescriptorType::CombinedSampler);
 
 		m_fsDescriptorPool = vzt::DescriptorPool(&m_device, {vzt::DescriptorType::CombinedSampler});
-		m_fsDescriptorPool.Allocate(imageCount, m_fsDescriptorSetLayout);
+		m_fsDescriptorPool.allocate(imageCount, m_fsDescriptorSetLayout);
 
 		m_compositionPipeline =
 		    std::make_unique<vzt::GraphicPipeline>(&m_device, std::move(fsBlinnPhongProgram), m_fsDescriptorSetLayout);
 		m_meshView = std::make_unique<vzt::MeshView>(&m_device, imageCount);
 
-		m_compositionPipeline->RasterOptions().cullMode = vzt::CullMode::Front;
+		m_compositionPipeline->getRasterOptions().cullMode = vzt::CullMode::Front;
 
-		m_offscreenCommandPool.AllocateCommandBuffers(imageCount);
-		m_fsCommandPool.AllocateCommandBuffers(imageCount);
+		m_offscreenCommandPool.allocateCommandBuffers(imageCount);
+		m_fsCommandPool.allocateCommandBuffers(imageCount);
 
 		VkSemaphoreCreateInfo semaphoreCreateInfo{};
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -54,10 +54,10 @@ namespace vzt
 			}
 		}
 
-		BuildRenderingSupports();
+		buildRenderingSupports();
 	}
 
-	Renderer::Renderer(Renderer&& other)
+	Renderer::Renderer(Renderer&& other) noexcept
 	    : m_device(std::move(other.m_device)), m_swapChain(std::move(other.m_swapChain)),
 	      m_offscreenCommandPool(std::move(other.m_offscreenCommandPool)),
 	      m_fsCommandPool(std::move(other.m_fsCommandPool)),
@@ -81,7 +81,7 @@ namespace vzt
 		std::swap(m_window, other.m_window);
 	}
 
-	Renderer& Renderer::operator=(Renderer&& other)
+	Renderer& Renderer::operator=(Renderer&& other) noexcept
 	{
 		std::swap(m_surface, other.m_surface);
 
@@ -118,33 +118,33 @@ namespace vzt
 		m_offscreenSemaphores = {};
 	}
 
-	void Renderer::SetScene(vzt::Scene* scene)
+	void Renderer::setScene(vzt::Scene* scene)
 	{
-		auto uiData = scene->CSceneUi();
+		auto uiData = scene->cSceneUi();
 		if (uiData.has_value())
 		{
-			m_ui = std::make_unique<vzt::VkUiRenderer>(m_instance, &m_device, m_window, m_swapChain.GetImageCount(),
-			                                           m_frames[0].RenderPass(), uiData.value());
+			m_ui = std::make_unique<vzt::VkUiRenderer>(m_instance, &m_device, m_window, m_swapChain.imageCount(),
+			                                           m_frames[0].getRenderPass(), uiData.value());
 		}
 
-		auto sceneModels = scene->CModels();
+		auto sceneModels = scene->cModels();
 		for (const auto* model : sceneModels)
 		{
-			m_meshView->AddModel(model);
+			m_meshView->addModel(model);
 		}
 	}
 
-	void Renderer::Draw(const vzt::Camera& camera)
+	void Renderer::draw(const vzt::Camera& camera)
 	{
-		m_meshView->Update(camera);
+		m_meshView->update(camera);
 
-		const bool recreate = m_swapChain.RenderFrame(
+		const bool recreate = m_swapChain.render(
 		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
-			    m_offscreenCommandPool.RecordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
-				    m_offscreenFrames[imageId].Bind(commandBuffer);
-				    m_meshView->Record(imageId, m_offscreenFrames[imageId].RenderPass(), commandBuffer);
+			    m_offscreenCommandPool.recordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
+				    m_offscreenFrames[imageId].bind(commandBuffer);
+				    m_meshView->record(imageId, m_offscreenFrames[imageId].getRenderPass(), commandBuffer);
 
-				    m_offscreenFrames[imageId].Unbind(commandBuffer);
+				    m_offscreenFrames[imageId].unbind(commandBuffer);
 			    });
 
 			    VkSubmitInfo submitInfo{};
@@ -160,27 +160,27 @@ namespace vzt
 			    submitInfo.signalSemaphoreCount = 1;
 			    submitInfo.pSignalSemaphores    = &m_offscreenSemaphores[imageId];
 
-			    if (vkQueueSubmit(m_device.GraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+			    if (vkQueueSubmit(m_device.getGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
 			    {
 				    throw std::runtime_error("Failed to submit command buffer!");
 			    }
 
-			    m_fsCommandPool.RecordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
-				    m_frames[imageId].Bind(commandBuffer);
+			    m_fsCommandPool.recordBuffer(imageId, [&](VkCommandBuffer commandBuffer) {
+				    m_frames[imageId].bind(commandBuffer);
 
-				    m_fsDescriptorPool.Bind(imageId, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				                            m_compositionPipeline->Layout());
-				    m_compositionPipeline->Bind(commandBuffer, m_frames[imageId].RenderPass());
+				    m_fsDescriptorPool.bind(imageId, commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				                            m_compositionPipeline->layout());
+				    m_compositionPipeline->bind(commandBuffer, m_frames[imageId].getRenderPass());
 
 				    // Final composition as full screen quad
 				    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 
 				    if (m_ui)
 				    {
-					    m_ui->Record(commandBuffer);
+					    m_ui->record(commandBuffer);
 				    }
 
-				    m_frames[imageId].Unbind(commandBuffer);
+				    m_frames[imageId].unbind(commandBuffer);
 			    });
 
 			    submitInfo.waitSemaphoreCount = 1;
@@ -193,7 +193,7 @@ namespace vzt
 			    submitInfo.pSignalSemaphores    = &renderComplete;
 
 			    vkResetFences(m_device.VkHandle(), 1, &inFlightFence);
-			    if (vkQueueSubmit(m_device.GraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+			    if (vkQueueSubmit(m_device.getGraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS)
 			    {
 				    throw std::runtime_error("Failed to submit command buffer!");
 			    }
@@ -205,22 +205,22 @@ namespace vzt
 		}
 	}
 
-	void Renderer::FrameBufferResized(vzt::Size2D<uint32_t> newSize)
+	void Renderer::resize(vzt::Size2D<uint32_t> newSize)
 	{
-		m_swapChain.SetFrameBufferSize(std::move(newSize));
-		m_swapChain.Recreate(m_surface);
+		m_swapChain.setFrameBufferSize(std::move(newSize));
+		m_swapChain.recreate(m_surface);
 
-		BuildRenderingSupports();
+		buildRenderingSupports();
 	}
 
-	void Renderer::BuildRenderingSupports()
+	void Renderer::buildRenderingSupports()
 	{
-		const uint32_t imageCount           = m_swapChain.GetImageCount();
-		const auto     swapChainImageFormat = m_swapChain.GetImageFormat();
-		const auto     swapChainSize        = m_swapChain.GetFrameBufferSize();
+		const uint32_t imageCount           = m_swapChain.imageCount();
+		const auto     swapChainImageFormat = m_swapChain.imageFormat();
+		const auto     swapChainSize        = m_swapChain.frameBufferSize();
 
-		vzt::Format depthFormat     = m_device.ChosenPhysicalDevice()->FindDepthFormat();
-		const auto  swapChainImages = m_swapChain.GetImagesKHR();
+		vzt::Format depthFormat     = m_device.getPhysicalDevice()->findDepthFormat();
+		const auto  swapChainImages = m_swapChain.getImagesKHR();
 
 		m_frames.clear();
 		m_offscreenFrames.clear();
@@ -242,21 +242,21 @@ namespace vzt
 			offscreenAttachments.emplace_back(&m_device, swapChainSize, depthFormat,
 			                                  vzt::ImageUsage::DepthStencilAttachment);
 
-			offscreenAttachments[0].SetFinalLayout(vzt::ImageLayout::ShaderReadOnlyOptimal);
-			offscreenAttachments[1].SetFinalLayout(vzt::ImageLayout::ShaderReadOnlyOptimal);
-			offscreenAttachments[2].SetFinalLayout(vzt::ImageLayout::ShaderReadOnlyOptimal);
-			offscreenAttachments[3].SetFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
+			offscreenAttachments[0].setFinalLayout(vzt::ImageLayout::ShaderReadOnlyOptimal);
+			offscreenAttachments[1].setFinalLayout(vzt::ImageLayout::ShaderReadOnlyOptimal);
+			offscreenAttachments[2].setFinalLayout(vzt::ImageLayout::ShaderReadOnlyOptimal);
+			offscreenAttachments[3].setFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
 
-			offscreenAttachmentsTexture.emplace_back(offscreenAttachments[0].AsTexture());
-			offscreenAttachmentsTexture.emplace_back(offscreenAttachments[1].AsTexture());
-			offscreenAttachmentsTexture.emplace_back(offscreenAttachments[2].AsTexture());
+			offscreenAttachmentsTexture.emplace_back(offscreenAttachments[0].asTexture());
+			offscreenAttachmentsTexture.emplace_back(offscreenAttachments[1].asTexture());
+			offscreenAttachmentsTexture.emplace_back(offscreenAttachments[2].asTexture());
 
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
 			texturesDescriptors[0] = offscreenAttachmentsTexture[0];
 			texturesDescriptors[1] = offscreenAttachmentsTexture[1];
 			texturesDescriptors[2] = offscreenAttachmentsTexture[2];
 
-			m_fsDescriptorPool.Update(i, texturesDescriptors);
+			m_fsDescriptorPool.update(i, texturesDescriptors);
 
 			std::vector<VkSubpassDependency> dependencies = {
 			    {VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
@@ -277,8 +277,8 @@ namespace vzt
 			screenAttachments.emplace_back(&m_device, swapChainSize, depthFormat,
 			                               vzt::ImageUsage::DepthStencilAttachment);
 
-			screenAttachments[0].SetFinalLayout(vzt::ImageLayout::PresentSrcKHR);
-			screenAttachments[1].SetFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
+			screenAttachments[0].setFinalLayout(vzt::ImageLayout::PresentSrcKHR);
+			screenAttachments[1].setFinalLayout(vzt::ImageLayout::DepthStencilAttachmentOptimal);
 
 			dependencies = {{VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 			                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_MEMORY_READ_BIT,
@@ -288,7 +288,7 @@ namespace vzt
 			m_frames.emplace_back(&m_device, 1, std::move(dependencies), std::move(screenAttachments), swapChainSize);
 		}
 
-		m_meshView->Configure({m_offscreenFrames[0].RenderPass(), swapChainImageFormat, swapChainSize});
-		m_compositionPipeline->Configure({m_frames[0].RenderPass(), swapChainImageFormat, swapChainSize});
+		m_meshView->configure({m_offscreenFrames[0].getRenderPass(), swapChainImageFormat, swapChainSize});
+		m_compositionPipeline->configure({m_frames[0].getRenderPass(), swapChainImageFormat, swapChainSize});
 	}
 } // namespace vzt

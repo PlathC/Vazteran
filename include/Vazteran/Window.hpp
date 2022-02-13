@@ -18,7 +18,7 @@ namespace vzt
 	{
 	  public:
 		SurfaceHandler(vzt::Instance* instance, VkSurfaceKHR surface);
-		VkSurfaceKHR VkHandle() const { return m_surface; }
+		VkSurfaceKHR vkHandle() const { return m_surface; }
 		~SurfaceHandler();
 
 	  private:
@@ -39,21 +39,24 @@ namespace vzt
 		Window(std::string_view name, uint32_t width, uint32_t height, OnFrameBufferChangedCallback callback);
 		~Window();
 
-		void OnFramebufferSizeChanged() const;
-		void OnKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers);
-		void OnMousePosChanged(const vzt::Dvec2 pos);
-		void OnMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers);
+		void onFramebufferSizeChanged() const;
+		void onKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers);
+		void onMousePosChanged(const vzt::Dvec2 pos);
+		void onMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers);
 
-		void SetOnKeyActionCallback(OnKeyActionCallback callback);
-		void SetOnMousePosChangedCallback(OnMousePosChangedCallback callback);
-		void SetOnMouseButtonCallback(OnMouseButtonCallback callback);
+		void setOnKeyActionCallback(OnKeyActionCallback callback);
+		void setOnMousePosChangedCallback(OnMousePosChangedCallback callback);
+		void setOnMouseButtonCallback(OnMouseButtonCallback callback);
 
-		vzt::Size2D<uint32_t>    FrameBufferSize() const;
-		GLFWwindow*              Handle() const { return m_window.get(); }
-		bool                     Update();
-		bool                     ShouldClose() const { return glfwWindowShouldClose(m_window.get()); }
-		VkSurfaceKHR             Surface(vzt::Instance* instance);
-		std::vector<const char*> VkExtensions() const;
+		GLFWwindow* windowHandle() const { return m_window.get(); }
+
+		vzt::Size2D<uint32_t> getFrameBufferSize() const;
+		VkSurfaceKHR          getSurface(vzt::Instance* instance);
+
+		bool update();
+		bool shouldClose() const { return glfwWindowShouldClose(m_window.get()); }
+
+		std::vector<const char*> vkExtensions() const;
 
 	  private:
 		std::unique_ptr<SurfaceHandler> m_surface = nullptr;

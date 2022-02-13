@@ -2,12 +2,12 @@
 
 namespace vzt
 {
-	AABB::AABB(const std::vector<vzt::Vec3> &vertices)
+	AABB::AABB(const std::vector<vzt::Vec3>& vertices)
 	{
 		assert(!vertices.empty() && "Vertices array should not be empty");
 
 		m_minimum = m_maximum = vertices[0];
-		for (const auto &vertex : vertices)
+		for (const auto& vertex : vertices)
 		{
 			if (vertex.x < m_minimum.x)
 			{
@@ -55,13 +55,13 @@ namespace vzt
 		};
 	}
 
-	AABB::AABB(const std::vector<vzt::AABB> &aabbs)
+	AABB::AABB(const std::vector<vzt::AABB>& aabbs)
 	{
 		assert(!aabbs.empty() && "Vertices array should not be empty");
 
 		m_minimum = aabbs[0].m_minimum;
 		m_maximum = aabbs[0].m_maximum;
-		for (const auto &aabb : aabbs)
+		for (const auto& aabb : aabbs)
 		{
 			m_minimum.x = std::min(aabb.m_minimum.x, m_minimum.x);
 			m_minimum.y = std::min(aabb.m_minimum.y, m_minimum.y);
@@ -87,7 +87,7 @@ namespace vzt
 		};
 	}
 
-	void AABB::Extend(const AABB &other)
+	void AABB::extend(const AABB& other)
 	{
 		m_minimum.x = std::min(other.m_minimum.x, m_minimum.x);
 		m_minimum.y = std::min(other.m_minimum.y, m_minimum.y);
@@ -112,10 +112,10 @@ namespace vzt
 		};
 	}
 
-	void AABB::Refresh()
+	void AABB::refresh()
 	{
 		m_minimum = m_maximum = m_vertices[0];
-		for (const auto &vertex : m_vertices)
+		for (const auto& vertex : m_vertices)
 		{
 			if (vertex.x < m_minimum.x)
 			{

@@ -13,13 +13,13 @@ namespace vzt
 	    VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 	    VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME};
 
-	VkPhysicalDevice PhysicalDevice::FindBestDevice(vzt::Instance* instance, VkSurfaceKHR surface,
+	VkPhysicalDevice PhysicalDevice::findBestDevice(vzt::Instance* instance, VkSurfaceKHR surface,
 	                                                const std::vector<const char*>& deviceExtensions)
 	{
-		std::vector<VkPhysicalDevice> physicalDevices = instance->EnumeratePhysicalDevice();
+		std::vector<VkPhysicalDevice> physicalDevices = instance->enumeratePhysicalDevice();
 		for (const auto& device : physicalDevices)
 		{
-			if (IsDeviceSuitable(device, surface, deviceExtensions))
+			if (isDeviceSuitable(device, surface, deviceExtensions))
 			{
 				return device;
 			}
@@ -29,7 +29,7 @@ namespace vzt
 
 	PhysicalDevice::PhysicalDevice(vzt::Instance* instance, VkSurfaceKHR surface,
 	                               const std::vector<const char*>& deviceExtensions)
-	    : m_vkHandle(FindBestDevice(instance, surface, deviceExtensions)), m_extensions(deviceExtensions)
+	    : m_vkHandle(findBestDevice(instance, surface, deviceExtensions)), m_extensions(deviceExtensions)
 	{
 		if (m_vkHandle == VK_NULL_HANDLE)
 		{
@@ -37,29 +37,29 @@ namespace vzt
 		}
 	}
 
-	SwapChainSupportDetails PhysicalDevice::QuerySwapChainSupport(VkSurfaceKHR surface) const
+	SwapChainSupportDetails PhysicalDevice::querySwapChainSupport(VkSurfaceKHR surface) const
 	{
-		return vzt::QuerySwapChainSupport(m_vkHandle, surface);
+		return vzt::querySwapChainSupport(m_vkHandle, surface);
 	}
 
-	QueueFamilyIndices PhysicalDevice::FindQueueFamilies(VkSurfaceKHR surface) const
+	QueueFamilyIndices PhysicalDevice::findQueueFamilies(VkSurfaceKHR surface) const
 	{
-		return vzt::FindQueueFamilies(m_vkHandle, surface);
+		return vzt::findQueueFamilies(m_vkHandle, surface);
 	}
 
-	vzt::Format PhysicalDevice::FindDepthFormat()
+	vzt::Format PhysicalDevice::findDepthFormat()
 	{
-		return FindSupportedFormat({vzt::Format::D32SFloat, vzt::Format::D32SFloatS8UInt, vzt::Format::D24UNormS8UInt},
+		return findSupportedFormat({vzt::Format::D32SFloat, vzt::Format::D32SFloatS8UInt, vzt::Format::D24UNormS8UInt},
 		                           VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	}
 
-	vzt::Format PhysicalDevice::FindSupportedFormat(const std::vector<vzt::Format>& candidates, VkImageTiling tiling,
+	vzt::Format PhysicalDevice::findSupportedFormat(const std::vector<vzt::Format>& candidates, VkImageTiling tiling,
 	                                                VkFormatFeatureFlags features)
 	{
 		for (vzt::Format format : candidates)
 		{
 			VkFormatProperties props;
-			vkGetPhysicalDeviceFormatProperties(m_vkHandle, static_cast<VkFormat>(vzt::ToUnderlying(format)), &props);
+			vkGetPhysicalDeviceFormatProperties(m_vkHandle, static_cast<VkFormat>(vzt::toUnderlying(format)), &props);
 
 			if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
 			{
@@ -74,30 +74,30 @@ namespace vzt
 		throw std::runtime_error("Failed to find supported format!");
 	}
 
-	VkSampleCountFlagBits PhysicalDevice::MaxUsableSampleCount() { return vzt::MaxUsableSampleCount(m_vkHandle); }
+	VkSampleCountFlagBits PhysicalDevice::getMaxUsableSampleCount() { return vzt::getMaxUsableSampleCount(m_vkHandle); }
 
 	PhysicalDevice::~PhysicalDevice() {}
 
-	static bool IsDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface,
+	static bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface,
 	                             const std::vector<const char*>& deviceExtensions)
 	{
-		QueueFamilyIndices indices = vzt::FindQueueFamilies(device, surface);
+		QueueFamilyIndices indices = vzt::findQueueFamilies(device, surface);
 
-		bool extensionsSupported = vzt::CheckDeviceExtensionSupport(device, deviceExtensions);
+		bool extensionsSupported = vzt::checkDeviceExtensionSupport(device, deviceExtensions);
 		bool swapChainAdequate   = false;
 		if (extensionsSupported)
 		{
-			vzt::SwapChainSupportDetails swapChainSupport = vzt::QuerySwapChainSupport(device, surface);
+			vzt::SwapChainSupportDetails swapChainSupport = vzt::querySwapChainSupport(device, surface);
 			swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
 		}
 
 		VkPhysicalDeviceFeatures supportedFeatures;
 		vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
 
-		return indices.IsComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
+		return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 	}
 
-	static vzt::SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+	static vzt::SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
 	{
 		vzt::SwapChainSupportDetails details{};
 		vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
@@ -122,7 +122,7 @@ namespace vzt
 		return details;
 	}
 
-	static QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
+	static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
 	{
 		vzt::QueueFamilyIndices indices{};
 
@@ -148,7 +148,7 @@ namespace vzt
 				indices.presentFamily = i;
 			}
 
-			if (indices.IsComplete())
+			if (indices.isComplete())
 			{
 				break;
 			}
@@ -159,7 +159,7 @@ namespace vzt
 		return indices;
 	}
 
-	static bool CheckDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions)
+	static bool checkDeviceExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& deviceExtensions)
 	{
 		uint32_t extensionCount;
 		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -177,13 +177,13 @@ namespace vzt
 		return requiredExtensions.empty();
 	}
 
-	static bool HasStencilComponent(vzt::Format format)
+	static bool hasStencilComponent(vzt::Format format)
 	{
-		return vzt::ToUnderlying(format) == VK_FORMAT_D32_SFLOAT_S8_UINT ||
-		       vzt::ToUnderlying(format) == VK_FORMAT_D24_UNORM_S8_UINT;
+		return vzt::toUnderlying(format) == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+		       vzt::toUnderlying(format) == VK_FORMAT_D24_UNORM_S8_UINT;
 	}
 
-	static VkSampleCountFlagBits MaxUsableSampleCount(VkPhysicalDevice physicalDevice)
+	static VkSampleCountFlagBits getMaxUsableSampleCount(VkPhysicalDevice physicalDevice)
 	{
 		VkPhysicalDeviceProperties physicalDeviceProperties;
 		vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
@@ -236,7 +236,7 @@ namespace vzt
 	    : m_physicalDevice(std::make_unique<vzt::PhysicalDevice>(instance, surface))
 	{
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-		m_queueFamilyIndices                   = m_physicalDevice->FindQueueFamilies(surface);
+		m_queueFamilyIndices                   = m_physicalDevice->findQueueFamilies(surface);
 		std::set<uint32_t> uniqueQueueFamilies = {m_queueFamilyIndices.graphicsFamily.value(),
 		                                          m_queueFamilyIndices.presentFamily.value()};
 
@@ -261,11 +261,11 @@ namespace vzt
 
 		createInfo.pEnabledFeatures = &m_deviceFeatures;
 
-		auto deviceExtensions              = m_physicalDevice->Extensions();
+		auto deviceExtensions              = m_physicalDevice->getExtensions();
 		createInfo.enabledExtensionCount   = static_cast<uint32_t>(deviceExtensions.size());
 		createInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
-		auto validationLayers = instance->ValidationLayers();
+		auto validationLayers = instance->getValidationLayers();
 		if (Instance::EnableValidationLayers)
 		{
 			createInfo.enabledLayerCount   = static_cast<uint32_t>(validationLayers.size());
@@ -276,7 +276,7 @@ namespace vzt
 			createInfo.enabledLayerCount = 0;
 		}
 
-		if (vkCreateDevice(m_physicalDevice->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateDevice(m_physicalDevice->vkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create logical device!");
 		}
@@ -287,9 +287,9 @@ namespace vzt
 		VmaAllocatorCreateInfo allocatorInfo = {};
 		allocatorInfo                        = {};
 
-		allocatorInfo.physicalDevice   = m_physicalDevice->VkHandle();
+		allocatorInfo.physicalDevice   = m_physicalDevice->vkHandle();
 		allocatorInfo.device           = m_vkHandle;
-		allocatorInfo.instance         = instance->VkHandle();
+		allocatorInfo.instance         = instance->vkHandle();
 		allocatorInfo.vulkanApiVersion = GetVulkanApiVersion();
 		allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 		allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
@@ -339,7 +339,7 @@ namespace vzt
 		}
 	}
 
-	VkBuffer Device::CreateBuffer(VmaAllocation& bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
+	VkBuffer Device::createBuffer(VmaAllocation& bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
 	                              VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags)
 	{
 		VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -361,7 +361,7 @@ namespace vzt
 		return buffer;
 	}
 
-	VkImage Device::CreateImage(VmaAllocation& allocation, uint32_t width, uint32_t height, vzt::Format format,
+	VkImage Device::createImage(VmaAllocation& allocation, uint32_t width, uint32_t height, vzt::Format format,
 	                            VkSampleCountFlagBits numSamples, VkImageTiling tiling, vzt::ImageUsage usage)
 	{
 		VkImageCreateInfo imageInfo{};
@@ -372,7 +372,7 @@ namespace vzt
 		imageInfo.extent.depth  = 1;
 		imageInfo.mipLevels     = 1;
 		imageInfo.arrayLayers   = 1;
-		imageInfo.format        = static_cast<VkFormat>(vzt::ToUnderlying(format));
+		imageInfo.format        = static_cast<VkFormat>(vzt::toUnderlying(format));
 		imageInfo.tiling        = tiling;
 		imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		imageInfo.usage         = static_cast<VkImageUsageFlags>(usage | vzt::ImageUsage::Sampled);
@@ -391,13 +391,13 @@ namespace vzt
 		return image;
 	}
 
-	VkImageView Device::CreateImageView(VkImage image, vzt::Format format, vzt::ImageAspect aspectFlags)
+	VkImageView Device::createImageView(VkImage image, vzt::Format format, vzt::ImageAspect aspectFlags)
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		viewInfo.image                           = image;
 		viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-		viewInfo.format                          = static_cast<VkFormat>(vzt::ToUnderlying(format));
+		viewInfo.format                          = static_cast<VkFormat>(vzt::toUnderlying(format));
 		viewInfo.subresourceRange.aspectMask     = static_cast<VkImageAspectFlags>(aspectFlags);
 		viewInfo.subresourceRange.baseMipLevel   = 0;
 		viewInfo.subresourceRange.levelCount     = 1;
@@ -413,18 +413,18 @@ namespace vzt
 		return imageView;
 	}
 
-	void Device::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	void Device::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 	{
-		SingleTimeCommand([&srcBuffer, &dstBuffer, &size](VkCommandBuffer commandBuffer) {
+		singleTimeCommand([&srcBuffer, &dstBuffer, &size](VkCommandBuffer commandBuffer) {
 			VkBufferCopy copyRegion{};
 			copyRegion.size = size;
 			vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 		});
 	}
 
-	void Device::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height)
+	void Device::copyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height)
 	{
-		SingleTimeCommand([&srcBuffer, &dstImage, width, height](VkCommandBuffer commandBuffer) {
+		singleTimeCommand([&srcBuffer, &dstImage, width, height](VkCommandBuffer commandBuffer) {
 			VkBufferImageCopy region{};
 			region.bufferOffset      = 0;
 			region.bufferRowLength   = 0;
@@ -443,10 +443,10 @@ namespace vzt
 		});
 	}
 
-	void Device::TransitionImageLayout(VkImage image, vzt::ImageLayout oldLayout, vzt::ImageLayout newLayout,
+	void Device::transitionImageLayout(VkImage image, vzt::ImageLayout oldLayout, vzt::ImageLayout newLayout,
 	                                   vzt::ImageAspect aspectFlags)
 	{
-		SingleTimeCommand([&](VkCommandBuffer commandBuffer) {
+		singleTimeCommand([&](VkCommandBuffer commandBuffer) {
 			VkImageMemoryBarrier barrier{};
 			barrier.sType               = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			barrier.oldLayout           = static_cast<VkImageLayout>(oldLayout);
@@ -500,7 +500,7 @@ namespace vzt
 		});
 	}
 
-	void Device::SingleTimeCommand(const vzt::Device::SingleTimeCommandFunction& singleTimeCommandFunction)
+	void Device::singleTimeCommand(const vzt::Device::SingleTimeCommandFunction& singleTimeCommandFunction)
 	{
 		VkCommandPool transferCommandPool;
 
@@ -542,10 +542,10 @@ namespace vzt
 		vkDestroyCommandPool(m_vkHandle, transferCommandPool, nullptr);
 	}
 
-	uint64_t Device::MinUniformOffsetAligment() const
+	uint64_t Device::getMinUniformOffsetAlignment() const
 	{
 		VkPhysicalDeviceProperties properties;
-		vkGetPhysicalDeviceProperties(m_physicalDevice->VkHandle(), &properties);
+		vkGetPhysicalDeviceProperties(m_physicalDevice->vkHandle(), &properties);
 
 		return properties.limits.minUniformBufferOffsetAlignment;
 	}

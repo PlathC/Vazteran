@@ -30,30 +30,30 @@ namespace vzt
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
 		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance                  = instance->VkHandle();
-		init_info.PhysicalDevice            = m_device->ChosenPhysicalDevice()->VkHandle();
+		init_info.Instance                  = instance->vkHandle();
+		init_info.PhysicalDevice            = m_device->getPhysicalDevice()->vkHandle();
 		init_info.Device                    = m_device->VkHandle();
 
-		QueueFamilyIndices indices = m_device->DeviceQueueFamilyIndices();
+		QueueFamilyIndices indices = m_device->getDeviceQueueFamilyIndices();
 		init_info.QueueFamily      = indices.graphicsFamily.value();
-		init_info.Queue            = m_device->GraphicsQueue();
+		init_info.Queue            = m_device->getGraphicsQueue();
 		// init_info.PipelineCache             = g_PipelineCache;
-		init_info.DescriptorPool = m_descriptorPool.VkHandle();
+		init_info.DescriptorPool = m_descriptorPool.vkHandle();
 		init_info.Subpass        = 0;
 		init_info.MinImageCount  = imageCount;
 		init_info.ImageCount     = imageCount;
 		init_info.MSAASamples    = VK_SAMPLE_COUNT_1_BIT;
 		// init_info.Allocator                 = nullptr;
 		// init_info.CheckVkResultFn           = nullptr;
-		ImGui_ImplVulkan_Init(&init_info, renderPass->VkHandle());
+		ImGui_ImplVulkan_Init(&init_info, renderPass->vkHandle());
 
-		m_device->SingleTimeCommand(
+		m_device->singleTimeCommand(
 		    [](VkCommandBuffer commandBuffer) { ImGui_ImplVulkan_CreateFontsTexture(commandBuffer); });
 
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 		ImGui_ImplVulkan_SetMinImageCount(imageCount);
 
-		m_commandPool.AllocateCommandBuffers(imageCount);
+		m_commandPool.allocateCommandBuffers(imageCount);
 	}
 
 	VkUiRenderer::~VkUiRenderer()
@@ -63,13 +63,13 @@ namespace vzt
 		ImGui::DestroyContext();
 	}
 
-	void VkUiRenderer::Record(VkCommandBuffer commandBuffer)
+	void VkUiRenderer::record(VkCommandBuffer commandBuffer)
 	{
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		m_uiManager.Draw();
+		m_uiManager.draw();
 
 		ImGui::Render();
 		ImDrawData* draw_data = ImGui::GetDrawData();

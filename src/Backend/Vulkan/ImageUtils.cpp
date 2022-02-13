@@ -12,31 +12,31 @@ namespace vzt
 	{
 		VkBuffer      stagingBuffer   = VK_NULL_HANDLE;
 		VmaAllocation stagingBufAlloc = VK_NULL_HANDLE;
-		VkDeviceSize  imageSize       = image.Width() * image.Height() * image.Channels();
+		VkDeviceSize  imageSize       = image.width() * image.height() * image.channels();
 
-		stagingBuffer = m_device->CreateBuffer(stagingBufAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		stagingBuffer = m_device->createBuffer(stagingBufAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 		                                       VMA_MEMORY_USAGE_CPU_ONLY);
 
 		void* data;
-		auto  imageData = image.Data();
-		vmaMapMemory(m_device->AllocatorHandle(), stagingBufAlloc, &data);
+		auto  imageData = image.data();
+		vmaMapMemory(m_device->getAllocatorHandle(), stagingBufAlloc, &data);
 		memcpy(data, imageData.data(), static_cast<size_t>(imageSize));
-		vmaUnmapMemory(m_device->AllocatorHandle(), stagingBufAlloc);
+		vmaUnmapMemory(m_device->getAllocatorHandle(), stagingBufAlloc);
 		m_vkImage =
-		    m_device->CreateImage(m_allocation, image.Width(), image.Height(), format, VK_SAMPLE_COUNT_1_BIT,
+		    m_device->createImage(m_allocation, image.width(), image.height(), format, VK_SAMPLE_COUNT_1_BIT,
 		                          VK_IMAGE_TILING_OPTIMAL, vzt::ImageUsage::TransferDst | vzt::ImageUsage::Sampled);
 
-		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::Undefined, vzt::ImageLayout::TransferDstOptimal,
+		m_device->transitionImageLayout(m_vkImage, vzt::ImageLayout::Undefined, vzt::ImageLayout::TransferDstOptimal,
 		                                vzt::ImageAspect::Color);
 
-		m_device->CopyBufferToImage(stagingBuffer, m_vkImage, image.Width(), image.Height());
+		m_device->copyBufferToImage(stagingBuffer, m_vkImage, image.width(), image.height());
 
-		m_device->TransitionImageLayout(m_vkImage, vzt::ImageLayout::TransferDstOptimal, layout,
+		m_device->transitionImageLayout(m_vkImage, vzt::ImageLayout::TransferDstOptimal, layout,
 		                                vzt::ImageAspect::Color);
 
-		vmaDestroyBuffer(m_device->AllocatorHandle(), stagingBuffer, stagingBufAlloc);
+		vmaDestroyBuffer(m_device->getAllocatorHandle(), stagingBuffer, stagingBufAlloc);
 
-		m_vkHandle = m_device->CreateImageView(m_vkImage, format, vzt::ImageAspect::Color);
+		m_vkHandle = m_device->createImageView(m_vkImage, format, vzt::ImageAspect::Color);
 	}
 
 	ImageView::ImageView(Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
@@ -44,16 +44,16 @@ namespace vzt
 	    : m_device(device), m_format(format), m_layout(layout)
 	{
 
-		m_vkImage = m_device->CreateImage(m_allocation, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
+		m_vkImage = m_device->createImage(m_allocation, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
 		                                  VK_IMAGE_TILING_OPTIMAL, usage);
 
-		m_vkHandle = m_device->CreateImageView(m_vkImage, format, aspectFlags);
+		m_vkHandle = m_device->createImageView(m_vkImage, format, aspectFlags);
 	}
 
 	ImageView::ImageView(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
 	    : m_device(device), m_format(format)
 	{
-		m_vkHandle = m_device->CreateImageView(image, format, aspect);
+		m_vkHandle = m_device->createImageView(image, format, aspect);
 	}
 
 	ImageView::ImageView(ImageView&& original) noexcept : m_device(original.m_device)
@@ -83,7 +83,7 @@ namespace vzt
 
 		if (m_vkImage != VK_NULL_HANDLE)
 		{
-			vmaDestroyImage(m_device->AllocatorHandle(), m_vkImage, m_allocation);
+			vmaDestroyImage(m_device->getAllocatorHandle(), m_vkImage, m_allocation);
 			m_vkImage = VK_NULL_HANDLE;
 		}
 	}
@@ -91,7 +91,7 @@ namespace vzt
 	Sampler::Sampler(const vzt::Device* device, const SamplerSettings& samplerSettings) : m_device(device)
 	{
 		VkPhysicalDeviceProperties properties{};
-		vkGetPhysicalDeviceProperties(m_device->ChosenPhysicalDevice()->VkHandle(), &properties);
+		vkGetPhysicalDeviceProperties(m_device->getPhysicalDevice()->vkHandle(), &properties);
 
 		VkSamplerCreateInfo samplerInfo{};
 		samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

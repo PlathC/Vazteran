@@ -52,9 +52,9 @@ namespace vzt
 
 		~DescriptorLayout();
 
-		void AddBinding(const vzt::ShaderStage bindingStage, const uint32_t binding, const vzt::DescriptorType type);
+		void addBinding(const vzt::ShaderStage bindingStage, const uint32_t binding, const vzt::DescriptorType type);
 
-		const VkDescriptorSetLayout& VkHandle() const;
+		const VkDescriptorSetLayout& vkHandle() const;
 
 	  private:
 		const vzt::Device*            m_device = nullptr;
@@ -79,23 +79,23 @@ namespace vzt
 
 		~DescriptorPool();
 
-		void Allocate(uint32_t count, const vzt::DescriptorLayout& layout);
-		void Bind(uint32_t i, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+		void allocate(uint32_t count, const vzt::DescriptorLayout& layout);
+		void bind(uint32_t i, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
 		          VkPipelineLayout pipelineLayout) const;
 
-		void Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
+		void update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
 		            const IndexedUniform<vzt::Texture*>& imageDescriptors);
-		void Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
-		void Update(const std::size_t i, const IndexedUniform<vzt::Texture*>& imageDescriptors);
+		void update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
+		void update(const std::size_t i, const IndexedUniform<vzt::Texture*>& imageDescriptors);
 
-		void UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
+		void updateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
 		               const IndexedUniform<vzt::Texture*>&         imageDescriptors);
-		void UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
-		void UpdateAll(const IndexedUniform<vzt::Texture*>& imageDescriptors);
+		void updateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
+		void updateAll(const IndexedUniform<vzt::Texture*>& imageDescriptors);
 
-		uint32_t         Remaining() const { return static_cast<uint32_t>(m_maxSetNb - m_descriptors.size()); }
-		uint32_t         MaxSetNb() const { return m_maxSetNb; }
-		VkDescriptorPool VkHandle() const { return m_vkHandle; }
+		uint32_t         getRemaining() const { return static_cast<uint32_t>(m_maxSetNb - m_descriptors.size()); }
+		uint32_t         getMaxSetNb() const { return m_maxSetNb; }
+		VkDescriptorPool vkHandle() const { return m_vkHandle; }
 
 	  private:
 		const vzt::Device*           m_device   = nullptr;

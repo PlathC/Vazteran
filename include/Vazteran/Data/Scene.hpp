@@ -31,15 +31,15 @@ namespace vzt
 		Scene(Scene&&) = default;
 		Scene& operator=(Scene&&) = default;
 
-		std::vector<vzt::Model*>           CModels() const;
-		std::optional<vzt::ui::UiManager>& SceneUi() { return m_uiManager; }
-		std::optional<vzt::ui::UiManager>  CSceneUi() const { return m_uiManager; }
-		vzt::Camera&                       SceneCamera() { return m_camera; };
-		vzt::Camera                        CSceneCamera() const { return m_camera; };
+		std::vector<vzt::Model*>           cModels() const;
+		std::optional<vzt::ui::UiManager>& sceneUi() { return m_uiManager; }
+		std::optional<vzt::ui::UiManager>  cSceneUi() const { return m_uiManager; }
+		vzt::Camera&                       sceneCamera() { return m_camera; };
+		vzt::Camera                        cSceneCamera() const { return m_camera; };
 
-		void Update() const;
+		void update() const;
 
-		static Scene Default(DefaultScene defaultScene);
+		static Scene default(DefaultScene defaultScene);
 
 	  private:
 		vzt::Camera                              m_camera;

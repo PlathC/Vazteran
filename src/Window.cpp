@@ -13,7 +13,7 @@ namespace vzt
 	{
 	}
 
-	SurfaceHandler::~SurfaceHandler() { vkDestroySurfaceKHR(m_instance->VkHandle(), m_surface, nullptr); }
+	SurfaceHandler::~SurfaceHandler() { vkDestroySurfaceKHR(m_instance->vkHandle(), m_surface, nullptr); }
 
 	Window::Window(std::string_view name, const uint32_t width, const uint32_t height,
 	               vzt::OnFrameBufferChangedCallback onFrameBufferChangedCallback)
@@ -29,32 +29,32 @@ namespace vzt
 		glfwSetWindowUserPointer(m_window.get(), this);
 		glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
 			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->OnFramebufferSizeChanged();
+			windowHandle->onFramebufferSizeChanged();
 		});
 
 		glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos) {
 			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->OnMousePosChanged(vzt::Dvec2{xPos, yPos});
+			windowHandle->onMousePosChanged(vzt::Dvec2{xPos, yPos});
 		});
 
 		glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
 			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->OnKeyAction(static_cast<vzt::KeyCode>(key), static_cast<vzt::KeyAction>(action),
+			windowHandle->onKeyAction(static_cast<vzt::KeyCode>(key), static_cast<vzt::KeyAction>(action),
 			                          static_cast<vzt::KeyModifier>(mods));
 		});
 
 		glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int key, int action, int mods) {
 			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->OnMouseButton(static_cast<vzt::MouseButton>(key), static_cast<vzt::KeyAction>(action),
+			windowHandle->onMouseButton(static_cast<vzt::MouseButton>(key), static_cast<vzt::KeyAction>(action),
 			                            static_cast<vzt::KeyModifier>(mods));
 		});
 	}
 
 	Window::~Window() = default;
 
-	void Window::OnFramebufferSizeChanged() const { m_onFrameBufferChangedCallback(); }
+	void Window::onFramebufferSizeChanged() const { m_onFrameBufferChangedCallback(); }
 
-	void Window::OnKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers)
+	void Window::onKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers)
 	{
 		if (m_onKeyActionCallback)
 		{
@@ -62,7 +62,7 @@ namespace vzt
 		}
 	}
 
-	void Window::OnMousePosChanged(const vzt::Dvec2 pos)
+	void Window::onMousePosChanged(const vzt::Dvec2 pos)
 	{
 		static bool firstChange = true;
 		if (firstChange)
@@ -79,7 +79,7 @@ namespace vzt
 		m_lastMousePos = pos;
 	}
 
-	void Window::OnMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers)
+	void Window::onMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers)
 	{
 		if (m_onMouseButtonCallback)
 		{
@@ -87,16 +87,16 @@ namespace vzt
 		}
 	}
 
-	void Window::SetOnKeyActionCallback(OnKeyActionCallback callback) { m_onKeyActionCallback = callback; }
+	void Window::setOnKeyActionCallback(OnKeyActionCallback callback) { m_onKeyActionCallback = callback; }
 
-	void Window::SetOnMousePosChangedCallback(OnMousePosChangedCallback callback)
+	void Window::setOnMousePosChangedCallback(OnMousePosChangedCallback callback)
 	{
 		m_onMousePosChangedCallback = callback;
 	}
 
-	void Window::SetOnMouseButtonCallback(OnMouseButtonCallback callback) { m_onMouseButtonCallback = callback; }
+	void Window::setOnMouseButtonCallback(OnMouseButtonCallback callback) { m_onMouseButtonCallback = callback; }
 
-	vzt::Size2D<uint32_t> Window::FrameBufferSize() const
+	vzt::Size2D<uint32_t> Window::getFrameBufferSize() const
 	{
 		int frameBufferWidth = 0, frameBufferHeight = 0;
 		glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
@@ -108,29 +108,29 @@ namespace vzt
 		return {static_cast<uint32_t>(frameBufferWidth), static_cast<uint32_t>(frameBufferHeight)};
 	}
 
-	VkSurfaceKHR Window::Surface(vzt::Instance* instance)
+	VkSurfaceKHR Window::getSurface(vzt::Instance* instance)
 	{
 		if (!m_surface)
 		{
 			VkSurfaceKHR surface;
-			if (glfwCreateWindowSurface(instance->VkHandle(), m_window.get(), nullptr, &surface) != VK_SUCCESS)
+			if (glfwCreateWindowSurface(instance->vkHandle(), m_window.get(), nullptr, &surface) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to create window surface!");
 			}
 			m_surface = std::make_unique<SurfaceHandler>(instance, surface);
 		}
 
-		return m_surface->VkHandle();
+		return m_surface->vkHandle();
 	}
 
-	bool Window::Update()
+	bool Window::update()
 	{
 		glfwPollEvents();
 
-		return ShouldClose();
+		return shouldClose();
 	}
 
-	std::vector<const char*> Window::VkExtensions() const
+	std::vector<const char*> Window::vkExtensions() const
 	{
 		uint32_t     glfwExtensionCount = 0;
 		const char** glfwExtensions;

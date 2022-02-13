@@ -20,7 +20,7 @@ namespace vzt
 	  public:
 		explicit Application(std::string_view name, vzt::Scene scene);
 
-		void Run();
+		void run();
 
 		~Application();
 

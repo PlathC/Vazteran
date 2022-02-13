@@ -42,13 +42,13 @@ namespace vzt
 		return *this;
 	}
 
-	void DescriptorLayout::AddBinding(const vzt::ShaderStage bindingStage, const uint32_t binding,
+	void DescriptorLayout::addBinding(const vzt::ShaderStage bindingStage, const uint32_t binding,
 	                                  const vzt::DescriptorType type)
 	{
 		m_bindings.emplace_back(Binding{binding, bindingStage, type});
 	}
 
-	const VkDescriptorSetLayout& DescriptorLayout::VkHandle() const
+	const VkDescriptorSetLayout& DescriptorLayout::vkHandle() const
 	{
 		if (m_handle == VK_NULL_HANDLE)
 		{
@@ -97,7 +97,7 @@ namespace vzt
 		for (const auto& descriptorType : descriptorTypes)
 		{
 			sizes.emplace_back(
-			    VkDescriptorPoolSize{static_cast<VkDescriptorType>(vzt::ToUnderlying(descriptorType)), maxSetNb});
+			    VkDescriptorPoolSize{static_cast<VkDescriptorType>(vzt::toUnderlying(descriptorType)), maxSetNb});
 		}
 
 		VkDescriptorPoolCreateInfo pool_info = {};
@@ -130,9 +130,9 @@ namespace vzt
 		return *this;
 	}
 
-	void DescriptorPool::Allocate(uint32_t count, const vzt::DescriptorLayout& layout)
+	void DescriptorPool::allocate(uint32_t count, const vzt::DescriptorLayout& layout)
 	{
-		const auto layouts = std::vector<VkDescriptorSetLayout>(count, layout.VkHandle());
+		const auto layouts = std::vector<VkDescriptorSetLayout>(count, layout.vkHandle());
 
 		VkDescriptorSetAllocateInfo descriptorSetAllocInfo{};
 		descriptorSetAllocInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -150,38 +150,38 @@ namespace vzt
 		m_descriptors.insert(m_descriptors.end(), descriptorSets.begin(), descriptorSets.end());
 	}
 
-	void DescriptorPool::Bind(uint32_t i, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
+	void DescriptorPool::bind(uint32_t i, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
 	                          VkPipelineLayout pipelineLayout) const
 	{
 		vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, pipelineLayout, 0, 1, &m_descriptors[i], 0, nullptr);
 	}
 
-	void DescriptorPool::UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
+	void DescriptorPool::updateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
 	                               const IndexedUniform<vzt::Texture*>&         textureHandlers)
 	{
 		for (std::size_t i = 0; i < m_descriptors.size(); i++)
 		{
-			Update(i, bufferDescriptors, textureHandlers);
+			update(i, bufferDescriptors, textureHandlers);
 		}
 	}
 
-	void DescriptorPool::UpdateAll(const IndexedUniform<vzt::Texture*>& imageDescriptors)
+	void DescriptorPool::updateAll(const IndexedUniform<vzt::Texture*>& imageDescriptors)
 	{
 		for (std::size_t i = 0; i < m_descriptors.size(); i++)
 		{
-			Update(i, imageDescriptors);
+			update(i, imageDescriptors);
 		}
 	}
 
-	void DescriptorPool::UpdateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors)
+	void DescriptorPool::updateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors)
 	{
 		for (std::size_t i = 0; i < m_descriptors.size(); i++)
 		{
-			Update(i, bufferDescriptors);
+			update(i, bufferDescriptors);
 		}
 	}
 
-	void DescriptorPool::Update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
+	void DescriptorPool::update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
 	                            const IndexedUniform<vzt::Texture*>& imageDescriptors)
 	{
 		assert(i < m_descriptors.size() && "i must be less than Size()");
@@ -192,7 +192,7 @@ namespace vzt
 		std::size_t bufferIdx = 0;
 		for (const auto& bufferDescriptor : bufferDescriptors)
 		{
-			descriptorBufferInfo[bufferIdx].buffer = bufferDescriptor.second.buffer->VkHandle();
+			descriptorBufferInfo[bufferIdx].buffer = bufferDescriptor.second.buffer->vkHandle();
 			descriptorBufferInfo[bufferIdx].offset = bufferDescriptor.second.offset;
 			descriptorBufferInfo[bufferIdx].range  = bufferDescriptor.second.range;
 
@@ -213,8 +213,8 @@ namespace vzt
 		for (const auto& imageDescriptor : imageDescriptors)
 		{
 			descriptorImageInfo[bufferIdx].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second->View()->VkHandle();
-			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second->Sampler()->VkHandle();
+			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second->getView()->vkHandle();
+			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second->getSampler()->vkHandle();
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -232,7 +232,7 @@ namespace vzt
 		                       descriptorWrites.data(), 0, nullptr);
 	}
 
-	void DescriptorPool::Update(std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors)
+	void DescriptorPool::update(std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors)
 	{
 		assert(i < m_descriptors.size() && "i must be less than Size()");
 
@@ -241,7 +241,7 @@ namespace vzt
 		std::size_t bufferIdx            = 0;
 		for (const auto& bufferDescriptor : bufferDescriptors)
 		{
-			descriptorBufferInfo[bufferIdx].buffer = bufferDescriptor.second.buffer->VkHandle();
+			descriptorBufferInfo[bufferIdx].buffer = bufferDescriptor.second.buffer->vkHandle();
 			descriptorBufferInfo[bufferIdx].offset = bufferDescriptor.second.offset;
 			descriptorBufferInfo[bufferIdx].range  = bufferDescriptor.second.range;
 
@@ -261,7 +261,7 @@ namespace vzt
 		                       descriptorWrites.data(), 0, nullptr);
 	}
 
-	void DescriptorPool::Update(const std::size_t i, const IndexedUniform<vzt::Texture*>& imageDescriptors)
+	void DescriptorPool::update(const std::size_t i, const IndexedUniform<vzt::Texture*>& imageDescriptors)
 	{
 		assert(i < m_descriptors.size() && "i must be less than Size()");
 
@@ -271,8 +271,8 @@ namespace vzt
 		for (const auto& imageDescriptor : imageDescriptors)
 		{
 			descriptorImageInfo[bufferIdx].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second->View()->VkHandle();
-			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second->Sampler()->VkHandle();
+			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second->getView()->vkHandle();
+			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second->getSampler()->vkHandle();
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

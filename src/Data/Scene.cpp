@@ -13,7 +13,7 @@ namespace vzt
 
 	Scene ::~Scene() = default;
 
-	std::vector<vzt::Model*> Scene::CModels() const
+	std::vector<vzt::Model*> Scene::cModels() const
 	{
 		auto result = std::vector<vzt::Model*>();
 		result.reserve(m_models.size());
@@ -24,15 +24,15 @@ namespace vzt
 		return result;
 	}
 
-	void Scene::Update() const
+	void Scene::update() const
 	{
 		for (const auto& model : m_models)
 		{
-			model->Update();
+			model->update();
 		}
 	}
 
-	Scene Scene::Default(Scene::DefaultScene defaultScene)
+	Scene Scene::default(Scene::DefaultScene defaultScene)
 	{
 		switch (defaultScene)
 		{
@@ -43,7 +43,7 @@ namespace vzt
 			models.reserve(ModelNb);
 
 			models.emplace_back(std::make_unique<vzt::Model>("./samples/TheCrounchingBoy/TheCrounchingBoy.obj"));
-			vzt::AABB fullBoundingBox = models[0]->BoundingBox();
+			vzt::AABB fullBoundingBox = models[0]->boundingBox();
 
 			vzt::ModelUpdateCallback modelUpdate = [](Model* model) {
 				static auto startTime = std::chrono::high_resolution_clock::now();
@@ -51,94 +51,94 @@ namespace vzt
 				auto  currentTime = std::chrono::high_resolution_clock::now();
 				float deltaTime =
 				    std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-				model->Rotation() = deltaTime * glm::radians(45.f) * glm::vec3(0.0f, 0.0f, 1.0f);
+				model->rotation() = deltaTime * glm::radians(45.f) * glm::vec3(0.0f, 0.0f, 1.0f);
 
 				const float timeValue =
 				    std::chrono::duration<float, std::chrono::seconds::period>(currentTime.time_since_epoch()).count();
 			};
-			models[0]->SetUpdateCallback(modelUpdate);
+			models[0]->setUpdateCallback(modelUpdate);
 
 			for (std::size_t i = 1; i < ModelNb; i++)
 			{
 				auto moved    = std::make_unique<vzt::Model>(*models[0]);
 				auto movement = glm::sphericalRand(5.f);
 
-				moved->Position() += movement;
-				moved->Mesh().Materials()[1].color     = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.f);
-				moved->Mesh().Materials()[1].shininess = ((movement.z + 5.f) * 0.1f) * 200.f;
-				moved->SetUpdateCallback(modelUpdate);
+				moved->position() += movement;
+				moved->mesh().materials()[1].color     = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.f);
+				moved->mesh().materials()[1].shininess = ((movement.z + 5.f) * 0.1f) * 200.f;
+				moved->setUpdateCallback(modelUpdate);
 
-				fullBoundingBox.Extend(moved->BoundingBox());
+				fullBoundingBox.extend(moved->boundingBox());
 				models.emplace_back(std::move(moved));
 			}
 
 			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
-			fileMenuField.AddItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
+			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
 
 			vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
-			brdfMenuField.AddItem(
+			brdfMenuField.addItem(
 			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
-			mainMenuBar.AddMenu(fileMenuField);
-			mainMenuBar.AddMenu(brdfMenuField);
+			mainMenuBar.addMenu(fileMenuField);
+			mainMenuBar.addMenu(brdfMenuField);
 
 			vzt::ui::UiManager uiManager;
-			uiManager.SetMainMenuBar(mainMenuBar);
+			uiManager.setMainMenuBar(mainMenuBar);
 
 			auto crounchingBoysScene      = Scene(std::move(models), Camera(fullBoundingBox));
-			crounchingBoysScene.SceneUi() = std::move(uiManager);
+			crounchingBoysScene.sceneUi() = std::move(uiManager);
 
 			return std::move(crounchingBoysScene);
 		}
 		case DefaultScene::VikingRoom: {
 			auto      vikingRoomModel = std::make_unique<vzt::Model>("./samples/VikingRoom/viking_room.obj");
-			vzt::AABB fullBoundingBox = vikingRoomModel->BoundingBox();
+			vzt::AABB fullBoundingBox = vikingRoomModel->boundingBox();
 
 			auto tex = vzt::Image("./samples/viking_room.png");
 
-			auto& mat   = vikingRoomModel->Mesh().Materials()[0];
+			auto& mat   = vikingRoomModel->mesh().materials()[0];
 			mat.texture = tex;
 
 			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
-			fileMenuField.AddItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
+			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
 
 			vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
-			brdfMenuField.AddItem(
+			brdfMenuField.addItem(
 			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
-			mainMenuBar.AddMenu(fileMenuField);
-			mainMenuBar.AddMenu(brdfMenuField);
+			mainMenuBar.addMenu(fileMenuField);
+			mainMenuBar.addMenu(brdfMenuField);
 
 			vzt::ui::UiManager uiManager;
-			uiManager.SetMainMenuBar(mainMenuBar);
+			uiManager.setMainMenuBar(mainMenuBar);
 
 			std::vector<std::unique_ptr<vzt::Model>> models;
 			models.emplace_back(std::move(vikingRoomModel));
 
 			auto vikingRoomScene      = Scene(std::move(models), Camera(fullBoundingBox));
-			vikingRoomScene.SceneUi() = std::move(uiManager);
+			vikingRoomScene.sceneUi() = std::move(uiManager);
 
 			return std::move(vikingRoomScene);
 		}
 		case DefaultScene::MoriKnob: {
 			auto      moriKnobModel   = std::make_unique<vzt::Model>("./samples/MoriKnob/MoriKnob.obj");
-			vzt::AABB fullBoundingBox = moriKnobModel->BoundingBox();
+			vzt::AABB fullBoundingBox = moriKnobModel->boundingBox();
 
 			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
-			fileMenuField.AddItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
+			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
 
 			vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
-			brdfMenuField.AddItem(
+			brdfMenuField.addItem(
 			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
-			mainMenuBar.AddMenu(std::move(fileMenuField));
-			mainMenuBar.AddMenu(std::move(brdfMenuField));
+			mainMenuBar.addMenu(std::move(fileMenuField));
+			mainMenuBar.addMenu(std::move(brdfMenuField));
 
 			vzt::ui::UiManager uiManager;
-			uiManager.SetMainMenuBar(mainMenuBar);
+			uiManager.setMainMenuBar(mainMenuBar);
 
 			std::vector<std::unique_ptr<vzt::Model>> models;
 			models.emplace_back(std::move(moriKnobModel));
@@ -148,7 +148,7 @@ namespace vzt
 			camera.front    = vzt::Vec3(0.011475, -0.438221, 0.898794);
 
 			auto moriKnowScene      = Scene(std::move(models), camera);
-			moriKnowScene.SceneUi() = std::move(uiManager);
+			moriKnowScene.sceneUi() = std::move(uiManager);
 
 			return std::move(moriKnowScene);
 		}

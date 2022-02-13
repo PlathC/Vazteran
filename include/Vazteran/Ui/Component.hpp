@@ -15,12 +15,12 @@ namespace vzt
 			Component(std::string name = "");
 			virtual ~Component() = default;
 
-			bool             IsEnable() const { return m_enable; }
-			std::string_view Name() const { m_name; }
+			bool             isEnable() const { return m_enable; }
+			std::string_view name() const { return m_name; }
 
-			bool ToggleEnable();
+			bool toggleEnable();
 
-			virtual void Draw() const = 0;
+			virtual void draw() const = 0;
 
 		  protected:
 			std::string m_name;
@@ -35,7 +35,7 @@ namespace vzt
 			    std::string name = "", Action action = []() {});
 
 		  protected:
-			virtual void Execute() const { m_action(); };
+			virtual void execute() const { m_action(); };
 
 		  private:
 			Action m_action;

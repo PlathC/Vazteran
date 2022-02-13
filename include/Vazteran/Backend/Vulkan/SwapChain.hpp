@@ -37,27 +37,27 @@ namespace vzt
 		SwapChain(SwapChain&& other) noexcept = default;
 		SwapChain& operator=(SwapChain&& other) noexcept = default;
 
-		void SetFrameBufferSize(vzt::Size2D<uint32_t> newSize);
-		void SetRenderPassTemplate(const vzt::RenderPass* const renderPassTemplate);
-
-		void Recreate(VkSurfaceKHR surface);
-		bool RenderFrame(const SubmitFunction submitFunction);
-
-		std::vector<VkImage>  GetImagesKHR();
-		vzt::Size2D<uint32_t> GetFrameBufferSize() const { return m_swapChainSize; }
-		uint32_t              GetImageCount() const { return m_imageCount; }
-		vzt::Format           GetImageFormat() const { return m_swapChainImageFormat; }
-
 		~SwapChain();
 
-	  private:
-		void CreateSwapChain();
-		void CreateSynchronizationObjects();
-		void Cleanup();
+		void                 setFrameBufferSize(vzt::Size2D<uint32_t> newSize);
+		void                 setRenderPassTemplate(const vzt::RenderPass* const renderPassTemplate);
+		std::vector<VkImage> getImagesKHR();
 
-		static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkPresentModeKHR          ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-		VkExtent2D                ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		void recreate(VkSurfaceKHR surface);
+		bool render(const SubmitFunction submitFunction);
+
+		vzt::Size2D<uint32_t> frameBufferSize() const { return m_swapChainSize; }
+		uint32_t              imageCount() const { return m_imageCount; }
+		vzt::Format           imageFormat() const { return m_swapChainImageFormat; }
+
+	  private:
+		void createSwapChain();
+		void createSynchronizationObjects();
+		void cleanup();
+
+		static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		VkPresentModeKHR          chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		VkExtent2D                chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
 	  private:
 		constexpr static uint32_t MaxFramesInFlight = 2;

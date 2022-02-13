@@ -21,18 +21,18 @@ namespace vzt
 		Model(const fs::path& modelPath, vzt::ModelUpdateCallback callback = vzt::ModelUpdateCallback());
 		~Model();
 
-		vzt::AABB        BoundingBox() const;
-		vzt::Mesh&       Mesh() { return m_mesh; };
-		const vzt::Mesh& CMesh() const { return m_mesh; };
+		vzt::AABB        boundingBox() const;
+		vzt::Mesh&       mesh() { return m_mesh; };
+		const vzt::Mesh& cMesh() const { return m_mesh; };
 
-		glm::mat4  ModelMatrix() const;
-		glm::vec3& Rotation() { return m_rotation; }
-		glm::vec3  CRotation() const { return m_rotation; }
-		glm::vec3& Position() { return m_position; }
-		glm::vec3  CPosition() const { return m_position; }
+		glm::mat4  getModelMatrix() const;
+		glm::vec3& rotation() { return m_rotation; }
+		glm::vec3  cRotation() const { return m_rotation; }
+		glm::vec3& position() { return m_position; }
+		glm::vec3  cPosition() const { return m_position; }
 
-		void SetUpdateCallback(vzt::ModelUpdateCallback callback) { m_updateCallback = std::move(callback); }
-		void Update();
+		void setUpdateCallback(vzt::ModelUpdateCallback callback) { m_updateCallback = std::move(callback); }
+		void update();
 
 	  private:
 		vzt::Mesh m_mesh;

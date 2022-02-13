@@ -20,7 +20,7 @@ namespace vzt
 			    std::string name = "", vzt::ui::MenuItemAction action = []() {});
 			virtual ~MainMenuItem() = default;
 
-			virtual void Draw() const;
+			virtual void draw() const;
 		};
 
 		class MainMenuField : public vzt::ui::Component
@@ -29,9 +29,9 @@ namespace vzt
 			MainMenuField(std::string name = "");
 			virtual ~MainMenuField() = default;
 
-			virtual void Draw() const;
+			virtual void draw() const;
 
-			void AddItem(vzt::ui::MainMenuItem item);
+			void addItem(vzt::ui::MainMenuItem item);
 
 		  private:
 			std::vector<vzt::ui::MainMenuItem> m_items;
@@ -43,9 +43,9 @@ namespace vzt
 			MainMenuBar();
 			virtual ~MainMenuBar() = default;
 
-			virtual void Draw() const;
+			virtual void draw() const;
 
-			void AddMenu(vzt::ui::MainMenuField menuItem);
+			void addMenu(vzt::ui::MainMenuField menuItem);
 
 		  private:
 			std::vector<vzt::ui::MainMenuField> m_menus;

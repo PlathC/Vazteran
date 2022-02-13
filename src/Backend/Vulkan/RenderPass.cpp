@@ -20,9 +20,9 @@ namespace vzt
 		for (std::size_t i = 0; i < attachments.size(); i++)
 		{
 			const auto& attachment = attachments[i];
-			attachmentDescriptions.emplace_back(attachment->Description());
+			attachmentDescriptions.emplace_back(attachment->getDescription());
 
-			const auto attachmentLayout = attachment->Layout();
+			const auto attachmentLayout = attachment->getLayout();
 
 			VkAttachmentReference currentAttachmentRef{};
 			currentAttachmentRef.attachment = static_cast<uint32_t>(i);
@@ -88,15 +88,15 @@ namespace vzt
 		}
 	}
 
-	void RenderPass::Bind(VkCommandBuffer commandBuffer, const vzt::FrameBuffer* const frameBuffer) const
+	void RenderPass::bind(VkCommandBuffer commandBuffer, const vzt::FrameBuffer* const frameBuffer) const
 	{
 		VkRenderPassBeginInfo renderPassInfo{};
 		renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		renderPassInfo.renderPass        = m_vkHandle;
-		renderPassInfo.framebuffer       = frameBuffer->VkHandle();
+		renderPassInfo.framebuffer       = frameBuffer->vkHandle();
 		renderPassInfo.renderArea.offset = {0, 0};
 
-		const auto fbSize                = frameBuffer->Size();
+		const auto fbSize                = frameBuffer->size();
 		renderPassInfo.renderArea.extent = VkExtent2D{fbSize.width, fbSize.height};
 
 		std::vector<VkClearValue> clearValues;
@@ -113,5 +113,5 @@ namespace vzt
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	}
 
-	void RenderPass::Unbind(VkCommandBuffer commandBuffer) const { vkCmdEndRenderPass(commandBuffer); }
+	void RenderPass::unbind(VkCommandBuffer commandBuffer) const { vkCmdEndRenderPass(commandBuffer); }
 } // namespace vzt

@@ -13,12 +13,12 @@ namespace vzt
 	SwapChain::SwapChain(vzt::Device* device, VkSurfaceKHR surface, vzt::Size2D<uint32_t> swapChainSize)
 	    : m_surface(surface), m_device(device), m_swapChainSize(swapChainSize)
 	{
-		CreateSwapChain();
+		createSwapChain();
 
-		CreateSynchronizationObjects();
+		createSynchronizationObjects();
 	}
 
-	bool SwapChain::RenderFrame(const SubmitFunction submitFunction)
+	bool SwapChain::render(const SubmitFunction submitFunction)
 	{
 		vkWaitForFences(m_device->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -58,7 +58,7 @@ namespace vzt
 		presentInfo.pImageIndices   = &imageIndex;
 		presentInfo.pResults        = nullptr; // Optional
 
-		result = vkQueuePresentKHR(m_device->PresentQueue(), &presentInfo);
+		result = vkQueuePresentKHR(m_device->getPresentQueue(), &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
 		{
 			m_framebufferResized = false;
@@ -73,19 +73,19 @@ namespace vzt
 		return false;
 	}
 
-	void SwapChain::SetFrameBufferSize(vzt::Size2D<uint32_t> newSize)
+	void SwapChain::setFrameBufferSize(vzt::Size2D<uint32_t> newSize)
 	{
 		m_swapChainSize      = std::move(newSize);
 		m_framebufferResized = true;
 	};
 
-	void SwapChain::Recreate(VkSurfaceKHR surface)
+	void SwapChain::recreate(VkSurfaceKHR surface)
 	{
-		Cleanup();
+		cleanup();
 
 		m_surface = surface;
 
-		CreateSwapChain();
+		createSwapChain();
 	}
 
 	SwapChain::~SwapChain()
@@ -100,16 +100,16 @@ namespace vzt
 		for (auto& imageInFlight : m_imagesInFlight)
 			imageInFlight = VK_NULL_HANDLE;
 
-		Cleanup();
+		cleanup();
 	}
 
-	void SwapChain::CreateSwapChain()
+	void SwapChain::createSwapChain()
 	{
-		SwapChainSupportDetails swapChainSupport = m_device->ChosenPhysicalDevice()->QuerySwapChainSupport(m_surface);
+		SwapChainSupportDetails swapChainSupport = m_device->getPhysicalDevice()->querySwapChainSupport(m_surface);
 
-		VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapChainSupport.formats);
-		VkPresentModeKHR   m_presentMode = ChooseSwapPresentMode(swapChainSupport.presentModes);
-		VkExtent2D         extent        = ChooseSwapExtent(swapChainSupport.capabilities);
+		VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+		VkPresentModeKHR   m_presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+		VkExtent2D         extent        = chooseSwapExtent(swapChainSupport.capabilities);
 
 		m_swapChainImageFormat = static_cast<vzt::Format>(surfaceFormat.format);
 
@@ -128,9 +128,9 @@ namespace vzt
 		createInfo.imageColorSpace  = surfaceFormat.colorSpace;
 		createInfo.imageExtent      = extent;
 		createInfo.imageArrayLayers = 1;
-		createInfo.imageUsage = static_cast<VkImageUsageFlags>(vzt::ToUnderlying(vzt::ImageUsage::ColorAttachment));
+		createInfo.imageUsage = static_cast<VkImageUsageFlags>(vzt::toUnderlying(vzt::ImageUsage::ColorAttachment));
 
-		QueueFamilyIndices indices              = m_device->DeviceQueueFamilyIndices();
+		QueueFamilyIndices indices              = m_device->getDeviceQueueFamilyIndices();
 		uint32_t           queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 		if (indices.graphicsFamily != indices.presentFamily)
@@ -158,7 +158,7 @@ namespace vzt
 		}
 	}
 
-	std::vector<VkImage> SwapChain::GetImagesKHR()
+	std::vector<VkImage> SwapChain::getImagesKHR()
 	{
 		auto swapChainImages = std::vector<VkImage>(m_imageCount);
 		vkGetSwapchainImagesKHR(m_device->VkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
@@ -166,7 +166,7 @@ namespace vzt
 		return swapChainImages;
 	}
 
-	void SwapChain::CreateSynchronizationObjects()
+	void SwapChain::createSynchronizationObjects()
 	{
 		m_imageAvailableSemaphores.resize(MaxFramesInFlight);
 		m_renderFinishedSemaphores.resize(MaxFramesInFlight);
@@ -192,7 +192,7 @@ namespace vzt
 		}
 	}
 
-	void SwapChain::Cleanup()
+	void SwapChain::cleanup()
 	{
 		for (std::size_t i = 0; i < m_imagesInFlight.size(); i++)
 		{
@@ -205,7 +205,7 @@ namespace vzt
 		vkDestroySwapchainKHR(m_device->VkHandle(), m_vkHandle, nullptr);
 	}
 
-	VkSurfaceFormatKHR SwapChain::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
 	{
 		for (const auto& availableFormat : availableFormats)
 		{
@@ -219,7 +219,7 @@ namespace vzt
 		return availableFormats[0];
 	}
 
-	VkPresentModeKHR SwapChain::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+	VkPresentModeKHR SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
 	{
 		for (const auto& availablePresentMode : availablePresentModes)
 		{
@@ -232,7 +232,7 @@ namespace vzt
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	VkExtent2D SwapChain::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+	VkExtent2D SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 	{
 		if (capabilities.currentExtent.width != UINT32_MAX)
 		{

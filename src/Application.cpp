@@ -14,33 +14,34 @@ namespace vzt
 		m_window = std::make_unique<vzt::Window>(name, 800, 600, [&]() {
 			if (m_renderer)
 			{
-				m_renderer->FrameBufferResized(m_window->FrameBufferSize());
-				const auto size = m_window->FrameBufferSize();
+				m_renderer->resize(m_window->getFrameBufferSize());
+				const auto size = m_window->getFrameBufferSize();
 
-				m_scene.SceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
+				m_scene.sceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
 			}
 		});
 
-		m_instance = std::make_unique<vzt::Instance>(name, m_window->VkExtensions());
+		m_instance = std::make_unique<vzt::Instance>(name, m_window->vkExtensions());
 
-		const auto size                   = m_window->FrameBufferSize();
-		m_scene.SceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
+		const auto size                   = m_window->getFrameBufferSize();
+		m_scene.sceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
 
-		m_renderer = std::make_unique<vzt::Renderer>(m_instance.get(), m_window->Handle(),
-		                                             m_window->Surface(m_instance.get()), m_window->FrameBufferSize());
-		m_renderer->SetScene(&m_scene);
+		m_renderer =
+		    std::make_unique<vzt::Renderer>(m_instance.get(), m_window->windowHandle(),
+		                                    m_window->getSurface(m_instance.get()), m_window->getFrameBufferSize());
+		m_renderer->setScene(&m_scene);
 
 		static bool isMouseEnable = false;
-		m_window->SetOnMousePosChangedCallback([&](vzt::Dvec2 deltaPos) {
+		m_window->setOnMousePosChangedCallback([&](vzt::Dvec2 deltaPos) {
 			if (!isMouseEnable)
 				return;
 
-			m_scene.SceneCamera().Update(deltaPos);
+			m_scene.sceneCamera().update(deltaPos);
 		});
 
-		m_window->SetOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
+		m_window->setOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
 			float cameraSpeed = 5e-2f;
-			auto& camera      = m_scene.SceneCamera();
+			auto& camera      = m_scene.sceneCamera();
 
 			if ((modifiers & vzt::KeyModifier::Shift) == vzt::KeyModifier::Shift)
 			{
@@ -65,7 +66,7 @@ namespace vzt
 			}
 		});
 
-		m_window->SetOnMouseButtonCallback(
+		m_window->setOnMouseButtonCallback(
 		    [](vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
 			    if (code == vzt::MouseButton::Left)
 			    {
@@ -74,15 +75,15 @@ namespace vzt
 		    });
 	}
 
-	void Application::Run()
+	void Application::run()
 	{
-		while (!m_window->Update())
+		while (!m_window->update())
 		{
-			m_scene.Update();
-			m_renderer->Draw(m_scene.SceneCamera());
+			m_scene.update();
+			m_renderer->draw(m_scene.sceneCamera());
 		}
 
-		vkDeviceWaitIdle(m_renderer->Device()->VkHandle());
+		vkDeviceWaitIdle(m_renderer->getDevice()->VkHandle());
 	}
 
 	Application::~Application() { glfwTerminate(); }

@@ -6,7 +6,7 @@ namespace vzt
 	{
 		Component::Component(std::string name) : m_name(std::move(name)) {}
 
-		bool Component::ToggleEnable()
+		bool Component::toggleEnable()
 		{
 			m_enable = !m_enable;
 			return m_enable;

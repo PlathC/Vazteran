@@ -27,13 +27,13 @@ namespace vzt
 		CommandPool(CommandPool&& other) noexcept;
 		CommandPool& operator=(CommandPool&& other) noexcept;
 
-		void AllocateCommandBuffers(uint32_t count);
-		void ResetBuffers(uint32_t bufferNumber);
-		void RecordBuffer(uint32_t bufferNumber, Command command) const;
+		~CommandPool();
 
 		VkCommandBuffer& operator[](uint32_t bufferNumber);
 
-		~CommandPool();
+		void allocateCommandBuffers(uint32_t count);
+		void resetBuffers(uint32_t bufferNumber);
+		void recordBuffer(uint32_t bufferNumber, Command command) const;
 
 	  private:
 		Device*                      m_logicalDevice;

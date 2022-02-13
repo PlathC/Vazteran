@@ -40,24 +40,22 @@ namespace vzt
 		Attachment(Attachment&&) = default;
 		Attachment& operator=(Attachment&&) = default;
 
-		const vzt::ImageView*  View() const { return m_imageView.get(); }
-		const vzt::Format      Format() const { return m_format; }
-		const vzt::ImageLayout Layout() const { return m_layout; }
+		const vzt::ImageView*  getView() const { return m_imageView.get(); }
+		const vzt::Format      getFormat() const { return m_format; }
+		const vzt::ImageLayout getLayout() const { return m_layout; }
 
-		void SetSamplerSettings();
+		vzt::Texture* asTexture();
 
-		vzt::Texture* AsTexture();
+		void setLoadOperation(vzt::LoadOperation loadOp) { m_loadOp = loadOp; }
+		void setStoreOperation(vzt::StoreOperation storeOp) { m_storeOp = storeOp; }
 
-		void SetLoadOperation(vzt::LoadOperation loadOp) { m_loadOp = loadOp; }
-		void SetStoreOperation(vzt::StoreOperation storeOp) { m_storeOp = storeOp; }
+		void setStencilLoadOperation(vzt::LoadOperation loadOp) { m_stencilLoadOp = loadOp; }
+		void setStencilStoreOperation(vzt::StoreOperation storeOp) { m_stencilStoreOp = storeOp; }
 
-		void SetStencilLoadOperation(vzt::LoadOperation loadOp) { m_stencilLoadOp = loadOp; }
-		void SetStencilStoreOperation(vzt::StoreOperation storeOp) { m_stencilStoreOp = storeOp; }
+		void setInitialLayout(vzt::ImageLayout initialLayout) { m_initialLayout = initialLayout; }
+		void setFinalLayout(vzt::ImageLayout finalLayout) { m_finalLayout = finalLayout; }
 
-		void SetInitialLayout(vzt::ImageLayout initialLayout) { m_initialLayout = initialLayout; }
-		void SetFinalLayout(vzt::ImageLayout finalLayout) { m_finalLayout = finalLayout; }
-
-		VkAttachmentDescription Description() const;
+		VkAttachmentDescription getDescription() const;
 
 	  private:
 		vzt::Device*                    m_device;

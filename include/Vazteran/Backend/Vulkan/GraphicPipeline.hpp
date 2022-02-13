@@ -76,21 +76,22 @@ namespace vzt
 		GraphicPipeline(GraphicPipeline&& other) noexcept = default;
 		GraphicPipeline& operator=(GraphicPipeline&& other) noexcept = default;
 
-		void Bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass);
-		void Configure(vzt::PipelineContextSettings settings);
-
-		vzt::RasterizationOptions& RasterOptions() { return m_rasterOptions; }
-		vzt::RasterizationOptions  CRasterOptions() const { return m_rasterOptions; }
-
-		const vzt::Program& Program() const { return m_program; };
-		VkPipelineLayout    Layout() const { return m_pipelineLayout; }
-		VkPipeline          VkHandle() const { return m_vkHandle; }
-
 		~GraphicPipeline();
 
+		void bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass);
+		void configure(vzt::PipelineContextSettings settings);
+
+		vzt::RasterizationOptions& getRasterOptions() { return m_rasterOptions; }
+		vzt::RasterizationOptions  getCRasterOptions() const { return m_rasterOptions; }
+
+		const vzt::Program& getProgram() const { return m_program; };
+		VkPipelineLayout    layout() const { return m_pipelineLayout; }
+
+		VkPipeline vkHandle() const { return m_vkHandle; }
+
 	  private:
-		void Create();
-		void Cleanup();
+		void create();
+		void cleanup();
 
 	  private:
 		vzt::Device* m_device;

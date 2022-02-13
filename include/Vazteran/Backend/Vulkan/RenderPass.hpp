@@ -29,12 +29,12 @@ namespace vzt
 		RenderPass(RenderPass&& other) noexcept;
 		RenderPass& operator=(RenderPass&& other) noexcept;
 
-		VkRenderPass VkHandle() const { return m_vkHandle; }
-
 		~RenderPass();
 
-		void Bind(VkCommandBuffer commandBuffer, const vzt::FrameBuffer* const frameBuffer) const;
-		void Unbind(VkCommandBuffer commandBuffer) const;
+		void bind(VkCommandBuffer commandBuffer, const vzt::FrameBuffer* const frameBuffer) const;
+		void unbind(VkCommandBuffer commandBuffer) const;
+
+		VkRenderPass vkHandle() const { return m_vkHandle; }
 
 	  private:
 		VkRenderPass m_vkHandle = VK_NULL_HANDLE;

@@ -7,13 +7,13 @@ namespace vzt
 	               MemoryUsage memoryUsage)
 	    : m_device(device)
 	{
-		Create(sizeof(Type) * data.size(), reinterpret_cast<uint8_t const*>(data.data()), usage, memoryUsage);
+		create(sizeof(Type) * data.size(), reinterpret_cast<uint8_t const*>(data.data()), usage, memoryUsage);
 	}
 
 	template <class Type>
-	void Buffer::Update(const std::vector<Type>& newData)
+	void Buffer::update(const std::vector<Type>& newData)
 	{
-		Update(sizeof(Type) * newData.size(), reinterpret_cast<uint8_t const*>(newData.data()));
+		update(sizeof(Type) * newData.size(), reinterpret_cast<uint8_t const*>(newData.data()));
 	}
 
 } // namespace vzt

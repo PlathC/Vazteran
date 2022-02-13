@@ -15,7 +15,7 @@ namespace vzt
 	{
 		vzt::Vec4 diffuse; // diffuse + shininess
 
-		static GenericMaterial FromMaterial(const vzt::Material& original);
+		static GenericMaterial fromMaterial(const vzt::Material& original);
 	};
 
 	struct Transforms

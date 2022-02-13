@@ -14,11 +14,11 @@ namespace vzt
 	constexpr float Pi = 3.14159265359f;
 
 	template <class T>
-	constexpr T Max = std::numeric_limits<T>::max();
+	constexpr T typeMax = std::numeric_limits<T>::max();
 	template <class T>
-	constexpr T Min = std::numeric_limits<T>::min();
+	constexpr T typeMin = std::numeric_limits<T>::min();
 	template <class T>
-	constexpr T Epsilon = std::numeric_limits<T>::epsilon();
+	constexpr T typeEpsilon = std::numeric_limits<T>::epsilon();
 
 	using Vec2  = glm::vec2;
 	using Ivec2 = glm::ivec2;
@@ -40,11 +40,11 @@ namespace vzt
 		Type height;
 	};
 
-	constexpr float ToRadians(float degrees) { return degrees * vzt::Pi / 180.f; }
-	constexpr float ToDegrees(float radians) { return radians * 180.f / vzt::Pi; }
+	constexpr float toRadians(const float degrees) { return degrees * vzt::Pi / 180.f; }
+	constexpr float toDegrees(const float radians) { return radians * 180.f / vzt::Pi; }
 } // namespace vzt
 
 #include "Vazteran/Core/Math/Aabb.hpp"
-#include "Vazteran/Core/Math/Random.hpp"
+#include "Vazteran/Core/Math/random.hpp"
 
 #endif // VAZTERAN_MATH_HPP

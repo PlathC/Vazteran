@@ -10,10 +10,10 @@ namespace fs = std::filesystem;
 
 namespace vzt
 {
-	std::vector<char> ReadFile(const fs::path &filename);
+	std::vector<char> ReadFile(const fs::path& filename);
 
 	template <class T>
-	inline void HashCombine(std::size_t &s, const T &v)
+	inline void combineHash(std::size_t& s, const T& v)
 	{
 		// HashCombine https://stackoverflow.com/a/19195373
 		// Magic Numbers https://stackoverflow.com/a/4948967
@@ -22,7 +22,7 @@ namespace vzt
 	}
 
 	template <class Enum>
-	constexpr typename std::underlying_type<Enum>::type ToUnderlying(const Enum e) noexcept
+	constexpr typename std::underlying_type<Enum>::type toUnderlying(const Enum e) noexcept
 	{
 		return static_cast<typename std::underlying_type<Enum>::type>(e);
 	}

@@ -24,8 +24,8 @@ namespace vzt
 		vzt::Vec2 textureCoordinates;
 		vzt::Vec3 normal;
 
-		static VkVertexInputBindingDescription                GetBindingDescription();
-		static std::vector<VkVertexInputAttributeDescription> GetAttributeDescription();
+		static VkVertexInputBindingDescription                getBindingDescription();
+		static std::vector<VkVertexInputAttributeDescription> getAttributeDescription();
 	};
 
 	class MeshView
@@ -41,14 +41,14 @@ namespace vzt
 
 		~MeshView();
 
-		void AddModel(const vzt::Model* const model);
-		void Configure(vzt::PipelineContextSettings settings);
+		vzt::GraphicPipeline* getPipeline() const { return m_graphicPipeline.get(); }
 
-		void Record(uint32_t imageCount, const vzt::RenderPass* const renderPass, VkCommandBuffer commandBuffer) const;
+		void addModel(const vzt::Model* const model);
+		void configure(vzt::PipelineContextSettings settings);
 
-		void Update(const vzt::Camera& camera);
+		void record(uint32_t imageCount, const vzt::RenderPass* const renderPass, VkCommandBuffer commandBuffer) const;
 
-		vzt::GraphicPipeline* Pipeline() const { return m_graphicPipeline.get(); }
+		void update(const vzt::Camera& camera);
 
 	  private:
 		// Rendering objects

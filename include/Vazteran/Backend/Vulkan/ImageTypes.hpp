@@ -57,17 +57,17 @@ namespace vzt
 
 	inline ImageAspect operator&(ImageAspect l, ImageAspect r)
 	{
-		return static_cast<ImageAspect>(vzt::ToUnderlying(l) & vzt::ToUnderlying(r));
+		return static_cast<ImageAspect>(vzt::toUnderlying(l) & vzt::toUnderlying(r));
 	}
 
 	inline ImageAspect operator|(ImageAspect l, ImageAspect r)
 	{
-		return static_cast<ImageAspect>(vzt::ToUnderlying(l) | vzt::ToUnderlying(r));
+		return static_cast<ImageAspect>(vzt::toUnderlying(l) | vzt::toUnderlying(r));
 	}
 
 	inline constexpr ImageAspect operator~(const ImageAspect m)
 	{
-		return static_cast<ImageAspect>(~vzt::ToUnderlying(m));
+		return static_cast<ImageAspect>(~vzt::toUnderlying(m));
 	}
 
 	enum class ImageUsage : uint32_t
@@ -88,15 +88,15 @@ namespace vzt
 
 	inline ImageUsage operator&(ImageUsage l, ImageUsage r)
 	{
-		return static_cast<ImageUsage>(vzt::ToUnderlying(l) & vzt::ToUnderlying(r));
+		return static_cast<ImageUsage>(vzt::toUnderlying(l) & vzt::toUnderlying(r));
 	}
 
 	inline ImageUsage operator|(ImageUsage l, ImageUsage r)
 	{
-		return static_cast<ImageUsage>(vzt::ToUnderlying(l) | vzt::ToUnderlying(r));
+		return static_cast<ImageUsage>(vzt::toUnderlying(l) | vzt::toUnderlying(r));
 	}
 
-	inline constexpr ImageUsage operator~(const ImageUsage m) { return static_cast<ImageUsage>(~vzt::ToUnderlying(m)); }
+	inline constexpr ImageUsage operator~(const ImageUsage m) { return static_cast<ImageUsage>(~vzt::toUnderlying(m)); }
 
 	enum class Format : uint32_t
 	{

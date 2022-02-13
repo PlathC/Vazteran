@@ -31,18 +31,18 @@ namespace vzt
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
-		Renderer(Renderer&&);
-		Renderer& operator=(Renderer&&);
+		Renderer(Renderer&&) noexcept;
+		Renderer& operator=(Renderer&&) noexcept;
 
 		~Renderer();
 
-		void               SetScene(vzt::Scene* scene);
-		void               Draw(const vzt::Camera& camera);
-		const vzt::Device* Device() const { return &m_device; }
-		void               FrameBufferResized(vzt::Size2D<uint32_t> newSize);
+		void               setScene(vzt::Scene* scene);
+		void               draw(const vzt::Camera& camera);
+		const vzt::Device* getDevice() const { return &m_device; }
+		void               resize(vzt::Size2D<uint32_t> newSize);
 
 	  private:
-		void BuildRenderingSupports();
+		void buildRenderingSupports();
 
 	  private:
 		VkSurfaceKHR m_surface;

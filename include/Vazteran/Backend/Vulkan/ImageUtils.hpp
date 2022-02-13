@@ -27,9 +27,10 @@ namespace vzt
 		ImageView(ImageView&& original) noexcept;
 		ImageView& operator=(ImageView&& original) noexcept;
 
-		vzt::ImageLayout Layout() const { return m_layout; }
-		vzt::Format      Format() const { return m_format; }
-		VkImageView      VkHandle() const { return m_vkHandle; }
+		vzt::ImageLayout layout() const { return m_layout; }
+		vzt::Format      format() const { return m_format; }
+
+		VkImageView vkHandle() const { return m_vkHandle; }
 
 		~ImageView();
 
@@ -63,7 +64,7 @@ namespace vzt
 		Sampler(Sampler&& other) noexcept;
 		Sampler& operator=(Sampler&& other) noexcept;
 
-		VkSampler VkHandle() const { return m_vkHandle; }
+		VkSampler vkHandle() const { return m_vkHandle; }
 
 		~Sampler();
 
@@ -77,9 +78,10 @@ namespace vzt
 	  public:
 		Texture(const vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings = {});
 
-		const vzt::ImageView* View() const { return m_imageView; }
-		const vzt::Sampler*   Sampler() const { return &m_sampler; }
-		const vzt::Format     Format() const { return m_imageView->Format(); }
+		const vzt::ImageView* getView() const { return m_imageView; }
+		const vzt::Sampler*   getSampler() const { return &m_sampler; }
+
+		const vzt::Format format() const { return m_imageView->format(); }
 
 	  private:
 		vzt::Sampler          m_sampler;

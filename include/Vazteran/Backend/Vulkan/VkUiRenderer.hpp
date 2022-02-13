@@ -37,7 +37,7 @@ namespace vzt
 
 		~VkUiRenderer();
 
-		void Record(VkCommandBuffer commandBuffer);
+		void record(VkCommandBuffer commandBuffer);
 
 	  private:
 		vzt::Device*        m_device;

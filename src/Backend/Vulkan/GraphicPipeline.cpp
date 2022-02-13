@@ -15,7 +15,7 @@ namespace vzt
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts    = &descriptorLayout.VkHandle();
+		pipelineLayoutInfo.pSetLayouts    = &descriptorLayout.vkHandle();
 
 		if (vkCreatePipelineLayout(m_device->VkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 		{
@@ -23,9 +23,9 @@ namespace vzt
 		}
 	}
 
-	void GraphicPipeline::Create()
+	void GraphicPipeline::create()
 	{
-		Cleanup();
+		cleanup();
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -120,7 +120,7 @@ namespace vzt
 		depthStencil.depthWriteEnable = VK_TRUE;
 		depthStencil.depthCompareOp   = VK_COMPARE_OP_LESS_OR_EQUAL;
 
-		const auto& shaderStages = m_program.PipelineStages();
+		const auto& shaderStages = m_program.getPipelineStages();
 
 		VkGraphicsPipelineCreateInfo pipelineInfo{};
 		pipelineInfo.sType      = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -137,7 +137,7 @@ namespace vzt
 
 		pipelineInfo.pDynamicState      = nullptr; // Optional
 		pipelineInfo.layout             = m_pipelineLayout;
-		pipelineInfo.renderPass         = m_settings.renderPassTemplate->VkHandle();
+		pipelineInfo.renderPass         = m_settings.renderPassTemplate->vkHandle();
 		pipelineInfo.subpass            = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex  = -1;             // Optional
@@ -149,18 +149,18 @@ namespace vzt
 		}
 	}
 
-	void GraphicPipeline::Bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass)
+	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass)
 	{
 		vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
 	}
 
-	void GraphicPipeline::Configure(vzt::PipelineContextSettings settings)
+	void GraphicPipeline::configure(vzt::PipelineContextSettings settings)
 	{
 		m_settings = settings;
-		Create();
+		create();
 	}
 
-	void GraphicPipeline::Cleanup()
+	void GraphicPipeline::cleanup()
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
@@ -171,7 +171,7 @@ namespace vzt
 
 	GraphicPipeline::~GraphicPipeline()
 	{
-		Cleanup();
+		cleanup();
 
 		if (m_pipelineLayout != VK_NULL_HANDLE)
 		{

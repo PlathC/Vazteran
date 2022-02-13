@@ -27,7 +27,7 @@ namespace vzt
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, image, format, aspect);
 	}
 
-	vzt::Texture* Attachment::AsTexture()
+	vzt::Texture* Attachment::asTexture()
 	{
 		if (!m_textureRepresentation)
 		{
@@ -38,7 +38,7 @@ namespace vzt
 		return m_textureRepresentation.get();
 	}
 
-	VkAttachmentDescription Attachment::Description() const
+	VkAttachmentDescription Attachment::getDescription() const
 	{
 		VkAttachmentDescription attachmentDescription{};
 		attachmentDescription.format         = static_cast<VkFormat>(m_format);

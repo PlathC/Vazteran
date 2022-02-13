@@ -44,10 +44,10 @@ namespace vzt
 	  public:
 		Shader(const fs::path& compiled_file, vzt::ShaderStage shaderStage);
 
-		VkShaderModuleCreateInfo ShaderModuleCreateInfo() const;
-		vzt::ShaderStage         Stage() const { return m_shaderStage; }
+		bool operator==(const Shader& other) const { return m_shaderStage == other.stage(); }
 
-		bool operator==(const Shader& other) const { return m_shaderStage == other.Stage(); }
+		VkShaderModuleCreateInfo getShaderModuleCreateInfo() const;
+		vzt::ShaderStage         stage() const { return m_shaderStage; }
 
 	  private:
 		std::vector<char>                 m_compiledSource;
@@ -68,9 +68,9 @@ namespace vzt
 		ShaderModule(ShaderModule&& other) noexcept;
 		ShaderModule& operator=(ShaderModule&& other) noexcept;
 
-		VkShaderModule VkHandle() const { return m_vkHandle; }
-
 		~ShaderModule();
+
+		VkShaderModule vkHandle() const { return m_vkHandle; }
 
 	  private:
 		VkShaderModule     m_vkHandle;
@@ -79,6 +79,8 @@ namespace vzt
 
 	class Program
 	{
+		using ShaderList = std::unordered_map<vzt::ShaderStage, vzt::Shader>;
+
 	  public:
 		Program(const vzt::Device* const device);
 
@@ -90,20 +92,18 @@ namespace vzt
 
 		~Program();
 
-		const std::unordered_map<vzt::ShaderStage, vzt::Shader>& Shaders() const { return m_shaders; };
-
-		// Configuration
-		void SetShader(Shader shader);
+		void              setShader(Shader shader);
+		const ShaderList& getShaders() const { return m_shaders; }
 
 		// Regenerate modules and stages
-		void Compile();
+		void compile();
 
 		// Post Compiling informations
-		const std::vector<VkPipelineShaderStageCreateInfo>& PipelineStages() const { return m_pipelineShaderStages; }
+		const std::vector<VkPipelineShaderStageCreateInfo>& getPipelineStages() const { return m_pipelineShaderStages; }
 
 	  private:
-		const vzt::Device*                                m_device = nullptr;
-		std::unordered_map<vzt::ShaderStage, vzt::Shader> m_shaders;
+		const vzt::Device* m_device = nullptr;
+		ShaderList         m_shaders;
 
 		std::vector<vzt::ShaderModule>               m_shaderModules;
 		std::vector<VkPipelineShaderStageCreateInfo> m_pipelineShaderStages;

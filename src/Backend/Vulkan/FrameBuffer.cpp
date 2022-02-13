@@ -22,7 +22,7 @@ namespace vzt
 		attachmentsViews.reserve(m_attachments.size());
 		for (auto& attachment : m_attachments)
 		{
-			attachmentsViews.emplace_back(attachment.View()->VkHandle());
+			attachmentsViews.emplace_back(attachment.getView()->vkHandle());
 			attachmentCopy.emplace_back(&attachment);
 		}
 
@@ -31,7 +31,7 @@ namespace vzt
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass      = m_renderPass->VkHandle();
+		framebufferInfo.renderPass      = m_renderPass->vkHandle();
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentsViews.size());
 		framebufferInfo.pAttachments    = attachmentsViews.data();
 		framebufferInfo.width           = m_size.width;
@@ -72,9 +72,9 @@ namespace vzt
 		}
 	}
 
-	void FrameBuffer::Bind(VkCommandBuffer commandBuffer) const
+	void FrameBuffer::bind(VkCommandBuffer commandBuffer) const
 	{
-		m_renderPass->Bind(commandBuffer, this);
+		m_renderPass->bind(commandBuffer, this);
 		VkViewport viewport;
 		viewport.x        = 0.f;
 		viewport.y        = 0.f;
@@ -90,5 +90,5 @@ namespace vzt
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}
 
-	void FrameBuffer::Unbind(VkCommandBuffer commandBuffer) const { m_renderPass->Unbind(commandBuffer); }
+	void FrameBuffer::unbind(VkCommandBuffer commandBuffer) const { m_renderPass->unbind(commandBuffer); }
 } // namespace vzt

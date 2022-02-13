@@ -20,22 +20,22 @@ namespace vzt
 
 	  public:
 		Camera() = default;
-		Camera(const vzt::AABB& referenceBoundingBox, const float fov = vzt::ToRadians(45.f),
+		Camera(const vzt::AABB& referenceBoundingBox, const float fov = vzt::toRadians(45.f),
 		       const glm::vec3& up = glm::vec3(0.f, 0.f, 1.f), const float near = 0.1f, const float far = 100.f,
 		       const float screenAspectRatio = 16.f / 9.f);
 
-		glm::mat4 Projection() const { return glm::perspective(fov, aspectRatio, nearClipping, farClipping); }
-		glm::mat4 View() const { return glm::lookAt(position, position + front, upVector); }
+		glm::mat4 getProjectionMatrix() const { return glm::perspective(fov, aspectRatio, nearClipping, farClipping); }
+		glm::mat4 getViewMatrix() const { return glm::lookAt(position, position + front, upVector); }
 
-		void SetUpdateFunction(const CameraUpdate updateFun);
+		void setUpdateFunction(const CameraUpdate updateFun);
 
-		void Update(const vzt::Dvec2 cursorPosition);
+		void update(const vzt::Dvec2 cursorPosition);
 
 	  public:
 		vzt::Vec3 position;
 		vzt::Vec3 front;
 
-		float fov          = vzt::ToRadians(45.f);
+		float fov          = vzt::toRadians(45.f);
 		float nearClipping = 0.1f;
 		float farClipping  = 100.f;
 		float aspectRatio  = 16.f / 9.f;

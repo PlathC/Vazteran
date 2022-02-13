@@ -43,17 +43,17 @@ namespace vzt
 
 	inline KeyModifier operator&(KeyModifier l, KeyModifier r)
 	{
-		return static_cast<KeyModifier>(vzt::ToUnderlying(l) & vzt::ToUnderlying(r));
+		return static_cast<KeyModifier>(vzt::toUnderlying(l) & vzt::toUnderlying(r));
 	}
 
 	inline KeyModifier operator|(KeyModifier l, KeyModifier r)
 	{
-		return static_cast<KeyModifier>(vzt::ToUnderlying(l) | vzt::ToUnderlying(r));
+		return static_cast<KeyModifier>(vzt::toUnderlying(l) | vzt::toUnderlying(r));
 	}
 
 	inline constexpr KeyModifier operator~(const KeyModifier m)
 	{
-		return static_cast<KeyModifier>(~vzt::ToUnderlying(m));
+		return static_cast<KeyModifier>(~vzt::toUnderlying(m));
 	}
 
 	enum class KeyCode : int32_t

@@ -35,17 +35,17 @@ namespace vzt
 		~Buffer();
 
 		template <class Type>
-		void Update(const std::vector<Type>& newData);
-		void Update(const std::size_t size, const uint8_t* const newData);
+		void update(const std::vector<Type>& newData);
+		void update(const std::size_t size, const uint8_t* const newData);
 
-		void Update(const std::size_t size, const std::size_t offset, const uint8_t* const newData);
+		void update(const std::size_t size, const std::size_t offset, const uint8_t* const newData);
 
-		VkMemoryRequirements MemoryRequirements() const;
+		VkMemoryRequirements getMemoryRequirements() const;
 
-		VkBuffer VkHandle() const { return m_vkHandle; }
+		VkBuffer vkHandle() const { return m_vkHandle; }
 
 	  private:
-		void Create(const std::size_t size, const uint8_t* const data, VkBufferUsageFlags usage,
+		void create(const std::size_t size, const uint8_t* const data, VkBufferUsageFlags usage,
 		            MemoryUsage memoryUsage);
 
 	  private:

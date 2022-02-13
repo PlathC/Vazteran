@@ -10,7 +10,7 @@ namespace vzt
 		m_compiledSource = vzt::ReadFile(compiled_file);
 	}
 
-	VkShaderModuleCreateInfo Shader::ShaderModuleCreateInfo() const
+	VkShaderModuleCreateInfo Shader::getShaderModuleCreateInfo() const
 	{
 		VkShaderModuleCreateInfo shaderModuleCreateInfo{};
 		shaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -71,25 +71,25 @@ namespace vzt
 
 	Program::~Program() = default;
 
-	void Program::SetShader(Shader shader)
+	void Program::setShader(Shader shader)
 	{
-		const auto stage = shader.Stage();
+		const auto stage = shader.stage();
 		m_shaders.emplace(stage, std::move(shader));
 	}
 
-	void Program::Compile()
+	void Program::compile()
 	{
 		m_shaderModules.clear();
 		m_pipelineShaderStages.clear();
 		for (const auto& stage : m_shaders)
 		{
 			const auto& shader = stage.second;
-			auto        module = ShaderModule(m_device, shader.ShaderModuleCreateInfo());
+			auto        module = ShaderModule(m_device, shader.getShaderModuleCreateInfo());
 
 			VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
 			shaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			shaderStageCreateInfo.stage  = static_cast<VkShaderStageFlagBits>(shader.Stage());
-			shaderStageCreateInfo.module = module.VkHandle();
+			shaderStageCreateInfo.stage  = static_cast<VkShaderStageFlagBits>(shader.stage());
+			shaderStageCreateInfo.module = module.vkHandle();
 			shaderStageCreateInfo.pName  = "main";
 
 			m_shaderModules.emplace_back(std::move(module));

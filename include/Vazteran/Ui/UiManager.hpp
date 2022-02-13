@@ -16,9 +16,9 @@ namespace vzt
 			UiManager()          = default;
 			virtual ~UiManager() = default;
 
-			void SetMainMenuBar(MainMenuBar mainMenuBar);
+			void setMainMenuBar(MainMenuBar mainMenuBar);
 
-			void Draw() const;
+			void draw() const;
 
 		  private:
 			std::optional<MainMenuBar> m_mainMenuBar;

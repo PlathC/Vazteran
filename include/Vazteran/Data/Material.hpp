@@ -14,7 +14,7 @@ namespace vzt
 		vzt::Vec4                 color     = vzt::Vec4{.7f};
 		float                     shininess = 50.f;
 
-		static const vzt::Material Default;
+		static const vzt::Material default;
 	};
 } // namespace vzt
 
