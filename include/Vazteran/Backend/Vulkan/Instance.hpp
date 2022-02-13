@@ -11,7 +11,7 @@ namespace vzt
 	class Instance
 	{
 	  public:
-		Instance(std::string_view name, std::vector<const char*> extensions,
+		Instance(const std::string& name, std::vector<const char*> extensions,
 		         const std::vector<const char*>& validationLayers = DefaultValidationLayers);
 
 		Instance(const Instance&) = delete;
@@ -22,7 +22,7 @@ namespace vzt
 
 		~Instance();
 
-		std::vector<VkPhysicalDevice> enumeratePhysicalDevice();
+		std::vector<VkPhysicalDevice> enumeratePhysicalDevice() const;
 		std::vector<const char*>      getValidationLayers() const { return m_validationLayers; }
 
 		VkInstance vkHandle() const { return m_handle; };

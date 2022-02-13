@@ -11,8 +11,7 @@ namespace vzt
 {
 	CommandPool::CommandPool(Device* logicalDevice) : m_logicalDevice(logicalDevice)
 	{
-
-		vzt::QueueFamilyIndices indices = m_logicalDevice->getDeviceQueueFamilyIndices();
+		const vzt::QueueFamilyIndices indices = m_logicalDevice->getDeviceQueueFamilyIndices();
 
 		VkCommandPoolCreateInfo commandPoolInfo{};
 		commandPoolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -72,7 +71,7 @@ namespace vzt
 		vkResetCommandBuffer(m_commandBuffers[bufferNumber], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 	}
 
-	void CommandPool::recordBuffer(uint32_t bufferNumber, Command command) const
+	void CommandPool::recordBuffer(uint32_t bufferNumber, const Command command) const
 	{
 		assert(bufferNumber < m_commandBuffers.size() && "bufferNumber should be less than m_commandBuffers.size()");
 

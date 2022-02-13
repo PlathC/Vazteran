@@ -18,7 +18,7 @@ namespace vzt
 	class Application
 	{
 	  public:
-		explicit Application(std::string_view name, vzt::Scene scene);
+		explicit Application(const std::string& name, vzt::Scene scene);
 
 		void run();
 

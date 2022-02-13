@@ -7,7 +7,7 @@ namespace vzt
 {
 	const std::vector<const char*> Instance::DefaultValidationLayers = {"VK_LAYER_KHRONOS_validation"};
 
-	Instance::Instance(std::string_view name, std::vector<const char*> extensions,
+	Instance::Instance(const std::string& name, std::vector<const char*> extensions,
 	                   const std::vector<const char*>& validationLayers)
 	    : m_validationLayers(validationLayers)
 	{
@@ -18,7 +18,7 @@ namespace vzt
 
 		VkApplicationInfo appInfo{};
 		appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		appInfo.pApplicationName   = std::string(name).c_str();
+		appInfo.pApplicationName   = name.c_str();
 		appInfo.applicationVersion = VK_MAKE_VERSION(1, 2, 0);
 		appInfo.pEngineName        = "No Engine";
 		appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
@@ -100,7 +100,7 @@ namespace vzt
 		return *this;
 	}
 
-	std::vector<VkPhysicalDevice> Instance::enumeratePhysicalDevice()
+	std::vector<VkPhysicalDevice> Instance::enumeratePhysicalDevice() const
 	{
 		uint32_t deviceCount = 0;
 		vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
@@ -118,7 +118,7 @@ namespace vzt
 
 	Instance::~Instance()
 	{
-		auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+		const auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
 		    vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
 		if (vkDestroyDebugUtilsMessengerEXT != nullptr && m_handle != VK_NULL_HANDLE &&
 		    m_debugMessenger != VK_NULL_HANDLE)

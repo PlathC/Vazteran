@@ -14,7 +14,7 @@ namespace vzt
 	FrameBuffer::FrameBuffer(vzt::Device* device, std::size_t subpassCount,
 	                         std::vector<VkSubpassDependency>&& subpassDependencies,
 	                         std::vector<vzt::Attachment>&& attachments, vzt::Size2D<uint32_t> size)
-	    : m_device(std::move(device)), m_size(std::move(size)), m_attachments(std::move(attachments))
+	    : m_device(device), m_size(size), m_attachments(std::move(attachments))
 	{
 		std::vector<vzt::Attachment*> attachmentCopy;
 		attachmentCopy.reserve(m_attachments.size());
@@ -69,6 +69,7 @@ namespace vzt
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
 			vkDestroyFramebuffer(m_device->VkHandle(), m_vkHandle, nullptr);
+			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}
 

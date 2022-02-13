@@ -104,7 +104,7 @@ namespace vzt
 		pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		pool_info.flags                      = flags;
 		pool_info.maxSets                    = maxSetNb;
-		pool_info.poolSizeCount              = (uint32_t)sizes.size();
+		pool_info.poolSizeCount              = static_cast<uint32_t>(sizes.size());
 		pool_info.pPoolSizes                 = sizes.data();
 
 		if (vkCreateDescriptorPool(m_device->VkHandle(), &pool_info, nullptr, &m_vkHandle) != VK_SUCCESS)

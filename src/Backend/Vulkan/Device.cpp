@@ -37,6 +37,8 @@ namespace vzt
 		}
 	}
 
+	PhysicalDevice::~PhysicalDevice() {}
+
 	SwapChainSupportDetails PhysicalDevice::querySwapChainSupport(VkSurfaceKHR surface) const
 	{
 		return vzt::querySwapChainSupport(m_vkHandle, surface);
@@ -75,8 +77,6 @@ namespace vzt
 	}
 
 	VkSampleCountFlagBits PhysicalDevice::getMaxUsableSampleCount() { return vzt::getMaxUsableSampleCount(m_vkHandle); }
-
-	PhysicalDevice::~PhysicalDevice() {}
 
 	static bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface,
 	                             const std::vector<const char*>& deviceExtensions)
@@ -340,7 +340,7 @@ namespace vzt
 	}
 
 	VkBuffer Device::createBuffer(VmaAllocation& bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
-	                              VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags)
+	                              VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags) const
 	{
 		VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
 		bufferInfo.size               = size;
@@ -362,7 +362,7 @@ namespace vzt
 	}
 
 	VkImage Device::createImage(VmaAllocation& allocation, uint32_t width, uint32_t height, vzt::Format format,
-	                            VkSampleCountFlagBits numSamples, VkImageTiling tiling, vzt::ImageUsage usage)
+	                            VkSampleCountFlagBits numSamples, VkImageTiling tiling, vzt::ImageUsage usage) const
 	{
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -391,7 +391,7 @@ namespace vzt
 		return image;
 	}
 
-	VkImageView Device::createImageView(VkImage image, vzt::Format format, vzt::ImageAspect aspectFlags)
+	VkImageView Device::createImageView(VkImage image, vzt::Format format, vzt::ImageAspect aspectFlags) const
 	{
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -413,7 +413,7 @@ namespace vzt
 		return imageView;
 	}
 
-	void Device::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+	void Device::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) const
 	{
 		singleTimeCommand([&srcBuffer, &dstBuffer, &size](VkCommandBuffer commandBuffer) {
 			VkBufferCopy copyRegion{};
@@ -422,7 +422,7 @@ namespace vzt
 		});
 	}
 
-	void Device::copyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height)
+	void Device::copyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, uint32_t width, uint32_t height) const
 	{
 		singleTimeCommand([&srcBuffer, &dstImage, width, height](VkCommandBuffer commandBuffer) {
 			VkBufferImageCopy region{};
@@ -444,7 +444,7 @@ namespace vzt
 	}
 
 	void Device::transitionImageLayout(VkImage image, vzt::ImageLayout oldLayout, vzt::ImageLayout newLayout,
-	                                   vzt::ImageAspect aspectFlags)
+	                                   vzt::ImageAspect aspectFlags) const
 	{
 		singleTimeCommand([&](VkCommandBuffer commandBuffer) {
 			VkImageMemoryBarrier barrier{};
@@ -500,7 +500,7 @@ namespace vzt
 		});
 	}
 
-	void Device::singleTimeCommand(const vzt::Device::SingleTimeCommandFunction& singleTimeCommandFunction)
+	void Device::singleTimeCommand(const vzt::Device::SingleTimeCommandFunction& singleTimeCommandFunction) const
 	{
 		VkCommandPool transferCommandPool;
 

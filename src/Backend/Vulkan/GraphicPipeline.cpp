@@ -149,7 +149,7 @@ namespace vzt
 		}
 	}
 
-	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass)
+	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass) const
 	{
 		vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
 	}

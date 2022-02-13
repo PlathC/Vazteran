@@ -53,10 +53,10 @@ namespace vzt
 		vzt::Size2D<uint32_t> getFrameBufferSize() const;
 		VkSurfaceKHR          getSurface(vzt::Instance* instance);
 
-		bool update();
+		bool update() const;
 		bool shouldClose() const { return glfwWindowShouldClose(m_window.get()); }
 
-		std::vector<const char*> vkExtensions() const;
+		static std::vector<const char*> vkExtensions();
 
 	  private:
 		std::unique_ptr<SurfaceHandler> m_surface = nullptr;

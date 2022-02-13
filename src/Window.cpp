@@ -87,14 +87,17 @@ namespace vzt
 		}
 	}
 
-	void Window::setOnKeyActionCallback(OnKeyActionCallback callback) { m_onKeyActionCallback = callback; }
+	void Window::setOnKeyActionCallback(OnKeyActionCallback callback) { m_onKeyActionCallback = std::move(callback); }
 
 	void Window::setOnMousePosChangedCallback(OnMousePosChangedCallback callback)
 	{
-		m_onMousePosChangedCallback = callback;
+		m_onMousePosChangedCallback = std::move(callback);
 	}
 
-	void Window::setOnMouseButtonCallback(OnMouseButtonCallback callback) { m_onMouseButtonCallback = callback; }
+	void Window::setOnMouseButtonCallback(OnMouseButtonCallback callback)
+	{
+		m_onMouseButtonCallback = std::move(callback);
+	}
 
 	vzt::Size2D<uint32_t> Window::getFrameBufferSize() const
 	{
@@ -123,18 +126,17 @@ namespace vzt
 		return m_surface->vkHandle();
 	}
 
-	bool Window::update()
+	bool Window::update() const
 	{
 		glfwPollEvents();
 
 		return shouldClose();
 	}
 
-	std::vector<const char*> Window::vkExtensions() const
+	std::vector<const char*> Window::vkExtensions()
 	{
 		uint32_t     glfwExtensionCount = 0;
-		const char** glfwExtensions;
-		glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+		const char** glfwExtensions     = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
 		std::vector<const char*> extensions;
 		extensions.assign(glfwExtensions, glfwExtensions + glfwExtensionCount);

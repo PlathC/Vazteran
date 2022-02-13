@@ -78,7 +78,7 @@ namespace vzt
 
 		~GraphicPipeline();
 
-		void bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass);
+		void bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass) const;
 		void configure(vzt::PipelineContextSettings settings);
 
 		vzt::RasterizationOptions& getRasterOptions() { return m_rasterOptions; }

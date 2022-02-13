@@ -37,9 +37,9 @@ namespace vzt
 
 	  private:
 		Device*                      m_logicalDevice;
-		VkCommandPool                m_vkHandle;
+		VkCommandPool                m_vkHandle{};
 		std::vector<VkCommandBuffer> m_commandBuffers;
-		uint32_t                     m_bufferCount;
+		uint32_t                     m_bufferCount{};
 	};
 } // namespace vzt
 

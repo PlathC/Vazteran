@@ -9,7 +9,7 @@
 
 namespace vzt
 {
-	Application::Application(std::string_view name, vzt::Scene scene) : m_scene(std::move(scene))
+	Application::Application(const std::string& name, vzt::Scene scene) : m_scene(std::move(scene))
 	{
 		m_window = std::make_unique<vzt::Window>(name, 800, 600, [&]() {
 			if (m_renderer)

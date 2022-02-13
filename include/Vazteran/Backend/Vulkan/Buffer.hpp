@@ -36,7 +36,7 @@ namespace vzt
 
 		template <class Type>
 		void update(const std::vector<Type>& newData);
-		void update(const std::size_t size, const uint8_t* const newData);
+		void update(const std::size_t size, const uint8_t* const newData) const;
 
 		void update(const std::size_t size, const std::size_t offset, const uint8_t* const newData);
 

@@ -35,7 +35,7 @@ namespace vzt
 		}
 	}
 
-	void Buffer::update(const std::size_t size, const uint8_t* const newData)
+	void Buffer::update(const std::size_t size, const uint8_t* const newData) const
 	{
 		void* data = nullptr;
 		vmaMapMemory(m_device->getAllocatorHandle(), m_allocation, &data);
@@ -61,8 +61,7 @@ namespace vzt
 	void Buffer::create(const std::size_t size, const uint8_t* const data, VkBufferUsageFlags usage,
 	                    MemoryUsage memoryUsage)
 	{
-		VkDeviceSize bufferSize = size;
-
+		const VkDeviceSize bufferSize = size;
 		if (memoryUsage == MemoryUsage::GPU_ONLY)
 		{
 			VkBuffer      stagingBuffer      = VK_NULL_HANDLE;
