@@ -15,6 +15,42 @@ namespace vzt
 		CPU_TO_GPU = VMA_MEMORY_USAGE_CPU_TO_GPU,
 	};
 
+	enum class BufferUsage : uint32_t
+	{
+		TransferSrc        = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		TransferDst        = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		UniformTexelBuffer = VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT,
+		StorageTexelBuffer = VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT,
+		UniformBuffer      = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		StorageBuffer      = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+		IndexBuffer        = VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VertexBuffer       = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		IndirectBuffer     = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+
+		// Provided by VK_VERSION_1_2
+		ShaderDeviceAddress = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+
+		// Provided by VK_EXT_transform_feedback
+		TransformFeedback = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_BUFFER_BIT_EXT,
+		// Provided by VK_EXT_transform_feedback
+		TransformFeedbackCounter = VK_BUFFER_USAGE_TRANSFORM_FEEDBACK_COUNTER_BUFFER_BIT_EXT,
+		// Provided by VK_EXT_conditional_rendering
+		ConditionalRendering = VK_BUFFER_USAGE_CONDITIONAL_RENDERING_BIT_EXT,
+		// Provided by VK_KHR_acceleration_structure
+		AccelerationStructureBuildInputReadOnly = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR,
+		// Provided by VK_KHR_acceleration_structure
+		AccelerationStructureStorage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR,
+		// Provided by VK_KHR_ray_tracing_pipeline
+		ShaderBindingTable = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR,
+
+		// Provided by VK_NV_ray_tracing
+		Raytracing = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV,
+		// Provided by VK_EXT_buffer_device_address
+		ShaderDeviceAddressExt = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_EXT,
+		// Provided by VK_KHR_buffer_device_address
+		ShaderDeviceAddressKHR = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR,
+	};
+
 	class Buffer
 	{
 	  public:

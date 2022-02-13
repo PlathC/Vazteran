@@ -32,12 +32,18 @@ int main(int /* args */, char*[] /* argv */)
 
 	vzt::RenderGraph renderGraph{};
 
+	const vzt::AttachmentHandle particlePositions = renderGraph.addStorage({128, vzt::BufferUsage::VertexBuffer});
+
 	const vzt::AttachmentHandle position = renderGraph.addAttachment({vzt::Format::R16G16B16A16SFloat});
 	const vzt::AttachmentHandle albedo   = renderGraph.addAttachment({vzt::Format::R16G16B16A16SFloat});
 	const vzt::AttachmentHandle normal   = renderGraph.addAttachment({vzt::Format::R8G8B8A8UNorm});
 	const vzt::AttachmentHandle depth    = renderGraph.addAttachment({});
 
+	auto& computePass = renderGraph.addPass("Particle Generation", vzt::QueueType::Compute);
+	computePass.addStorageOutput(particlePositions, "Particles");
+
 	auto& geometryBuffer = renderGraph.addPass("G-Buffer", vzt::QueueType::Graphic);
+	geometryBuffer.addStorageInput(particlePositions, "Particles");
 	geometryBuffer.addColorOutput(position, "Position");
 	geometryBuffer.addColorOutput(albedo, "Albedo");
 	geometryBuffer.addColorOutput(normal, "Normal");
@@ -46,13 +52,12 @@ int main(int /* args */, char*[] /* argv */)
 	const vzt::AttachmentHandle composed = renderGraph.addAttachment({});
 
 	auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
+	deferredPass.addStorageInput(particlePositions, "Particles");
 	deferredPass.addAttachmentInput(position, "G-Position");
 	deferredPass.addAttachmentInput(albedo, "G-Albedo");
 	deferredPass.addAttachmentInput(normal, "G-Normal");
 	deferredPass.setDepthStencilInput(depth, "G-Depth");
-	deferredPass.addAttachmentInput(composed, "Composed");
 
-	deferredPass.addAttachmentInput(albedo, "G-Albedo");
 	deferredPass.addColorOutput(composed, "Composed");
 
 	auto& uiPass = renderGraph.addPass("UI", vzt::QueueType::Graphic);
