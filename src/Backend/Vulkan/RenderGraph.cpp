@@ -170,13 +170,16 @@ namespace vzt
 	{
 		sortRenderPasses();
 
+		std::cout << "Sorted render passes :" << std::endl;
 		for (std::size_t i = 0; i < m_sortedRenderPassIndices.size(); i++)
 		{
 			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
 		}
+		std::cout << std::endl;
 
 		reorderRenderPasses();
 
+		std::cout << "Reordered render passes :" << std::endl;
 		for (std::size_t i = 0; i < m_sortedRenderPassIndices.size(); i++)
 		{
 			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
