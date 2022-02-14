@@ -22,8 +22,9 @@ namespace vzt
 		m_colorInputs[attachment] = savedName;
 	}
 
-	void RenderPassHandler::addColorOutput(const vzt::AttachmentHandle attachment, const std::string& attachmentName)
+	void RenderPassHandler::addColorOutput(vzt::AttachmentHandle& attachment, const std::string& attachmentName)
 	{
+		attachment.state++;
 		std::string savedName = attachmentName;
 		if (savedName.empty())
 		{
@@ -33,7 +34,7 @@ namespace vzt
 		m_colorOutputs[attachment] = savedName;
 	}
 
-	void RenderPassHandler::addStorageInput(const vzt::StorageHandle attachment, const std::string& storageName)
+	void RenderPassHandler::addStorageInput(const vzt::StorageHandle storage, const std::string& storageName)
 	{
 		std::string savedName = storageName;
 		if (savedName.empty())
@@ -41,21 +42,22 @@ namespace vzt
 			savedName = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 		}
 
-		m_storageInputs[attachment] = savedName;
+		m_storageInputs[storage] = savedName;
 	}
 
-	void RenderPassHandler::addStorageOutput(const vzt::StorageHandle attachment, const std::string& storageName)
+	void RenderPassHandler::addStorageOutput(vzt::StorageHandle& storage, const std::string& storageName)
 	{
+		storage.state++;
 		std::string savedName = storageName;
 		if (savedName.empty())
 		{
 			savedName = m_name + "StorageOut" + std::to_string(m_storageOutput.size());
 		}
 
-		m_storageOutput[attachment] = savedName;
+		m_storageOutput[storage] = savedName;
 	}
 
-	void RenderPassHandler::setDepthStencilInput(const vzt::AttachmentHandle attachment,
+	void RenderPassHandler::setDepthStencilInput(const vzt::AttachmentHandle depthStencil,
 	                                             const std::string&          attachmentName)
 	{
 		std::string savedName = attachmentName;
@@ -64,19 +66,77 @@ namespace vzt
 			savedName = m_name + "DepthIn";
 		}
 
-		m_depthInput = {attachment, savedName};
+		m_depthInput = {depthStencil, savedName};
 	}
 
-	void RenderPassHandler::setDepthStencilOutput(const vzt::AttachmentHandle attachment,
-	                                              const std::string&          attachmentName)
+	void RenderPassHandler::setDepthStencilOutput(vzt::AttachmentHandle& depthStencil,
+	                                              const std::string&     attachmentName)
 	{
+		depthStencil.state++;
 		std::string savedName = attachmentName;
 		if (savedName.empty())
 		{
 			savedName = m_name + "DepthOut";
 		}
 
-		m_depthOutput = {attachment, savedName};
+		m_depthOutput = {depthStencil, savedName};
+	}
+
+	void RenderPassHandler::setRenderFunction(vzt::RenderFunction renderFunction)
+	{
+		m_renderFunction = std::move(renderFunction);
+	}
+
+	void RenderPassHandler::setDepthClearFunction(vzt::DepthClearFunction depthClearFunction)
+	{
+		m_depthClearFunction = std::move(depthClearFunction);
+	}
+
+	void RenderPassHandler::setColorClearFunction(vzt::ColorClearFunction colorClearFunction)
+	{
+		m_colorClearFunction = std::move(colorClearFunction);
+	}
+
+	bool RenderPassHandler::isDependingOn(const RenderPassHandler& other) const
+	{
+		for (const auto& output : m_colorOutputs)
+		{
+			const auto currentHandle = output.first;
+			for (const auto& input : other.m_colorInputs)
+			{
+				if (input.first == currentHandle)
+				{
+					return true;
+				}
+			}
+		}
+
+		for (const auto& output : m_storageOutput)
+		{
+			const auto currentHandle = output.first;
+			for (const auto& input : other.m_storageOutput)
+			{
+				if (input.first == currentHandle)
+				{
+					return true;
+				}
+			}
+		}
+
+		// Depth attachment
+		if (m_depthOutput.has_value())
+		{
+			const auto currentHandle = m_depthOutput.value().first;
+			if (other.m_depthInput.has_value())
+			{
+				if (other.m_depthInput.value().first == currentHandle)
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	RenderGraph::RenderGraph()  = default;
@@ -115,6 +175,13 @@ namespace vzt
 			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
 		}
 
+		reorderRenderPasses();
+
+		for (std::size_t i = 0; i < m_sortedRenderPassIndices.size(); i++)
+		{
+			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
+		}
+
 		// generateRenderOperation();
 	}
 
@@ -146,55 +213,16 @@ namespace vzt
 
 			nodeStatus[idx] = 1;
 
-			// Colors attachments
 			const auto& currentRenderPass = m_renderPasses[idx];
-			for (const auto& output : currentRenderPass.m_colorOutputs)
+			for (std::size_t j = 0; j < m_renderPasses.size(); j++)
 			{
-				const auto currentHandle = output.first;
-				for (std::size_t j = 0; j < m_renderPasses.size(); j++)
-				{
-					const auto& renderPass = m_renderPasses[j];
-					for (const auto& input : renderPass.m_colorInputs)
-					{
-						if (input.first == currentHandle)
-						{
-							processNode(j);
-						}
-					}
-				}
-			}
+				if (j == idx)
+					continue;
 
-			// Storage attachment
-			for (const auto& output : currentRenderPass.m_storageOutput)
-			{
-				const auto currentHandle = output.first;
-				for (std::size_t j = 0; j < m_renderPasses.size(); j++)
+				const auto& renderPass = m_renderPasses[j];
+				if (currentRenderPass.isDependingOn(renderPass))
 				{
-					const auto& renderPass = m_renderPasses[j];
-					for (const auto& input : renderPass.m_storageInputs)
-					{
-						if (input.first == currentHandle)
-						{
-							processNode(j);
-						}
-					}
-				}
-			}
-
-			// Depth attachment
-			if (currentRenderPass.m_depthOutput.has_value())
-			{
-				const auto currentHandle = currentRenderPass.m_depthOutput.value().first;
-				for (std::size_t j = 0; j < m_renderPasses.size(); j++)
-				{
-					const auto& renderPass = m_renderPasses[j];
-					if (renderPass.m_depthInput.has_value())
-					{
-						if (renderPass.m_depthInput.value().first == currentHandle)
-						{
-							processNode(j);
-						}
-					}
+					processNode(j);
 				}
 			}
 
@@ -209,9 +237,68 @@ namespace vzt
 		}
 	}
 
+	void RenderGraph::reorderRenderPasses()
+	{
+		if (m_sortedRenderPassIndices.size() >= 2)
+			return;
+
+		// Based on https://github.com/Themaister/Granite/blob/master/renderer/render_graph.cpp#L2897
+		// Expecting that m_sortedRenderPassIndices contains
+		// the sorted list of render pass indices.
+		std::vector<std::size_t> toProcess;
+		toProcess.reserve(m_sortedRenderPassIndices.size());
+		std::swap(toProcess, m_sortedRenderPassIndices);
+
+		const auto schedule = [&](unsigned index) {
+			// Need to preserve the order of remaining elements.
+			m_sortedRenderPassIndices.push_back(toProcess[index]);
+			toProcess.erase(toProcess.begin() + index);
+		};
+
+		schedule(0);
+		while (!toProcess.empty())
+		{
+			std::size_t bestCandidateIdx  = 0;
+			std::size_t bestOverlapFactor = 0;
+
+			for (std::size_t i = 0; i < toProcess.size(); i++)
+			{
+				std::size_t overlapFactor = 0;
+				for (auto it = m_sortedRenderPassIndices.rbegin(); it != m_sortedRenderPassIndices.rend(); ++it)
+				{
+					if (m_renderPasses[toProcess[i]].isDependingOn(m_renderPasses[*it]))
+						break;
+					overlapFactor++;
+				}
+
+				if (overlapFactor <= bestOverlapFactor)
+					continue;
+
+				bool possibleCandidate = true;
+				for (std::size_t j = 0; j < i; j++)
+				{
+					if (m_renderPasses[toProcess[i]].isDependingOn(m_renderPasses[toProcess[j]]))
+					{
+						possibleCandidate = false;
+						break;
+					}
+				}
+
+				if (!possibleCandidate)
+					continue;
+
+				bestCandidateIdx  = i;
+				bestOverlapFactor = overlapFactor;
+			}
+
+			m_sortedRenderPassIndices.push_back(toProcess[bestCandidateIdx]);
+			toProcess.erase(toProcess.begin() + bestCandidateIdx);
+		}
+	}
+
 	void RenderGraph::generateRenderOperations() {}
 
-	vzt::AttachmentHandle RenderGraph::generateAttachmentHandle() const { return m_hash(m_handleCounter++); }
-	vzt::StorageHandle    RenderGraph::generateStorageHandle() const { return m_hash(m_handleCounter++); }
+	vzt::AttachmentHandle RenderGraph::generateAttachmentHandle() const { return {m_hash(m_handleCounter++), 0}; }
+	vzt::StorageHandle    RenderGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), 0}; }
 
 } // namespace vzt

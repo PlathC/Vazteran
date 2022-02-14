@@ -1,6 +1,7 @@
 #ifndef VAZTERAN_BACKEND_VULKAN_RENDERGRAPH_HPP
 #define VAZTERAN_BACKEND_VULKAN_RENDERGRAPH_HPP
 
+#include <functional>
 #include <optional>
 
 #include <vulkan/vulkan.hpp>
@@ -47,8 +48,40 @@ namespace vzt
 		vzt::BufferUsage usage;
 	};
 
-	using AttachmentHandle = std::size_t;
-	using StorageHandle    = std::size_t;
+	struct AttachmentHandle
+	{
+		std::size_t id;        // immutable identifier
+		std::size_t state = 0; // Describe the state of the handle
+
+		struct hash
+		{
+			auto operator()(const AttachmentHandle& handle) const { return handle.id; }
+		};
+
+		bool operator==(const AttachmentHandle& other) const { return id == other.id && state == other.state; }
+	};
+
+	struct StorageHandle
+	{
+		std::size_t id;        // immutable identifier
+		std::size_t state = 0; // Describe the state of the handle
+
+		struct hash
+		{
+			auto operator()(const StorageHandle& handle) const { return handle.id; }
+		};
+
+		bool operator==(const StorageHandle& other) const { return id == other.id && state == other.state; }
+	};
+
+	template <class Type>
+	using AttachmentList = std::unordered_map<vzt::AttachmentHandle, Type, vzt::AttachmentHandle::hash>;
+	template <class Type>
+	using StorageList = std::unordered_map<vzt::StorageHandle, Type, vzt::StorageHandle::hash>;
+
+	using RenderFunction     = std::function<void(VkCommandBuffer& /*cmd*/)>;
+	using DepthClearFunction = std::function<bool(VkClearDepthStencilValue* /* value */)>;
+	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, VkClearColorValue* /* value */)>;
 	class RenderPassHandler
 	{
 	  public:
@@ -58,28 +91,38 @@ namespace vzt
 		RenderPassHandler() = delete;
 
 		void addAttachmentInput(const vzt::AttachmentHandle attachment, const std::string& attachmentName = "");
-		void addColorOutput(const vzt::AttachmentHandle attachment, const std::string& attachmentName = "");
+		void addColorOutput(vzt::AttachmentHandle& attachment, const std::string& attachmentName = "");
 
-		void addStorageInput(const vzt::StorageHandle attachment, const std::string& storageName = "");
-		void addStorageOutput(const vzt::StorageHandle attachment, const std::string& storageName = "");
+		void addStorageInput(const vzt::StorageHandle storage, const std::string& storageName = "");
+		void addStorageOutput(vzt::StorageHandle& storage, const std::string& storageName = "");
 
-		void setDepthStencilInput(const vzt::AttachmentHandle attachment, const std::string& attachmentName = "");
-		void setDepthStencilOutput(const vzt::AttachmentHandle attachment, const std::string& attachmentName = "");
+		void setDepthStencilInput(const vzt::AttachmentHandle depthStencil, const std::string& attachmentName = "");
+		void setDepthStencilOutput(vzt::AttachmentHandle& depthStencil, const std::string& attachmentName = "");
+
+		void setRenderFunction(vzt::RenderFunction renderFunction);
+		void setDepthClearFunction(vzt::DepthClearFunction depthClearFunction);
+		void setColorClearFunction(vzt::ColorClearFunction colorClearFunction);
+
+		bool isDependingOn(const RenderPassHandler& other) const;
 
 	  private:
-		RenderPassHandler(std::string m_name, vzt::QueueType m_queueType);
+		RenderPassHandler(std::string name, vzt::QueueType queueType);
 
 	  private:
 		std::string    m_name;
 		vzt::QueueType m_queueType;
 
-		std::unordered_map<vzt::AttachmentHandle, std::string>       m_colorInputs;
-		std::unordered_map<vzt::StorageHandle, std::string>          m_storageInputs;
+		vzt::AttachmentList<std::string>                             m_colorInputs;
+		vzt::StorageList<std::string>                                m_storageInputs;
 		std::optional<std::pair<vzt::AttachmentHandle, std::string>> m_depthInput;
 
-		std::unordered_map<vzt::AttachmentHandle, std::string>       m_colorOutputs;
-		std::unordered_map<vzt::StorageHandle, std::string>          m_storageOutput;
+		vzt::AttachmentList<std::string>                             m_colorOutputs;
+		vzt::StorageList<std::string>                                m_storageOutput;
 		std::optional<std::pair<vzt::AttachmentHandle, std::string>> m_depthOutput;
+
+		vzt::RenderFunction     m_renderFunction;
+		vzt::DepthClearFunction m_depthClearFunction;
+		vzt::ColorClearFunction m_colorClearFunction;
 	};
 
 	class RenderGraph
@@ -103,22 +146,23 @@ namespace vzt
 
 	  private:
 		void sortRenderPasses();
+		void reorderRenderPasses();
 		void generateRenderOperations();
 
 		vzt::AttachmentHandle generateAttachmentHandle() const;
 		vzt::StorageHandle    generateStorageHandle() const;
 
 	  private:
+		// TODO: Handle could be shared between rendergraph
 		static inline std::size_t m_handleCounter = 0;
 
 		std::hash<std::size_t> m_hash{};
+		vzt::Size2D<uint32_t>  m_frameBufferSize{};
 
-		vzt::Size2D<uint32_t> m_frameBufferSize{};
-
-		std::vector<std::size_t>                                           m_sortedRenderPassIndices;
-		std::vector<vzt::RenderPassHandler>                                m_renderPasses;
-		std::unordered_map<vzt::AttachmentHandle, vzt::AttachmentSettings> m_attachments;
-		std::unordered_map<vzt::StorageHandle, vzt::StorageSettings>       m_storages;
+		std::vector<std::size_t>                     m_sortedRenderPassIndices;
+		std::vector<vzt::RenderPassHandler>          m_renderPasses;
+		vzt::AttachmentList<vzt::AttachmentSettings> m_attachments;
+		vzt::StorageList<vzt::StorageSettings>       m_storages;
 
 		std::optional<vzt::AttachmentHandle> m_backBuffer;
 	};
