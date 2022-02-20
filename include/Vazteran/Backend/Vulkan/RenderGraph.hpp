@@ -104,13 +104,15 @@ namespace vzt
 		void setColorClearFunction(vzt::ColorClearFunction colorClearFunction);
 
 		bool isDependingOn(const RenderPassHandler& other) const;
+		void buildAttachmentDescription();
 
 	  private:
-		RenderPassHandler(std::string name, vzt::QueueType queueType);
+		RenderPassHandler(const vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType);
 
 	  private:
-		std::string    m_name;
-		vzt::QueueType m_queueType;
+		const vzt::RenderGraph* m_graph;
+		std::string             m_name;
+		vzt::QueueType          m_queueType;
 
 		vzt::AttachmentList<std::string>                             m_colorInputs;
 		vzt::StorageList<std::string>                                m_storageInputs;
@@ -123,6 +125,8 @@ namespace vzt
 		vzt::RenderFunction     m_renderFunction;
 		vzt::DepthClearFunction m_depthClearFunction;
 		vzt::ColorClearFunction m_colorClearFunction;
+
+		std::vector<VkAttachmentDescription> m_attachmentDescription;
 
 		std::vector<std::size_t> m_physicalResources;
 	};
@@ -157,6 +161,9 @@ namespace vzt
 		// Engine configuration
 		void setFrameBufferSize(vzt::Size2D<uint32_t> frameBufferSize);
 
+		const vzt::AttachmentSettings& getAttachmentSettings(const vzt::AttachmentHandle& handle) const;
+		const vzt::StorageSettings&    getStorageSettings(const vzt::StorageHandle& handle) const;
+
 	  private:
 		void sortRenderPasses();
 		void reorderRenderPasses();
@@ -176,10 +183,6 @@ namespace vzt
 		std::vector<vzt::RenderPassHandler>          m_renderPasses;
 		vzt::AttachmentList<vzt::AttachmentSettings> m_attachments;
 		vzt::StorageList<vzt::StorageSettings>       m_storages;
-
-		std::unordered_map<std::size_t /*id*/, vzt::PhysicalAttachment> m_physicalAttachments;
-		std::unordered_map<std::size_t /*id*/, vzt::PhysicalAttachment> m_physicalDepthAttachments;
-		std::unordered_map<std::size_t /*id*/, vzt::PhysicalStorage>    m_physicalStorages;
 
 		std::optional<vzt::AttachmentHandle> m_backBuffer;
 	};

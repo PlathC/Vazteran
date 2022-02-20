@@ -5,8 +5,9 @@
 
 namespace vzt
 {
-	RenderPassHandler::RenderPassHandler(std::string name, vzt::QueueType queueType)
-	    : m_name(std::move(name)), m_queueType(queueType)
+	RenderPassHandler::RenderPassHandler(const vzt::RenderGraph* const graph, std::string name,
+	                                     vzt::QueueType queueType)
+	    : m_graph(graph), m_name(std::move(name)), m_queueType(queueType)
 	{
 	}
 
@@ -140,6 +141,35 @@ namespace vzt
 		return false;
 	}
 
+	void RenderPassHandler::buildAttachmentDescription()
+	{
+		for (const auto& input : m_colorInputs)
+		{
+			const auto& attachmentSettings = m_graph->getAttachmentSettings(input.first);
+
+			// VkAttachmentDescription attachmentDescription{};
+			// attachmentDescription.format         = static_cast<VkFormat>(m_format);
+			// attachmentDescription.samples        = VK_SAMPLE_COUNT_1_BIT;
+			// attachmentDescription.loadOp         = static_cast<VkAttachmentLoadOp>(m_loadOp);
+			// attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(m_storeOp);
+			// attachmentDescription.stencilLoadOp  = static_cast<VkAttachmentLoadOp>(m_stencilLoadOp);
+			// attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(m_stencilStoreOp);
+			// attachmentDescription.initialLayout  = static_cast<VkImageLayout>(m_initialLayout);
+			// attachmentDescription.finalLayout    = static_cast<VkImageLayout>(m_finalLayout);
+			//
+			// m_attachmentDescription.emplace_back(attachmentDescription);
+			//
+			// for (const auto& output : m_colorOutputs)
+			// {
+			// 	if (output.first.id == input.first.id)
+			// 	{
+			// 		isInputOutput = true;
+			// 		break;
+			// 	}
+			// }
+		}
+	}
+
 	RenderGraph::RenderGraph()  = default;
 	RenderGraph::~RenderGraph() = default;
 
@@ -193,6 +223,22 @@ namespace vzt
 	{
 		m_frameBufferSize = frameBufferSize;
 		// generateRenderOperations();
+	}
+
+	const vzt::AttachmentSettings& RenderGraph::getAttachmentSettings(const vzt::AttachmentHandle& handle) const
+	{
+		const auto attachmentInfo = m_attachments.find(handle);
+		if (attachmentInfo == m_attachments.end())
+			throw std::runtime_error("Unknown referenced attachment.");
+		return attachmentInfo->second;
+	}
+
+	const vzt::StorageSettings& RenderGraph::getStorageSettings(const vzt::StorageHandle& handle) const
+	{
+		const auto storageInfo = m_storages.find(handle);
+		if (storageInfo == m_storages.end())
+			throw std::runtime_error("Unknown referenced attachment.");
+		return storageInfo->second;
 	}
 
 	void RenderGraph::sortRenderPasses()
@@ -300,6 +346,7 @@ namespace vzt
 			toProcess.erase(toProcess.begin() + bestCandidateIdx);
 		}
 	}
+
 	void RenderGraph::resolvePhysicalResources() {}
 
 	vzt::AttachmentHandle RenderGraph::generateAttachmentHandle() const { return {m_hash(m_handleCounter++), 0}; }
