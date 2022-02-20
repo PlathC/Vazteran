@@ -123,6 +123,19 @@ namespace vzt
 		vzt::RenderFunction     m_renderFunction;
 		vzt::DepthClearFunction m_depthClearFunction;
 		vzt::ColorClearFunction m_colorClearFunction;
+
+		std::vector<std::size_t> m_physicalResources;
+	};
+
+	struct PhysicalAttachment
+	{
+		const vzt::AttachmentSettings settings;
+	};
+
+	struct PhysicalStorage
+	{
+		const vzt::StorageSettings settings;
+		vzt::Buffer                buffer;
 	};
 
 	class RenderGraph
@@ -147,13 +160,13 @@ namespace vzt
 	  private:
 		void sortRenderPasses();
 		void reorderRenderPasses();
-		void generateRenderOperations();
+		void resolvePhysicalResources();
 
 		vzt::AttachmentHandle generateAttachmentHandle() const;
 		vzt::StorageHandle    generateStorageHandle() const;
 
 	  private:
-		// TODO: Handle could be shared between rendergraph
+		// TODO: Handle could be shared between render graphs
 		static inline std::size_t m_handleCounter = 0;
 
 		std::hash<std::size_t> m_hash{};
@@ -163,6 +176,10 @@ namespace vzt
 		std::vector<vzt::RenderPassHandler>          m_renderPasses;
 		vzt::AttachmentList<vzt::AttachmentSettings> m_attachments;
 		vzt::StorageList<vzt::StorageSettings>       m_storages;
+
+		std::unordered_map<std::size_t /*id*/, vzt::PhysicalAttachment> m_physicalAttachments;
+		std::unordered_map<std::size_t /*id*/, vzt::PhysicalAttachment> m_physicalDepthAttachments;
+		std::unordered_map<std::size_t /*id*/, vzt::PhysicalStorage>    m_physicalStorages;
 
 		std::optional<vzt::AttachmentHandle> m_backBuffer;
 	};

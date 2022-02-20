@@ -55,12 +55,12 @@ namespace vzt
 		Plane2KHR       = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR,
 	};
 
-	inline ImageAspect operator&(ImageAspect l, ImageAspect r)
+	inline constexpr ImageAspect operator&(const ImageAspect l, const ImageAspect r)
 	{
 		return static_cast<ImageAspect>(vzt::toUnderlying(l) & vzt::toUnderlying(r));
 	}
 
-	inline ImageAspect operator|(ImageAspect l, ImageAspect r)
+	inline constexpr ImageAspect operator|(const ImageAspect l, const ImageAspect r)
 	{
 		return static_cast<ImageAspect>(vzt::toUnderlying(l) | vzt::toUnderlying(r));
 	}

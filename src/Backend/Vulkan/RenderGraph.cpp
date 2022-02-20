@@ -104,7 +104,7 @@ namespace vzt
 			const auto currentHandle = output.first;
 			for (const auto& input : other.m_colorInputs)
 			{
-				if (input.first == currentHandle)
+				if (input.first.id == currentHandle.id && input.first.state == currentHandle.state)
 				{
 					return true;
 				}
@@ -116,7 +116,7 @@ namespace vzt
 			const auto currentHandle = output.first;
 			for (const auto& input : other.m_storageOutput)
 			{
-				if (input.first == currentHandle)
+				if (input.first.id == currentHandle.id && input.first.state == currentHandle.state)
 				{
 					return true;
 				}
@@ -129,7 +129,8 @@ namespace vzt
 			const auto currentHandle = m_depthOutput.value().first;
 			if (other.m_depthInput.has_value())
 			{
-				if (other.m_depthInput.value().first == currentHandle)
+				auto otherHandle = other.m_depthInput.value().first;
+				if (otherHandle.id == currentHandle.id && otherHandle.state == currentHandle.state)
 				{
 					return true;
 				}
@@ -185,13 +186,13 @@ namespace vzt
 			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
 		}
 
-		// generateRenderOperation();
+		resolvePhysicalResources();
 	}
 
 	void RenderGraph::setFrameBufferSize(vzt::Size2D<uint32_t> frameBufferSize)
 	{
 		m_frameBufferSize = frameBufferSize;
-		generateRenderOperations();
+		// generateRenderOperations();
 	}
 
 	void RenderGraph::sortRenderPasses()
@@ -267,6 +268,7 @@ namespace vzt
 			for (std::size_t i = 0; i < toProcess.size(); i++)
 			{
 				std::size_t overlapFactor = 0;
+				// Try to find the farthest non-depending pass
 				for (auto it = m_sortedRenderPassIndices.rbegin(); it != m_sortedRenderPassIndices.rend(); ++it)
 				{
 					if (m_renderPasses[toProcess[i]].isDependingOn(m_renderPasses[*it]))
@@ -298,8 +300,7 @@ namespace vzt
 			toProcess.erase(toProcess.begin() + bestCandidateIdx);
 		}
 	}
-
-	void RenderGraph::generateRenderOperations() {}
+	void RenderGraph::resolvePhysicalResources() {}
 
 	vzt::AttachmentHandle RenderGraph::generateAttachmentHandle() const { return {m_hash(m_handleCounter++), 0}; }
 	vzt::StorageHandle    RenderGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), 0}; }
