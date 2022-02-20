@@ -418,6 +418,17 @@ namespace vzt
 		FloatCustomExt        = VK_BORDER_COLOR_FLOAT_CUSTOM_EXT,
 		IntCustomExt          = VK_BORDER_COLOR_INT_CUSTOM_EXT
 	};
+
+	enum class SampleCount : uint32_t
+	{
+		Sample1  = VK_SAMPLE_COUNT_1_BIT,
+		Sample2  = VK_SAMPLE_COUNT_2_BIT,
+		Sample4  = VK_SAMPLE_COUNT_4_BIT,
+		Sample8  = VK_SAMPLE_COUNT_8_BIT,
+		Sample16 = VK_SAMPLE_COUNT_16_BIT,
+		Sample32 = VK_SAMPLE_COUNT_32_BIT,
+		Sample64 = VK_SAMPLE_COUNT_64_BIT
+	};
 } // namespace vzt
 
 #endif // VAZTERAN_BACKEND_VULKAN_IMAGETYPES_HPP

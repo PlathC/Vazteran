@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <numeric>
+#include <stack>
 
 namespace vzt
 {
@@ -141,32 +142,77 @@ namespace vzt
 		return false;
 	}
 
-	void RenderPassHandler::buildAttachmentDescription()
+	void RenderPassHandler::buildAttachmentDescription(const vzt::Format scColorFormat, const vzt::Format scDepthFormat)
 	{
-		for (const auto& input : m_colorInputs)
-		{
-			const auto& attachmentSettings = m_graph->getAttachmentSettings(input.first);
+		m_attachmentDescription.clear();
+		m_attachmentDescription.reserve(m_colorOutputs.size());
 
-			// VkAttachmentDescription attachmentDescription{};
-			// attachmentDescription.format         = static_cast<VkFormat>(m_format);
-			// attachmentDescription.samples        = VK_SAMPLE_COUNT_1_BIT;
-			// attachmentDescription.loadOp         = static_cast<VkAttachmentLoadOp>(m_loadOp);
-			// attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(m_storeOp);
-			// attachmentDescription.stencilLoadOp  = static_cast<VkAttachmentLoadOp>(m_stencilLoadOp);
-			// attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(m_stencilStoreOp);
-			// attachmentDescription.initialLayout  = static_cast<VkImageLayout>(m_initialLayout);
-			// attachmentDescription.finalLayout    = static_cast<VkImageLayout>(m_finalLayout);
-			//
-			// m_attachmentDescription.emplace_back(attachmentDescription);
-			//
-			// for (const auto& output : m_colorOutputs)
-			// {
-			// 	if (output.first.id == input.first.id)
-			// 	{
-			// 		isInputOutput = true;
-			// 		break;
-			// 	}
-			// }
+		std::vector<vzt::AttachmentHandle> remainingInputs;
+		remainingInputs.reserve(m_colorInputs.size());
+		for (const auto& input : m_colorInputs)
+			remainingInputs.emplace_back(input.first);
+		for (const auto& output : m_colorOutputs)
+		{
+			const auto&             attachmentSettings = m_graph->getAttachmentSettings(output.first);
+			bool                    isInputOutput      = false;
+			VkAttachmentDescription attachmentDescription{};
+			if (attachmentSettings.format.has_value())
+			{
+				attachmentDescription.format = static_cast<VkFormat>(attachmentSettings.format.value());
+			}
+			else
+			{
+				attachmentDescription.format = static_cast<VkFormat>(scColorFormat);
+			}
+
+			attachmentDescription.samples = static_cast<VkSampleCountFlagBits>(attachmentSettings.sampleCount);
+
+			for (std::size_t i = 0; i < remainingInputs.size(); i++)
+			{
+				const auto& input = remainingInputs[i];
+				if (output.first.id == input.id)
+				{
+					remainingInputs.erase(remainingInputs.begin() + i);
+					isInputOutput = true;
+					break;
+				}
+			}
+
+			attachmentDescription.initialLayout = static_cast<VkImageLayout>(vzt::ImageLayout::Undefined);
+
+			if (isInputOutput)
+			{
+				attachmentDescription.loadOp        = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::Load);
+				attachmentDescription.stencilLoadOp = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::DontCare);
+
+				attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::DontCare);
+				attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::Store);
+			}
+			else if (output.first.state > 2)
+			{
+				attachmentDescription.loadOp        = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::Load);
+				attachmentDescription.stencilLoadOp = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::DontCare);
+
+				attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::DontCare);
+				attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::Store);
+			}
+			else
+			{
+				attachmentDescription.loadOp        = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::Clear);
+				attachmentDescription.stencilLoadOp = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::DontCare);
+
+				attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::DontCare);
+				attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::Store);
+
+				attachmentDescription.initialLayout = static_cast<VkImageLayout>(vzt::ImageLayout::Undefined);
+			}
+
+			const vzt::ImageLayout finalLayout = m_graph->isBackBuffer(output.first)
+			                                         ? vzt::ImageLayout::ColorAttachmentOptimal
+			                                         : vzt::ImageLayout::PresentSrcKHR;
+			attachmentDescription.finalLayout  = static_cast<VkImageLayout>(finalLayout);
+
+			m_attachmentDescription.emplace_back(attachmentDescription);
 		}
 	}
 
@@ -191,11 +237,15 @@ namespace vzt
 
 	vzt::RenderPassHandler& RenderGraph::addPass(const std::string& name, const vzt::QueueType queueType)
 	{
-		m_renderPasses.emplace_back(vzt::RenderPassHandler(name, queueType));
+		m_renderPasses.emplace_back(vzt::RenderPassHandler(this, name, queueType));
 		return m_renderPasses.back();
 	}
 
 	void RenderGraph::setBackBuffer(const vzt::AttachmentHandle backBufferHandle) { m_backBuffer = backBufferHandle; }
+	bool RenderGraph::isBackBuffer(const vzt::AttachmentHandle backBufferHandle) const
+	{
+		return m_backBuffer == backBufferHandle;
+	}
 
 	void RenderGraph::compile(vzt::Format scColorFormat, vzt::Format scDepthFormat, vzt::Size2D<uint32_t> scImageSize)
 	{
@@ -216,7 +266,7 @@ namespace vzt
 			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
 		}
 
-		resolvePhysicalResources();
+		resolvePhysicalResources(scColorFormat, scDepthFormat);
 	}
 
 	void RenderGraph::setFrameBufferSize(vzt::Size2D<uint32_t> frameBufferSize)
@@ -227,18 +277,26 @@ namespace vzt
 
 	const vzt::AttachmentSettings& RenderGraph::getAttachmentSettings(const vzt::AttachmentHandle& handle) const
 	{
-		const auto attachmentInfo = m_attachments.find(handle);
-		if (attachmentInfo == m_attachments.end())
-			throw std::runtime_error("Unknown referenced attachment.");
-		return attachmentInfo->second;
+		for (const auto& savedHandle : m_attachments)
+		{
+			if (savedHandle.first.id == handle.id)
+			{
+				return savedHandle.second;
+			}
+		}
+		throw std::runtime_error("Unknown referenced attachment.");
 	}
 
 	const vzt::StorageSettings& RenderGraph::getStorageSettings(const vzt::StorageHandle& handle) const
 	{
-		const auto storageInfo = m_storages.find(handle);
-		if (storageInfo == m_storages.end())
-			throw std::runtime_error("Unknown referenced attachment.");
-		return storageInfo->second;
+		for (const auto& savedHandle : m_storages)
+		{
+			if (savedHandle.first.id == handle.id)
+			{
+				return savedHandle.second;
+			}
+		}
+		throw std::runtime_error("Unknown referenced storage.");
 	}
 
 	void RenderGraph::sortRenderPasses()
@@ -347,7 +405,14 @@ namespace vzt
 		}
 	}
 
-	void RenderGraph::resolvePhysicalResources() {}
+	void RenderGraph::resolvePhysicalResources(vzt::Format scColorFormat, vzt::Format scDepthFormat)
+	{
+		for (const std::size_t renderPassId : m_sortedRenderPassIndices)
+		{
+			auto& renderPass = m_renderPasses[renderPassId];
+			renderPass.buildAttachmentDescription(scColorFormat, scDepthFormat);
+		}
+	}
 
 	vzt::AttachmentHandle RenderGraph::generateAttachmentHandle() const { return {m_hash(m_handleCounter++), 0}; }
 	vzt::StorageHandle    RenderGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), 0}; }

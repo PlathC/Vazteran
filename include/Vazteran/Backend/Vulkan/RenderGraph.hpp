@@ -20,6 +20,7 @@ namespace vzt
 		Graphic = VK_QUEUE_GRAPHICS_BIT,
 		Compute = VK_QUEUE_COMPUTE_BIT
 	};
+
 	enum class LoadOperation : uint32_t
 	{
 		Load     = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD,
@@ -40,6 +41,7 @@ namespace vzt
 	{
 		std::optional<vzt::Format>        format{};    // if unset, use swapchain image formats
 		std::optional<vzt::Size2D<float>> imageSize{}; // if unset, use frame buffer size
+		vzt::SampleCount                  sampleCount = vzt::SampleCount::Sample1;
 	};
 
 	struct StorageSettings
@@ -104,7 +106,7 @@ namespace vzt
 		void setColorClearFunction(vzt::ColorClearFunction colorClearFunction);
 
 		bool isDependingOn(const RenderPassHandler& other) const;
-		void buildAttachmentDescription();
+		void buildAttachmentDescription(const vzt::Format scColorFormat, const vzt::Format scDepthFormat);
 
 	  private:
 		RenderPassHandler(const vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType);
@@ -155,6 +157,8 @@ namespace vzt
 		vzt::RenderPassHandler& addPass(const std::string& name, const vzt::QueueType queueType);
 		void                    setBackBuffer(const vzt::AttachmentHandle backBufferHandle);
 
+		bool isBackBuffer(const vzt::AttachmentHandle backBufferHandle) const;
+
 		// User information check
 		void compile(vzt::Format scColorFormat, vzt::Format scDepthFormat, vzt::Size2D<uint32_t> scImageSize);
 
@@ -167,7 +171,7 @@ namespace vzt
 	  private:
 		void sortRenderPasses();
 		void reorderRenderPasses();
-		void resolvePhysicalResources();
+		void resolvePhysicalResources(vzt::Format scColorFormat, vzt::Format scDepthFormat);
 
 		vzt::AttachmentHandle generateAttachmentHandle() const;
 		vzt::StorageHandle    generateStorageHandle() const;
