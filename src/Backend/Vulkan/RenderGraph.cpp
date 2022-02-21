@@ -12,76 +12,188 @@ namespace vzt
 	{
 	}
 
-	void RenderPassHandler::addAttachmentInput(const vzt::AttachmentHandle attachment,
-	                                           const std::string&          attachmentName)
+	void RenderPassHandler::addColorInput(const vzt::AttachmentHandle attachment, const std::string& attachmentName)
 	{
-		std::string savedName = attachmentName;
-		if (savedName.empty())
+		AttachmentInfo attachmentInfo;
+
+		attachmentInfo.name = attachmentName;
+		if (attachmentInfo.name.empty())
 		{
-			savedName = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
+			attachmentInfo.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
 		}
 
-		m_colorInputs[attachment] = savedName;
+		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ShaderReadOnlyOptimal;
+		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
+		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
+
+		attachmentInfo.barrier.layout   = vzt::ImageLayout::ShaderReadOnlyOptimal;
+		attachmentInfo.barrier.accesses = vzt::AccessFlag::ShaderRead;
+		attachmentInfo.barrier.stages   = vzt::PipelineStage::FragmentShader;
+		m_colorInputs[attachment]       = attachmentInfo;
 	}
 
 	void RenderPassHandler::addColorOutput(vzt::AttachmentHandle& attachment, const std::string& attachmentName)
 	{
 		attachment.state++;
-		std::string savedName = attachmentName;
-		if (savedName.empty())
+
+		AttachmentInfo attachmentInfo{};
+		attachmentInfo.name = attachmentName;
+		if (attachmentInfo.name.empty())
 		{
-			savedName = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
+			attachmentInfo.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
 		}
 
-		m_colorOutputs[attachment] = savedName;
+		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
+		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Clear;
+		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
+		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
+
+		m_colorOutputs[attachment] = attachmentInfo;
+	}
+
+	void RenderPassHandler::addColorInputOutput(vzt::AttachmentHandle& attachment, const std::string& inName,
+	                                            const std::string& outName)
+	{
+		attachment.state++;
+
+		AttachmentInfo inAttachmentInfo{};
+		inAttachmentInfo.name = inName;
+		if (inAttachmentInfo.name.empty())
+		{
+			inAttachmentInfo.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
+		}
+
+		inAttachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		inAttachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
+		inAttachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
+		inAttachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
+		inAttachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
+		inAttachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
+
+		m_colorInputs[attachment] = inAttachmentInfo;
+
+		AttachmentInfo outAttachmentInfo{};
+		outAttachmentInfo.name = outName;
+		if (outAttachmentInfo.name.empty())
+		{
+			outAttachmentInfo.name = m_name + "ColorOut" + std::to_string(m_colorInputs.size());
+		}
+
+		m_colorOutputs[attachment] = outAttachmentInfo;
 	}
 
 	void RenderPassHandler::addStorageInput(const vzt::StorageHandle storage, const std::string& storageName)
 	{
-		std::string savedName = storageName;
-		if (savedName.empty())
+		StorageInfo inStorageInfo;
+		inStorageInfo.name = storageName;
+		if (inStorageInfo.name.empty())
 		{
-			savedName = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
+			inStorageInfo.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 		}
 
-		m_storageInputs[storage] = savedName;
+		inStorageInfo.barrier.accesses = vzt::AccessFlag::ShaderRead;
+		if (m_queueType == vzt::QueueType::Compute)
+		{
+			inStorageInfo.barrier.stages = vzt::PipelineStage::ComputeShader;
+		}
+		else
+		{
+			inStorageInfo.barrier.stages = vzt::PipelineStage::FragmentShader;
+		}
+
+		m_storageInputs[storage] = inStorageInfo;
 	}
 
 	void RenderPassHandler::addStorageOutput(vzt::StorageHandle& storage, const std::string& storageName)
 	{
 		storage.state++;
-		std::string savedName = storageName;
-		if (savedName.empty())
+		StorageInfo inStorageInfo{};
+		inStorageInfo.name = storageName;
+		if (inStorageInfo.name.empty())
 		{
-			savedName = m_name + "StorageOut" + std::to_string(m_storageOutput.size());
+			inStorageInfo.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
 		}
 
-		m_storageOutput[storage] = savedName;
+		m_storageOutputs[storage] = inStorageInfo;
+	}
+
+	void RenderPassHandler::addStorageInputOutput(vzt::StorageHandle& storage, const std::string& inName,
+	                                              const std::string& outName)
+	{
+		storage.state++;
+
+		StorageInfo inStorageInfo{};
+		inStorageInfo.name = inName;
+		if (inStorageInfo.name.empty())
+		{
+			inStorageInfo.name = m_name + "In" + std::to_string(m_colorInputs.size());
+		}
+		inStorageInfo.barrier.accesses = vzt::AccessFlag::ShaderRead | vzt::AccessFlag::ShaderWrite;
+		if (m_queueType == vzt::QueueType::Compute)
+		{
+			inStorageInfo.barrier.stages = vzt::PipelineStage::ComputeShader;
+		}
+		else
+		{
+			inStorageInfo.barrier.stages = vzt::PipelineStage::FragmentShader;
+		}
+		m_storageInputs[storage] = inStorageInfo;
+
+		StorageInfo outAttachmentInfo{};
+		outAttachmentInfo.name = outName;
+		if (outAttachmentInfo.name.empty())
+		{
+			outAttachmentInfo.name = m_name + "Out" + std::to_string(m_colorInputs.size());
+		}
+
+		m_storageOutputs[storage] = outAttachmentInfo;
 	}
 
 	void RenderPassHandler::setDepthStencilInput(const vzt::AttachmentHandle depthStencil,
 	                                             const std::string&          attachmentName)
 	{
-		std::string savedName = attachmentName;
-		if (savedName.empty())
+		AttachmentInfo attachmentInfo;
+		attachmentInfo.name = attachmentName;
+		if (attachmentInfo.name.empty())
 		{
-			savedName = m_name + "DepthIn";
+			attachmentInfo.name = m_name + "DepthIn";
 		}
 
-		m_depthInput = {depthStencil, savedName};
+		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal;
+		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
+
+		m_depthInput = {depthStencil, attachmentInfo};
 	}
 
 	void RenderPassHandler::setDepthStencilOutput(vzt::AttachmentHandle& depthStencil,
 	                                              const std::string&     attachmentName)
 	{
 		depthStencil.state++;
-		std::string savedName = attachmentName;
-		if (savedName.empty())
+
+		AttachmentInfo attachmentInfo;
+		attachmentInfo.name = attachmentName;
+		if (attachmentInfo.name.empty())
 		{
-			savedName = m_name + "DepthOut";
+			attachmentInfo.name = m_name + "DepthOut";
 		}
 
-		m_depthOutput = {depthStencil, savedName};
+		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal;
+		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
+
+		m_depthOutput = {depthStencil, attachmentInfo};
 	}
 
 	void RenderPassHandler::setRenderFunction(vzt::RenderFunction renderFunction)
@@ -113,10 +225,10 @@ namespace vzt
 			}
 		}
 
-		for (const auto& output : m_storageOutput)
+		for (const auto& output : m_storageOutputs)
 		{
 			const auto currentHandle = output.first;
-			for (const auto& input : other.m_storageOutput)
+			for (const auto& input : other.m_storageOutputs)
 			{
 				if (input.first.id == currentHandle.id && input.first.state == currentHandle.state)
 				{
@@ -131,7 +243,7 @@ namespace vzt
 			const auto currentHandle = m_depthOutput.value().first;
 			if (other.m_depthInput.has_value())
 			{
-				auto otherHandle = other.m_depthInput.value().first;
+				const auto otherHandle = other.m_depthInput.value().first;
 				if (otherHandle.id == currentHandle.id && otherHandle.state == currentHandle.state)
 				{
 					return true;
@@ -140,80 +252,6 @@ namespace vzt
 		}
 
 		return false;
-	}
-
-	void RenderPassHandler::buildAttachmentDescription(const vzt::Format scColorFormat, const vzt::Format scDepthFormat)
-	{
-		m_attachmentDescription.clear();
-		m_attachmentDescription.reserve(m_colorOutputs.size());
-
-		std::vector<vzt::AttachmentHandle> remainingInputs;
-		remainingInputs.reserve(m_colorInputs.size());
-		for (const auto& input : m_colorInputs)
-			remainingInputs.emplace_back(input.first);
-		for (const auto& output : m_colorOutputs)
-		{
-			const auto&             attachmentSettings = m_graph->getAttachmentSettings(output.first);
-			bool                    isInputOutput      = false;
-			VkAttachmentDescription attachmentDescription{};
-			if (attachmentSettings.format.has_value())
-			{
-				attachmentDescription.format = static_cast<VkFormat>(attachmentSettings.format.value());
-			}
-			else
-			{
-				attachmentDescription.format = static_cast<VkFormat>(scColorFormat);
-			}
-
-			attachmentDescription.samples = static_cast<VkSampleCountFlagBits>(attachmentSettings.sampleCount);
-
-			for (std::size_t i = 0; i < remainingInputs.size(); i++)
-			{
-				const auto& input = remainingInputs[i];
-				if (output.first.id == input.id)
-				{
-					remainingInputs.erase(remainingInputs.begin() + i);
-					isInputOutput = true;
-					break;
-				}
-			}
-
-			attachmentDescription.initialLayout = static_cast<VkImageLayout>(vzt::ImageLayout::Undefined);
-
-			if (isInputOutput)
-			{
-				attachmentDescription.loadOp        = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::Load);
-				attachmentDescription.stencilLoadOp = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::DontCare);
-
-				attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::DontCare);
-				attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::Store);
-			}
-			else if (output.first.state > 2)
-			{
-				attachmentDescription.loadOp        = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::Load);
-				attachmentDescription.stencilLoadOp = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::DontCare);
-
-				attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::DontCare);
-				attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::Store);
-			}
-			else
-			{
-				attachmentDescription.loadOp        = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::Clear);
-				attachmentDescription.stencilLoadOp = static_cast<VkAttachmentLoadOp>(vzt::LoadOperation::DontCare);
-
-				attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::DontCare);
-				attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(vzt::StoreOperation::Store);
-
-				attachmentDescription.initialLayout = static_cast<VkImageLayout>(vzt::ImageLayout::Undefined);
-			}
-
-			const vzt::ImageLayout finalLayout = m_graph->isBackBuffer(output.first)
-			                                         ? vzt::ImageLayout::ColorAttachmentOptimal
-			                                         : vzt::ImageLayout::PresentSrcKHR;
-			attachmentDescription.finalLayout  = static_cast<VkImageLayout>(finalLayout);
-
-			m_attachmentDescription.emplace_back(attachmentDescription);
-		}
 	}
 
 	RenderGraph::RenderGraph()  = default;
@@ -265,8 +303,6 @@ namespace vzt
 		{
 			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
 		}
-
-		resolvePhysicalResources(scColorFormat, scDepthFormat);
 	}
 
 	void RenderGraph::setFrameBufferSize(vzt::Size2D<uint32_t> frameBufferSize)
@@ -402,15 +438,6 @@ namespace vzt
 
 			m_sortedRenderPassIndices.push_back(toProcess[bestCandidateIdx]);
 			toProcess.erase(toProcess.begin() + bestCandidateIdx);
-		}
-	}
-
-	void RenderGraph::resolvePhysicalResources(vzt::Format scColorFormat, vzt::Format scDepthFormat)
-	{
-		for (const std::size_t renderPassId : m_sortedRenderPassIndices)
-		{
-			auto& renderPass = m_renderPasses[renderPassId];
-			renderPass.buildAttachmentDescription(scColorFormat, scDepthFormat);
 		}
 	}
 

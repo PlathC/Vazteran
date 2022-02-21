@@ -53,11 +53,10 @@ int main(int /* args */, char*[] /* argv */)
 
 	auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
 	deferredPass.addStorageInput(particlePositions, "Particles");
-	deferredPass.addAttachmentInput(position, "G-Position");
-	deferredPass.addAttachmentInput(albedo, "G-Albedo");
-	deferredPass.addAttachmentInput(normal, "G-Normal");
+	deferredPass.addColorInput(position, "G-Position");
+	deferredPass.addColorInput(albedo, "G-Albedo");
+	deferredPass.addColorInput(normal, "G-Normal");
 	deferredPass.setDepthStencilInput(depth, "G-Depth");
-
 	deferredPass.addColorOutput(composed, "Composed");
 
 	auto& uiPass = renderGraph.addPass("UI", vzt::QueueType::Graphic);

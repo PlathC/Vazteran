@@ -1,6 +1,7 @@
 #ifndef VAZTERAN_BACKEND_VULKAN_IMAGETYPES_HPP
 #define VAZTERAN_BACKEND_VULKAN_IMAGETYPES_HPP
 
+#include "Vazteran/Core/Macro.hpp"
 #include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
@@ -36,6 +37,7 @@ namespace vzt
 		StencilAttachmentOptimalKHR              = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
 		StencilReadOnlyOptimalKHR                = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL,
 	};
+	TO_VULKAN_FUNCTION(ImageLayout, VkImageLayout)
 
 	enum class ImageAspect : uint32_t
 	{
@@ -54,21 +56,8 @@ namespace vzt
 		Plane1KHR       = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR,
 		Plane2KHR       = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR,
 	};
-
-	inline constexpr ImageAspect operator&(const ImageAspect l, const ImageAspect r)
-	{
-		return static_cast<ImageAspect>(vzt::toUnderlying(l) & vzt::toUnderlying(r));
-	}
-
-	inline constexpr ImageAspect operator|(const ImageAspect l, const ImageAspect r)
-	{
-		return static_cast<ImageAspect>(vzt::toUnderlying(l) | vzt::toUnderlying(r));
-	}
-
-	inline constexpr ImageAspect operator~(const ImageAspect m)
-	{
-		return static_cast<ImageAspect>(~vzt::toUnderlying(m));
-	}
+	TO_VULKAN_FUNCTION(ImageAspect, VkImageAspectFlagBits)
+	BITWISE_FUNCTION(ImageAspect)
 
 	enum class ImageUsage : uint32_t
 	{
@@ -85,18 +74,8 @@ namespace vzt
 		InvocationMask                = VK_IMAGE_USAGE_INVOCATION_MASK_BIT_HUAWEI,
 		ShadingRateImage              = VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV
 	};
-
-	inline ImageUsage operator&(ImageUsage l, ImageUsage r)
-	{
-		return static_cast<ImageUsage>(vzt::toUnderlying(l) & vzt::toUnderlying(r));
-	}
-
-	inline ImageUsage operator|(ImageUsage l, ImageUsage r)
-	{
-		return static_cast<ImageUsage>(vzt::toUnderlying(l) | vzt::toUnderlying(r));
-	}
-
-	inline constexpr ImageUsage operator~(const ImageUsage m) { return static_cast<ImageUsage>(~vzt::toUnderlying(m)); }
+	TO_VULKAN_FUNCTION(ImageUsage, VkImageUsageFlagBits)
+	BITWISE_FUNCTION(ImageUsage)
 
 	enum class Format : uint32_t
 	{
@@ -382,6 +361,7 @@ namespace vzt
 		G16B16R162Plane422UNormKHR              = VK_FORMAT_G16_B16R16_2PLANE_422_UNORM_KHR,
 		G16B16R163Plane444UNormKHR              = VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM_KHR,
 	};
+	TO_VULKAN_FUNCTION(Format, VkFormat)
 
 	enum class Filter : uint32_t
 	{
@@ -390,6 +370,7 @@ namespace vzt
 		CubicImg = VK_FILTER_CUBIC_IMG,
 		CubicExt = VK_FILTER_CUBIC_EXT
 	};
+	TO_VULKAN_FUNCTION(Filter, VkFilter)
 
 	enum class AddressMode : uint32_t
 	{
@@ -400,12 +381,14 @@ namespace vzt
 		MirrorClampToEdge    = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE,
 		MirrorClampToEdgeKHR = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE_KHR,
 	};
+	TO_VULKAN_FUNCTION(AddressMode, VkSamplerAddressMode)
 
 	enum class MipmapMode : uint32_t
 	{
 		Nearest = VK_SAMPLER_MIPMAP_MODE_NEAREST,
 		Linear  = VK_SAMPLER_MIPMAP_MODE_LINEAR,
 	};
+	TO_VULKAN_FUNCTION(MipmapMode, VkSamplerMipmapMode)
 
 	enum class BorderColor : uint32_t
 	{
@@ -418,6 +401,7 @@ namespace vzt
 		FloatCustomExt        = VK_BORDER_COLOR_FLOAT_CUSTOM_EXT,
 		IntCustomExt          = VK_BORDER_COLOR_INT_CUSTOM_EXT
 	};
+	TO_VULKAN_FUNCTION(BorderColor, VkBorderColor)
 
 	enum class SampleCount : uint32_t
 	{
@@ -429,6 +413,7 @@ namespace vzt
 		Sample32 = VK_SAMPLE_COUNT_32_BIT,
 		Sample64 = VK_SAMPLE_COUNT_64_BIT
 	};
+	TO_VULKAN_FUNCTION(SampleCount, VkSampleCountFlagBits)
 } // namespace vzt
 
 #endif // VAZTERAN_BACKEND_VULKAN_IMAGETYPES_HPP
