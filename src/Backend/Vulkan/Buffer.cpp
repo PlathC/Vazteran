@@ -54,7 +54,7 @@ namespace vzt
 	VkMemoryRequirements Buffer::getMemoryRequirements() const
 	{
 		VkMemoryRequirements memoryRequirements;
-		vkGetBufferMemoryRequirements(m_device->VkHandle(), m_vkHandle, &memoryRequirements);
+		vkGetBufferMemoryRequirements(m_device->vkHandle(), m_vkHandle, &memoryRequirements);
 		return memoryRequirements;
 	}
 

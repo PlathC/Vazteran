@@ -17,7 +17,7 @@ namespace vzt
 		pipelineLayoutInfo.setLayoutCount = 1;
 		pipelineLayoutInfo.pSetLayouts    = &descriptorLayout.vkHandle();
 
-		if (vkCreatePipelineLayout(m_device->VkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+		if (vkCreatePipelineLayout(m_device->vkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
@@ -142,7 +142,7 @@ namespace vzt
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex  = -1;             // Optional
 
-		if (vkCreateGraphicsPipelines(m_device->VkHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_vkHandle) !=
+		if (vkCreateGraphicsPipelines(m_device->vkHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_vkHandle) !=
 		    VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create graphics pipeline!");
@@ -164,7 +164,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyPipeline(m_device->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyPipeline(m_device->vkHandle(), m_vkHandle, nullptr);
 			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}
@@ -175,7 +175,7 @@ namespace vzt
 
 		if (m_pipelineLayout != VK_NULL_HANDLE)
 		{
-			vkDestroyPipelineLayout(m_device->VkHandle(), m_pipelineLayout, nullptr);
+			vkDestroyPipelineLayout(m_device->vkHandle(), m_pipelineLayout, nullptr);
 			m_pipelineLayout = VK_NULL_HANDLE;
 		}
 	}

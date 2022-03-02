@@ -1,16 +1,18 @@
 #include "Vazteran/Backend/Vulkan/VkRenderer.hpp"
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
+#include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/VkUiRenderer.hpp"
 #include "Vazteran/Data/Scene.hpp"
 #include "Vazteran/Views/MeshView.hpp"
 
 namespace vzt
 {
-	Renderer::Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size)
+	Renderer::Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size,
+	                   vzt::RenderGraph* renderGraph)
 	    : m_surface(surface), m_device(instance, m_surface), m_offscreenCommandPool(&m_device),
 	      m_fsCommandPool(&m_device), m_swapChain(&m_device, surface, size), m_instance(instance), m_window(window),
-	      m_fsDescriptorSetLayout(&m_device)
+	      m_fsDescriptorSetLayout(&m_device), m_renderGraph(renderGraph)
 	{
 		const uint32_t imageCount           = m_swapChain.imageCount();
 		const auto     swapChainImageFormat = m_swapChain.imageFormat();
@@ -48,13 +50,13 @@ namespace vzt
 		m_offscreenSemaphores.resize(imageCount);
 		for (auto& semaphore : m_offscreenSemaphores)
 		{
-			if (vkCreateSemaphore(m_device.VkHandle(), &semaphoreCreateInfo, nullptr, &semaphore) != VK_SUCCESS)
+			if (vkCreateSemaphore(m_device.vkHandle(), &semaphoreCreateInfo, nullptr, &semaphore) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Can't create offscreen semaphore");
 			}
 		}
 
-		buildRenderingSupports();
+		m_renderGraph->configure(m_device, size, ) buildRenderingSupports();
 	}
 
 	Renderer::Renderer(Renderer&& other) noexcept
@@ -113,7 +115,7 @@ namespace vzt
 	{
 		for (auto& semaphore : m_offscreenSemaphores)
 		{
-			vkDestroySemaphore(m_device.VkHandle(), semaphore, nullptr);
+			vkDestroySemaphore(m_device.vkHandle(), semaphore, nullptr);
 		}
 		m_offscreenSemaphores = {};
 	}
@@ -192,7 +194,7 @@ namespace vzt
 			    submitInfo.signalSemaphoreCount = 1;
 			    submitInfo.pSignalSemaphores    = &renderComplete;
 
-			    vkResetFences(m_device.VkHandle(), 1, &inFlightFence);
+			    vkResetFences(m_device.vkHandle(), 1, &inFlightFence);
 			    if (vkQueueSubmit(m_device.getGraphicsQueue(), 1, &submitInfo, inFlightFence) != VK_SUCCESS)
 			    {
 				    throw std::runtime_error("Failed to submit command buffer!");
@@ -201,7 +203,7 @@ namespace vzt
 
 		if (recreate)
 		{
-			vkDeviceWaitIdle(m_device.VkHandle());
+			vkDeviceWaitIdle(m_device.vkHandle());
 		}
 	}
 

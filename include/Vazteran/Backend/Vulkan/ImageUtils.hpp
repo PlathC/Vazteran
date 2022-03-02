@@ -15,11 +15,11 @@ namespace vzt
 	class ImageView
 	{
 	  public:
-		ImageView(vzt::Device* device, vzt::Image image, vzt::Format format = vzt::Format::B8G8R8A8SRGB,
+		ImageView(const vzt::Device* device, vzt::Image image, vzt::Format format = vzt::Format::B8G8R8A8SRGB,
 		          vzt::ImageLayout layout = vzt::ImageLayout::ShaderReadOnlyOptimal);
-		ImageView(vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
+		ImageView(const vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
 		          vzt::ImageAspect aspectFlags, vzt::ImageLayout layout);
-		ImageView(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect);
+		ImageView(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect);
 
 		ImageView(const ImageView&) = delete;
 		ImageView& operator=(const ImageView&) = delete;
@@ -35,7 +35,7 @@ namespace vzt
 		~ImageView();
 
 	  private:
-		vzt::Device* m_device;
+		const vzt::Device* m_device;
 
 		VkImage       m_vkImage    = VK_NULL_HANDLE;
 		VmaAllocation m_allocation = VK_NULL_HANDLE;

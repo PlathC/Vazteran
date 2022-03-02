@@ -83,7 +83,7 @@ namespace vzt
 			m_renderer->draw(m_scene.sceneCamera());
 		}
 
-		vkDeviceWaitIdle(m_renderer->getDevice()->VkHandle());
+		vkDeviceWaitIdle(m_renderer->getDevice()->vkHandle());
 	}
 
 	Application::~Application() { glfwTerminate(); }

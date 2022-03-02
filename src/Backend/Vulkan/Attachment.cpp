@@ -2,7 +2,8 @@
 
 namespace vzt
 {
-	Attachment::Attachment(vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage)
+	Attachment::Attachment(const vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format,
+	                       vzt::ImageUsage usage)
 	    : m_device(device), m_format(format)
 	{
 		vzt::ImageAspect aspect;
@@ -20,9 +21,9 @@ namespace vzt
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, size, format, usage, aspect, m_layout);
 	}
 
-	Attachment::Attachment(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageLayout layout,
+	Attachment::Attachment(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageLayout layout,
 	                       vzt::ImageAspect aspect)
-	    : m_device(device), m_format(format), m_layout(layout)
+	    : m_device(device), m_format(format), m_layout(layout), m_sampleCount(vzt::SampleCount::Sample1)
 	{
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, image, format, aspect);
 	}
@@ -37,20 +38,4 @@ namespace vzt
 		}
 		return m_textureRepresentation.get();
 	}
-
-	VkAttachmentDescription Attachment::getDescription() const
-	{
-		VkAttachmentDescription attachmentDescription{};
-		attachmentDescription.format         = static_cast<VkFormat>(m_format);
-		attachmentDescription.samples        = VK_SAMPLE_COUNT_1_BIT;
-		attachmentDescription.loadOp         = static_cast<VkAttachmentLoadOp>(m_loadOp);
-		attachmentDescription.storeOp        = static_cast<VkAttachmentStoreOp>(m_storeOp);
-		attachmentDescription.stencilLoadOp  = static_cast<VkAttachmentLoadOp>(m_stencilLoadOp);
-		attachmentDescription.stencilStoreOp = static_cast<VkAttachmentStoreOp>(m_stencilStoreOp);
-		attachmentDescription.initialLayout  = static_cast<VkImageLayout>(m_initialLayout);
-		attachmentDescription.finalLayout    = static_cast<VkImageLayout>(m_finalLayout);
-
-		return attachmentDescription;
-	}
-
 } // namespace vzt

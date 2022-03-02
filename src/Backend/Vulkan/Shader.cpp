@@ -22,7 +22,7 @@ namespace vzt
 
 	ShaderModule::ShaderModule(const vzt::Device* const device, VkShaderModuleCreateInfo createInfo) : m_device(device)
 	{
-		if (vkCreateShaderModule(m_device->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateShaderModule(m_device->vkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create shader module!");
 		}
@@ -46,7 +46,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyShaderModule(m_device->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyShaderModule(m_device->vkHandle(), m_vkHandle, nullptr);
 		}
 	}
 

@@ -32,8 +32,52 @@ namespace vzt
 		}
 	}
 
-	Scene Scene::default(Scene::DefaultScene defaultScene)
+	Scene Scene::defaultScene(const Scene::DefaultScene defaultScene)
 	{
+		vzt::RenderGraph renderGraph{};
+
+		vzt::StorageHandle particlePositions = renderGraph.addStorage({128, vzt::BufferUsage::VertexBuffer});
+
+		vzt::AttachmentHandle position =
+		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
+		vzt::AttachmentHandle albedo =
+		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
+		vzt::AttachmentHandle normal =
+		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8UNorm});
+		vzt::AttachmentHandle depth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
+
+		auto& computePass = renderGraph.addPass("Particle Generation", vzt::QueueType::Compute);
+		computePass.addStorageOutput(particlePositions, "Particles");
+
+		auto& geometryBuffer = renderGraph.addPass("G-Buffer", vzt::QueueType::Graphic);
+		geometryBuffer.addColorOutput(position, "Position");
+		geometryBuffer.addColorOutput(albedo, "Albedo");
+		geometryBuffer.addColorOutput(normal, "Normal");
+		geometryBuffer.setDepthStencilOutput(depth, "Depth");
+
+		vzt::AttachmentHandle composed = renderGraph.addAttachment({});
+
+		auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
+		deferredPass.addColorInput(position, "G-Position");
+		deferredPass.addColorInput(albedo, "G-Albedo");
+		deferredPass.addColorInput(normal, "G-Normal");
+		deferredPass.setDepthStencilInput(depth, "G-Depth");
+		deferredPass.addColorOutput(composed, "Composed");
+
+		auto& uiPass = renderGraph.addPass("UI", vzt::QueueType::Graphic);
+		uiPass.addColorOutput(composed, "Final");
+
+		renderGraph.setBackBuffer(composed);
+
+		try
+		{
+			renderGraph.compile();
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << e.what() << std::endl;
+		}
+
 		switch (defaultScene)
 		{
 		case DefaultScene::CrounchingBoys: {
@@ -86,10 +130,11 @@ namespace vzt
 			vzt::ui::UiManager uiManager;
 			uiManager.setMainMenuBar(mainMenuBar);
 
-			auto crounchingBoysScene      = Scene(std::move(models), Camera(fullBoundingBox));
-			crounchingBoysScene.sceneUi() = std::move(uiManager);
+			auto crounchingBoysScene          = Scene(std::move(models), Camera(fullBoundingBox));
+			crounchingBoysScene.m_uiManager   = std::move(uiManager);
+			crounchingBoysScene.m_renderGraph = renderGraph;
 
-			return std::move(crounchingBoysScene);
+			return crounchingBoysScene;
 		}
 		case DefaultScene::VikingRoom: {
 			auto      vikingRoomModel = std::make_unique<vzt::Model>("./samples/VikingRoom/viking_room.obj");
@@ -117,10 +162,11 @@ namespace vzt
 			std::vector<std::unique_ptr<vzt::Model>> models;
 			models.emplace_back(std::move(vikingRoomModel));
 
-			auto vikingRoomScene      = Scene(std::move(models), Camera(fullBoundingBox));
-			vikingRoomScene.sceneUi() = std::move(uiManager);
+			auto vikingRoomScene          = Scene(std::move(models), Camera(fullBoundingBox));
+			vikingRoomScene.m_uiManager   = std::move(uiManager);
+			vikingRoomScene.m_renderGraph = renderGraph;
 
-			return std::move(vikingRoomScene);
+			return vikingRoomScene;
 		}
 		case DefaultScene::MoriKnob: {
 			auto      moriKnobModel   = std::make_unique<vzt::Model>("./samples/MoriKnob/MoriKnob.obj");
@@ -147,10 +193,11 @@ namespace vzt
 			camera.position = vzt::Vec3(-0.011357f, 1.731663f, -4.142815f);
 			camera.front    = vzt::Vec3(0.011475, -0.438221, 0.898794);
 
-			auto moriKnowScene      = Scene(std::move(models), camera);
-			moriKnowScene.sceneUi() = std::move(uiManager);
+			auto moriKnowScene          = Scene(std::move(models), camera);
+			moriKnowScene.m_uiManager   = std::move(uiManager);
+			moriKnowScene.m_renderGraph = renderGraph;
 
-			return std::move(moriKnowScene);
+			return moriKnowScene;
 		}
 		default: throw std::runtime_error("The specified scene is not currently implemented.");
 		}

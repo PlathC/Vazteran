@@ -17,7 +17,7 @@ namespace vzt
 	{
 		if (m_handle != VK_NULL_HANDLE)
 		{
-			vkDestroyDescriptorSetLayout(m_device->VkHandle(), m_handle, nullptr);
+			vkDestroyDescriptorSetLayout(m_device->vkHandle(), m_handle, nullptr);
 			m_handle = VK_NULL_HANDLE;
 		}
 		m_device   = other.m_device;
@@ -70,7 +70,7 @@ namespace vzt
 			layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
 			layoutInfo.pBindings    = layoutBindings.data();
 
-			if (vkCreateDescriptorSetLayout(m_device->VkHandle(), &layoutInfo, nullptr, &m_handle) != VK_SUCCESS)
+			if (vkCreateDescriptorSetLayout(m_device->vkHandle(), &layoutInfo, nullptr, &m_handle) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to create descriptor set layout!");
 			}
@@ -83,7 +83,7 @@ namespace vzt
 	{
 		if (m_handle != VK_NULL_HANDLE)
 		{
-			vkDestroyDescriptorSetLayout(m_device->VkHandle(), m_handle, nullptr);
+			vkDestroyDescriptorSetLayout(m_device->vkHandle(), m_handle, nullptr);
 			m_handle = VK_NULL_HANDLE;
 		}
 	}
@@ -107,7 +107,7 @@ namespace vzt
 		pool_info.poolSizeCount              = static_cast<uint32_t>(sizes.size());
 		pool_info.pPoolSizes                 = sizes.data();
 
-		if (vkCreateDescriptorPool(m_device->VkHandle(), &pool_info, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateDescriptorPool(m_device->vkHandle(), &pool_info, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create descriptor pool!");
 		}
@@ -141,7 +141,7 @@ namespace vzt
 		descriptorSetAllocInfo.pSetLayouts        = layouts.data();
 
 		auto descriptorSets = std::vector<VkDescriptorSet>(count);
-		if (vkAllocateDescriptorSets(m_device->VkHandle(), &descriptorSetAllocInfo, descriptorSets.data()) !=
+		if (vkAllocateDescriptorSets(m_device->vkHandle(), &descriptorSetAllocInfo, descriptorSets.data()) !=
 		    VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to allocate descriptor sets!");
@@ -228,7 +228,7 @@ namespace vzt
 			bufferIdx++;
 		}
 
-		vkUpdateDescriptorSets(m_device->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()),
+		vkUpdateDescriptorSets(m_device->vkHandle(), static_cast<uint32_t>(descriptorWrites.size()),
 		                       descriptorWrites.data(), 0, nullptr);
 	}
 
@@ -257,7 +257,7 @@ namespace vzt
 			bufferIdx++;
 		}
 
-		vkUpdateDescriptorSets(m_device->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()),
+		vkUpdateDescriptorSets(m_device->vkHandle(), static_cast<uint32_t>(descriptorWrites.size()),
 		                       descriptorWrites.data(), 0, nullptr);
 	}
 
@@ -286,7 +286,7 @@ namespace vzt
 			bufferIdx++;
 		}
 
-		vkUpdateDescriptorSets(m_device->VkHandle(), static_cast<uint32_t>(descriptorWrites.size()),
+		vkUpdateDescriptorSets(m_device->vkHandle(), static_cast<uint32_t>(descriptorWrites.size()),
 		                       descriptorWrites.data(), 0, nullptr);
 	}
 
@@ -294,7 +294,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyDescriptorPool(m_device->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyDescriptorPool(m_device->vkHandle(), m_vkHandle, nullptr);
 			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}

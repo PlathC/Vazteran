@@ -9,9 +9,8 @@
 
 namespace vzt
 {
-	RenderPass::RenderPass(vzt::Device* device, std::size_t subpassCount, std::vector<VkSubpassDependency>&& subpasses,
-	                       const std::vector<vzt::Attachment*>& attachments)
-	    : m_device(device), m_subpassDependencies(std::move(subpasses))
+	RenderPass::RenderPass(const vzt::Device* device, const std::vector<AttachmentPassConfiguration>& attachments)
+	    : m_device(device)
 	{
 		std::vector<VkAttachmentDescription> attachmentDescriptions;
 		attachmentDescriptions.reserve(attachments.size());
@@ -20,9 +19,19 @@ namespace vzt
 		for (std::size_t i = 0; i < attachments.size(); i++)
 		{
 			const auto& attachment = attachments[i];
-			attachmentDescriptions.emplace_back(attachment->getDescription());
 
-			const auto attachmentLayout = attachment->getLayout();
+			VkAttachmentDescription description{};
+			description.initialLayout  = vzt::toVulkan(attachment.second.initialLayout);
+			description.finalLayout    = vzt::toVulkan(attachment.second.finalLayout);
+			description.stencilLoadOp  = vzt::toVulkan(attachment.second.stencilLoapOp);
+			description.stencilStoreOp = vzt::toVulkan(attachment.second.stencilStoreOp);
+			description.loadOp         = vzt::toVulkan(attachment.second.loadOp);
+			description.storeOp        = vzt::toVulkan(attachment.second.storeOp);
+			description.format         = vzt::toVulkan(attachment.first->getFormat());
+			description.samples        = vzt::toVulkan(attachment.first->getSampleCount());
+			attachmentDescriptions.emplace_back(description);
+
+			const auto attachmentLayout = attachment.first->getLayout();
 
 			VkAttachmentReference currentAttachmentRef{};
 			currentAttachmentRef.attachment = static_cast<uint32_t>(i);
@@ -39,28 +48,31 @@ namespace vzt
 			}
 		}
 
-		m_subpassDescriptions.reserve(subpassCount);
-		for (std::size_t i = 0; i < subpassCount; i++)
-		{
-			VkSubpassDescription subpass{};
-			subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			subpass.colorAttachmentCount    = static_cast<uint32_t>(m_colorRefs.size());
-			subpass.pColorAttachments       = m_colorRefs.data();
-			subpass.pDepthStencilAttachment = &m_depthRef;
+		VkSubpassDescription subpass{};
+		subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount    = static_cast<uint32_t>(m_colorRefs.size());
+		subpass.pColorAttachments       = m_colorRefs.data();
+		subpass.pDepthStencilAttachment = &m_depthRef;
 
-			m_subpassDescriptions.emplace_back(subpass);
-		}
+		m_subpassDependencies = {{VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_MEMORY_READ_BIT,
+		                          VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+		                          VK_DEPENDENCY_BY_REGION_BIT},
+		                         {0, VK_SUBPASS_EXTERNAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		                          VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+		                          VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+		                          VK_ACCESS_MEMORY_READ_BIT, VK_DEPENDENCY_BY_REGION_BIT}};
 
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachmentDescriptions.size());
 		renderPassInfo.pAttachments    = attachmentDescriptions.data();
-		renderPassInfo.subpassCount    = static_cast<uint32_t>(m_subpassDescriptions.size());
-		renderPassInfo.pSubpasses      = m_subpassDescriptions.data();
+		renderPassInfo.subpassCount    = 1;
+		renderPassInfo.pSubpasses      = &subpass;
 		renderPassInfo.dependencyCount = static_cast<uint32_t>(m_subpassDependencies.size());
 		renderPassInfo.pDependencies   = m_subpassDependencies.data();
 
-		if (vkCreateRenderPass(m_device->VkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateRenderPass(m_device->vkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create render pass!");
 		}
@@ -84,7 +96,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyRenderPass(m_device->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyRenderPass(m_device->vkHandle(), m_vkHandle, nullptr);
 		}
 	}
 
@@ -101,9 +113,9 @@ namespace vzt
 
 		std::vector<VkClearValue> clearValues;
 		clearValues.resize(m_colorRefs.size() + 1);
-		for (std::size_t i = 0; i < m_colorRefs.size(); i++)
+		for (const auto& m_colorRef : m_colorRefs)
 		{
-			clearValues[m_colorRefs[i].attachment].color = {0.0f, 0.0f, 0.0f, 1.0f};
+			clearValues[m_colorRef.attachment].color = {0.0f, 0.0f, 0.0f, 1.0f};
 		}
 		clearValues[m_depthRef.attachment].depthStencil = {1.0f, 0};
 

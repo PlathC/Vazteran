@@ -1,13 +1,18 @@
 #ifndef VAZTERAN_BACKEND_VULKAN_RENDERGRAPH_HPP
 #define VAZTERAN_BACKEND_VULKAN_RENDERGRAPH_HPP
 
+#include "CommandPool.hpp"
+
 #include <functional>
 #include <optional>
 
 #include <vulkan/vulkan.hpp>
 
+#include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
+#include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
+#include "Vazteran/Backend/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
@@ -21,54 +26,6 @@ namespace vzt
 		Compute = VK_QUEUE_COMPUTE_BIT
 	};
 	TO_VULKAN_FUNCTION(QueueType, VkQueueFlagBits)
-
-	enum class LoadOperation : uint32_t
-	{
-		Load     = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_LOAD,
-		Clear    = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_CLEAR,
-		DontCare = VkAttachmentLoadOp::VK_ATTACHMENT_LOAD_OP_DONT_CARE
-	};
-	TO_VULKAN_FUNCTION(LoadOperation, VkAttachmentLoadOp)
-
-	enum class StoreOperation : uint32_t
-	{
-		Store    = VK_ATTACHMENT_STORE_OP_STORE,
-		DontCare = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		// NoneKHR  = VK_ATTACHMENT_STORE_OP_NONE_KHR,
-		NoneQCOM = VK_ATTACHMENT_STORE_OP_NONE_QCOM,
-		NoneExt  = VK_ATTACHMENT_STORE_OP_NONE_EXT
-	};
-	TO_VULKAN_FUNCTION(StoreOperation, VkAttachmentStoreOp)
-
-	enum class PipelineStage : uint32_t
-	{
-		TopOfPipe                    = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-		DrawIndirect                 = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-		VertexInput                  = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-		VertexShader                 = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-		TessellationControlShader    = VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT,
-		TessellationEvaluationShader = VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT,
-		GeometryShader               = VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT,
-		FragmentShader               = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-		EarlyFragmentTests           = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-		LateFragmentTests            = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-		ColorAttachmentOutput        = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-		ComputeShader                = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-		StageTransfer                = VK_PIPELINE_STAGE_TRANSFER_BIT,
-		BottomOfPipe                 = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-		Host                         = VK_PIPELINE_STAGE_HOST_BIT,
-		AllGraphic                   = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-		AllCommands                  = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-		TransformFeedback            = VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT,
-		ConditionRendering           = VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
-		AccelerationStructureBuild   = VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-		RaytracingShader             = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
-		TaskShaderNV                 = VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV,
-		MeshShaderNV                 = VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
-		None                         = VK_PIPELINE_STAGE_NONE_KHR,
-	};
-	BITWISE_FUNCTION(PipelineStage)
-	TO_VULKAN_FUNCTION(PipelineStage, VkPipelineStageFlagBits)
 
 	enum class AccessFlag : uint32_t
 	{
@@ -95,9 +52,10 @@ namespace vzt
 
 	struct AttachmentSettings
 	{
-		std::optional<vzt::Format>        format{};    // if unset, use swapchain image formats
-		std::optional<vzt::Size2D<float>> imageSize{}; // if unset, use frame buffer size
-		vzt::SampleCount                  sampleCount = vzt::SampleCount::Sample1;
+		vzt::ImageUsage                      usage;
+		std::optional<vzt::Format>           format{};    // if unset, use swapchain image formats
+		std::optional<vzt::Size2D<uint32_t>> imageSize{}; // if unset, use frame buffer size
+		vzt::SampleCount                     sampleCount = vzt::SampleCount::Sample1;
 	};
 
 	struct StorageSettings
@@ -132,16 +90,6 @@ namespace vzt
 		bool operator==(const StorageHandle& other) const { return id == other.id && state == other.state; }
 	};
 
-	struct AttachmentPassUse
-	{
-		vzt::ImageLayout    initialLayout;
-		vzt::ImageLayout    finalLayout;
-		vzt::LoadOperation  loadOp;
-		vzt::LoadOperation  stencilLoapOp;
-		vzt::StoreOperation storeOp;
-		vzt::StoreOperation stencilStoreOp;
-	};
-
 	struct ImageBarrier
 	{
 		vzt::PipelineStage stages;
@@ -160,7 +108,8 @@ namespace vzt
 	template <class Type>
 	using StorageList = std::unordered_map<vzt::StorageHandle, Type, vzt::StorageHandle::hash>;
 
-	using RenderFunction     = std::function<void(VkCommandBuffer& /*cmd*/)>;
+	using RenderFunction = std::function<void(const vzt::RenderPass* /*renderPass*/, const VkCommandBuffer& /*cmd*/)>;
+	using ConfigureFunction  = std::function<void(vzt::PipelineContextSettings /*settings*/)>;
 	using DepthClearFunction = std::function<bool(VkClearDepthStencilValue* /* value */)>;
 	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, VkClearColorValue* /* value */)>;
 	class RenderPassHandler
@@ -185,30 +134,36 @@ namespace vzt
 		void setDepthStencilOutput(vzt::AttachmentHandle& depthStencil, const std::string& attachmentName = "");
 
 		void setRenderFunction(vzt::RenderFunction renderFunction);
+		void setConfigureFunction(vzt::ConfigureFunction configureFunction);
 		void setDepthClearFunction(vzt::DepthClearFunction depthClearFunction);
 		void setColorClearFunction(vzt::ColorClearFunction colorClearFunction);
 
 		bool isDependingOn(const RenderPassHandler& other) const;
 
-	  private:
-		RenderPassHandler(const vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType);
+		std::unique_ptr<vzt::RenderPass> build(const vzt::Device* device, const std::size_t imageId,
+		                                       const vzt::Size2D<uint32_t>& targetSize, const vzt::Format targetFormat);
+
+		void render(const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const;
 
 	  private:
-		const vzt::RenderGraph* m_graph;
-		std::string             m_name;
-		vzt::QueueType          m_queueType;
+		RenderPassHandler(vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType);
+
+	  private:
+		vzt::RenderGraph* m_graph;
+		std::string       m_name;
+		vzt::QueueType    m_queueType;
 
 		struct AttachmentInfo
 		{
-			std::string       name;
-			vzt::ImageBarrier barrier;
-			AttachmentPassUse attachmentUse;
+			std::string                      name;
+			vzt::AttachmentPassUse           attachmentUse{};
+			std::optional<vzt::ImageBarrier> barrier;
 		};
 
 		struct StorageInfo
 		{
-			std::string         name;
-			vzt::StorageBarrier barrier;
+			std::string                        name;
+			std::optional<vzt::StorageBarrier> barrier;
 		};
 
 		vzt::AttachmentList<AttachmentInfo>                             m_colorInputs;
@@ -220,8 +175,11 @@ namespace vzt
 		std::optional<std::pair<vzt::AttachmentHandle, AttachmentInfo>> m_depthOutput;
 
 		vzt::RenderFunction     m_renderFunction;
+		vzt::ConfigureFunction  m_configureFunction;
 		vzt::DepthClearFunction m_depthClearFunction;
 		vzt::ColorClearFunction m_colorClearFunction;
+
+		std::unique_ptr<vzt::RenderPass> m_pass{};
 	};
 
 	struct PhysicalAttachment
@@ -251,10 +209,16 @@ namespace vzt
 		bool isBackBuffer(const vzt::AttachmentHandle backBufferHandle) const;
 
 		// User information check
-		void compile(vzt::Format scColorFormat, vzt::Format scDepthFormat, vzt::Size2D<uint32_t> scImageSize);
+		void compile();
 
 		// Engine configuration
-		void setFrameBufferSize(vzt::Size2D<uint32_t> frameBufferSize);
+		void configure(const vzt::Device* device, const std::vector<VkImage>& swapchainImages,
+		               vzt::Size2D<uint32_t> scImageSize, vzt::Format scColorFormat, vzt::Format scDepthFormat);
+
+		void render(const vzt::Device* device, const std::size_t imageId, VkSemaphore imageAvailable,
+		            VkSemaphore renderComplete, VkFence inFlightFence);
+
+		const vzt::Attachment* getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle);
 
 		const vzt::AttachmentSettings& getAttachmentSettings(const vzt::AttachmentHandle& handle) const;
 		const vzt::StorageSettings&    getStorageSettings(const vzt::StorageHandle& handle) const;
@@ -271,12 +235,14 @@ namespace vzt
 		static inline std::size_t m_handleCounter = 0;
 
 		std::hash<std::size_t> m_hash{};
-		vzt::Size2D<uint32_t>  m_frameBufferSize{};
 
-		std::vector<std::size_t>                     m_sortedRenderPassIndices;
-		std::vector<vzt::RenderPassHandler>          m_renderPasses;
-		vzt::AttachmentList<vzt::AttachmentSettings> m_attachments;
-		vzt::StorageList<vzt::StorageSettings>       m_storages;
+		std::vector<std::size_t>                                           m_sortedRenderPassIndices;
+		std::vector<vzt::RenderPassHandler>                                m_renderPassHandlers;
+		std::vector<vzt::CommandPool>                                      m_commandPools;
+		std::vector<std::vector<std::unique_ptr<vzt::FrameBuffer>>>        m_frameBuffers;
+		vzt::AttachmentList<vzt::AttachmentSettings>                       m_attachmentsSettings;
+		std::vector<vzt::AttachmentList<std::unique_ptr<vzt::Attachment>>> m_attachments;
+		vzt::StorageList<vzt::StorageSettings>                             m_storagesSettings;
 
 		std::optional<vzt::AttachmentHandle> m_backBuffer;
 	};

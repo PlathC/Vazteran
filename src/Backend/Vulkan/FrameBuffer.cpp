@@ -11,34 +11,25 @@
 
 namespace vzt
 {
-	FrameBuffer::FrameBuffer(vzt::Device* device, std::size_t subpassCount,
-	                         std::vector<VkSubpassDependency>&& subpassDependencies,
-	                         std::vector<vzt::Attachment>&& attachments, vzt::Size2D<uint32_t> size)
-	    : m_device(device), m_size(size), m_attachments(std::move(attachments))
+	FrameBuffer::FrameBuffer(const vzt::Device* device, std::unique_ptr<vzt::RenderPass> renderPass,
+	                         vzt::Size2D<uint32_t> size, const std::vector<const vzt::ImageView*>& extAttachmentViews)
+	    : m_device(device), m_size(size), m_renderPass(std::move(renderPass))
 	{
-		std::vector<vzt::Attachment*> attachmentCopy;
-		attachmentCopy.reserve(m_attachments.size());
-		std::vector<VkImageView> attachmentsViews;
-		attachmentsViews.reserve(m_attachments.size());
-		for (auto& attachment : m_attachments)
-		{
-			attachmentsViews.emplace_back(attachment.getView()->vkHandle());
-			attachmentCopy.emplace_back(&attachment);
-		}
-
-		m_renderPass =
-		    std::make_unique<vzt::RenderPass>(m_device, subpassCount, std::move(subpassDependencies), attachmentCopy);
+		std::vector<VkImageView> attachmentView{};
+		attachmentView.reserve(extAttachmentViews.size());
+		for (const auto& view : extAttachmentViews)
+			attachmentView.emplace_back(view->vkHandle());
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferInfo.renderPass      = m_renderPass->vkHandle();
-		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentsViews.size());
-		framebufferInfo.pAttachments    = attachmentsViews.data();
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentView.size());
+		framebufferInfo.pAttachments    = attachmentView.data();
 		framebufferInfo.width           = m_size.width;
 		framebufferInfo.height          = m_size.height;
 		framebufferInfo.layers          = 1;
 
-		if (vkCreateFramebuffer(m_device->VkHandle(), &framebufferInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateFramebuffer(m_device->vkHandle(), &framebufferInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create framebuffer!");
 		}
@@ -49,7 +40,6 @@ namespace vzt
 		std::swap(m_device, other.m_device);
 		std::swap(m_vkHandle, other.m_vkHandle);
 		std::swap(m_size, other.m_size);
-		std::swap(m_attachments, other.m_attachments);
 		std::swap(m_renderPass, other.m_renderPass);
 	}
 
@@ -58,7 +48,6 @@ namespace vzt
 		std::swap(m_device, other.m_device);
 		std::swap(m_vkHandle, other.m_vkHandle);
 		std::swap(m_size, other.m_size);
-		std::swap(m_attachments, other.m_attachments);
 		std::swap(m_renderPass, other.m_renderPass);
 
 		return *this;
@@ -68,7 +57,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyFramebuffer(m_device->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyFramebuffer(m_device->vkHandle(), m_vkHandle, nullptr);
 			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}

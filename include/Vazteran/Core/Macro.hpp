@@ -15,6 +15,6 @@
 	inline constexpr Type operator~(const Type m) { return static_cast<Type>(~vzt::toUnderlying(m)); }
 
 #define TO_VULKAN_FUNCTION(BaseType, VulkanType) \
-	inline constexpr VulkanType ToVulkan(const BaseType l) { return static_cast<VulkanType>(l); }
+	inline constexpr VulkanType toVulkan(const BaseType l) { return static_cast<VulkanType>(l); }
 
 #endif // VAZTERAN_CORE_MACRO_HPP

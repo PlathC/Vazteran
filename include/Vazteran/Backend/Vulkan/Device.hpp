@@ -105,7 +105,7 @@ namespace vzt
 		vzt::PhysicalDevice*    getPhysicalDevice() const { return m_physicalDevice.get(); }
 		uint64_t                getMinUniformOffsetAlignment() const;
 
-		VkDevice VkHandle() const { return m_vkHandle; }
+		VkDevice vkHandle() const { return m_vkHandle; }
 
 	  private:
 		std::unique_ptr<vzt::PhysicalDevice> m_physicalDevice;

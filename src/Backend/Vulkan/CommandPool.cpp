@@ -17,7 +17,7 @@ namespace vzt
 		commandPoolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 		commandPoolInfo.queueFamilyIndex = indices.graphicsFamily.value();
 		commandPoolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-		if (vkCreateCommandPool(m_logicalDevice->VkHandle(), &commandPoolInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateCommandPool(m_logicalDevice->vkHandle(), &commandPoolInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create command pool!");
 		}
@@ -45,7 +45,7 @@ namespace vzt
 	{
 		if (!m_commandBuffers.empty())
 		{
-			vkFreeCommandBuffers(m_logicalDevice->VkHandle(), m_vkHandle,
+			vkFreeCommandBuffers(m_logicalDevice->vkHandle(), m_vkHandle,
 			                     static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
 			m_commandBuffers.clear();
 		}
@@ -59,7 +59,7 @@ namespace vzt
 		commandBufferAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		commandBufferAllocInfo.commandBufferCount = static_cast<uint32_t>(m_commandBuffers.size());
 
-		if (vkAllocateCommandBuffers(m_logicalDevice->VkHandle(), &commandBufferAllocInfo, m_commandBuffers.data()) !=
+		if (vkAllocateCommandBuffers(m_logicalDevice->vkHandle(), &commandBufferAllocInfo, m_commandBuffers.data()) !=
 		    VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to allocate command buffers!");
@@ -103,13 +103,13 @@ namespace vzt
 	{
 		if (!m_commandBuffers.empty())
 		{
-			vkFreeCommandBuffers(m_logicalDevice->VkHandle(), m_vkHandle,
+			vkFreeCommandBuffers(m_logicalDevice->vkHandle(), m_vkHandle,
 			                     static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
 		}
 
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyCommandPool(m_logicalDevice->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyCommandPool(m_logicalDevice->vkHandle(), m_vkHandle, nullptr);
 		}
 	}
 } // namespace vzt

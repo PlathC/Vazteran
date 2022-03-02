@@ -6,8 +6,7 @@
 
 namespace vzt
 {
-	RenderPassHandler::RenderPassHandler(const vzt::RenderGraph* const graph, std::string name,
-	                                     vzt::QueueType queueType)
+	RenderPassHandler::RenderPassHandler(vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType)
 	    : m_graph(graph), m_name(std::move(name)), m_queueType(queueType)
 	{
 	}
@@ -29,10 +28,12 @@ namespace vzt
 		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
 		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
 
-		attachmentInfo.barrier.layout   = vzt::ImageLayout::ShaderReadOnlyOptimal;
-		attachmentInfo.barrier.accesses = vzt::AccessFlag::ShaderRead;
-		attachmentInfo.barrier.stages   = vzt::PipelineStage::FragmentShader;
-		m_colorInputs[attachment]       = attachmentInfo;
+		vzt::ImageBarrier barrier{};
+		barrier.layout            = vzt::ImageLayout::ShaderReadOnlyOptimal;
+		barrier.accesses          = vzt::AccessFlag::ShaderRead;
+		barrier.stages            = vzt::PipelineStage::FragmentShader;
+		attachmentInfo.barrier    = barrier;
+		m_colorInputs[attachment] = attachmentInfo;
 	}
 
 	void RenderPassHandler::addColorOutput(vzt::AttachmentHandle& attachment, const std::string& attachmentName)
@@ -75,6 +76,9 @@ namespace vzt
 		inAttachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
 		inAttachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
 
+		inAttachmentInfo.barrier = {vzt::PipelineStage::FragmentShader, vzt::AccessFlag::ShaderRead,
+		                            vzt::ImageLayout::ShaderReadOnlyOptimal};
+
 		m_colorInputs[attachment] = inAttachmentInfo;
 
 		AttachmentInfo outAttachmentInfo{};
@@ -96,16 +100,17 @@ namespace vzt
 			inStorageInfo.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 		}
 
-		inStorageInfo.barrier.accesses = vzt::AccessFlag::ShaderRead;
+		vzt::StorageBarrier barrier{};
+		barrier.accesses = vzt::AccessFlag::ShaderRead;
 		if (m_queueType == vzt::QueueType::Compute)
 		{
-			inStorageInfo.barrier.stages = vzt::PipelineStage::ComputeShader;
+			barrier.stages = vzt::PipelineStage::ComputeShader;
 		}
 		else
 		{
-			inStorageInfo.barrier.stages = vzt::PipelineStage::FragmentShader;
+			barrier.stages = vzt::PipelineStage::FragmentShader;
 		}
-
+		inStorageInfo.barrier    = barrier;
 		m_storageInputs[storage] = inStorageInfo;
 	}
 
@@ -133,15 +138,18 @@ namespace vzt
 		{
 			inStorageInfo.name = m_name + "In" + std::to_string(m_colorInputs.size());
 		}
-		inStorageInfo.barrier.accesses = vzt::AccessFlag::ShaderRead | vzt::AccessFlag::ShaderWrite;
+
+		vzt::StorageBarrier barrier{};
+		barrier.accesses = vzt::AccessFlag::ShaderRead | vzt::AccessFlag::ShaderWrite;
 		if (m_queueType == vzt::QueueType::Compute)
 		{
-			inStorageInfo.barrier.stages = vzt::PipelineStage::ComputeShader;
+			barrier.stages = vzt::PipelineStage::ComputeShader;
 		}
 		else
 		{
-			inStorageInfo.barrier.stages = vzt::PipelineStage::FragmentShader;
+			barrier.stages = vzt::PipelineStage::FragmentShader;
 		}
+		inStorageInfo.barrier    = barrier;
 		m_storageInputs[storage] = inStorageInfo;
 
 		StorageInfo outAttachmentInfo{};
@@ -201,6 +209,11 @@ namespace vzt
 		m_renderFunction = std::move(renderFunction);
 	}
 
+	void RenderPassHandler::setConfigureFunction(vzt::ConfigureFunction configureFunction)
+	{
+		m_configureFunction = std::move(configureFunction);
+	}
+
 	void RenderPassHandler::setDepthClearFunction(vzt::DepthClearFunction depthClearFunction)
 	{
 		m_depthClearFunction = std::move(depthClearFunction);
@@ -254,13 +267,46 @@ namespace vzt
 		return false;
 	}
 
+	std::unique_ptr<vzt::RenderPass> RenderPassHandler::build(const vzt::Device* device, const std::size_t imageId,
+	                                                          const vzt::Size2D<uint32_t>& targetSize,
+	                                                          const vzt::Format            targetFormat)
+	{
+		std::vector<std::pair<vzt::Attachment*, vzt::AttachmentPassUse>> attachments;
+		attachments.reserve(m_colorOutputs.size());
+		for (const auto& output : m_colorOutputs)
+		{
+			auto attachmentUse = output.second.attachmentUse;
+			if (m_graph->isBackBuffer(output.first))
+			{
+				attachmentUse.finalLayout = vzt::ImageLayout::PresentSrcKHR;
+			}
+
+			attachments.emplace_back(m_graph->getAttachment(imageId, output.first), attachmentUse);
+		}
+
+		auto renderPass = std::make_unique<vzt::RenderPass>(device, attachments);
+		if (imageId == 0 && m_configureFunction)
+		{
+			m_configureFunction({renderPass.get(), targetFormat, targetSize});
+		}
+
+		return renderPass;
+	}
+
+	void RenderPassHandler::render(const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const
+	{
+		// m_colorClearFunction();
+		// m_depthClearFunction();
+		m_renderFunction(renderPass, commandBuffer);
+	}
+
 	RenderGraph::RenderGraph()  = default;
 	RenderGraph::~RenderGraph() = default;
 
 	vzt::AttachmentHandle RenderGraph::addAttachment(const vzt::AttachmentSettings& settings)
 	{
 		const vzt::AttachmentHandle handle = generateAttachmentHandle();
-		m_attachments[handle]              = settings;
+		m_attachmentsSettings[handle]      = settings;
 
 		return handle;
 	}
@@ -268,15 +314,15 @@ namespace vzt
 	vzt::StorageHandle RenderGraph::addStorage(const vzt::StorageSettings& settings)
 	{
 		const vzt::StorageHandle handle = generateStorageHandle();
-		m_storages[handle]              = settings;
+		m_storagesSettings[handle]      = settings;
 
 		return handle;
 	}
 
 	vzt::RenderPassHandler& RenderGraph::addPass(const std::string& name, const vzt::QueueType queueType)
 	{
-		m_renderPasses.emplace_back(vzt::RenderPassHandler(this, name, queueType));
-		return m_renderPasses.back();
+		m_renderPassHandlers.emplace_back(vzt::RenderPassHandler(this, name, queueType));
+		return m_renderPassHandlers.back();
 	}
 
 	void RenderGraph::setBackBuffer(const vzt::AttachmentHandle backBufferHandle) { m_backBuffer = backBufferHandle; }
@@ -285,14 +331,15 @@ namespace vzt
 		return m_backBuffer == backBufferHandle;
 	}
 
-	void RenderGraph::compile(vzt::Format scColorFormat, vzt::Format scDepthFormat, vzt::Size2D<uint32_t> scImageSize)
+	void RenderGraph::compile()
 	{
 		sortRenderPasses();
 
 		std::cout << "Sorted render passes :" << std::endl;
 		for (std::size_t i = 0; i < m_sortedRenderPassIndices.size(); i++)
 		{
-			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
+			std::cout << std::to_string(i) << " => " << m_renderPassHandlers[m_sortedRenderPassIndices[i]].m_name
+			          << std::endl;
 		}
 		std::cout << std::endl;
 
@@ -301,19 +348,124 @@ namespace vzt
 		std::cout << "Reordered render passes :" << std::endl;
 		for (std::size_t i = 0; i < m_sortedRenderPassIndices.size(); i++)
 		{
-			std::cout << std::to_string(i) << " => " << m_renderPasses[i].m_name << std::endl;
+			std::cout << std::to_string(i) << " => " << m_renderPassHandlers[m_sortedRenderPassIndices[i]].m_name
+			          << std::endl;
 		}
 	}
 
-	void RenderGraph::setFrameBufferSize(vzt::Size2D<uint32_t> frameBufferSize)
+	void RenderGraph::configure(const vzt::Device* device, const std::vector<VkImage>& swapchainImages,
+	                            vzt::Size2D<uint32_t> scImageSize, vzt::Format scColorFormat, vzt::Format scDepthFormat)
 	{
-		m_frameBufferSize = frameBufferSize;
-		// generateRenderOperations();
+		m_attachments.resize(swapchainImages.size());
+		m_frameBuffers.resize(swapchainImages.size());
+		for (std::size_t i = 0; i < swapchainImages.size(); i++)
+		{
+			const auto& swapchainImage = swapchainImages[i];
+
+			// Create attachments
+			for (const auto& attachmentSettings : m_attachmentsSettings)
+			{
+				const bool  isFinalImage  = isBackBuffer(attachmentSettings.first);
+				vzt::Format currentFormat = attachmentSettings.second.format.value_or(scColorFormat);
+
+				const bool isDepthStencil =
+				    (attachmentSettings.second.usage & vzt::ImageUsage::DepthStencilAttachment) ==
+				    vzt::ImageUsage::DepthStencilAttachment;
+				if (!isFinalImage && isDepthStencil)
+				{
+					currentFormat = scDepthFormat;
+				}
+
+				if (isFinalImage)
+				{
+					m_attachments[i][attachmentSettings.first] = std::make_unique<vzt::Attachment>(
+					    device, swapchainImage, scColorFormat, vzt::ImageLayout::ColorAttachmentOptimal,
+					    vzt::ImageAspect::Color);
+				}
+				else
+				{
+					m_attachments[i][attachmentSettings.first] = std::make_unique<vzt::Attachment>(
+					    device, attachmentSettings.second.imageSize.value_or(scImageSize), currentFormat,
+					    attachmentSettings.second.usage);
+				}
+			}
+
+			// TODO: Create storages too
+
+			m_frameBuffers[i].reserve(m_renderPassHandlers.size());
+			for (auto& renderPassHandler : m_renderPassHandlers)
+			{
+				auto renderPass = renderPassHandler.build(device, i, scImageSize, scColorFormat);
+				std::vector<const vzt::ImageView*> views;
+				views.resize(renderPassHandler.m_colorOutputs.size());
+
+				for (const auto& colorOutput : renderPassHandler.m_colorOutputs)
+				{
+					views.emplace_back(m_attachments[i][colorOutput.first]->getView());
+				}
+
+				if (renderPassHandler.m_depthOutput.has_value())
+				{
+					views.emplace_back(m_attachments[i][renderPassHandler.m_depthOutput.value().first]->getView());
+				}
+
+				m_frameBuffers[i].emplace_back(device, std::move(renderPass), scImageSize, views);
+			}
+		}
+	}
+
+	void RenderGraph::render(const vzt::Device* device, const std::size_t imageId, VkSemaphore imageAvailable,
+	                         VkSemaphore renderComplete, VkFence inFlightFence)
+	{
+		const auto& frameBuffers = m_frameBuffers[imageId];
+		for (std::size_t i = 0; i < frameBuffers.size(); i++)
+		{
+			const std::size_t renderPassIdx = m_sortedRenderPassIndices[i];
+			const auto&       currentFb     = frameBuffers[renderPassIdx];
+			const auto&       renderPass    = m_renderPassHandlers[renderPassIdx];
+			m_commandPools[imageId].recordBuffer(i, [&](VkCommandBuffer commandBuffer) {
+				currentFb->bind(commandBuffer);
+				renderPass.render(currentFb->getRenderPass(), commandBuffer);
+				currentFb->unbind(commandBuffer);
+			});
+
+			VkSubmitInfo submitInfo{};
+			submitInfo.sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+			if (i == 0)
+			{
+				submitInfo.waitSemaphoreCount = 1;
+				submitInfo.pWaitSemaphores    = &imageAvailable;
+			}
+
+			submitInfo.pWaitDstStageMask  = waitStages;
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers    = &m_commandPools[imageId][i];
+
+			submitInfo.signalSemaphoreCount = 0;
+			// submitInfo.pSignalSemaphores    = &m_offscreenSemaphores[imageId];
+
+			const VkQueue currentQueue = renderPass.m_queueType == vzt::QueueType::Graphic
+			                                 ? device->getGraphicsQueue()
+			                                 : throw std::runtime_error("Compute pipeline is not currently supported");
+
+			if (vkQueueSubmit(currentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+			{
+				throw std::runtime_error("Failed to submit command buffer!");
+			}
+		}
+		vkResetFences(device->vkHandle(), 1, &inFlightFence);
+	}
+
+	const vzt::Attachment* RenderGraph::getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle)
+	{
+		return m_attachments[imageId][handle].get();
 	}
 
 	const vzt::AttachmentSettings& RenderGraph::getAttachmentSettings(const vzt::AttachmentHandle& handle) const
 	{
-		for (const auto& savedHandle : m_attachments)
+		for (const auto& savedHandle : m_attachmentsSettings)
 		{
 			if (savedHandle.first.id == handle.id)
 			{
@@ -325,7 +477,7 @@ namespace vzt
 
 	const vzt::StorageSettings& RenderGraph::getStorageSettings(const vzt::StorageHandle& handle) const
 	{
-		for (const auto& savedHandle : m_storages)
+		for (const auto& savedHandle : m_storagesSettings)
 		{
 			if (savedHandle.first.id == handle.id)
 			{
@@ -342,13 +494,13 @@ namespace vzt
 		m_sortedRenderPassIndices.reserve(m_sortedRenderPassIndices.size());
 
 		// 0: unmarked, 1: temporary marked, 2: permanent mark
-		std::vector<std::size_t> nodeStatus     = std::vector<std::size_t>(m_renderPasses.size(), 0);
-		std::vector<std::size_t> remainingNodes = std::vector<std::size_t>(m_renderPasses.size());
+		std::vector<std::size_t> nodeStatus     = std::vector<std::size_t>(m_renderPassHandlers.size(), 0);
+		std::vector<std::size_t> remainingNodes = std::vector<std::size_t>(m_renderPassHandlers.size());
 		std::iota(remainingNodes.begin(), remainingNodes.end(), 0);
 
 		std::function<void(std::size_t)> processNode;
 		processNode = [&](std::size_t idx) {
-			std::size_t currentStatus = nodeStatus[idx];
+			const std::size_t currentStatus = nodeStatus[idx];
 
 			if (currentStatus == 1)
 				throw std::runtime_error("The render graph is cyclic.");
@@ -357,13 +509,13 @@ namespace vzt
 
 			nodeStatus[idx] = 1;
 
-			const auto& currentRenderPass = m_renderPasses[idx];
-			for (std::size_t j = 0; j < m_renderPasses.size(); j++)
+			const auto& currentRenderPass = m_renderPassHandlers[idx];
+			for (std::size_t j = 0; j < m_renderPassHandlers.size(); j++)
 			{
 				if (j == idx)
 					continue;
 
-				const auto& renderPass = m_renderPasses[j];
+				const auto& renderPass = m_renderPassHandlers[j];
 				if (currentRenderPass.isDependingOn(renderPass))
 				{
 					processNode(j);
@@ -411,7 +563,7 @@ namespace vzt
 				// Try to find the farthest non-depending pass
 				for (auto it = m_sortedRenderPassIndices.rbegin(); it != m_sortedRenderPassIndices.rend(); ++it)
 				{
-					if (m_renderPasses[toProcess[i]].isDependingOn(m_renderPasses[*it]))
+					if (m_renderPassHandlers[toProcess[i]].isDependingOn(m_renderPassHandlers[*it]))
 						break;
 					overlapFactor++;
 				}
@@ -422,7 +574,7 @@ namespace vzt
 				bool possibleCandidate = true;
 				for (std::size_t j = 0; j < i; j++)
 				{
-					if (m_renderPasses[toProcess[i]].isDependingOn(m_renderPasses[toProcess[j]]))
+					if (m_renderPassHandlers[toProcess[i]].isDependingOn(m_renderPassHandlers[toProcess[j]]))
 					{
 						possibleCandidate = false;
 						break;

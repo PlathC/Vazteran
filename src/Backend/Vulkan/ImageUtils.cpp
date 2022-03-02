@@ -7,7 +7,7 @@
 
 namespace vzt
 {
-	ImageView::ImageView(Device* device, vzt::Image image, vzt::Format format, vzt::ImageLayout layout)
+	ImageView::ImageView(const Device* device, vzt::Image image, vzt::Format format, vzt::ImageLayout layout)
 	    : m_device(device), m_format(format), m_layout(layout)
 	{
 		VkBuffer      stagingBuffer   = VK_NULL_HANDLE;
@@ -39,7 +39,7 @@ namespace vzt
 		m_vkHandle = m_device->createImageView(m_vkImage, format, vzt::ImageAspect::Color);
 	}
 
-	ImageView::ImageView(Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
+	ImageView::ImageView(const Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
 	                     vzt::ImageAspect aspectFlags, vzt::ImageLayout layout)
 	    : m_device(device), m_format(format), m_layout(layout)
 	{
@@ -50,7 +50,7 @@ namespace vzt
 		m_vkHandle = m_device->createImageView(m_vkImage, format, aspectFlags);
 	}
 
-	ImageView::ImageView(vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
+	ImageView::ImageView(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
 	    : m_device(device), m_format(format)
 	{
 		m_vkHandle = m_device->createImageView(image, format, aspect);
@@ -77,7 +77,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroyImageView(m_device->VkHandle(), m_vkHandle, nullptr);
+			vkDestroyImageView(m_device->vkHandle(), m_vkHandle, nullptr);
 			m_vkHandle = VK_NULL_HANDLE;
 		}
 
@@ -108,7 +108,7 @@ namespace vzt
 		samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
 		samplerInfo.mipmapMode              = static_cast<VkSamplerMipmapMode>(samplerSettings.mipmapMode);
 
-		if (vkCreateSampler(m_device->VkHandle(), &samplerInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateSampler(m_device->vkHandle(), &samplerInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create texture sampler!");
 		}
@@ -132,7 +132,7 @@ namespace vzt
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
-			vkDestroySampler(m_device->VkHandle(), m_vkHandle, nullptr);
+			vkDestroySampler(m_device->vkHandle(), m_vkHandle, nullptr);
 			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}

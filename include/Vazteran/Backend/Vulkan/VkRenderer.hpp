@@ -16,6 +16,7 @@ struct GLFWwindow;
 
 namespace vzt
 {
+	class RenderGraph;
 	class GraphicPipeline;
 	class ImageView;
 	class MeshView;
@@ -26,7 +27,8 @@ namespace vzt
 	class Renderer
 	{
 	  public:
-		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size);
+		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size,
+		         vzt::RenderGraph* renderGraph);
 
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
@@ -47,8 +49,9 @@ namespace vzt
 	  private:
 		VkSurfaceKHR m_surface;
 
-		vzt::Device    m_device;
-		vzt::SwapChain m_swapChain;
+		vzt::Device       m_device;
+		vzt::SwapChain    m_swapChain;
+		vzt::RenderGraph* m_renderGraph;
 
 		std::unique_ptr<vzt::MeshView>     m_meshView;
 		std::unique_ptr<vzt::VkUiRenderer> m_ui;

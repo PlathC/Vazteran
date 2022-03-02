@@ -32,7 +32,7 @@ namespace vzt
 		ImGui_ImplVulkan_InitInfo init_info = {};
 		init_info.Instance                  = instance->vkHandle();
 		init_info.PhysicalDevice            = m_device->getPhysicalDevice()->vkHandle();
-		init_info.Device                    = m_device->VkHandle();
+		init_info.Device                    = m_device->vkHandle();
 
 		QueueFamilyIndices indices = m_device->getDeviceQueueFamilyIndices();
 		init_info.QueueFamily      = indices.graphicsFamily.value();

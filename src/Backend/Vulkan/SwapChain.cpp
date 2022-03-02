@@ -20,11 +20,11 @@ namespace vzt
 
 	bool SwapChain::render(const SubmitFunction submitFunction)
 	{
-		vkWaitForFences(m_device->VkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+		vkWaitForFences(m_device->vkHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
 		uint32_t imageIndex;
 		VkResult result =
-		    vkAcquireNextImageKHR(m_device->VkHandle(), m_vkHandle, UINT64_MAX,
+		    vkAcquireNextImageKHR(m_device->vkHandle(), m_vkHandle, UINT64_MAX,
 		                          m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		{
@@ -38,7 +38,7 @@ namespace vzt
 		// Check if a previous frame is using this image (i.e. there is its fence to wait on)
 		if (m_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
 		{
-			vkWaitForFences(m_device->VkHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+			vkWaitForFences(m_device->vkHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
 		}
 
 		// Mark the image as now being in use by this frame
@@ -92,9 +92,9 @@ namespace vzt
 	{
 		for (std::size_t i = 0; i < MaxFramesInFlight; i++)
 		{
-			vkDestroySemaphore(m_device->VkHandle(), m_renderFinishedSemaphores[i], nullptr);
-			vkDestroySemaphore(m_device->VkHandle(), m_imageAvailableSemaphores[i], nullptr);
-			vkDestroyFence(m_device->VkHandle(), m_inFlightFences[i], nullptr);
+			vkDestroySemaphore(m_device->vkHandle(), m_renderFinishedSemaphores[i], nullptr);
+			vkDestroySemaphore(m_device->vkHandle(), m_imageAvailableSemaphores[i], nullptr);
+			vkDestroyFence(m_device->vkHandle(), m_inFlightFences[i], nullptr);
 		}
 
 		for (auto& imageInFlight : m_imagesInFlight)
@@ -152,7 +152,7 @@ namespace vzt
 		createInfo.clipped        = VK_TRUE;
 		createInfo.oldSwapchain   = VK_NULL_HANDLE;
 
-		if (vkCreateSwapchainKHR(m_device->VkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
+		if (vkCreateSwapchainKHR(m_device->vkHandle(), &createInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to create swapchain!");
 		}
@@ -161,7 +161,7 @@ namespace vzt
 	std::vector<VkImage> SwapChain::getImagesKHR()
 	{
 		auto swapChainImages = std::vector<VkImage>(m_imageCount);
-		vkGetSwapchainImagesKHR(m_device->VkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
+		vkGetSwapchainImagesKHR(m_device->vkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());
 
 		return swapChainImages;
 	}
@@ -181,11 +181,11 @@ namespace vzt
 
 		for (std::size_t i = 0; i < MaxFramesInFlight; i++)
 		{
-			if (vkCreateSemaphore(m_device->VkHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) !=
+			if (vkCreateSemaphore(m_device->vkHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]) !=
 			        VK_SUCCESS ||
-			    vkCreateSemaphore(m_device->VkHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) !=
+			    vkCreateSemaphore(m_device->vkHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]) !=
 			        VK_SUCCESS ||
-			    vkCreateFence(m_device->VkHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
+			    vkCreateFence(m_device->vkHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]) != VK_SUCCESS)
 			{
 				throw std::runtime_error("Failed to create synchronization objects for a frame!");
 			}
@@ -198,11 +198,11 @@ namespace vzt
 		{
 			if (m_imagesInFlight[i] != VK_NULL_HANDLE)
 			{
-				vkWaitForFences(m_device->VkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
+				vkWaitForFences(m_device->vkHandle(), 1, &m_imagesInFlight[i], VK_TRUE, UINT64_MAX);
 			}
 		}
 
-		vkDestroySwapchainKHR(m_device->VkHandle(), m_vkHandle, nullptr);
+		vkDestroySwapchainKHR(m_device->vkHandle(), m_vkHandle, nullptr);
 	}
 
 	VkSurfaceFormatKHR SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
