@@ -443,8 +443,15 @@ namespace vzt
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers    = &m_commandPools[imageId][i];
 
-			submitInfo.signalSemaphoreCount = 0;
-			// submitInfo.pSignalSemaphores    = &m_offscreenSemaphores[imageId];
+			if (i == frameBuffers.size() - 1)
+			{
+				submitInfo.signalSemaphoreCount = 1;
+				submitInfo.pSignalSemaphores    = &renderComplete;
+			}
+			else
+			{
+				submitInfo.signalSemaphoreCount = 0;
+			}
 
 			const VkQueue currentQueue = renderPass.m_queueType == vzt::QueueType::Graphic
 			                                 ? device->getGraphicsQueue()
