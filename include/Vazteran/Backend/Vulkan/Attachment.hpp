@@ -48,16 +48,16 @@ namespace vzt
 		vzt::SampleCount      getSampleCount() const { return m_sampleCount; }
 		void                  setSampleCount(const vzt::SampleCount sampleCount) { m_sampleCount = sampleCount; }
 
-		vzt::Texture* asTexture();
+		vzt::Texture* asTexture() const;
 
 	  private:
-		const vzt::Device*                    m_device;
+		const vzt::Device*              m_device;
 		vzt::Format                     m_format;
 		vzt::ImageLayout                m_layout;
 		vzt::SampleCount                m_sampleCount;
 		std::unique_ptr<vzt::ImageView> m_imageView;
 
-		std::unique_ptr<vzt::Texture> m_textureRepresentation;
+		mutable std::unique_ptr<vzt::Texture> m_textureRepresentation;
 	};
 } // namespace vzt
 

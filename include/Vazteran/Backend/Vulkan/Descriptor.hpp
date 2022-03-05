@@ -83,6 +83,8 @@ namespace vzt
 		void bind(uint32_t i, VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint,
 		          VkPipelineLayout pipelineLayout) const;
 
+		VkDescriptorSet operator[](uint32_t i) const { return m_descriptors[i]; }
+
 		void update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
 		            const IndexedUniform<vzt::Texture*>& imageDescriptors);
 		void update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);

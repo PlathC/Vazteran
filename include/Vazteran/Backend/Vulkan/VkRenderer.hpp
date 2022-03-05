@@ -53,21 +53,6 @@ namespace vzt
 		vzt::SwapChain    m_swapChain;
 		vzt::RenderGraph* m_renderGraph;
 
-		std::unique_ptr<vzt::MeshView>     m_meshView;
-		std::unique_ptr<vzt::VkUiRenderer> m_ui;
-
-		std::vector<VkSemaphore>      m_offscreenSemaphores{};
-		std::vector<vzt::FrameBuffer> m_offscreenFrames;
-		vzt::CommandPool              m_offscreenCommandPool;
-
-		std::vector<vzt::FrameBuffer> m_frames;
-		vzt::CommandPool              m_fsCommandPool;
-		vzt::DescriptorLayout         m_fsDescriptorSetLayout;
-		vzt::DescriptorPool           m_fsDescriptorPool;
-
-		std::unique_ptr<vzt::GraphicPipeline>  m_compositionPipeline;
-		std::vector<vzt::SamplerDescriptorSet> m_samplersDescriptors;
-
 		vzt::Instance* m_instance;
 		GLFWwindow*    m_window;
 	};

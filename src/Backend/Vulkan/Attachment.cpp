@@ -28,7 +28,7 @@ namespace vzt
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, image, format, aspect);
 	}
 
-	vzt::Texture* Attachment::asTexture()
+	vzt::Texture* Attachment::asTexture() const
 	{
 		if (!m_textureRepresentation)
 		{

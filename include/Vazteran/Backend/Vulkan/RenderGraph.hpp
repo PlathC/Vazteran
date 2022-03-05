@@ -1,8 +1,6 @@
 #ifndef VAZTERAN_BACKEND_VULKAN_RENDERGRAPH_HPP
 #define VAZTERAN_BACKEND_VULKAN_RENDERGRAPH_HPP
 
-#include "CommandPool.hpp"
-
 #include <functional>
 #include <optional>
 
@@ -10,6 +8,8 @@
 
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
+#include "Vazteran/Backend/Vulkan/CommandPool.hpp"
+#include "Vazteran/Backend/Vulkan/Descriptor.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
@@ -108,7 +108,8 @@ namespace vzt
 	template <class Type>
 	using StorageList = std::unordered_map<vzt::StorageHandle, Type, vzt::StorageHandle::hash>;
 
-	using RenderFunction = std::function<void(const vzt::RenderPass* /*renderPass*/, const VkCommandBuffer& /*cmd*/)>;
+	using RecordFunction     = std::function<void(const vzt::RenderPass* /*renderPass*/, const VkCommandBuffer& /*cmd*/,
+                                              const std::vector<VkDescriptorSet>& /* engineDescriptorSets */)>;
 	using ConfigureFunction  = std::function<void(vzt::PipelineContextSettings /*settings*/)>;
 	using DepthClearFunction = std::function<bool(VkClearDepthStencilValue* /* value */)>;
 	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, VkClearColorValue* /* value */)>;
@@ -133,7 +134,7 @@ namespace vzt
 		void setDepthStencilInput(const vzt::AttachmentHandle depthStencil, const std::string& attachmentName = "");
 		void setDepthStencilOutput(vzt::AttachmentHandle& depthStencil, const std::string& attachmentName = "");
 
-		void setRenderFunction(vzt::RenderFunction renderFunction);
+		void setRenderFunction(vzt::RecordFunction renderFunction);
 		void setConfigureFunction(vzt::ConfigureFunction configureFunction);
 		void setDepthClearFunction(vzt::DepthClearFunction depthClearFunction);
 		void setColorClearFunction(vzt::ColorClearFunction colorClearFunction);
@@ -143,7 +144,7 @@ namespace vzt
 		std::unique_ptr<vzt::RenderPass> build(const vzt::Device* device, const std::size_t imageId,
 		                                       const vzt::Size2D<uint32_t>& targetSize, const vzt::Format targetFormat);
 
-		void render(const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const;
+		void render(std::size_t imageId, const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const;
 
 	  private:
 		RenderPassHandler(vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType);
@@ -174,12 +175,14 @@ namespace vzt
 		vzt::StorageList<StorageInfo>                                   m_storageOutputs;
 		std::optional<std::pair<vzt::AttachmentHandle, AttachmentInfo>> m_depthOutput;
 
-		vzt::RenderFunction     m_renderFunction;
+		vzt::RecordFunction     m_renderFunction;
 		vzt::ConfigureFunction  m_configureFunction;
 		vzt::DepthClearFunction m_depthClearFunction;
 		vzt::ColorClearFunction m_colorClearFunction;
 
-		std::unique_ptr<vzt::RenderPass> m_pass{};
+		std::unique_ptr<vzt::DescriptorPool> m_descriptorPool;
+		std::optional<vzt::DescriptorLayout> m_descriptorLayout;
+		std::unique_ptr<vzt::RenderPass>     m_pass{};
 	};
 
 	struct PhysicalAttachment
@@ -215,8 +218,8 @@ namespace vzt
 		void configure(const vzt::Device* device, const std::vector<VkImage>& swapchainImages,
 		               vzt::Size2D<uint32_t> scImageSize, vzt::Format scColorFormat, vzt::Format scDepthFormat);
 
-		void render(const vzt::Device* device, const std::size_t imageId, VkSemaphore imageAvailable,
-		            VkSemaphore renderComplete, VkFence inFlightFence);
+		void render(const std::size_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete,
+		            VkFence inFlightFence);
 
 		const vzt::Attachment* getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle);
 
@@ -238,13 +241,16 @@ namespace vzt
 
 		std::vector<std::size_t>                                           m_sortedRenderPassIndices;
 		std::vector<vzt::RenderPassHandler>                                m_renderPassHandlers;
-		std::vector<vzt::CommandPool>                                      m_commandPools;
 		std::vector<std::vector<std::unique_ptr<vzt::FrameBuffer>>>        m_frameBuffers;
 		vzt::AttachmentList<vzt::AttachmentSettings>                       m_attachmentsSettings;
+		vzt::AttachmentList<std::vector<std::size_t>>                      m_attachmentsSynchronizations;
 		std::vector<vzt::AttachmentList<std::unique_ptr<vzt::Attachment>>> m_attachments;
 		vzt::StorageList<vzt::StorageSettings>                             m_storagesSettings;
 
-		std::optional<vzt::AttachmentHandle> m_backBuffer;
+		const vzt::Device*                    m_device;
+		std::vector<vzt::CommandPool>         m_commandPools;
+		std::vector<std::vector<VkSemaphore>> m_semaphores;
+		std::optional<vzt::AttachmentHandle>  m_backBuffer;
 	};
 } // namespace vzt
 

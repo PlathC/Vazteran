@@ -1,4 +1,5 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
+#include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
 
 #include <iostream>
 #include <numeric>
@@ -204,7 +205,7 @@ namespace vzt
 		m_depthOutput = {depthStencil, attachmentInfo};
 	}
 
-	void RenderPassHandler::setRenderFunction(vzt::RenderFunction renderFunction)
+	void RenderPassHandler::setRenderFunction(vzt::RecordFunction renderFunction)
 	{
 		m_renderFunction = std::move(renderFunction);
 	}
@@ -290,18 +291,61 @@ namespace vzt
 			m_configureFunction({renderPass.get(), targetFormat, targetSize});
 		}
 
+		if (!m_descriptorPool && !m_colorInputs.empty())
+		{
+			vzt::DescriptorLayout currentLayout = vzt::DescriptorLayout(device);
+			for (std::size_t i = 0; i < m_colorInputs.size(); i++)
+			{
+				currentLayout.addBinding(vzt::ShaderStage::FragmentShader, i, vzt::DescriptorType::CombinedSampler);
+			}
+
+			m_descriptorPool = std::make_unique<vzt::DescriptorPool>(
+			    device, std::vector<vzt::DescriptorType>{vzt::DescriptorType::CombinedSampler});
+			m_descriptorPool->allocate(3, currentLayout);
+			m_descriptorLayout = std::move(currentLayout);
+		}
+
+		if (!m_colorInputs.empty())
+		{
+			auto inputStart = m_colorInputs.begin();
+
+			IndexedUniform<vzt::Texture*> texturesDescriptors;
+			for (std::size_t i = 0; i < m_colorInputs.size(); i++)
+			{
+				texturesDescriptors[i] = m_graph->getAttachment(imageId, inputStart->first)->asTexture();
+				inputStart++;
+			}
+			m_descriptorPool->update(imageId, texturesDescriptors);
+		}
+
 		return renderPass;
 	}
 
-	void RenderPassHandler::render(const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const
+	void RenderPassHandler::render(std::size_t imageId, const vzt::RenderPass* renderPass,
+	                               VkCommandBuffer commandBuffer) const
 	{
 		// m_colorClearFunction();
 		// m_depthClearFunction();
-		m_renderFunction(renderPass, commandBuffer);
+		std::vector<VkDescriptorSet> descriptorSets;
+		if (m_descriptorPool)
+		{
+			descriptorSets.emplace_back((*m_descriptorPool)[imageId]);
+		}
+
+		m_renderFunction(renderPass, commandBuffer, descriptorSets);
 	}
 
-	RenderGraph::RenderGraph()  = default;
-	RenderGraph::~RenderGraph() = default;
+	RenderGraph::RenderGraph() = default;
+	RenderGraph::~RenderGraph()
+	{
+		for (auto& semaphores : m_semaphores)
+		{
+			for (auto& semaphore : semaphores)
+			{
+				vkDestroySemaphore(m_device->vkHandle(), semaphore, nullptr);
+			}
+		}
+	};
 
 	vzt::AttachmentHandle RenderGraph::addAttachment(const vzt::AttachmentSettings& settings)
 	{
@@ -356,8 +400,15 @@ namespace vzt
 	void RenderGraph::configure(const vzt::Device* device, const std::vector<VkImage>& swapchainImages,
 	                            vzt::Size2D<uint32_t> scImageSize, vzt::Format scColorFormat, vzt::Format scDepthFormat)
 	{
+		m_device = device;
 		m_attachments.resize(swapchainImages.size());
 		m_frameBuffers.resize(swapchainImages.size());
+		m_commandPools.reserve(swapchainImages.size());
+
+		std::size_t           semaphoreCount = 0;
+		VkSemaphoreCreateInfo semaphoreCreateInfo{};
+		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
 		for (std::size_t i = 0; i < swapchainImages.size(); i++)
 		{
 			const auto& swapchainImage = swapchainImages[i];
@@ -393,11 +444,24 @@ namespace vzt
 			// TODO: Create storages too
 
 			m_frameBuffers[i].reserve(m_renderPassHandlers.size());
-			for (auto& renderPassHandler : m_renderPassHandlers)
+			for (std::size_t j = 0; j < m_sortedRenderPassIndices.size(); j++)
 			{
-				auto renderPass = renderPassHandler.build(device, i, scImageSize, scColorFormat);
+				auto& renderPassHandler = m_renderPassHandlers[m_sortedRenderPassIndices[j]];
+				auto  renderPass        = renderPassHandler.build(device, i, scImageSize, scColorFormat);
 				std::vector<const vzt::ImageView*> views;
 				views.resize(renderPassHandler.m_colorOutputs.size());
+
+				if (i == 0)
+				{
+					for (const auto& colorInput : renderPassHandler.m_colorInputs)
+					{
+						if (m_attachmentsSynchronizations[colorInput.first].size() <= colorInput.first.state)
+						{
+							m_attachmentsSynchronizations[colorInput.first].emplace_back(semaphoreCount);
+							semaphoreCount++;
+						}
+					}
+				}
 
 				for (const auto& colorOutput : renderPassHandler.m_colorOutputs)
 				{
@@ -411,58 +475,94 @@ namespace vzt
 
 				m_frameBuffers[i].emplace_back(device, std::move(renderPass), scImageSize, views);
 			}
+
+			m_commandPools[i].allocateCommandBuffers(m_frameBuffers[i].size());
+			m_semaphores[i].resize(semaphoreCount);
+
+			for (std::size_t s = 0; s < semaphoreCount; s++)
+			{
+				if (vkCreateSemaphore(m_device->vkHandle(), &semaphoreCreateInfo, nullptr, &m_semaphores[i][s]) !=
+				    VK_SUCCESS)
+				{
+					throw std::runtime_error("Can't create semaphores");
+				}
+			}
 		}
 	}
 
-	void RenderGraph::render(const vzt::Device* device, const std::size_t imageId, VkSemaphore imageAvailable,
-	                         VkSemaphore renderComplete, VkFence inFlightFence)
+	void RenderGraph::render(const std::size_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete,
+	                         VkFence inFlightFence)
 	{
 		const auto& frameBuffers = m_frameBuffers[imageId];
+
+		std::vector<VkSubmitInfo> graphicSubmissions{};
+		graphicSubmissions.reserve(frameBuffers.size());
 		for (std::size_t i = 0; i < frameBuffers.size(); i++)
 		{
 			const std::size_t renderPassIdx = m_sortedRenderPassIndices[i];
 			const auto&       currentFb     = frameBuffers[renderPassIdx];
 			const auto&       renderPass    = m_renderPassHandlers[renderPassIdx];
+
 			m_commandPools[imageId].recordBuffer(i, [&](VkCommandBuffer commandBuffer) {
 				currentFb->bind(commandBuffer);
-				renderPass.render(currentFb->getRenderPass(), commandBuffer);
+				renderPass.render(i, currentFb->getRenderPass(), commandBuffer);
 				currentFb->unbind(commandBuffer);
 			});
 
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+			submitInfo.pWaitDstStageMask      = waitStages;
 
+			std::vector<VkSemaphore> waitSemaphores{};
+			waitSemaphores.reserve(renderPass.m_colorInputs.size());
 			if (i == 0)
 			{
-				submitInfo.waitSemaphoreCount = 1;
-				submitInfo.pWaitSemaphores    = &imageAvailable;
+				waitSemaphores.emplace_back(imageAvailable);
 			}
 
-			submitInfo.pWaitDstStageMask  = waitStages;
+			for (const auto& colorInput : renderPass.m_colorInputs)
+			{
+				const std::size_t semaphoreId = m_attachmentsSynchronizations[colorInput.first][colorInput.first.state];
+				waitSemaphores.emplace_back(m_semaphores[semaphoreId]);
+			}
+
+			submitInfo.waitSemaphoreCount = waitSemaphores.size();
+			submitInfo.pWaitSemaphores    = waitSemaphores.data();
+
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers    = &m_commandPools[imageId][i];
 
+			std::vector<VkSemaphore> signalSemaphores{};
+			signalSemaphores.reserve(renderPass.m_colorOutputs.size());
 			if (i == frameBuffers.size() - 1)
 			{
-				submitInfo.signalSemaphoreCount = 1;
-				submitInfo.pSignalSemaphores    = &renderComplete;
+				signalSemaphores.emplace_back(renderComplete);
 			}
-			else
+
+			for (const auto& colorOutput : renderPass.m_colorOutputs)
 			{
-				submitInfo.signalSemaphoreCount = 0;
+				const std::size_t semaphoreId =
+				    m_attachmentsSynchronizations[colorOutput.first][colorOutput.first.state];
+				signalSemaphores.emplace_back(m_semaphores[semaphoreId]);
 			}
+
+			submitInfo.signalSemaphoreCount = signalSemaphores.size();
+			submitInfo.pSignalSemaphores    = signalSemaphores.data();
 
 			const VkQueue currentQueue = renderPass.m_queueType == vzt::QueueType::Graphic
-			                                 ? device->getGraphicsQueue()
+			                                 ? m_device->getGraphicsQueue()
 			                                 : throw std::runtime_error("Compute pipeline is not currently supported");
 
-			if (vkQueueSubmit(currentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
-			{
-				throw std::runtime_error("Failed to submit command buffer!");
-			}
+			graphicSubmissions.emplace_back(submitInfo);
 		}
-		vkResetFences(device->vkHandle(), 1, &inFlightFence);
+
+		vkResetFences(m_device->vkHandle(), 1, &inFlightFence);
+		if (vkQueueSubmit(m_device->getGraphicsQueue(), graphicSubmissions.size(), graphicSubmissions.data(),
+		                  VK_NULL_HANDLE) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to submit command buffers!");
+		}
 	}
 
 	const vzt::Attachment* RenderGraph::getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle)
