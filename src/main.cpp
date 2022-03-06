@@ -39,6 +39,7 @@ int main(int /* args */, char*[] /* argv */)
 
 	auto& uiPass = renderGraph.addPass("UI", vzt::QueueType::Graphic);
 	uiPass.addColorOutput(composed, "Final");
+	uiPass.setDepthStencilOutput(depth, "Depth");
 
 	renderGraph.setBackBuffer(composed);
 

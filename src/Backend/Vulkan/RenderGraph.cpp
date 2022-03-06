@@ -286,6 +286,17 @@ namespace vzt
 			attachments.emplace_back(correspondingGraph->getAttachment(imageId, output.first), attachmentUse);
 		}
 
+		if (m_depthOutput.has_value())
+		{
+			auto depthAttachment = m_depthOutput.value();
+			attachments.emplace_back(correspondingGraph->getAttachment(imageId, depthAttachment.first),
+			                         depthAttachment.second.attachmentUse);
+		}
+		else if (m_queueType == vzt::QueueType::Graphic)
+		{
+			throw std::runtime_error("A graphic render pass should have a depth attachment.");
+		}
+
 		auto renderPass = std::make_unique<vzt::RenderPass>(device, attachments);
 		if (imageId == 0 && m_configureFunction)
 		{
@@ -424,7 +435,8 @@ namespace vzt
 			// Create attachments
 			for (const auto& attachmentSettings : m_attachmentsSettings)
 			{
-				const bool  isFinalImage  = isBackBuffer(attachmentSettings.first);
+				const bool isFinalImage =
+				    m_backBuffer.value_or(vzt::AttachmentHandle{~0ULL, 0}).id == attachmentSettings.first.id;
 				vzt::Format currentFormat = attachmentSettings.second.format.value_or(scColorFormat);
 
 				const bool isDepthStencil =

@@ -35,7 +35,7 @@ namespace vzt
 
 			VkAttachmentReference currentAttachmentRef{};
 			currentAttachmentRef.attachment = static_cast<uint32_t>(i);
-			currentAttachmentRef.layout     = static_cast<VkImageLayout>(attachmentLayout);
+			currentAttachmentRef.layout     = vzt::toVulkan(attachmentLayout);
 
 			if (attachmentLayout == vzt::ImageLayout::ColorAttachmentOptimal)
 			{
