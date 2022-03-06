@@ -1,7 +1,6 @@
 #include "Vazteran/Backend/Vulkan/VkRenderer.hpp"
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/VkUiRenderer.hpp"
 #include "Vazteran/Data/Scene.hpp"
 #include "Vazteran/Views/MeshView.hpp"
@@ -9,16 +8,19 @@
 namespace vzt
 {
 	Renderer::Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size,
-	                   vzt::RenderGraph* renderGraph)
+	                   vzt::RenderGraph renderGraph)
 	    : m_surface(surface), m_device(instance, m_surface), m_swapChain(&m_device, surface, size),
-	      m_instance(instance), m_window(window), m_renderGraph(renderGraph)
+	      m_instance(instance), m_window(window), m_renderGraph(std::move(renderGraph))
 	{
+		m_renderGraph.configure(&m_device, m_swapChain.getRenderImages(), m_swapChain.getFrameBufferSize(),
+		                        m_swapChain.getImageFormat(), m_device.getPhysicalDevice()->findDepthFormat());
 	}
 
 	Renderer::Renderer(Renderer&& other) noexcept
 	    : m_device(std::move(other.m_device)), m_swapChain(std::move(other.m_swapChain))
 	{
 		std::swap(m_surface, other.m_surface);
+		std::swap(m_renderGraph, other.m_renderGraph);
 		std::swap(m_instance, other.m_instance);
 		std::swap(m_window, other.m_window);
 	}
@@ -26,6 +28,7 @@ namespace vzt
 	Renderer& Renderer::operator=(Renderer&& other) noexcept
 	{
 		std::swap(m_surface, other.m_surface);
+		std::swap(m_renderGraph, other.m_renderGraph);
 
 		std::swap(m_device, other.m_device);
 		std::swap(m_swapChain, other.m_swapChain);
@@ -54,18 +57,13 @@ namespace vzt
 		// }
 	}
 
-	void Renderer::setRenderGraph(vzt::RenderGraph* renderGraph) { m_renderGraph = renderGraph; }
-
 	void Renderer::draw(const vzt::Camera& camera)
 	{
 		// m_meshView->update(camera);
 
 		const bool recreate = m_swapChain.render(
 		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
-			    if (m_renderGraph)
-			    {
-				    m_renderGraph->render(imageId, imageAvailable, renderComplete, inFlightFence);
-			    }
+			    m_renderGraph.render(imageId, imageAvailable, renderComplete, inFlightFence);
 		    });
 
 		if (recreate)
@@ -79,7 +77,7 @@ namespace vzt
 		m_swapChain.setFrameBufferSize(std::move(newSize));
 		m_swapChain.recreate(m_surface);
 
-		m_renderGraph->configure(&m_device, m_swapChain.getImagesKHR(), m_swapChain.frameBufferSize(),
-		                         m_swapChain.imageFormat(), m_device.getPhysicalDevice()->findDepthFormat());
+		m_renderGraph.configure(&m_device, m_swapChain.getRenderImages(), m_swapChain.getFrameBufferSize(),
+		                        m_swapChain.getImageFormat(), m_device.getPhysicalDevice()->findDepthFormat());
 	}
 } // namespace vzt

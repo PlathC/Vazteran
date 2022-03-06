@@ -39,16 +39,16 @@ namespace vzt
 
 		~SwapChain();
 
-		void                 setFrameBufferSize(vzt::Size2D<uint32_t> newSize);
 		void                 setRenderPassTemplate(const vzt::RenderPass* const renderPassTemplate);
-		std::vector<VkImage> getImagesKHR();
+		std::vector<VkImage> getRenderImages();
 
 		void recreate(VkSurfaceKHR surface);
 		bool render(const SubmitFunction submitFunction);
 
-		vzt::Size2D<uint32_t> frameBufferSize() const { return m_swapChainSize; }
-		uint32_t              imageCount() const { return m_imageCount; }
-		vzt::Format           imageFormat() const { return m_swapChainImageFormat; }
+		void                  setFrameBufferSize(vzt::Size2D<uint32_t> newSize);
+		vzt::Size2D<uint32_t> getFrameBufferSize() const { return m_swapChainSize; }
+		uint32_t              getImageCount() const { return m_imageCount; }
+		vzt::Format           getImageFormat() const { return m_swapChainImageFormat; }
 
 	  private:
 		void createSwapChain();

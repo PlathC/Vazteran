@@ -8,6 +8,7 @@
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
+#include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/SwapChain.hpp"
 #include "Vazteran/Core/Utils.hpp"
 #include "Vazteran/Data/Camera.hpp"
@@ -28,7 +29,7 @@ namespace vzt
 	{
 	  public:
 		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size,
-		         vzt::RenderGraph* renderGraph);
+		         vzt::RenderGraph renderGraph);
 
 		Renderer(const Renderer&) = delete;
 		Renderer& operator=(const Renderer&) = delete;
@@ -39,7 +40,6 @@ namespace vzt
 		~Renderer();
 
 		void               setScene(vzt::Scene* scene);
-		void               setRenderGraph(vzt::RenderGraph* renderGraph);
 		void               draw(const vzt::Camera& camera);
 		const vzt::Device* getDevice() const { return &m_device; }
 		void               resize(vzt::Size2D<uint32_t> newSize);
@@ -47,9 +47,9 @@ namespace vzt
 	  private:
 		VkSurfaceKHR m_surface;
 
-		vzt::Device       m_device;
-		vzt::SwapChain    m_swapChain;
-		vzt::RenderGraph* m_renderGraph;
+		vzt::Device      m_device;
+		vzt::SwapChain   m_swapChain;
+		vzt::RenderGraph m_renderGraph;
 
 		vzt::Instance* m_instance;
 		GLFWwindow*    m_window;

@@ -141,18 +141,18 @@ namespace vzt
 
 		bool isDependingOn(const RenderPassHandler& other) const;
 
-		std::unique_ptr<vzt::RenderPass> build(const vzt::Device* device, const uint32_t imageId,
-		                                       const vzt::Size2D<uint32_t>& targetSize, const vzt::Format targetFormat);
+		std::unique_ptr<vzt::RenderPass> build(RenderGraph* const correspondingGraph, const vzt::Device* device,
+		                                       const uint32_t imageId, const vzt::Size2D<uint32_t>& targetSize,
+		                                       const vzt::Format targetFormat);
 
 		void render(const uint32_t imageId, const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const;
 
 	  private:
-		RenderPassHandler(vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType);
+		RenderPassHandler(std::string name, vzt::QueueType queueType);
 
 	  private:
-		vzt::RenderGraph* m_graph;
-		std::string       m_name;
-		vzt::QueueType    m_queueType;
+		std::string    m_name;
+		vzt::QueueType m_queueType;
 
 		struct AttachmentInfo
 		{

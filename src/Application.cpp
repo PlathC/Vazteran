@@ -29,7 +29,7 @@ namespace vzt
 
 		m_renderer = std::make_unique<vzt::Renderer>(m_instance.get(), m_window->windowHandle(),
 		                                             m_window->getSurface(m_instance.get()),
-		                                             m_window->getFrameBufferSize(), &renderGraph);
+		                                             m_window->getFrameBufferSize(), std::move(renderGraph));
 		m_renderer->setScene(&m_scene);
 
 		static bool isMouseEnable = false;

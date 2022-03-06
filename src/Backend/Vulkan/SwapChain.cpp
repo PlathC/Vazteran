@@ -158,7 +158,7 @@ namespace vzt
 		}
 	}
 
-	std::vector<VkImage> SwapChain::getImagesKHR()
+	std::vector<VkImage> SwapChain::getRenderImages()
 	{
 		auto swapChainImages = std::vector<VkImage>(m_imageCount);
 		vkGetSwapchainImagesKHR(m_device->vkHandle(), m_vkHandle, &m_imageCount, swapChainImages.data());

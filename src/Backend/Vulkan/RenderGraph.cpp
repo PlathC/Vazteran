@@ -7,8 +7,8 @@
 
 namespace vzt
 {
-	RenderPassHandler::RenderPassHandler(vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType)
-	    : m_graph(graph), m_name(std::move(name)), m_queueType(queueType)
+	RenderPassHandler::RenderPassHandler(std::string name, vzt::QueueType queueType)
+	    : m_name(std::move(name)), m_queueType(queueType)
 	{
 	}
 
@@ -268,7 +268,8 @@ namespace vzt
 		return false;
 	}
 
-	std::unique_ptr<vzt::RenderPass> RenderPassHandler::build(const vzt::Device* device, const uint32_t imageId,
+	std::unique_ptr<vzt::RenderPass> RenderPassHandler::build(RenderGraph* const correspondingGraph,
+	                                                          const vzt::Device* device, const uint32_t imageId,
 	                                                          const vzt::Size2D<uint32_t>& targetSize,
 	                                                          const vzt::Format            targetFormat)
 	{
@@ -277,12 +278,12 @@ namespace vzt
 		for (const auto& output : m_colorOutputs)
 		{
 			auto attachmentUse = output.second.attachmentUse;
-			if (m_graph->isBackBuffer(output.first))
+			if (correspondingGraph->isBackBuffer(output.first))
 			{
 				attachmentUse.finalLayout = vzt::ImageLayout::PresentSrcKHR;
 			}
 
-			attachments.emplace_back(m_graph->getAttachment(imageId, output.first), attachmentUse);
+			attachments.emplace_back(correspondingGraph->getAttachment(imageId, output.first), attachmentUse);
 		}
 
 		auto renderPass = std::make_unique<vzt::RenderPass>(device, attachments);
@@ -313,7 +314,7 @@ namespace vzt
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
 			for (uint32_t i = 0; i < m_colorInputs.size(); i++)
 			{
-				texturesDescriptors[i] = m_graph->getAttachment(imageId, inputStart->first)->asTexture();
+				texturesDescriptors[i] = correspondingGraph->getAttachment(imageId, inputStart->first)->asTexture();
 				inputStart++;
 			}
 			m_descriptorPool->update(imageId, texturesDescriptors);
@@ -366,7 +367,7 @@ namespace vzt
 
 	vzt::RenderPassHandler& RenderGraph::addPass(const std::string& name, const vzt::QueueType queueType)
 	{
-		m_renderPassHandlers.emplace_back(vzt::RenderPassHandler(this, name, queueType));
+		m_renderPassHandlers.emplace_back(vzt::RenderPassHandler(name, queueType));
 		return m_renderPassHandlers.back();
 	}
 
@@ -402,8 +403,13 @@ namespace vzt
 	                            vzt::Size2D<uint32_t> scImageSize, vzt::Format scColorFormat, vzt::Format scDepthFormat)
 	{
 		m_device = device;
-		m_attachments.resize(swapchainImages.size());
+
+		m_attachmentsIndices.resize(swapchainImages.size());
 		m_frameBuffers.resize(swapchainImages.size());
+		m_semaphores.resize(swapchainImages.size());
+
+		m_attachments.clear();
+		m_attachments.reserve(m_attachmentsSettings.size() * swapchainImages.size());
 		m_commandPools.reserve(swapchainImages.size());
 
 		uint32_t              semaphoreCount = 0;
@@ -412,8 +418,8 @@ namespace vzt
 
 		for (uint32_t i = 0; i < swapchainImages.size(); i++)
 		{
-			auto  swapchainImage = swapchainImages[i];
-			auto& attachments    = m_attachments[i];
+			auto swapchainImage = swapchainImages[i];
+			m_commandPools.emplace_back(device);
 
 			// Create attachments
 			for (const auto& attachmentSettings : m_attachmentsSettings)
@@ -453,7 +459,7 @@ namespace vzt
 			for (uint32_t j = 0; j < m_sortedRenderPassIndices.size(); j++)
 			{
 				auto& renderPassHandler = m_renderPassHandlers[m_sortedRenderPassIndices[j]];
-				auto  renderPass        = renderPassHandler.build(device, i, scImageSize, scColorFormat);
+				auto  renderPass        = renderPassHandler.build(this, device, i, scImageSize, scColorFormat);
 				std::vector<const vzt::ImageView*> views;
 				views.reserve(renderPassHandler.m_colorOutputs.size());
 

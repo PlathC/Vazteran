@@ -9,7 +9,7 @@
 
 namespace vzt
 {
-	CommandPool::CommandPool(Device* logicalDevice) : m_logicalDevice(logicalDevice)
+	CommandPool::CommandPool(const Device* logicalDevice) : m_logicalDevice(logicalDevice)
 	{
 		const vzt::QueueFamilyIndices indices = m_logicalDevice->getDeviceQueueFamilyIndices();
 

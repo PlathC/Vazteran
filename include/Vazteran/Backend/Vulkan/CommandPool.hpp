@@ -19,7 +19,7 @@ namespace vzt
 	class CommandPool
 	{
 	  public:
-		CommandPool(Device* logicalDevice);
+		CommandPool(const Device* logicalDevice);
 
 		CommandPool(CommandPool&) = delete;
 		CommandPool& operator=(const CommandPool&) = delete;
@@ -36,7 +36,7 @@ namespace vzt
 		void recordBuffer(uint32_t bufferNumber, Command command) const;
 
 	  private:
-		Device*                      m_logicalDevice;
+		const Device*                m_logicalDevice;
 		VkCommandPool                m_vkHandle{};
 		std::vector<VkCommandBuffer> m_commandBuffers;
 		uint32_t                     m_bufferCount{};
