@@ -10,6 +10,7 @@ namespace vzt
 {
 	class Attachment;
 	class Device;
+	class ImageView;
 	class RenderPass;
 
 	class FrameBuffer

@@ -34,7 +34,7 @@ namespace vzt
 		Attachment(const vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage);
 		Attachment(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageLayout layout,
 		           vzt::ImageAspect aspect);
-		~Attachment() = default;
+		~Attachment();
 
 		Attachment(const Attachment&) = delete;
 		Attachment& operator=(const Attachment&) = delete;
@@ -57,7 +57,7 @@ namespace vzt
 		vzt::SampleCount                m_sampleCount;
 		std::unique_ptr<vzt::ImageView> m_imageView;
 
-		mutable std::unique_ptr<vzt::Texture> m_textureRepresentation;
+		std::unique_ptr<vzt::Texture> m_textureRepresentation;
 	};
 } // namespace vzt
 

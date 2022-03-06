@@ -268,11 +268,11 @@ namespace vzt
 		return false;
 	}
 
-	std::unique_ptr<vzt::RenderPass> RenderPassHandler::build(const vzt::Device* device, const std::size_t imageId,
+	std::unique_ptr<vzt::RenderPass> RenderPassHandler::build(const vzt::Device* device, const uint32_t imageId,
 	                                                          const vzt::Size2D<uint32_t>& targetSize,
 	                                                          const vzt::Format            targetFormat)
 	{
-		std::vector<std::pair<vzt::Attachment*, vzt::AttachmentPassUse>> attachments;
+		std::vector<vzt::RenderPass::AttachmentPassConfiguration> attachments;
 		attachments.reserve(m_colorOutputs.size());
 		for (const auto& output : m_colorOutputs)
 		{
@@ -296,7 +296,8 @@ namespace vzt
 			vzt::DescriptorLayout currentLayout = vzt::DescriptorLayout(device);
 			for (std::size_t i = 0; i < m_colorInputs.size(); i++)
 			{
-				currentLayout.addBinding(vzt::ShaderStage::FragmentShader, i, vzt::DescriptorType::CombinedSampler);
+				currentLayout.addBinding(vzt::ShaderStage::FragmentShader, static_cast<uint32_t>(i),
+				                         vzt::DescriptorType::CombinedSampler);
 			}
 
 			m_descriptorPool = std::make_unique<vzt::DescriptorPool>(
@@ -310,7 +311,7 @@ namespace vzt
 			auto inputStart = m_colorInputs.begin();
 
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
-			for (std::size_t i = 0; i < m_colorInputs.size(); i++)
+			for (uint32_t i = 0; i < m_colorInputs.size(); i++)
 			{
 				texturesDescriptors[i] = m_graph->getAttachment(imageId, inputStart->first)->asTexture();
 				inputStart++;
@@ -321,7 +322,7 @@ namespace vzt
 		return renderPass;
 	}
 
-	void RenderPassHandler::render(std::size_t imageId, const vzt::RenderPass* renderPass,
+	void RenderPassHandler::render(const uint32_t imageId, const vzt::RenderPass* renderPass,
 	                               VkCommandBuffer commandBuffer) const
 	{
 		// m_colorClearFunction();
@@ -405,13 +406,14 @@ namespace vzt
 		m_frameBuffers.resize(swapchainImages.size());
 		m_commandPools.reserve(swapchainImages.size());
 
-		std::size_t           semaphoreCount = 0;
+		uint32_t              semaphoreCount = 0;
 		VkSemaphoreCreateInfo semaphoreCreateInfo{};
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-		for (std::size_t i = 0; i < swapchainImages.size(); i++)
+		for (uint32_t i = 0; i < swapchainImages.size(); i++)
 		{
-			const auto& swapchainImage = swapchainImages[i];
+			auto  swapchainImage = swapchainImages[i];
+			auto& attachments    = m_attachments[i];
 
 			// Create attachments
 			for (const auto& attachmentSettings : m_attachmentsSettings)
@@ -427,29 +429,33 @@ namespace vzt
 					currentFormat = scDepthFormat;
 				}
 
+				std::unique_ptr<vzt::Attachment> attachment;
 				if (isFinalImage)
 				{
-					m_attachments[i][attachmentSettings.first] = std::make_unique<vzt::Attachment>(
-					    device, swapchainImage, scColorFormat, vzt::ImageLayout::ColorAttachmentOptimal,
-					    vzt::ImageAspect::Color);
+					attachment = std::make_unique<vzt::Attachment>(device, swapchainImage, scColorFormat,
+					                                               vzt::ImageLayout::ColorAttachmentOptimal,
+					                                               vzt::ImageAspect::Color);
 				}
 				else
 				{
-					m_attachments[i][attachmentSettings.first] = std::make_unique<vzt::Attachment>(
+					attachment = std::make_unique<vzt::Attachment>(
 					    device, attachmentSettings.second.imageSize.value_or(scImageSize), currentFormat,
 					    attachmentSettings.second.usage);
 				}
+
+				m_attachmentsIndices[i][attachmentSettings.first] = m_attachments.size();
+				m_attachments.emplace_back(std::move(attachment));
 			}
 
 			// TODO: Create storages too
 
 			m_frameBuffers[i].reserve(m_renderPassHandlers.size());
-			for (std::size_t j = 0; j < m_sortedRenderPassIndices.size(); j++)
+			for (uint32_t j = 0; j < m_sortedRenderPassIndices.size(); j++)
 			{
 				auto& renderPassHandler = m_renderPassHandlers[m_sortedRenderPassIndices[j]];
 				auto  renderPass        = renderPassHandler.build(device, i, scImageSize, scColorFormat);
 				std::vector<const vzt::ImageView*> views;
-				views.resize(renderPassHandler.m_colorOutputs.size());
+				views.reserve(renderPassHandler.m_colorOutputs.size());
 
 				if (i == 0)
 				{
@@ -465,18 +471,21 @@ namespace vzt
 
 				for (const auto& colorOutput : renderPassHandler.m_colorOutputs)
 				{
-					views.emplace_back(m_attachments[i][colorOutput.first]->getView());
+					views.emplace_back(m_attachments[m_attachmentsIndices[i][colorOutput.first]]->getView());
 				}
 
 				if (renderPassHandler.m_depthOutput.has_value())
 				{
-					views.emplace_back(m_attachments[i][renderPassHandler.m_depthOutput.value().first]->getView());
+					views.emplace_back(
+					    m_attachments[m_attachmentsIndices[i][renderPassHandler.m_depthOutput.value().first]]
+					        ->getView());
 				}
 
-				m_frameBuffers[i].emplace_back(device, std::move(renderPass), scImageSize, views);
+				m_frameBuffers[i].emplace_back(
+				    std::make_unique<vzt::FrameBuffer>(device, std::move(renderPass), scImageSize, views));
 			}
 
-			m_commandPools[i].allocateCommandBuffers(m_frameBuffers[i].size());
+			m_commandPools[i].allocateCommandBuffers(static_cast<uint32_t>(m_frameBuffers[i].size()));
 			m_semaphores[i].resize(semaphoreCount);
 
 			for (std::size_t s = 0; s < semaphoreCount; s++)
@@ -494,10 +503,11 @@ namespace vzt
 	                         VkFence inFlightFence)
 	{
 		const auto& frameBuffers = m_frameBuffers[imageId];
+		const auto& semaphores   = m_semaphores[imageId];
 
 		std::vector<VkSubmitInfo> graphicSubmissions{};
 		graphicSubmissions.reserve(frameBuffers.size());
-		for (std::size_t i = 0; i < frameBuffers.size(); i++)
+		for (uint32_t i = 0; i < frameBuffers.size(); i++)
 		{
 			const std::size_t renderPassIdx = m_sortedRenderPassIndices[i];
 			const auto&       currentFb     = frameBuffers[renderPassIdx];
@@ -524,10 +534,10 @@ namespace vzt
 			for (const auto& colorInput : renderPass.m_colorInputs)
 			{
 				const std::size_t semaphoreId = m_attachmentsSynchronizations[colorInput.first][colorInput.first.state];
-				waitSemaphores.emplace_back(m_semaphores[semaphoreId]);
+				waitSemaphores.emplace_back(semaphores[semaphoreId]);
 			}
 
-			submitInfo.waitSemaphoreCount = waitSemaphores.size();
+			submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
 			submitInfo.pWaitSemaphores    = waitSemaphores.data();
 
 			submitInfo.commandBufferCount = 1;
@@ -544,10 +554,10 @@ namespace vzt
 			{
 				const std::size_t semaphoreId =
 				    m_attachmentsSynchronizations[colorOutput.first][colorOutput.first.state];
-				signalSemaphores.emplace_back(m_semaphores[semaphoreId]);
+				signalSemaphores.emplace_back(semaphores[semaphoreId]);
 			}
 
-			submitInfo.signalSemaphoreCount = signalSemaphores.size();
+			submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
 			submitInfo.pSignalSemaphores    = signalSemaphores.data();
 
 			const VkQueue currentQueue = renderPass.m_queueType == vzt::QueueType::Graphic
@@ -558,16 +568,16 @@ namespace vzt
 		}
 
 		vkResetFences(m_device->vkHandle(), 1, &inFlightFence);
-		if (vkQueueSubmit(m_device->getGraphicsQueue(), graphicSubmissions.size(), graphicSubmissions.data(),
-		                  VK_NULL_HANDLE) != VK_SUCCESS)
+		if (vkQueueSubmit(m_device->getGraphicsQueue(), static_cast<uint32_t>(graphicSubmissions.size()),
+		                  graphicSubmissions.data(), VK_NULL_HANDLE) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to submit command buffers!");
 		}
 	}
 
-	const vzt::Attachment* RenderGraph::getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle)
+	vzt::Attachment* RenderGraph::getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle)
 	{
-		return m_attachments[imageId][handle].get();
+		return m_attachments[m_attachmentsIndices[imageId][handle]].get();
 	}
 
 	const vzt::AttachmentSettings& RenderGraph::getAttachmentSettings(const vzt::AttachmentHandle& handle) const

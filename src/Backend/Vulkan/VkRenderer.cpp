@@ -54,13 +54,18 @@ namespace vzt
 		// }
 	}
 
+	void Renderer::setRenderGraph(vzt::RenderGraph* renderGraph) { m_renderGraph = renderGraph; }
+
 	void Renderer::draw(const vzt::Camera& camera)
 	{
 		// m_meshView->update(camera);
 
 		const bool recreate = m_swapChain.render(
 		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
-			    m_renderGraph->render(imageId, imageAvailable, renderComplete, inFlightFence);
+			    if (m_renderGraph)
+			    {
+				    m_renderGraph->render(imageId, imageAvailable, renderComplete, inFlightFence);
+			    }
 		    });
 
 		if (recreate)

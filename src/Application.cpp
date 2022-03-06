@@ -9,7 +9,8 @@
 
 namespace vzt
 {
-	Application::Application(const std::string& name, vzt::Scene scene) : m_scene(std::move(scene))
+	Application::Application(const std::string& name, vzt::Scene scene, vzt::RenderGraph renderGraph)
+	    : m_scene(std::move(scene))
 	{
 		m_window = std::make_unique<vzt::Window>(name, 800, 600, [&]() {
 			if (m_renderer)
@@ -26,9 +27,9 @@ namespace vzt
 		const auto size                   = m_window->getFrameBufferSize();
 		m_scene.sceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
 
-		m_renderer =
-		    std::make_unique<vzt::Renderer>(m_instance.get(), m_window->windowHandle(),
-		                                    m_window->getSurface(m_instance.get()), m_window->getFrameBufferSize());
+		m_renderer = std::make_unique<vzt::Renderer>(m_instance.get(), m_window->windowHandle(),
+		                                             m_window->getSurface(m_instance.get()),
+		                                             m_window->getFrameBufferSize(), &renderGraph);
 		m_renderer->setScene(&m_scene);
 
 		static bool isMouseEnable = false;

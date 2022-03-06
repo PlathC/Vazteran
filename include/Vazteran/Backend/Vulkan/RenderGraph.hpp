@@ -71,7 +71,7 @@ namespace vzt
 
 		struct hash
 		{
-			auto operator()(const AttachmentHandle& handle) const { return handle.id; }
+			std::size_t operator()(const AttachmentHandle& handle) const { return handle.id; }
 		};
 
 		bool operator==(const AttachmentHandle& other) const { return id == other.id && state == other.state; }
@@ -141,10 +141,10 @@ namespace vzt
 
 		bool isDependingOn(const RenderPassHandler& other) const;
 
-		std::unique_ptr<vzt::RenderPass> build(const vzt::Device* device, const std::size_t imageId,
+		std::unique_ptr<vzt::RenderPass> build(const vzt::Device* device, const uint32_t imageId,
 		                                       const vzt::Size2D<uint32_t>& targetSize, const vzt::Format targetFormat);
 
-		void render(std::size_t imageId, const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const;
+		void render(const uint32_t imageId, const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const;
 
 	  private:
 		RenderPassHandler(vzt::RenderGraph* const graph, std::string name, vzt::QueueType queueType);
@@ -200,6 +200,13 @@ namespace vzt
 	{
 	  public:
 		RenderGraph();
+
+		RenderGraph(const RenderGraph&) = delete;
+		RenderGraph& operator=(const RenderGraph&) = delete;
+
+		RenderGraph(RenderGraph&&) = default;
+		RenderGraph& operator=(RenderGraph&&) = default;
+
 		~RenderGraph();
 
 		// User configuration
@@ -221,7 +228,7 @@ namespace vzt
 		void render(const std::size_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete,
 		            VkFence inFlightFence);
 
-		const vzt::Attachment* getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle);
+		vzt::Attachment* getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle);
 
 		const vzt::AttachmentSettings& getAttachmentSettings(const vzt::AttachmentHandle& handle) const;
 		const vzt::StorageSettings&    getStorageSettings(const vzt::StorageHandle& handle) const;
@@ -239,13 +246,16 @@ namespace vzt
 
 		std::hash<std::size_t> m_hash{};
 
-		std::vector<std::size_t>                                           m_sortedRenderPassIndices;
-		std::vector<vzt::RenderPassHandler>                                m_renderPassHandlers;
-		std::vector<std::vector<std::unique_ptr<vzt::FrameBuffer>>>        m_frameBuffers;
-		vzt::AttachmentList<vzt::AttachmentSettings>                       m_attachmentsSettings;
-		vzt::AttachmentList<std::vector<std::size_t>>                      m_attachmentsSynchronizations;
-		std::vector<vzt::AttachmentList<std::unique_ptr<vzt::Attachment>>> m_attachments;
-		vzt::StorageList<vzt::StorageSettings>                             m_storagesSettings;
+		std::vector<std::size_t>                                    m_sortedRenderPassIndices;
+		std::vector<vzt::RenderPassHandler>                         m_renderPassHandlers;
+		std::vector<std::vector<std::unique_ptr<vzt::FrameBuffer>>> m_frameBuffers;
+		vzt::AttachmentList<vzt::AttachmentSettings>                m_attachmentsSettings;
+		vzt::AttachmentList<std::vector<std::size_t>>               m_attachmentsSynchronizations;
+
+		std::vector<vzt::AttachmentList<std::size_t>> m_attachmentsIndices;
+		std::vector<std::unique_ptr<vzt::Attachment>> m_attachments;
+
+		vzt::StorageList<vzt::StorageSettings> m_storagesSettings;
 
 		const vzt::Device*                    m_device;
 		std::vector<vzt::CommandPool>         m_commandPools;

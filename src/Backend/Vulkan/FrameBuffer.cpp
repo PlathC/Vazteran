@@ -18,7 +18,9 @@ namespace vzt
 		std::vector<VkImageView> attachmentView{};
 		attachmentView.reserve(extAttachmentViews.size());
 		for (const auto& view : extAttachmentViews)
+		{
 			attachmentView.emplace_back(view->vkHandle());
+		}
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

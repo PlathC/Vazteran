@@ -39,12 +39,10 @@ namespace vzt
 		~Renderer();
 
 		void               setScene(vzt::Scene* scene);
+		void               setRenderGraph(vzt::RenderGraph* renderGraph);
 		void               draw(const vzt::Camera& camera);
 		const vzt::Device* getDevice() const { return &m_device; }
 		void               resize(vzt::Size2D<uint32_t> newSize);
-
-	  private:
-		void buildRenderingSupports();
 
 	  private:
 		VkSurfaceKHR m_surface;

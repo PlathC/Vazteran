@@ -19,6 +19,10 @@ namespace vzt
 		}
 
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, size, format, usage, aspect, m_layout);
+
+		vzt::SamplerSettings samplerSettings{vzt::Filter::Nearest, vzt::AddressMode::ClampToEdge,
+		                                     vzt::MipmapMode::Linear, vzt::BorderColor::FloatOpaqueWhite};
+		m_textureRepresentation = std::make_unique<vzt::Texture>(m_device, m_imageView.get(), samplerSettings);
 	}
 
 	Attachment::Attachment(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageLayout layout,
@@ -28,14 +32,7 @@ namespace vzt
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, image, format, aspect);
 	}
 
-	vzt::Texture* Attachment::asTexture() const
-	{
-		if (!m_textureRepresentation)
-		{
-			vzt::SamplerSettings samplerSettings{vzt::Filter::Nearest, vzt::AddressMode::ClampToEdge,
-			                                     vzt::MipmapMode::Linear, vzt::BorderColor::FloatOpaqueWhite};
-			m_textureRepresentation = std::make_unique<vzt::Texture>(m_device, m_imageView.get(), samplerSettings);
-		}
-		return m_textureRepresentation.get();
-	}
+	Attachment::~Attachment() = default;
+
+	vzt::Texture* Attachment::asTexture() const { return m_textureRepresentation.get(); }
 } // namespace vzt

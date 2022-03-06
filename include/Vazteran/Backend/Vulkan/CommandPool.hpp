@@ -29,9 +29,9 @@ namespace vzt
 
 		~CommandPool();
 
-		VkCommandBuffer& operator[](uint32_t bufferNumber);
+		VkCommandBuffer& operator[](const uint32_t bufferNumber);
 
-		void allocateCommandBuffers(uint32_t count);
+		void allocateCommandBuffers(const uint32_t count);
 		void resetBuffers(uint32_t bufferNumber);
 		void recordBuffer(uint32_t bufferNumber, Command command) const;
 

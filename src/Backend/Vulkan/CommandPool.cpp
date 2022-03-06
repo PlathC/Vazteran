@@ -41,7 +41,7 @@ namespace vzt
 		return *this;
 	}
 
-	void CommandPool::allocateCommandBuffers(uint32_t count)
+	void CommandPool::allocateCommandBuffers(const uint32_t count)
 	{
 		if (!m_commandBuffers.empty())
 		{
@@ -66,12 +66,12 @@ namespace vzt
 		}
 	}
 
-	void CommandPool::resetBuffers(uint32_t bufferNumber)
+	void CommandPool::resetBuffers(const uint32_t bufferNumber)
 	{
 		vkResetCommandBuffer(m_commandBuffers[bufferNumber], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 	}
 
-	void CommandPool::recordBuffer(uint32_t bufferNumber, const Command command) const
+	void CommandPool::recordBuffer(const uint32_t bufferNumber, const Command command) const
 	{
 		assert(bufferNumber < m_commandBuffers.size() && "bufferNumber should be less than m_commandBuffers.size()");
 

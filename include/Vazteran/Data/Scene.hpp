@@ -38,7 +38,6 @@ namespace vzt
 		std::optional<vzt::ui::UiManager>  cSceneUi() const { return m_uiManager; }
 		vzt::Camera&                       sceneCamera() { return m_camera; };
 		vzt::Camera                        cSceneCamera() const { return m_camera; };
-		vzt::RenderGraph                   getrenderGraph() const { return m_renderGraph; }
 
 		void update() const;
 
@@ -47,7 +46,6 @@ namespace vzt
 	  private:
 		vzt::Camera                              m_camera;
 		std::vector<std::unique_ptr<vzt::Model>> m_models;
-		vzt::RenderGraph                         m_renderGraph{};
 		std::optional<vzt::ui::UiManager>        m_uiManager;
 	};
 } // namespace vzt
