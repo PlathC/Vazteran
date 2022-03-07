@@ -50,9 +50,16 @@ namespace vzt
 
 	struct PipelineContextSettings
 	{
-		const vzt::RenderPass* renderPassTemplate;
-		vzt::Format            targetFormat;
-		vzt::Size2D<uint32_t>  targetSize;
+		const vzt::Device*                        device;
+		const vzt::RenderPass*                    renderPassTemplate;
+		std::vector<const vzt::DescriptorLayout*> engineDescriptors;
+	};
+
+	struct PipelineDrawSettings
+	{
+		uint32_t              attachmentCount;
+		vzt::Format           targetFormat;
+		vzt::Size2D<uint32_t> targetSize;
 	};
 
 	struct RasterizationOptions
@@ -65,10 +72,8 @@ namespace vzt
 	class GraphicPipeline
 	{
 	  public:
-		GraphicPipeline(vzt::Device* device, vzt::Program&& program, vzt::DescriptorLayout descriptorLayout,
-		                std::optional<vzt::VertexInputDescription> vertexInputDescription =
-		                    std::optional<vzt::VertexInputDescription>(),
-		                uint32_t attachmentCount = 1);
+		GraphicPipeline(vzt::Program&& program, std::optional<vzt::DescriptorLayout> userDefinedDescriptorLayout = {},
+		                std::optional<vzt::VertexInputDescription> vertexInputDescription = {});
 
 		GraphicPipeline(const GraphicPipeline&) = delete;
 		GraphicPipeline& operator=(const GraphicPipeline&) = delete;
@@ -79,7 +84,9 @@ namespace vzt
 		~GraphicPipeline();
 
 		void bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass) const;
+
 		void configure(vzt::PipelineContextSettings settings);
+		void configureDrawSettings(vzt::PipelineDrawSettings settings);
 
 		vzt::RasterizationOptions& getRasterOptions() { return m_rasterOptions; }
 		vzt::RasterizationOptions  getCRasterOptions() const { return m_rasterOptions; }
@@ -99,9 +106,11 @@ namespace vzt
 		VkPipeline       m_vkHandle       = VK_NULL_HANDLE;
 		VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-		std::optional<vzt::VertexInputDescription> m_vertexInputDescription;
 		vzt::Program                               m_program;
-		vzt::PipelineContextSettings               m_settings{};
+		std::optional<vzt::DescriptorLayout>       m_userDefinedDescriptorLayout;
+		std::optional<vzt::VertexInputDescription> m_vertexInputDescription;
+		vzt::PipelineContextSettings               m_contextSettings{};
+		vzt::PipelineDrawSettings                  m_drawSettings{};
 		vzt::RasterizationOptions                  m_rasterOptions{};
 		uint32_t                                   m_attachmentCount;
 	};

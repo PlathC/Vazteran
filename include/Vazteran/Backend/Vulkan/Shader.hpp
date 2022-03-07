@@ -82,7 +82,7 @@ namespace vzt
 		using ShaderList = std::unordered_map<vzt::ShaderStage, vzt::Shader>;
 
 	  public:
-		Program(const vzt::Device* const device);
+		Program();
 
 		Program(const Program&) = delete;
 		Program& operator=(const Program&) = delete;
@@ -96,7 +96,7 @@ namespace vzt
 		const ShaderList& getShaders() const { return m_shaders; }
 
 		// Regenerate modules and stages
-		void compile();
+		void compile(const vzt::Device* const device);
 
 		// Post Compiling informations
 		const std::vector<VkPipelineShaderStageCreateInfo>& getPipelineStages() const { return m_pipelineShaderStages; }

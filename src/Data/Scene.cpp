@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "Vazteran/Backend/Vulkan/VkUiRenderer.hpp"
+#include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
 #include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Model.hpp"
 #include "Vazteran/Data/Scene.hpp"

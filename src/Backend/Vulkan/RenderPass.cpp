@@ -9,7 +9,8 @@
 
 namespace vzt
 {
-	RenderPass::RenderPass(const vzt::Device* device, const std::vector<AttachmentPassConfiguration>& attachments)
+	RenderPass::RenderPass(const vzt::Device* device, const std::vector<AttachmentPassConfiguration>& attachments,
+	                       const DepthAttachmentPassConfiguration& depthAttachment)
 	    : m_device(device)
 	{
 		std::vector<VkAttachmentDescription> attachmentDescriptions;
@@ -37,22 +38,18 @@ namespace vzt
 			currentAttachmentRef.attachment = static_cast<uint32_t>(i);
 			currentAttachmentRef.layout     = vzt::toVulkan(attachmentLayout);
 
-			if (attachmentLayout == vzt::ImageLayout::ColorAttachmentOptimal)
-			{
-				m_colorRefs.emplace_back(currentAttachmentRef);
-			}
-			else if (attachmentLayout == vzt::ImageLayout::DepthAttachmentOptimal ||
-			         attachmentLayout == vzt::ImageLayout::DepthStencilAttachmentOptimal)
-			{
-				m_depthRef = currentAttachmentRef;
-			}
+			m_colorRefs.emplace_back(currentAttachmentRef);
 		}
+
+		VkAttachmentReference depthAttachmentRef{};
+		depthAttachmentRef.attachment = static_cast<uint32_t>(m_colorRefs.size());
+		depthAttachmentRef.layout     = vzt::toVulkan(depthAttachment.first->getLayout());
 
 		VkSubpassDescription subpass{};
 		subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount    = static_cast<uint32_t>(m_colorRefs.size());
 		subpass.pColorAttachments       = m_colorRefs.data();
-		subpass.pDepthStencilAttachment = &m_depthRef;
+		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 		m_subpassDependencies = {{VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 		                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_MEMORY_READ_BIT,

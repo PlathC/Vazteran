@@ -23,7 +23,7 @@ namespace vzt
 	class MeshView;
 	class RenderPass;
 	class Scene;
-	class VkUiRenderer;
+	class UiRenderer;
 
 	class Renderer
 	{

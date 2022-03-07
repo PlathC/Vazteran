@@ -26,7 +26,8 @@ namespace vzt
 	class UiRenderer
 	{
 	  public:
-		UiRenderer(vzt::ui::UiManager uiManager);
+		UiRenderer(vzt::Instance* instance, vzt::Device* device, GLFWwindow* window, uint32_t imageCount,
+		           const vzt::RenderPass* const renderPass, vzt::ui::UiManager uiManager);
 
 		UiRenderer(const UiRenderer&) = delete;
 		UiRenderer& operator=(const UiRenderer&) = delete;
@@ -36,15 +37,11 @@ namespace vzt
 
 		~UiRenderer();
 
-		void configure(vzt::Instance* instance, vzt::Device* device, GLFWwindow* window, uint32_t imageCount,
-		               const vzt::RenderPass* const renderPass);
-
 		void record(VkCommandBuffer commandBuffer);
 
 	  private:
 		vzt::Device*        m_device;
 		vzt::DescriptorPool m_descriptorPool;
-		vzt::CommandPool    m_commandPool;
 
 		const vzt::ui::UiManager m_uiManager;
 

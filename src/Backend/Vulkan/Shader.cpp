@@ -50,7 +50,7 @@ namespace vzt
 		}
 	}
 
-	Program::Program(const vzt::Device* const device) : m_device(device) {}
+	Program::Program() {}
 
 	Program::Program(Program&& other) noexcept
 	{
@@ -77,8 +77,10 @@ namespace vzt
 		m_shaders.emplace(stage, std::move(shader));
 	}
 
-	void Program::compile()
+	void Program::compile(const vzt::Device* const device)
 	{
+		m_device = device;
+
 		m_shaderModules.clear();
 		m_pipelineShaderStages.clear();
 		for (const auto& stage : m_shaders)

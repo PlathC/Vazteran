@@ -1,7 +1,7 @@
 #include "Vazteran/Backend/Vulkan/VkRenderer.hpp"
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/Backend/Vulkan/VkUiRenderer.hpp"
+#include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
 #include "Vazteran/Data/Scene.hpp"
 #include "Vazteran/Views/MeshView.hpp"
 
@@ -46,7 +46,7 @@ namespace vzt
 		auto uiData = scene->cSceneUi();
 		if (uiData.has_value())
 		{
-			// m_ui = std::make_unique<vzt::VkUiRenderer>(m_instance, &m_device, m_window, m_swapChain.imageCount(),
+			// m_ui = std::make_unique<vzt::UiRenderer>(m_instance, &m_device, m_window, m_swapChain.imageCount(),
 			//                                            m_frames[0].getRenderPass(), uiData.value());
 		}
 

@@ -56,15 +56,31 @@ namespace vzt
 		vzt::LoadOperation  stencilLoapOp;
 		vzt::StoreOperation storeOp;
 		vzt::StoreOperation stencilStoreOp;
+
+		vzt::Vec4 clearValue = {0.0f, 0.0f, 0.0f, 1.0f};
+	};
+
+	struct DepthAttachmentPassUse
+	{
+		vzt::ImageLayout    initialLayout;
+		vzt::ImageLayout    finalLayout;
+		vzt::LoadOperation  loadOp;
+		vzt::LoadOperation  stencilLoapOp;
+		vzt::StoreOperation storeOp;
+		vzt::StoreOperation stencilStoreOp;
+
+		vzt::Vec2 clearValue = {1.f, 0.f};
 	};
 
 	class RenderPass
 	{
 	  public:
-		using AttachmentPassConfiguration = std::pair<vzt::Attachment*, vzt::AttachmentPassUse>;
+		using AttachmentPassConfiguration      = std::pair<vzt::Attachment*, vzt::AttachmentPassUse>;
+		using DepthAttachmentPassConfiguration = std::pair<vzt::Attachment*, vzt::DepthAttachmentPassUse>;
 
 	  public:
-		RenderPass(const vzt::Device* device, const std::vector<AttachmentPassConfiguration>& attachments);
+		RenderPass(const vzt::Device* device, const std::vector<AttachmentPassConfiguration>& attachments,
+		           const DepthAttachmentPassConfiguration& depthAttachment);
 
 		RenderPass(const RenderPass&) = delete;
 		RenderPass& operator=(const RenderPass&) = delete;

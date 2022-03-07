@@ -38,51 +38,7 @@ namespace vzt
 		return attributeDescriptions;
 	}
 
-	MeshView::MeshView(vzt::Device* device, uint32_t imageCount)
-	    : m_imageCount(imageCount), m_device(device), m_commandPool(m_device), m_meshDescriptorLayout(m_device)
-	{
-		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
-		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::UniformBuffer);
-		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 2, vzt::DescriptorType::CombinedSampler);
-
-		vzt::Program triangleProgram = vzt::Program(device);
-
-		auto vtxShader  = vzt::Shader("./shaders/triangle.vert.spv", ShaderStage::VertexShader);
-		auto fragShader = vzt::Shader("./shaders/triangle.frag.spv", ShaderStage::FragmentShader);
-		triangleProgram.setShader(std::move(vtxShader));
-		triangleProgram.setShader(std::move(fragShader));
-		triangleProgram.compile();
-
-		m_descriptorPool = vzt::DescriptorPool(
-		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);
-
-		m_graphicPipeline = std::make_unique<vzt::GraphicPipeline>(
-		    m_device, std::move(triangleProgram), m_meshDescriptorLayout,
-		    vzt::VertexInputDescription{TriangleVertexInput::getBindingDescription(),
-		                                TriangleVertexInput::getAttributeDescription()},
-		    3);
-
-		const uint32_t minOffset = static_cast<uint32_t>(m_device->getMinUniformOffsetAlignment());
-
-		m_transformOffsetSize = sizeof(vzt::Transforms);
-		if (minOffset > 0)
-		{
-			m_transformOffsetSize = (m_transformOffsetSize + minOffset - 1) & ~(minOffset - 1);
-		}
-
-		m_transformBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_transformOffsetSize),
-		                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
-
-		m_materialInfoOffsetSize = sizeof(vzt::Transforms);
-		if (minOffset > 0)
-		{
-			m_materialInfoOffsetSize = (m_materialInfoOffsetSize + minOffset - 1) & ~(minOffset - 1);
-		}
-		m_materialInfoBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_materialInfoOffsetSize),
-		                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
-
-		m_commandPool.allocateCommandBuffers(imageCount);
-	}
+	MeshView::MeshView() {}
 
 	MeshView::~MeshView() = default;
 
@@ -165,12 +121,37 @@ namespace vzt
 		m_models.emplace_back(std::move(modelDisplayInfo));
 	}
 
-	void MeshView::configure(vzt::PipelineContextSettings settings) { m_graphicPipeline->configure(settings); }
-
-	void MeshView::record(uint32_t imageCount, const vzt::RenderPass* const renderPass,
-	                      VkCommandBuffer commandBuffer) const
+	void MeshView::configure(const vzt::Device* device, uint32_t imageCount)
 	{
-		m_graphicPipeline->bind(commandBuffer, renderPass);
+		m_imageCount           = imageCount;
+		m_device               = device;
+		m_meshDescriptorLayout = vzt::DescriptorLayout();
+
+		m_descriptorPool = vzt::DescriptorPool(
+		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);
+
+		const uint32_t minOffset = static_cast<uint32_t>(m_device->getMinUniformOffsetAlignment());
+
+		m_transformOffsetSize = sizeof(vzt::Transforms);
+		if (minOffset > 0)
+		{
+			m_transformOffsetSize = (m_transformOffsetSize + minOffset - 1) & ~(minOffset - 1);
+		}
+
+		m_transformBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_transformOffsetSize),
+		                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
+
+		m_materialInfoOffsetSize = sizeof(vzt::Transforms);
+		if (minOffset > 0)
+		{
+			m_materialInfoOffsetSize = (m_materialInfoOffsetSize + minOffset - 1) & ~(minOffset - 1);
+		}
+		m_materialInfoBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_materialInfoOffsetSize),
+		                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
+	}
+
+	void MeshView::record(uint32_t imageCount, VkCommandBuffer commandBuffer) const
+	{
 		for (const auto& model : m_models)
 		{
 			VkBuffer     vertexBuffers[] = {model.vertexBuffer.vkHandle()};

@@ -74,7 +74,7 @@ namespace vzt
 			std::size_t operator()(const AttachmentHandle& handle) const { return handle.id; }
 		};
 
-		bool operator==(const AttachmentHandle& other) const { return id == other.id && state == other.state; }
+		bool operator==(const AttachmentHandle& other) const { return id == other.id; }
 	};
 
 	struct StorageHandle
@@ -84,10 +84,10 @@ namespace vzt
 
 		struct hash
 		{
-			auto operator()(const StorageHandle& handle) const { return handle.id; }
+			std::size_t operator()(const StorageHandle& handle) const { return handle.id; }
 		};
 
-		bool operator==(const StorageHandle& other) const { return id == other.id && state == other.state; }
+		bool operator==(const StorageHandle& other) const { return id == other.id; }
 	};
 
 	struct ImageBarrier
@@ -108,11 +108,12 @@ namespace vzt
 	template <class Type>
 	using StorageList = std::unordered_map<vzt::StorageHandle, Type, vzt::StorageHandle::hash>;
 
-	using RecordFunction     = std::function<void(const vzt::RenderPass* /*renderPass*/, const VkCommandBuffer& /*cmd*/,
+	using RecordFunction    = std::function<void(uint32_t /* imageId */, const vzt::RenderPass* /*renderPass*/,
+                                              const VkCommandBuffer& /*cmd*/,
                                               const std::vector<VkDescriptorSet>& /* engineDescriptorSets */)>;
-	using ConfigureFunction  = std::function<void(vzt::PipelineContextSettings /*settings*/)>;
-	using DepthClearFunction = std::function<bool(VkClearDepthStencilValue* /* value */)>;
-	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, VkClearColorValue* /* value */)>;
+	using ConfigureFunction = std::function<void(uint32_t /* imageCount */, vzt::PipelineContextSettings /*settings*/)>;
+	using DepthClearFunction = std::function<bool(vzt::Vec2* /* value */)>;
+	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, vzt::Vec4* /* value */)>;
 	class RenderPassHandler
 	{
 	  public:
@@ -134,7 +135,7 @@ namespace vzt
 		void setDepthStencilInput(const vzt::AttachmentHandle depthStencil, const std::string& attachmentName = "");
 		void setDepthStencilOutput(vzt::AttachmentHandle& depthStencil, const std::string& attachmentName = "");
 
-		void setRenderFunction(vzt::RecordFunction renderFunction);
+		void setRenderFunction(vzt::RecordFunction recordFunction);
 		void setConfigureFunction(vzt::ConfigureFunction configureFunction);
 		void setDepthClearFunction(vzt::DepthClearFunction depthClearFunction);
 		void setColorClearFunction(vzt::ColorClearFunction colorClearFunction);
@@ -142,8 +143,8 @@ namespace vzt
 		bool isDependingOn(const RenderPassHandler& other) const;
 
 		std::unique_ptr<vzt::RenderPass> build(RenderGraph* const correspondingGraph, const vzt::Device* device,
-		                                       const uint32_t imageId, const vzt::Size2D<uint32_t>& targetSize,
-		                                       const vzt::Format targetFormat);
+		                                       const uint32_t imageId, const uint32_t imageCount,
+		                                       const vzt::Size2D<uint32_t>& targetSize, const vzt::Format targetFormat);
 
 		void render(const uint32_t imageId, const vzt::RenderPass* renderPass, VkCommandBuffer commandBuffer) const;
 
@@ -161,21 +162,28 @@ namespace vzt
 			std::optional<vzt::ImageBarrier> barrier;
 		};
 
+		struct DepthAttachmentInfo
+		{
+			std::string                      name;
+			vzt::DepthAttachmentPassUse      attachmentUse{};
+			std::optional<vzt::ImageBarrier> barrier;
+		};
+
 		struct StorageInfo
 		{
 			std::string                        name;
 			std::optional<vzt::StorageBarrier> barrier;
 		};
 
-		vzt::AttachmentList<AttachmentInfo>                             m_colorInputs;
-		vzt::StorageList<StorageInfo>                                   m_storageInputs;
-		std::optional<std::pair<vzt::AttachmentHandle, AttachmentInfo>> m_depthInput;
+		vzt::AttachmentList<AttachmentInfo>                                  m_colorInputs;
+		vzt::StorageList<StorageInfo>                                        m_storageInputs;
+		std::optional<std::pair<vzt::AttachmentHandle, DepthAttachmentInfo>> m_depthInput;
 
-		vzt::AttachmentList<AttachmentInfo>                             m_colorOutputs;
-		vzt::StorageList<StorageInfo>                                   m_storageOutputs;
-		std::optional<std::pair<vzt::AttachmentHandle, AttachmentInfo>> m_depthOutput;
+		vzt::AttachmentList<AttachmentInfo>                                  m_colorOutputs;
+		vzt::StorageList<StorageInfo>                                        m_storageOutputs;
+		std::optional<std::pair<vzt::AttachmentHandle, DepthAttachmentInfo>> m_depthOutput;
 
-		vzt::RecordFunction     m_renderFunction;
+		vzt::RecordFunction     m_recordFunction;
 		vzt::ConfigureFunction  m_configureFunction;
 		vzt::DepthClearFunction m_depthClearFunction;
 		vzt::ColorClearFunction m_colorClearFunction;
@@ -228,7 +236,7 @@ namespace vzt
 		void render(const std::size_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete,
 		            VkFence inFlightFence);
 
-		vzt::Attachment* getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle);
+		vzt::Attachment* getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle) const;
 
 		const vzt::AttachmentSettings& getAttachmentSettings(const vzt::AttachmentHandle& handle) const;
 		const vzt::StorageSettings&    getStorageSettings(const vzt::StorageHandle& handle) const;

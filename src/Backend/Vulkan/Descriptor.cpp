@@ -5,12 +5,16 @@
 
 namespace vzt
 {
-	DescriptorLayout::DescriptorLayout(const vzt::Device* const device) : m_device(device) {}
+	DescriptorLayout::DescriptorLayout() = default;
 
 	DescriptorLayout::DescriptorLayout(const DescriptorLayout& other)
+	    : m_device(other.m_device), m_bindings(other.m_bindings)
 	{
-		m_device   = other.m_device;
-		m_bindings = other.m_bindings;
+		if (m_handle != VK_NULL_HANDLE)
+		{
+			vkDestroyDescriptorSetLayout(m_device->vkHandle(), m_handle, nullptr);
+			m_handle = VK_NULL_HANDLE;
+		}
 	}
 
 	DescriptorLayout& DescriptorLayout::operator=(const DescriptorLayout& other)
@@ -48,8 +52,15 @@ namespace vzt
 		m_bindings.emplace_back(Binding{binding, bindingStage, type});
 	}
 
+	void DescriptorLayout::configure(const vzt::Device* const device) { m_device = device; }
+
 	const VkDescriptorSetLayout& DescriptorLayout::vkHandle() const
 	{
+		if (!m_device)
+		{
+			throw std::runtime_error("Descriptor set has not been configured");
+		}
+
 		if (m_handle == VK_NULL_HANDLE)
 		{
 			std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
@@ -96,8 +107,7 @@ namespace vzt
 		sizes.reserve(descriptorTypes.size());
 		for (const auto& descriptorType : descriptorTypes)
 		{
-			sizes.emplace_back(
-			    VkDescriptorPoolSize{static_cast<VkDescriptorType>(vzt::toUnderlying(descriptorType)), maxSetNb});
+			sizes.emplace_back(VkDescriptorPoolSize{vzt::toVulkan(descriptorType), maxSetNb});
 		}
 
 		VkDescriptorPoolCreateInfo pool_info = {};

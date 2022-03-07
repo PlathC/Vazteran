@@ -57,9 +57,9 @@ namespace vzt
 		Buffer() = default;
 
 		template <class Type>
-		Buffer(vzt::Device* device, const std::vector<Type>& data, VkBufferUsageFlags usage,
+		Buffer(const vzt::Device* device, const std::vector<Type>& data, VkBufferUsageFlags usage,
 		       MemoryUsage memoryUsage = MemoryUsage::GPU_ONLY);
-		Buffer(vzt::Device* device, const std::size_t size, uint8_t* data, VkBufferUsageFlags usage,
+		Buffer(const vzt::Device* device, const std::size_t size, uint8_t* data, VkBufferUsageFlags usage,
 		       MemoryUsage memoryUsage = MemoryUsage::GPU_ONLY);
 
 		Buffer(const Buffer&) = delete;
@@ -85,9 +85,9 @@ namespace vzt
 		            MemoryUsage memoryUsage);
 
 	  private:
-		vzt::Device*  m_device     = nullptr;
-		VkBuffer      m_vkHandle   = VK_NULL_HANDLE;
-		VmaAllocation m_allocation = VK_NULL_HANDLE;
+		const vzt::Device* m_device     = nullptr;
+		VkBuffer           m_vkHandle   = VK_NULL_HANDLE;
+		VmaAllocation      m_allocation = VK_NULL_HANDLE;
 	};
 } // namespace vzt
 

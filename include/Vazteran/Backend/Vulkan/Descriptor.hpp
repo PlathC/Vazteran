@@ -38,11 +38,12 @@ namespace vzt
 		StorageBufferDynamic = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
 		InputAttachment      = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
 	};
+	TO_VULKAN_FUNCTION(DescriptorType, VkDescriptorType)
 
 	class DescriptorLayout
 	{
 	  public:
-		DescriptorLayout(const vzt::Device* const device);
+		DescriptorLayout();
 
 		DescriptorLayout(const DescriptorLayout& other);
 		DescriptorLayout& operator=(const DescriptorLayout& other);
@@ -53,6 +54,7 @@ namespace vzt
 		~DescriptorLayout();
 
 		void addBinding(const vzt::ShaderStage bindingStage, const uint32_t binding, const vzt::DescriptorType type);
+		void configure(const vzt::Device* const device);
 
 		const VkDescriptorSetLayout& vkHandle() const;
 

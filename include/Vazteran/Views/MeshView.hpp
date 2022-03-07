@@ -31,7 +31,7 @@ namespace vzt
 	class MeshView
 	{
 	  public:
-		MeshView(vzt::Device* device, uint32_t imageCount);
+		MeshView();
 
 		MeshView(const MeshView&) = delete;
 		MeshView& operator=(const MeshView&) = delete;
@@ -44,15 +44,15 @@ namespace vzt
 		vzt::GraphicPipeline* getPipeline() const { return m_graphicPipeline.get(); }
 
 		void addModel(const vzt::Model* const model);
-		void configure(vzt::PipelineContextSettings settings);
+		void configure(const vzt::Device* device, uint32_t imageCount);
 
-		void record(uint32_t imageCount, const vzt::RenderPass* const renderPass, VkCommandBuffer commandBuffer) const;
+		void record(uint32_t imageCount, VkCommandBuffer commandBuffer) const;
 
 		void update(const vzt::Camera& camera);
 
 	  private:
 		// Rendering objects
-		vzt::Device*                          m_device;
+		const vzt::Device*                    m_device;
 		std::unique_ptr<vzt::GraphicPipeline> m_graphicPipeline;
 		struct SubMeshData
 		{
@@ -79,7 +79,6 @@ namespace vzt
 		};
 
 		vzt::DescriptorPool m_descriptorPool;
-		vzt::CommandPool    m_commandPool;
 
 		vzt::Buffer m_materialInfoBuffer;
 		uint32_t    m_materialNb             = 0;

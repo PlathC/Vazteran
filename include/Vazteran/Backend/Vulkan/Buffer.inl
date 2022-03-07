@@ -3,7 +3,7 @@
 namespace vzt
 {
 	template <class Type>
-	Buffer::Buffer(vzt::Device* device, const std::vector<Type>& data, VkBufferUsageFlags usage,
+	Buffer::Buffer(const vzt::Device* device, const std::vector<Type>& data, VkBufferUsageFlags usage,
 	               MemoryUsage memoryUsage)
 	    : m_device(device)
 	{

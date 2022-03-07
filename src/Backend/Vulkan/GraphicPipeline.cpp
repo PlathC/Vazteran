@@ -1,26 +1,18 @@
-#include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
+#include <utility>
+
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
+#include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
-	GraphicPipeline::GraphicPipeline(vzt::Device* device, vzt::Program&& program,
-	                                 vzt::DescriptorLayout                      descriptorLayout,
-	                                 std::optional<vzt::VertexInputDescription> vertexInputDescription,
-	                                 uint32_t                                   attachmentCount)
-	    : m_device(device), m_program(std::move(program)), m_vertexInputDescription(std::move(vertexInputDescription)),
-	      m_attachmentCount(attachmentCount)
+	GraphicPipeline::GraphicPipeline(vzt::Program&&                             program,
+	                                 std::optional<vzt::DescriptorLayout>       userDefinedDescriptorLayout,
+	                                 std::optional<vzt::VertexInputDescription> vertexInputDescription)
+	    : m_program(std::move(program)), m_userDefinedDescriptorLayout(std::move(userDefinedDescriptorLayout)),
+	      m_vertexInputDescription(std::move(vertexInputDescription))
 	{
-		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-		pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 1;
-		pipelineLayoutInfo.pSetLayouts    = &descriptorLayout.vkHandle();
-
-		if (vkCreatePipelineLayout(m_device->vkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create pipeline layout!");
-		}
 	}
 
 	void GraphicPipeline::create()
@@ -47,14 +39,14 @@ namespace vzt
 		VkViewport viewport{};
 		viewport.x        = 0.0f;
 		viewport.y        = 0.0f;
-		viewport.width    = static_cast<float>(m_settings.targetSize.width);
-		viewport.height   = static_cast<float>(m_settings.targetSize.height);
+		viewport.width    = static_cast<float>(m_drawSettings.targetSize.width);
+		viewport.height   = static_cast<float>(m_drawSettings.targetSize.height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor{};
 		scissor.offset = {0, 0};
-		scissor.extent = {m_settings.targetSize.width, m_settings.targetSize.height};
+		scissor.extent = {m_drawSettings.targetSize.width, m_drawSettings.targetSize.height};
 
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -137,7 +129,7 @@ namespace vzt
 
 		pipelineInfo.pDynamicState      = nullptr; // Optional
 		pipelineInfo.layout             = m_pipelineLayout;
-		pipelineInfo.renderPass         = m_settings.renderPassTemplate->vkHandle();
+		pipelineInfo.renderPass         = m_contextSettings.renderPassTemplate->vkHandle();
 		pipelineInfo.subpass            = 0;
 		pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 		pipelineInfo.basePipelineIndex  = -1;             // Optional
@@ -156,7 +148,34 @@ namespace vzt
 
 	void GraphicPipeline::configure(vzt::PipelineContextSettings settings)
 	{
-		m_settings = settings;
+		m_contextSettings = settings;
+
+		std::vector<VkDescriptorSetLayout> descriptors;
+		descriptors.reserve(m_contextSettings.engineDescriptors.size());
+		for (const auto& descriptor : m_contextSettings.engineDescriptors)
+		{
+			descriptors.emplace_back(descriptor->vkHandle());
+		}
+
+		if (m_userDefinedDescriptorLayout.has_value())
+		{
+			descriptors.emplace_back(m_userDefinedDescriptorLayout.value().vkHandle());
+		}
+
+		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+		pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+		pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(descriptors.size());
+		pipelineLayoutInfo.pSetLayouts    = descriptors.data();
+
+		if (vkCreatePipelineLayout(m_device->vkHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create pipeline layout!");
+		}
+	}
+
+	void GraphicPipeline::configureDrawSettings(vzt::PipelineDrawSettings settings)
+	{
+		m_drawSettings = settings;
 		create();
 	}
 

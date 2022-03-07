@@ -1,15 +1,27 @@
+#include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
-#include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
 
 namespace vzt
 {
-	UiRenderer::UiRenderer(vzt::Instance* instance, vzt::Device* device, GLFWwindow* window, uint32_t imageCount,
-	                       const vzt::RenderPass* const renderPass, vzt::ui::UiManager uiManager)
-	    : m_device(device), m_imageCount(imageCount), m_uiManager(std::move(uiManager))
+	UiRenderer::UiRenderer(vzt::ui::UiManager uiManager) : m_uiManager(std::move(uiManager)) {}
+
+	UiRenderer::~UiRenderer()
 	{
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+	}
+
+	void UiRenderer::configure(vzt::Instance* instance, vzt::Device* device, GLFWwindow* window, uint32_t imageCount,
+	                           const vzt::RenderPass* const renderPass)
+	{
+		m_device      = device;
+		m_imageCount  = imageCount;
+		m_commandPool = vzt::CommandPool(m_device);
+
 		const std::vector<vzt::DescriptorType> descriptorTypes = {vzt::DescriptorType::Sampler,
 		                                                          vzt::DescriptorType::CombinedSampler,
 		                                                          vzt::DescriptorType::SampledImage,
@@ -52,13 +64,8 @@ namespace vzt
 
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 		ImGui_ImplVulkan_SetMinImageCount(imageCount);
-	}
 
-	UiRenderer::~UiRenderer()
-	{
-		ImGui_ImplVulkan_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
+		m_commandPool.allocateCommandBuffers(imageCount);
 	}
 
 	void UiRenderer::record(VkCommandBuffer commandBuffer)
