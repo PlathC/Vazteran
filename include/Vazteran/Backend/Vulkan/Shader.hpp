@@ -97,13 +97,14 @@ namespace vzt
 
 		// Regenerate modules and stages
 		void compile(const vzt::Device* const device);
+		bool isCompiled() const { return m_isCompiled; }
 
 		// Post Compiling informations
-		const std::vector<VkPipelineShaderStageCreateInfo>& getPipelineStages() const { return m_pipelineShaderStages; }
+		const std::vector<VkPipelineShaderStageCreateInfo>& getPipelineStages();
 
 	  private:
-		const vzt::Device* m_device = nullptr;
-		ShaderList         m_shaders;
+		ShaderList m_shaders;
+		bool       m_isCompiled = false;
 
 		std::vector<vzt::ShaderModule>               m_shaderModules;
 		std::vector<VkPipelineShaderStageCreateInfo> m_pipelineShaderStages;

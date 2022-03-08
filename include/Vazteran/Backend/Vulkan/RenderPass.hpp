@@ -1,6 +1,7 @@
 #ifndef VAZTERAN_BACKEND_VULKAN_RENDERPASS_HPP
 #define VAZTERAN_BACKEND_VULKAN_RENDERPASS_HPP
 
+#include "GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 
 namespace vzt

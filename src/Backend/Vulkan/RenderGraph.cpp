@@ -205,7 +205,7 @@ namespace vzt
 		m_depthOutput = {depthStencil, attachmentInfo};
 	}
 
-	void RenderPassHandler::setRenderFunction(vzt::RecordFunction recordFunction)
+	void RenderPassHandler::setRecordFunction(vzt::RecordFunction recordFunction)
 	{
 		m_recordFunction = std::move(recordFunction);
 	}
@@ -276,7 +276,7 @@ namespace vzt
 	{
 		if (!m_recordFunction)
 		{
-			throw std::runtime_error("A render pass must have a render function");
+			throw std::runtime_error("A render pass must have a record function");
 		}
 
 		std::vector<vzt::RenderPass::AttachmentPassConfiguration> attachments;
@@ -324,7 +324,7 @@ namespace vzt
 
 			m_descriptorPool =
 			    std::make_unique<vzt::DescriptorPool>(device, std::vector{vzt::DescriptorType::CombinedSampler});
-			m_descriptorPool->allocate(3, currentLayout);
+			m_descriptorPool->allocate(imageCount, currentLayout);
 			m_descriptorLayout = std::move(currentLayout);
 		}
 
@@ -334,7 +334,8 @@ namespace vzt
 			if (m_descriptorLayout.has_value())
 				descriptors.emplace_back(&m_descriptorLayout.value());
 
-			m_configureFunction(imageCount, {device, renderPass.get(), descriptors});
+			m_configureFunction({device, renderPass.get(), descriptors, static_cast<uint32_t>(m_colorInputs.size()),
+			                     targetFormat, targetSize});
 		}
 
 		if (!m_colorInputs.empty())
@@ -345,7 +346,7 @@ namespace vzt
 			for (uint32_t i = 0; i < m_colorInputs.size(); i++)
 			{
 				texturesDescriptors[i] = correspondingGraph->getAttachment(imageId, inputStart->first)->asTexture();
-				inputStart++;
+				++inputStart;
 			}
 			m_descriptorPool->update(imageId, texturesDescriptors);
 		}
@@ -362,7 +363,7 @@ namespace vzt
 			descriptorSets.emplace_back((*m_descriptorPool)[imageId]);
 		}
 
-		m_recordFunction(imageId, renderPass, commandBuffer, descriptorSets);
+		m_recordFunction(imageId, commandBuffer, descriptorSets);
 	}
 
 	RenderGraph::RenderGraph() = default;
@@ -370,7 +371,7 @@ namespace vzt
 	{
 		for (auto& semaphores : m_semaphores)
 		{
-			for (auto& semaphore : semaphores)
+			for (const auto& semaphore : semaphores)
 			{
 				vkDestroySemaphore(m_device->vkHandle(), semaphore, nullptr);
 			}

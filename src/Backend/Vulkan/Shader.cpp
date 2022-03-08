@@ -54,7 +54,6 @@ namespace vzt
 
 	Program::Program(Program&& other) noexcept
 	{
-		std::swap(m_device, other.m_device);
 		std::swap(m_shaders, other.m_shaders);
 		std::swap(m_shaderModules, other.m_shaderModules);
 		std::swap(m_pipelineShaderStages, other.m_pipelineShaderStages);
@@ -62,7 +61,6 @@ namespace vzt
 
 	Program& Program::operator=(Program&& other) noexcept
 	{
-		std::swap(m_device, other.m_device);
 		std::swap(m_shaders, other.m_shaders);
 		std::swap(m_shaderModules, other.m_shaderModules);
 		std::swap(m_pipelineShaderStages, other.m_pipelineShaderStages);
@@ -79,14 +77,12 @@ namespace vzt
 
 	void Program::compile(const vzt::Device* const device)
 	{
-		m_device = device;
-
 		m_shaderModules.clear();
 		m_pipelineShaderStages.clear();
 		for (const auto& stage : m_shaders)
 		{
 			const auto& shader = stage.second;
-			auto        module = ShaderModule(m_device, shader.getShaderModuleCreateInfo());
+			auto        module = ShaderModule(device, shader.getShaderModuleCreateInfo());
 
 			VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
 			shaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -98,4 +94,6 @@ namespace vzt
 			m_pipelineShaderStages.emplace_back(shaderStageCreateInfo);
 		}
 	}
+
+	const std::vector<VkPipelineShaderStageCreateInfo>& Program::getPipelineStages() { return m_pipelineShaderStages; }
 } // namespace vzt

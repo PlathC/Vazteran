@@ -108,10 +108,9 @@ namespace vzt
 	template <class Type>
 	using StorageList = std::unordered_map<vzt::StorageHandle, Type, vzt::StorageHandle::hash>;
 
-	using RecordFunction    = std::function<void(uint32_t /* imageId */, const vzt::RenderPass* /*renderPass*/,
-                                              const VkCommandBuffer& /*cmd*/,
+	using RecordFunction     = std::function<void(uint32_t /* imageId */, const VkCommandBuffer& /*cmd*/,
                                               const std::vector<VkDescriptorSet>& /* engineDescriptorSets */)>;
-	using ConfigureFunction = std::function<void(uint32_t /* imageCount */, vzt::PipelineContextSettings /*settings*/)>;
+	using ConfigureFunction  = std::function<void(vzt::PipelineContextSettings /*settings*/)>;
 	using DepthClearFunction = std::function<bool(vzt::Vec2* /* value */)>;
 	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, vzt::Vec4* /* value */)>;
 	class RenderPassHandler
@@ -135,7 +134,7 @@ namespace vzt
 		void setDepthStencilInput(const vzt::AttachmentHandle depthStencil, const std::string& attachmentName = "");
 		void setDepthStencilOutput(vzt::AttachmentHandle& depthStencil, const std::string& attachmentName = "");
 
-		void setRenderFunction(vzt::RecordFunction recordFunction);
+		void setRecordFunction(vzt::RecordFunction recordFunction);
 		void setConfigureFunction(vzt::ConfigureFunction configureFunction);
 		void setDepthClearFunction(vzt::DepthClearFunction depthClearFunction);
 		void setColorClearFunction(vzt::ColorClearFunction colorClearFunction);

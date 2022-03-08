@@ -41,6 +41,17 @@ namespace vzt
 			m_colorRefs.emplace_back(currentAttachmentRef);
 		}
 
+		VkAttachmentDescription description{};
+		description.initialLayout  = vzt::toVulkan(depthAttachment.second.initialLayout);
+		description.finalLayout    = vzt::toVulkan(depthAttachment.second.finalLayout);
+		description.stencilLoadOp  = vzt::toVulkan(depthAttachment.second.stencilLoapOp);
+		description.stencilStoreOp = vzt::toVulkan(depthAttachment.second.stencilStoreOp);
+		description.loadOp         = vzt::toVulkan(depthAttachment.second.loadOp);
+		description.storeOp        = vzt::toVulkan(depthAttachment.second.storeOp);
+		description.format         = vzt::toVulkan(depthAttachment.first->getFormat());
+		description.samples        = vzt::toVulkan(depthAttachment.first->getSampleCount());
+		attachmentDescriptions.emplace_back(description);
+
 		VkAttachmentReference depthAttachmentRef{};
 		depthAttachmentRef.attachment = static_cast<uint32_t>(m_colorRefs.size());
 		depthAttachmentRef.layout     = vzt::toVulkan(depthAttachment.first->getLayout());

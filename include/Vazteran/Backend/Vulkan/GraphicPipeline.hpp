@@ -53,13 +53,9 @@ namespace vzt
 		const vzt::Device*                        device;
 		const vzt::RenderPass*                    renderPassTemplate;
 		std::vector<const vzt::DescriptorLayout*> engineDescriptors;
-	};
-
-	struct PipelineDrawSettings
-	{
-		uint32_t              attachmentCount;
-		vzt::Format           targetFormat;
-		vzt::Size2D<uint32_t> targetSize;
+		uint32_t                                  attachmentCount;
+		vzt::Format                               targetFormat;
+		vzt::Size2D<uint32_t>                     targetSize;
 	};
 
 	struct RasterizationOptions
@@ -83,10 +79,8 @@ namespace vzt
 
 		~GraphicPipeline();
 
-		void bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass) const;
-
 		void configure(vzt::PipelineContextSettings settings);
-		void configureDrawSettings(vzt::PipelineDrawSettings settings);
+		void bind(VkCommandBuffer commandsBuffer) const;
 
 		vzt::RasterizationOptions& getRasterOptions() { return m_rasterOptions; }
 		vzt::RasterizationOptions  getCRasterOptions() const { return m_rasterOptions; }
@@ -108,9 +102,7 @@ namespace vzt
 		std::optional<vzt::DescriptorLayout>       m_userDefinedDescriptorLayout;
 		std::optional<vzt::VertexInputDescription> m_vertexInputDescription;
 		vzt::PipelineContextSettings               m_contextSettings{};
-		vzt::PipelineDrawSettings                  m_drawSettings{};
 		vzt::RasterizationOptions                  m_rasterOptions{};
-		uint32_t                                   m_attachmentCount;
 	};
 } // namespace vzt
 

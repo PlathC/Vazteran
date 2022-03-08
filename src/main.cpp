@@ -25,7 +25,7 @@ int main(int /* args */, char*[] /* argv */)
 	triangleProgram.setShader(vzt::Shader("./shaders/triangle.vert.spv", vzt::ShaderStage::VertexShader));
 	triangleProgram.setShader(vzt::Shader("./shaders/triangle.frag.spv", vzt::ShaderStage::FragmentShader));
 	auto geometryPipeline = std::make_unique<vzt::GraphicPipeline>(
-	    std::move(triangleProgram), std::optional<vzt::DescriptorLayout>{},
+	    std::move(triangleProgram), meshDescriptorLayout,
 	    vzt::VertexInputDescription{vzt::TriangleVertexInput::getBindingDescription(),
 	                                vzt::TriangleVertexInput::getAttributeDescription()});
 
@@ -45,15 +45,12 @@ int main(int /* args */, char*[] /* argv */)
 	geometryBuffer.addColorOutput(albedo, "Albedo");
 	geometryBuffer.addColorOutput(normal, "Normal");
 	geometryBuffer.setDepthStencilOutput(depth, "Depth");
-	geometryBuffer.setConfigureFunction([&](uint32_t imageCount, vzt::PipelineContextSettings settings) {
-		meshView.configure(settings.device, imageCount);
-		geometryPipeline->configure(settings);
-	});
+	geometryBuffer.setConfigureFunction(
+	    [&](vzt::PipelineContextSettings settings) { geometryPipeline->configure(std::move(settings)); });
 
-	geometryBuffer.setRenderFunction([&](uint32_t imageId, const vzt::RenderPass* renderPass,
-	                                     const VkCommandBuffer&              cmd,
+	geometryBuffer.setRecordFunction([&](uint32_t imageId, const VkCommandBuffer& cmd,
 	                                     const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-		geometryPipeline->bind(cmd, renderPass);
+		geometryPipeline->bind(cmd);
 		if (!engineDescriptorSets.empty())
 		{
 			vkCmdBindDescriptorSets(cmd, vzt::toVulkan(vzt::PipelineBindPoint::Graphics), geometryPipeline->layout(), 0,
@@ -72,14 +69,12 @@ int main(int /* args */, char*[] /* argv */)
 	deferredPass.addColorInput(normal, "G-Normal");
 	deferredPass.setDepthStencilOutput(depth, "G-Depth");
 	deferredPass.addColorOutput(composed, "Composed");
-	deferredPass.setConfigureFunction([&](uint32_t /* imageCount */, vzt::PipelineContextSettings settings) {
-		compositionPipeline->configure(settings);
-	});
+	deferredPass.setConfigureFunction(
+	    [&](vzt::PipelineContextSettings settings) { compositionPipeline->configure(std::move(settings)); });
 
-	deferredPass.setRenderFunction([&](uint32_t /* imageId */, const vzt::RenderPass* renderPass,
-	                                   const VkCommandBuffer&              cmd,
+	deferredPass.setRecordFunction([&](uint32_t /* imageId */, const VkCommandBuffer& cmd,
 	                                   const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-		compositionPipeline->bind(cmd, renderPass);
+		compositionPipeline->bind(cmd);
 		if (!engineDescriptorSets.empty())
 		{
 			vkCmdBindDescriptorSets(cmd, vzt::toVulkan(vzt::PipelineBindPoint::Graphics), compositionPipeline->layout(),

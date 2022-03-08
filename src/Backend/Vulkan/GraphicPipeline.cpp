@@ -39,14 +39,14 @@ namespace vzt
 		VkViewport viewport{};
 		viewport.x        = 0.0f;
 		viewport.y        = 0.0f;
-		viewport.width    = static_cast<float>(m_drawSettings.targetSize.width);
-		viewport.height   = static_cast<float>(m_drawSettings.targetSize.height);
+		viewport.width    = static_cast<float>(m_contextSettings.targetSize.width);
+		viewport.height   = static_cast<float>(m_contextSettings.targetSize.height);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor{};
 		scissor.offset = {0, 0};
-		scissor.extent = {m_drawSettings.targetSize.width, m_drawSettings.targetSize.height};
+		scissor.extent = {m_contextSettings.targetSize.width, m_contextSettings.targetSize.height};
 
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -78,8 +78,8 @@ namespace vzt
 		multisampling.alphaToOneEnable      = VK_FALSE; // Optional
 
 		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-		colorBlendAttachments.reserve(m_attachmentCount);
-		for (std::size_t i = 0; i < m_attachmentCount; i++)
+		colorBlendAttachments.reserve(m_contextSettings.attachmentCount);
+		for (std::size_t i = 0; i < m_contextSettings.attachmentCount; i++)
 		{
 			VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 			colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
@@ -141,16 +141,14 @@ namespace vzt
 		}
 	}
 
-	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer, const vzt::RenderPass* const renderPass) const
-	{
-		vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
-	}
-
 	void GraphicPipeline::configure(vzt::PipelineContextSettings settings)
 	{
 		cleanup();
 
-		m_contextSettings = settings;
+		m_contextSettings = std::move(settings);
+
+		if (!m_program.isCompiled())
+			m_program.compile(m_contextSettings.device);
 
 		std::vector<VkDescriptorSetLayout> descriptors;
 		descriptors.reserve(m_contextSettings.engineDescriptors.size());
@@ -174,12 +172,16 @@ namespace vzt
 		{
 			throw std::runtime_error("failed to create pipeline layout!");
 		}
+
+		create();
 	}
 
-	void GraphicPipeline::configureDrawSettings(vzt::PipelineDrawSettings settings)
+	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer) const
 	{
-		m_drawSettings = settings;
-		create();
+		assert(m_vkHandle != VK_NULL_HANDLE &&
+		       "The engine must call configureDrawSettings before binding this pipeline");
+
+		vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
 	}
 
 	void GraphicPipeline::cleanup()
