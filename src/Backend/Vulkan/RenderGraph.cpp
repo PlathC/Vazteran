@@ -290,7 +290,8 @@ namespace vzt
 				attachmentUse.finalLayout = vzt::ImageLayout::PresentSrcKHR;
 			}
 
-			m_colorClearFunction(i++, &attachmentUse.clearValue);
+			if (m_colorClearFunction)
+				m_colorClearFunction(i++, &attachmentUse.clearValue);
 			attachments.emplace_back(correspondingGraph->getAttachment(imageId, output.first), attachmentUse);
 		}
 
@@ -298,7 +299,8 @@ namespace vzt
 		if (m_depthOutput.has_value())
 		{
 			auto depthAttachment = m_depthOutput.value();
-			m_depthClearFunction(&depthAttachment.second.attachmentUse.clearValue);
+			if (m_depthClearFunction)
+				m_depthClearFunction(&depthAttachment.second.attachmentUse.clearValue);
 
 			vzt::RenderPass::DepthAttachmentPassConfiguration depthUse = {
 			    correspondingGraph->getAttachment(imageId, depthAttachment.first),

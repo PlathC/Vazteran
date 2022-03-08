@@ -101,8 +101,6 @@ namespace vzt
 		void cleanup();
 
 	  private:
-		vzt::Device* m_device;
-
 		VkPipeline       m_vkHandle       = VK_NULL_HANDLE;
 		VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 

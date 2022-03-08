@@ -75,6 +75,7 @@ int main(int /* args */, char*[] /* argv */)
 	deferredPass.setConfigureFunction([&](uint32_t /* imageCount */, vzt::PipelineContextSettings settings) {
 		compositionPipeline->configure(settings);
 	});
+
 	deferredPass.setRenderFunction([&](uint32_t /* imageId */, const vzt::RenderPass* renderPass,
 	                                   const VkCommandBuffer&              cmd,
 	                                   const std::vector<VkDescriptorSet>& engineDescriptorSets) {
