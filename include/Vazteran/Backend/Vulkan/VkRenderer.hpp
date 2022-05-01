@@ -31,7 +31,7 @@ namespace vzt
 		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size,
 		         vzt::RenderGraph renderGraph);
 
-		Renderer(const Renderer&) = delete;
+		Renderer(const Renderer&)            = delete;
 		Renderer& operator=(const Renderer&) = delete;
 
 		Renderer(Renderer&&) noexcept;
@@ -47,12 +47,12 @@ namespace vzt
 	  private:
 		VkSurfaceKHR m_surface;
 
+		vzt::Instance* m_instance;
+		GLFWwindow*    m_window;
+
 		vzt::Device      m_device;
 		vzt::SwapChain   m_swapChain;
 		vzt::RenderGraph m_renderGraph;
-
-		vzt::Instance* m_instance;
-		GLFWwindow*    m_window;
 	};
 } // namespace vzt
 

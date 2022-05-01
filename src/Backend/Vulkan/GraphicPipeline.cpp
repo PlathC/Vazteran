@@ -17,18 +17,16 @@ namespace vzt
 
 	void GraphicPipeline::create()
 	{
-		cleanup();
-
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-		if (m_vertexInputDescription.has_value())
+		if (m_vertexInputDescription)
 		{
 			vertexInputInfo.vertexBindingDescriptionCount = 1;
 			vertexInputInfo.vertexAttributeDescriptionCount =
-			    static_cast<uint32_t>(m_vertexInputDescription.value().attribute.size());
-			vertexInputInfo.pVertexBindingDescriptions   = &m_vertexInputDescription.value().binding;
-			vertexInputInfo.pVertexAttributeDescriptions = m_vertexInputDescription.value().attribute.data();
+			    static_cast<uint32_t>(m_vertexInputDescription->attribute.size());
+			vertexInputInfo.pVertexBindingDescriptions   = &m_vertexInputDescription->binding;
+			vertexInputInfo.pVertexAttributeDescriptions = m_vertexInputDescription->attribute.data();
 		}
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -157,9 +155,10 @@ namespace vzt
 			descriptors.emplace_back(descriptor->vkHandle());
 		}
 
-		if (m_userDefinedDescriptorLayout.has_value())
+		if (m_userDefinedDescriptorLayout)
 		{
-			descriptors.emplace_back(m_userDefinedDescriptorLayout.value().vkHandle());
+			m_userDefinedDescriptorLayout->configure(m_contextSettings.device);
+			descriptors.emplace_back(m_userDefinedDescriptorLayout->vkHandle());
 		}
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};

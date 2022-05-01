@@ -76,16 +76,18 @@ namespace vzt
 		    });
 	}
 
-	void Application::run()
+	bool Application::run()
 	{
-		while (!m_window->update())
-		{
-			m_scene.update();
-			m_renderer->draw(m_scene.sceneCamera());
-		}
+		bool shouldClose = !m_window->update();
+		m_scene.update();
+		m_renderer->draw(m_scene.sceneCamera());
 
-		vkDeviceWaitIdle(m_renderer->getDevice()->vkHandle());
+		return shouldClose;
 	}
 
-	Application::~Application() { glfwTerminate(); }
+	Application::~Application()
+	{
+		vkDeviceWaitIdle(m_renderer->getDevice()->vkHandle());
+		glfwTerminate();
+	}
 } // namespace vzt

@@ -1,6 +1,7 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <numeric>
 #include <stack>
@@ -22,7 +23,7 @@ namespace vzt
 			attachmentInfo.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
 		}
 
-		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
 		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ShaderReadOnlyOptimal;
 		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
@@ -48,7 +49,7 @@ namespace vzt
 			attachmentInfo.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
 		}
 
-		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
 		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
 		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Clear;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
@@ -70,7 +71,7 @@ namespace vzt
 			inAttachmentInfo.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
 		}
 
-		inAttachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		// inAttachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
 		inAttachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
 		inAttachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
 		inAttachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
@@ -173,11 +174,11 @@ namespace vzt
 			attachmentInfo.name = m_name + "DepthIn";
 		}
 
-		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
 		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal;
-		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
-		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
+		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::Load;
 		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
 
 		m_depthInput = {depthStencil, attachmentInfo};
@@ -195,12 +196,12 @@ namespace vzt
 			attachmentInfo.name = m_name + "DepthOut";
 		}
 
-		attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
 		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal;
-		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::DontCare;
-		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
-		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
-		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
+		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Clear;
+		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
+		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::Clear;
+		attachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::Store;
 
 		m_depthOutput = {depthStencil, attachmentInfo};
 	}
@@ -334,7 +335,7 @@ namespace vzt
 			if (m_descriptorLayout.has_value())
 				descriptors.emplace_back(&m_descriptorLayout.value());
 
-			m_configureFunction({device, renderPass.get(), descriptors, static_cast<uint32_t>(m_colorInputs.size()),
+			m_configureFunction({device, renderPass.get(), descriptors, static_cast<uint32_t>(m_colorOutputs.size()),
 			                     targetFormat, targetSize});
 		}
 
@@ -359,24 +360,13 @@ namespace vzt
 	{
 		std::vector<VkDescriptorSet> descriptorSets;
 		if (m_descriptorPool)
-		{
 			descriptorSets.emplace_back((*m_descriptorPool)[imageId]);
-		}
 
 		m_recordFunction(imageId, commandBuffer, descriptorSets);
 	}
 
-	RenderGraph::RenderGraph() = default;
-	RenderGraph::~RenderGraph()
-	{
-		for (auto& semaphores : m_semaphores)
-		{
-			for (const auto& semaphore : semaphores)
-			{
-				vkDestroySemaphore(m_device->vkHandle(), semaphore, nullptr);
-			}
-		}
-	};
+	RenderGraph::RenderGraph()  = default;
+	RenderGraph::~RenderGraph() = default;
 
 	vzt::AttachmentHandle RenderGraph::addAttachment(const vzt::AttachmentSettings& settings)
 	{
@@ -435,7 +425,6 @@ namespace vzt
 
 		m_attachmentsIndices.resize(swapchainImages.size());
 		m_frameBuffers.resize(swapchainImages.size());
-		m_semaphores.resize(swapchainImages.size());
 
 		m_attachments.clear();
 		m_attachments.reserve(m_attachmentsSettings.size() * swapchainImages.size());
@@ -445,25 +434,29 @@ namespace vzt
 		VkSemaphoreCreateInfo semaphoreCreateInfo{};
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
+		vzt::AttachmentList<vzt::ImageLayout> lastAttachmentsLayout;
+
+		std::cout << "Creating framebuffers data." << std::endl;
 		for (uint32_t i = 0; i < swapchainImages.size(); i++)
 		{
+			std::cout << std::to_string(i) << " - Framebuffer creation" << std::endl;
+
 			auto swapchainImage = swapchainImages[i];
 			m_commandPools.emplace_back(device);
 
 			// Create attachments
 			for (const auto& attachmentSettings : m_attachmentsSettings)
 			{
-				const bool isFinalImage =
-				    m_backBuffer.value_or(vzt::AttachmentHandle{~0ULL, 0}).id == attachmentSettings.first.id;
-				vzt::Format currentFormat = attachmentSettings.second.format.value_or(scColorFormat);
+				lastAttachmentsLayout[attachmentSettings.first] = vzt::ImageLayout::Undefined;
 
+				const bool isFinalImage = m_backBuffer && m_backBuffer->id == attachmentSettings.first.id;
 				const bool isDepthStencil =
 				    (attachmentSettings.second.usage & vzt::ImageUsage::DepthStencilAttachment) ==
 				    vzt::ImageUsage::DepthStencilAttachment;
+
+				vzt::Format currentFormat = attachmentSettings.second.format.value_or(scColorFormat);
 				if (!isFinalImage && isDepthStencil)
-				{
 					currentFormat = scDepthFormat;
-				}
 
 				std::unique_ptr<vzt::Attachment> attachment;
 				if (isFinalImage)
@@ -479,6 +472,11 @@ namespace vzt
 					    attachmentSettings.second.usage);
 				}
 
+				std::cout << "\t- Creating attachment " << std::to_string(attachmentSettings.first.id) << " / "
+				          << std::to_string(attachmentSettings.first.state) << " ";
+				std::cout << (isFinalImage ? "Final attachment " : "Temp attachment ")
+				          << (isDepthStencil ? "Depth stencil " : "Image ") << std::endl;
+
 				m_attachmentsIndices[i][attachmentSettings.first] = m_attachments.size();
 				m_attachments.emplace_back(std::move(attachment));
 			}
@@ -486,36 +484,70 @@ namespace vzt
 			// TODO: Create storages too
 
 			m_frameBuffers[i].reserve(m_renderPassHandlers.size());
+
 			for (const std::size_t sortedRenderPassIndice : m_sortedRenderPassIndices)
 			{
 				auto& renderPassHandler = m_renderPassHandlers[sortedRenderPassIndice];
 				auto  renderPass        = renderPassHandler.build(
 				            this, device, i, static_cast<uint32_t>(swapchainImages.size()), scImageSize, scColorFormat);
+
+				std::cout << "\t- Creating renderpass " + std::to_string(sortedRenderPassIndice) + " " +
+				                 renderPassHandler.m_name
+				          << std::endl;
+
 				std::vector<const vzt::ImageView*> views;
 				views.reserve(renderPassHandler.m_colorOutputs.size());
 
 				if (i == 0)
 				{
-					for (const auto& colorInput : renderPassHandler.m_colorInputs)
+					std::cout << "\t\t- Creating color inputs synchronizations " << std::endl;
+
+					for (auto& colorInput : renderPassHandler.m_colorInputs)
 					{
-						if (m_attachmentsSynchronizations[colorInput.first].size() <= colorInput.first.state)
-						{
-							m_attachmentsSynchronizations[colorInput.first].emplace_back(semaphoreCount);
-							semaphoreCount++;
-						}
+						colorInput.second.attachmentUse.initialLayout = lastAttachmentsLayout[colorInput.first];
+						lastAttachmentsLayout[colorInput.first]       = colorInput.second.attachmentUse.finalLayout;
+						std::cout << "\t\t\t- Synchronize to " << colorInput.second.name << " => "
+						          << std::to_string(colorInput.first.id) << " / "
+						          << std::to_string(colorInput.first.state) << std::endl;
+					}
+
+					if (renderPassHandler.m_depthInput)
+					{
+						renderPassHandler.m_depthInput->second.attachmentUse.initialLayout =
+						    lastAttachmentsLayout[renderPassHandler.m_depthInput->first];
+						lastAttachmentsLayout[renderPassHandler.m_depthInput->first] =
+						    renderPassHandler.m_depthInput->second.attachmentUse.finalLayout;
+
+						std::cout << "\t\t\t- Synchronize to " << renderPassHandler.m_depthInput->second.name << " => "
+						          << std::to_string(renderPassHandler.m_depthInput->first.id) << " / "
+						          << std::to_string(renderPassHandler.m_depthInput->first.state) << std::endl;
 					}
 				}
 
-				for (const auto& colorOutput : renderPassHandler.m_colorOutputs)
+				std::cout << "\t\t- Acquiring output targets" << std::endl;
+				for (auto& colorOutput : renderPassHandler.m_colorOutputs)
 				{
 					views.emplace_back(m_attachments[m_attachmentsIndices[i][colorOutput.first]]->getView());
+					colorOutput.second.attachmentUse.initialLayout = lastAttachmentsLayout[colorOutput.first];
+					lastAttachmentsLayout[colorOutput.first]       = colorOutput.second.attachmentUse.finalLayout;
+
+					std::cout << "\t\t\t- Got target " + colorOutput.second.name + " => "
+					          << std::to_string(colorOutput.first.id) << " / "
+					          << std::to_string(colorOutput.first.state) << std::endl;
 				}
 
-				if (renderPassHandler.m_depthOutput.has_value())
+				if (renderPassHandler.m_depthOutput)
 				{
 					views.emplace_back(
-					    m_attachments[m_attachmentsIndices[i][renderPassHandler.m_depthOutput.value().first]]
-					        ->getView());
+					    m_attachments[m_attachmentsIndices[i][renderPassHandler.m_depthOutput->first]]->getView());
+					renderPassHandler.m_depthOutput->second.attachmentUse.initialLayout =
+					    lastAttachmentsLayout[renderPassHandler.m_depthOutput->first];
+					lastAttachmentsLayout[renderPassHandler.m_depthOutput->first] =
+					    renderPassHandler.m_depthOutput->second.attachmentUse.finalLayout;
+
+					std::cout << "\t\t\t- Got depth target " + renderPassHandler.m_depthOutput->second.name + " "
+					          << std::to_string(renderPassHandler.m_depthOutput->first.id) << " / "
+					          << std::to_string(renderPassHandler.m_depthOutput->first.state) << std::endl;
 				}
 
 				m_frameBuffers[i].emplace_back(
@@ -523,27 +555,19 @@ namespace vzt
 			}
 
 			m_commandPools[i].allocateCommandBuffers(static_cast<uint32_t>(m_frameBuffers[i].size()));
-			m_semaphores[i].resize(semaphoreCount);
-
-			for (std::size_t s = 0; s < semaphoreCount; s++)
-			{
-				if (vkCreateSemaphore(m_device->vkHandle(), &semaphoreCreateInfo, nullptr, &m_semaphores[i][s]) !=
-				    VK_SUCCESS)
-				{
-					throw std::runtime_error("Can't create semaphores");
-				}
-			}
 		}
 	}
 
 	void RenderGraph::render(const std::size_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete,
 	                         VkFence inFlightFence)
 	{
+		// https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples#draw-writes-to-a-depth-attachment-dispatch-samples-from-that-image
+
 		const auto& frameBuffers = m_frameBuffers[imageId];
-		const auto& semaphores   = m_semaphores[imageId];
 
 		std::vector<VkSubmitInfo> graphicSubmissions{};
 		graphicSubmissions.reserve(frameBuffers.size());
+
 		for (uint32_t i = 0; i < frameBuffers.size(); i++)
 		{
 			const std::size_t renderPassIdx = m_sortedRenderPassIndices[i];
@@ -551,51 +575,75 @@ namespace vzt
 			const auto&       renderPass    = m_renderPassHandlers[renderPassIdx];
 
 			m_commandPools[imageId].recordBuffer(i, [&](VkCommandBuffer commandBuffer) {
+				for (const auto& colorInput : renderPass.m_colorInputs)
+				{
+					auto& attachment = m_attachments[m_attachmentsIndices[imageId][colorInput.first]];
+
+					VkImageMemoryBarrier textureBarrier{};
+					textureBarrier.sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+					textureBarrier.image         = attachment->getView()->image();
+					textureBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+					textureBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+					textureBarrier.srcQueueFamilyIndex = VK_QUEUE_GRAPHICS_BIT;
+					textureBarrier.dstQueueFamilyIndex = VK_QUEUE_GRAPHICS_BIT;
+
+					textureBarrier.oldLayout        = vzt::toVulkan(colorInput.second.attachmentUse.initialLayout);
+					textureBarrier.newLayout        = vzt::toVulkan(colorInput.second.attachmentUse.finalLayout);
+					textureBarrier.subresourceRange = VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+					                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1,
+					                     &textureBarrier);
+				}
+
+				if (renderPass.m_depthInput)
+				{
+					auto& attachment = m_attachments[m_attachmentsIndices[imageId][renderPass.m_depthInput->first]];
+
+					VkImageMemoryBarrier depthBarrier{};
+					depthBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+					depthBarrier.image = attachment->getView()->image();
+					depthBarrier.srcAccessMask =
+					    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+					depthBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+					depthBarrier.oldLayout = vzt::toVulkan(renderPass.m_depthInput->second.attachmentUse.initialLayout);
+					depthBarrier.newLayout = vzt::toVulkan(renderPass.m_depthInput->second.attachmentUse.finalLayout);
+					depthBarrier.subresourceRange =
+					    VkImageSubresourceRange{VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
+					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+					                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1,
+					                     &depthBarrier);
+				}
+
 				currentFb->bind(commandBuffer);
 				renderPass.render(i, currentFb->getRenderPass(), commandBuffer);
 				currentFb->unbind(commandBuffer);
 			});
 
 			VkSubmitInfo submitInfo{};
-			submitInfo.sType                  = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-			submitInfo.pWaitDstStageMask      = waitStages;
+			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 			std::vector<VkSemaphore> waitSemaphores{};
-			waitSemaphores.reserve(renderPass.m_colorInputs.size());
+			if (i == 0)
+				waitSemaphores.emplace_back(imageAvailable);
+
+			constexpr VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			submitInfo.pWaitDstStageMask              = &waitStages;
+
 			if (i == 0)
 			{
-				waitSemaphores.emplace_back(imageAvailable);
+				submitInfo.waitSemaphoreCount = 1;
+				submitInfo.pWaitSemaphores    = &imageAvailable;
 			}
-
-			for (const auto& colorInput : renderPass.m_colorInputs)
-			{
-				const std::size_t semaphoreId = m_attachmentsSynchronizations[colorInput.first][colorInput.first.state];
-				waitSemaphores.emplace_back(semaphores[semaphoreId]);
-			}
-
-			submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
-			submitInfo.pWaitSemaphores    = waitSemaphores.data();
 
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers    = &m_commandPools[imageId][i];
 
-			std::vector<VkSemaphore> signalSemaphores{};
-			signalSemaphores.reserve(renderPass.m_colorOutputs.size());
 			if (i == frameBuffers.size() - 1)
 			{
-				signalSemaphores.emplace_back(renderComplete);
+				submitInfo.signalSemaphoreCount = 1;
+				submitInfo.pSignalSemaphores    = &renderComplete;
 			}
-
-			for (const auto& colorOutput : renderPass.m_colorOutputs)
-			{
-				const std::size_t semaphoreId =
-				    m_attachmentsSynchronizations[colorOutput.first][colorOutput.first.state];
-				signalSemaphores.emplace_back(semaphores[semaphoreId]);
-			}
-
-			submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
-			submitInfo.pSignalSemaphores    = signalSemaphores.data();
 
 			const VkQueue currentQueue = renderPass.m_queueType == vzt::QueueType::Graphic
 			                                 ? m_device->getGraphicsQueue()
@@ -606,7 +654,7 @@ namespace vzt
 
 		vkResetFences(m_device->vkHandle(), 1, &inFlightFence);
 		if (vkQueueSubmit(m_device->getGraphicsQueue(), static_cast<uint32_t>(graphicSubmissions.size()),
-		                  graphicSubmissions.data(), VK_NULL_HANDLE) != VK_SUCCESS)
+		                  graphicSubmissions.data(), inFlightFence) != VK_SUCCESS)
 		{
 			throw std::runtime_error("Failed to submit command buffers!");
 		}

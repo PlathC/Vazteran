@@ -21,7 +21,7 @@ namespace vzt
 		          vzt::ImageAspect aspectFlags, vzt::ImageLayout layout);
 		ImageView(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect);
 
-		ImageView(const ImageView&) = delete;
+		ImageView(const ImageView&)            = delete;
 		ImageView& operator=(const ImageView&) = delete;
 
 		ImageView(ImageView&& original) noexcept;
@@ -30,6 +30,7 @@ namespace vzt
 		vzt::ImageLayout layout() const { return m_layout; }
 		vzt::Format      format() const { return m_format; }
 
+		VkImage     image() const { return m_vkImage; }
 		VkImageView vkHandle() const { return m_vkHandle; }
 
 		~ImageView();
@@ -58,7 +59,7 @@ namespace vzt
 	  public:
 		explicit Sampler(const vzt::Device* logicalDevice, const SamplerSettings& samplerSettings = {});
 
-		Sampler(const Sampler&) = delete;
+		Sampler(const Sampler&)            = delete;
 		Sampler& operator=(const Sampler&) = delete;
 
 		Sampler(Sampler&& other) noexcept;

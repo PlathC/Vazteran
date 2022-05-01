@@ -45,8 +45,10 @@ int main(int /* args */, char*[] /* argv */)
 	geometryBuffer.addColorOutput(albedo, "Albedo");
 	geometryBuffer.addColorOutput(normal, "Normal");
 	geometryBuffer.setDepthStencilOutput(depth, "Depth");
-	geometryBuffer.setConfigureFunction(
-	    [&](vzt::PipelineContextSettings settings) { geometryPipeline->configure(std::move(settings)); });
+	geometryBuffer.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
+		meshView.configure(settings.device, 2);
+		geometryPipeline->configure(std::move(settings));
+	});
 
 	geometryBuffer.setRecordFunction([&](uint32_t imageId, const VkCommandBuffer& cmd,
 	                                     const std::vector<VkDescriptorSet>& engineDescriptorSets) {
@@ -58,16 +60,17 @@ int main(int /* args */, char*[] /* argv */)
 			                        nullptr);
 		}
 
-		meshView.record(imageId, cmd);
+		meshView.record(imageId, cmd, geometryPipeline.get());
 	});
 
-	vzt::AttachmentHandle composed = renderGraph.addAttachment({});
+	vzt::AttachmentHandle composed   = renderGraph.addAttachment({});
+	vzt::AttachmentHandle finalDepth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
 
 	auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
 	deferredPass.addColorInput(position, "G-Position");
 	deferredPass.addColorInput(albedo, "G-Albedo");
 	deferredPass.addColorInput(normal, "G-Normal");
-	deferredPass.setDepthStencilOutput(depth, "G-Depth");
+	deferredPass.setDepthStencilOutput(finalDepth, "Final Depth");
 	deferredPass.addColorOutput(composed, "Composed");
 	deferredPass.setConfigureFunction(
 	    [&](vzt::PipelineContextSettings settings) { compositionPipeline->configure(std::move(settings)); });
@@ -100,14 +103,25 @@ int main(int /* args */, char*[] /* argv */)
 		std::cerr << e.what() << std::endl;
 	}
 
-	vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::CrounchingBoys);
-	// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
+	// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::CrounchingBoys);
+	vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
 	// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
 
 	try
 	{
-		auto app = vzt::Application("Vazteran", std::move(currentScene), std::move(renderGraph));
-		app.run();
+		auto app         = vzt::Application("Vazteran", std::move(currentScene), std::move(renderGraph));
+		currentScene     = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
+		auto sceneModels = currentScene.cModels();
+		for (const auto* model : sceneModels)
+		{
+			meshView.addModel(model);
+		}
+		meshView.update(currentScene.cSceneCamera());
+
+		while (app.run())
+		{
+			meshView.update(currentScene.cSceneCamera());
+		}
 	}
 	catch (const std::exception& e)
 	{

@@ -52,15 +52,14 @@ namespace vzt
 		description.samples        = vzt::toVulkan(depthAttachment.first->getSampleCount());
 		attachmentDescriptions.emplace_back(description);
 
-		VkAttachmentReference depthAttachmentRef{};
-		depthAttachmentRef.attachment = static_cast<uint32_t>(m_colorRefs.size());
-		depthAttachmentRef.layout     = vzt::toVulkan(depthAttachment.first->getLayout());
+		m_depthRef.attachment = static_cast<uint32_t>(m_colorRefs.size());
+		m_depthRef.layout     = vzt::toVulkan(depthAttachment.first->getLayout());
 
 		VkSubpassDescription subpass{};
 		subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount    = static_cast<uint32_t>(m_colorRefs.size());
 		subpass.pColorAttachments       = m_colorRefs.data();
-		subpass.pDepthStencilAttachment = &depthAttachmentRef;
+		subpass.pDepthStencilAttachment = &m_depthRef;
 
 		m_subpassDependencies = {{VK_SUBPASS_EXTERNAL, 0, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 		                          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_MEMORY_READ_BIT,
@@ -116,15 +115,14 @@ namespace vzt
 		renderPassInfo.renderPass        = m_vkHandle;
 		renderPassInfo.framebuffer       = frameBuffer->vkHandle();
 		renderPassInfo.renderArea.offset = {0, 0};
-
 		const auto fbSize                = frameBuffer->size();
 		renderPassInfo.renderArea.extent = VkExtent2D{fbSize.width, fbSize.height};
 
 		std::vector<VkClearValue> clearValues;
 		clearValues.resize(m_colorRefs.size() + 1);
-		for (const auto& m_colorRef : m_colorRefs)
+		for (const auto& colorRef : m_colorRefs)
 		{
-			clearValues[m_colorRef.attachment].color = {0.0f, 0.0f, 0.0f, 1.0f};
+			clearValues[colorRef.attachment].color = {0.0f, 0.0f, 0.0f, 1.0f};
 		}
 		clearValues[m_depthRef.attachment].depthStencil = {1.0f, 0};
 

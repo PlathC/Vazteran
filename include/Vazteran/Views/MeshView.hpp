@@ -33,27 +33,24 @@ namespace vzt
 	  public:
 		MeshView();
 
-		MeshView(const MeshView&) = delete;
+		MeshView(const MeshView&)            = delete;
 		MeshView& operator=(const MeshView&) = delete;
 
-		MeshView(MeshView&& other) noexcept = default;
+		MeshView(MeshView&& other) noexcept            = default;
 		MeshView& operator=(MeshView&& other) noexcept = default;
 
 		~MeshView();
 
-		vzt::GraphicPipeline* getPipeline() const { return m_graphicPipeline.get(); }
-
 		void addModel(const vzt::Model* const model);
 		void configure(const vzt::Device* device, uint32_t imageCount);
 
-		void record(uint32_t imageCount, VkCommandBuffer commandBuffer) const;
+		void record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const;
 
 		void update(const vzt::Camera& camera);
 
 	  private:
 		// Rendering objects
-		const vzt::Device*                    m_device;
-		std::unique_ptr<vzt::GraphicPipeline> m_graphicPipeline;
+		const vzt::Device* m_device;
 		struct SubMeshData
 		{
 			uint32_t minOffset;

@@ -47,6 +47,7 @@ namespace vzt
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
 			vkDestroyShaderModule(m_device->vkHandle(), m_vkHandle, nullptr);
+			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}
 

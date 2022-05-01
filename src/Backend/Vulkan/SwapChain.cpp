@@ -27,19 +27,13 @@ namespace vzt
 		    vkAcquireNextImageKHR(m_device->vkHandle(), m_vkHandle, UINT64_MAX,
 		                          m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR)
-		{
 			return true;
-		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		{
 			throw std::runtime_error("Failed to acquire swapchain image!");
-		}
 
 		// Check if a previous frame is using this image (i.e. there is its fence to wait on)
 		if (m_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
-		{
 			vkWaitForFences(m_device->vkHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
-		}
 
 		// Mark the image as now being in use by this frame
 		m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
@@ -56,7 +50,6 @@ namespace vzt
 		presentInfo.swapchainCount  = 1;
 		presentInfo.pSwapchains     = swapChains;
 		presentInfo.pImageIndices   = &imageIndex;
-		presentInfo.pResults        = nullptr; // Optional
 
 		result = vkQueuePresentKHR(m_device->getPresentQueue(), &presentInfo);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)

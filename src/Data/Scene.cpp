@@ -97,7 +97,7 @@ namespace vzt
 			auto      vikingRoomModel = std::make_unique<vzt::Model>("./samples/VikingRoom/viking_room.obj");
 			vzt::AABB fullBoundingBox = vikingRoomModel->boundingBox();
 
-			auto tex = vzt::Image("./samples/viking_room.png");
+			auto tex = vzt::Image("./samples/VikingRoom/viking_room.png");
 
 			auto& mat   = vikingRoomModel->mesh().materials()[0];
 			mat.texture = tex;

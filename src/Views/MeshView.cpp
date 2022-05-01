@@ -47,8 +47,6 @@ namespace vzt
 		// m_models.emplace_back(model);
 		ModelDisplayInformation modelDisplayInfo = {model};
 
-		const auto& program = m_graphicPipeline->getProgram();
-
 		// Use one vertex buffer for the whole mesh
 		const auto& vertices = model->cMesh().cVertices();
 		const auto& normals  = model->cMesh().cNormals();
@@ -126,6 +124,10 @@ namespace vzt
 		m_imageCount           = imageCount;
 		m_device               = device;
 		m_meshDescriptorLayout = vzt::DescriptorLayout();
+		m_meshDescriptorLayout.configure(device);
+		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
+		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::UniformBuffer);
+		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 2, vzt::DescriptorType::CombinedSampler);
 
 		m_descriptorPool = vzt::DescriptorPool(
 		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);
@@ -150,7 +152,7 @@ namespace vzt
 		                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
 	}
 
-	void MeshView::record(uint32_t imageCount, VkCommandBuffer commandBuffer) const
+	void MeshView::record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const
 	{
 		for (const auto& model : m_models)
 		{
@@ -166,7 +168,7 @@ namespace vzt
 				                     VK_INDEX_TYPE_UINT32);
 
 				m_descriptorPool.bind((subMesh.materialDataIndex) * m_imageCount + imageCount, commandBuffer,
-				                      VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicPipeline->layout());
+				                      VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout());
 
 				vkCmdDrawIndexed(commandBuffer, subMesh.maxOffset - subMesh.minOffset, 1, 0, 0, 0);
 			}

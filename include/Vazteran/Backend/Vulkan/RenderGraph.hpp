@@ -208,10 +208,10 @@ namespace vzt
 	  public:
 		RenderGraph();
 
-		RenderGraph(const RenderGraph&) = delete;
+		RenderGraph(const RenderGraph&)            = delete;
 		RenderGraph& operator=(const RenderGraph&) = delete;
 
-		RenderGraph(RenderGraph&&) = default;
+		RenderGraph(RenderGraph&&)            = default;
 		RenderGraph& operator=(RenderGraph&&) = default;
 
 		~RenderGraph();
@@ -257,17 +257,15 @@ namespace vzt
 		std::vector<vzt::RenderPassHandler>                         m_renderPassHandlers;
 		std::vector<std::vector<std::unique_ptr<vzt::FrameBuffer>>> m_frameBuffers;
 		vzt::AttachmentList<vzt::AttachmentSettings>                m_attachmentsSettings;
-		vzt::AttachmentList<std::vector<std::size_t>>               m_attachmentsSynchronizations;
 
 		std::vector<vzt::AttachmentList<std::size_t>> m_attachmentsIndices;
 		std::vector<std::unique_ptr<vzt::Attachment>> m_attachments;
 
 		vzt::StorageList<vzt::StorageSettings> m_storagesSettings;
 
-		const vzt::Device*                    m_device;
-		std::vector<vzt::CommandPool>         m_commandPools;
-		std::vector<std::vector<VkSemaphore>> m_semaphores;
-		std::optional<vzt::AttachmentHandle>  m_backBuffer;
+		const vzt::Device*                   m_device;
+		std::vector<vzt::CommandPool>        m_commandPools;
+		std::optional<vzt::AttachmentHandle> m_backBuffer;
 	};
 } // namespace vzt
 

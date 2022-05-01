@@ -51,7 +51,7 @@ namespace vzt
 		}
 
 		// auto sceneModels = scene->cModels();
-		// for (const auto* model : sceneModels)
+		// for(const auto* model : sceneModels)
 		// {
 		// 	m_meshView->addModel(model);
 		// }
