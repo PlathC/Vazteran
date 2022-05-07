@@ -43,7 +43,6 @@ namespace vzt
 	                     vzt::ImageAspect aspectFlags, vzt::ImageLayout layout)
 	    : m_device(device), m_format(format), m_layout(layout)
 	{
-
 		m_vkImage  = m_device->createImage(m_allocation, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
 		                                   VK_IMAGE_TILING_OPTIMAL, usage);
 		m_vkHandle = m_device->createImageView(m_vkImage, format, aspectFlags);

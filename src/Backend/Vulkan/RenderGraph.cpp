@@ -23,8 +23,8 @@ namespace vzt
 			attachmentInfo.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
 		}
 
-		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
 		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ShaderReadOnlyOptimal;
+		attachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::ShaderReadOnlyOptimal;
 		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
 		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
@@ -32,7 +32,7 @@ namespace vzt
 
 		vzt::ImageBarrier barrier{};
 		barrier.layout            = vzt::ImageLayout::ShaderReadOnlyOptimal;
-		barrier.accesses          = vzt::AccessFlag::ShaderRead;
+		barrier.accesses          = vzt::AttachmentAccess::ShaderRead;
 		barrier.stages            = vzt::PipelineStage::FragmentShader;
 		attachmentInfo.barrier    = barrier;
 		m_colorInputs[attachment] = attachmentInfo;
@@ -49,8 +49,8 @@ namespace vzt
 			attachmentInfo.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
 		}
 
-		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
-		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
+		attachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::ColorAttachmentOptimal;
+		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ShaderReadOnlyOptimal;
 		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Clear;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
 		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
@@ -71,14 +71,14 @@ namespace vzt
 			inAttachmentInfo.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
 		}
 
-		// inAttachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
-		inAttachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
+		inAttachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::ShaderReadOnlyOptimal;
+		inAttachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ShaderReadOnlyOptimal;
 		inAttachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
 		inAttachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
 		inAttachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
 		inAttachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
 
-		inAttachmentInfo.barrier = {vzt::PipelineStage::FragmentShader, vzt::AccessFlag::ShaderRead,
+		inAttachmentInfo.barrier = {vzt::PipelineStage::FragmentShader, vzt::AttachmentAccess::ShaderRead,
 		                            vzt::ImageLayout::ShaderReadOnlyOptimal};
 
 		m_colorInputs[attachment] = inAttachmentInfo;
@@ -103,7 +103,7 @@ namespace vzt
 		}
 
 		vzt::StorageBarrier barrier{};
-		barrier.accesses = vzt::AccessFlag::ShaderRead;
+		barrier.accesses = vzt::AttachmentAccess::ShaderRead;
 		if (m_queueType == vzt::QueueType::Compute)
 		{
 			barrier.stages = vzt::PipelineStage::ComputeShader;
@@ -142,7 +142,7 @@ namespace vzt
 		}
 
 		vzt::StorageBarrier barrier{};
-		barrier.accesses = vzt::AccessFlag::ShaderRead | vzt::AccessFlag::ShaderWrite;
+		barrier.accesses = vzt::AttachmentAccess::ShaderRead | vzt::AttachmentAccess::ShaderWrite;
 		if (m_queueType == vzt::QueueType::Compute)
 		{
 			barrier.stages = vzt::PipelineStage::ComputeShader;
@@ -175,6 +175,7 @@ namespace vzt
 		}
 
 		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		attachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::DepthStencilAttachmentOptimal;
 		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal;
 		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::DontCare;
@@ -196,7 +197,7 @@ namespace vzt
 			attachmentInfo.name = m_name + "DepthOut";
 		}
 
-		// attachmentInfo.attachmentUse.initialLayout  = vzt::ImageLayout::Undefined;
+		attachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::DepthStencilAttachmentOptimal;
 		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal;
 		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Clear;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
@@ -276,37 +277,75 @@ namespace vzt
 	                                                          const vzt::Format            targetFormat)
 	{
 		if (!m_recordFunction)
-		{
 			throw std::runtime_error("A render pass must have a record function");
-		}
 
-		std::vector<vzt::RenderPass::AttachmentPassConfiguration> attachments;
-		attachments.reserve(m_colorOutputs.size());
-		uint32_t i = 0;
-		for (const auto& output : m_colorOutputs)
+		RenderPassConfiguration configuration{};
+		configuration.colorAttachments.reserve(m_colorOutputs.size());
+		uint32_t outputIndex = 0;
+		for (auto& output : m_colorOutputs)
 		{
-			auto attachmentUse = output.second.attachmentUse;
-			if (correspondingGraph->isBackBuffer(output.first))
-			{
-				attachmentUse.finalLayout = vzt::ImageLayout::PresentSrcKHR;
-			}
+			auto& attachmentUse = output.second.attachmentUse;
 
 			if (m_colorClearFunction)
-				m_colorClearFunction(i++, &attachmentUse.clearValue);
-			attachments.emplace_back(correspondingGraph->getAttachment(imageId, output.first), attachmentUse);
+				m_colorClearFunction(outputIndex++, &attachmentUse.clearValue);
+
+			vzt::Attachment* attachment = correspondingGraph->getAttachment(imageId, output.first);
+			configuration.colorAttachments.emplace_back(attachment, attachmentUse);
+		}
+
+		if (!m_colorOutputs.empty())
+		{
+			configuration.dependencies.emplace_back();
+			SubpassDependency& incomingDependency = configuration.dependencies.back();
+
+			incomingDependency.src       = SubpassDependency::ExternalSubpass;
+			incomingDependency.dst       = 0;
+			incomingDependency.srcStage  = vzt::PipelineStage::BottomOfPipe;
+			incomingDependency.srcAccess = vzt::AttachmentAccess::MemoryRead;
+			incomingDependency.dstStage  = vzt::PipelineStage::ColorAttachmentOutput;
+			incomingDependency.dstAccess =
+			    vzt::AttachmentAccess::ColorAttachmentWrite | vzt::AttachmentAccess::ColorAttachmentRead;
+
+			configuration.dependencies.emplace_back();
+			SubpassDependency& outcomingDependency = configuration.dependencies.back();
+
+			outcomingDependency.src      = 0;
+			outcomingDependency.dst      = SubpassDependency::ExternalSubpass;
+			outcomingDependency.srcStage = vzt::PipelineStage::ColorAttachmentOutput;
+			outcomingDependency.srcAccess =
+			    vzt::AttachmentAccess::ColorAttachmentWrite | vzt::AttachmentAccess::ColorAttachmentRead;
+			outcomingDependency.dstStage  = vzt::PipelineStage::BottomOfPipe;
+			outcomingDependency.dstAccess = vzt::AttachmentAccess::MemoryRead;
 		}
 
 		std::unique_ptr<vzt::RenderPass> renderPass{};
-		if (m_depthOutput.has_value())
+		if (m_depthOutput)
 		{
 			auto depthAttachment = m_depthOutput.value();
 			if (m_depthClearFunction)
 				m_depthClearFunction(&depthAttachment.second.attachmentUse.clearValue);
 
-			vzt::RenderPass::DepthAttachmentPassConfiguration depthUse = {
-			    correspondingGraph->getAttachment(imageId, depthAttachment.first),
-			    depthAttachment.second.attachmentUse};
-			renderPass = std::make_unique<vzt::RenderPass>(device, attachments, depthUse);
+			configuration.depthAttachment.first  = correspondingGraph->getAttachment(imageId, depthAttachment.first);
+			configuration.depthAttachment.second = depthAttachment.second.attachmentUse;
+
+			configuration.dependencies.emplace_back();
+			SubpassDependency& dependency = configuration.dependencies.back();
+
+			dependency.src       = SubpassDependency::ExternalSubpass;
+			dependency.dst       = 0;
+			dependency.srcStage  = vzt::PipelineStage::Transfer;
+			dependency.srcAccess = vzt::AttachmentAccess::TransferWrite;
+			if (m_depthOutput->first.state > 1)
+			{
+				dependency.srcStage = dependency.srcStage | vzt::PipelineStage::EarlyFragmentTests |
+				                      vzt::PipelineStage::LateFragmentTests;
+				dependency.srcAccess = dependency.srcAccess | vzt::AttachmentAccess::DepthStencilAttachmentWrite;
+			}
+			dependency.dstStage = vzt::PipelineStage::EarlyFragmentTests | vzt::PipelineStage::LateFragmentTests;
+			dependency.dstAccess =
+			    vzt::AttachmentAccess::DepthStencilAttachmentRead | vzt::AttachmentAccess::DepthStencilAttachmentWrite;
+
+			renderPass = std::make_unique<vzt::RenderPass>(device, configuration);
 		}
 		else if (m_queueType == vzt::QueueType::Graphic)
 		{
@@ -315,25 +354,24 @@ namespace vzt
 
 		if (!m_descriptorPool && !m_colorInputs.empty())
 		{
-			vzt::DescriptorLayout currentLayout{};
+			m_descriptorLayout = vzt::DescriptorLayout{};
 			for (std::size_t i = 0; i < m_colorInputs.size(); i++)
 			{
-				currentLayout.addBinding(vzt::ShaderStage::FragmentShader, static_cast<uint32_t>(i),
-				                         vzt::DescriptorType::CombinedSampler);
+				m_descriptorLayout->addBinding(vzt::ShaderStage::FragmentShader, static_cast<uint32_t>(i),
+				                               vzt::DescriptorType::CombinedSampler);
 			}
-			currentLayout.configure(device);
+			m_descriptorLayout->configure(device);
 
 			m_descriptorPool =
 			    std::make_unique<vzt::DescriptorPool>(device, std::vector{vzt::DescriptorType::CombinedSampler});
-			m_descriptorPool->allocate(imageCount, currentLayout);
-			m_descriptorLayout = std::move(currentLayout);
+			m_descriptorPool->allocate(imageCount, *m_descriptorLayout);
 		}
 
 		if (imageId == 0 && m_configureFunction)
 		{
 			std::vector<const vzt::DescriptorLayout*> descriptors{};
 			if (m_descriptorLayout.has_value())
-				descriptors.emplace_back(&m_descriptorLayout.value());
+				descriptors.emplace_back(&(*m_descriptorLayout));
 
 			m_configureFunction({device, renderPass.get(), descriptors, static_cast<uint32_t>(m_colorOutputs.size()),
 			                     targetFormat, targetSize});
@@ -341,13 +379,13 @@ namespace vzt
 
 		if (!m_colorInputs.empty())
 		{
-			auto inputStart = m_colorInputs.begin();
+			auto input = m_colorInputs.begin();
 
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
-			for (uint32_t i = 0; i < m_colorInputs.size(); i++)
+			for (uint32_t i = 0; i < m_colorInputs.size(); ++input, i++)
 			{
-				texturesDescriptors[i] = correspondingGraph->getAttachment(imageId, inputStart->first)->asTexture();
-				++inputStart;
+				vzt::Attachment* attachment = correspondingGraph->getAttachment(imageId, input->first);
+				texturesDescriptors[i]      = attachment->asTexture();
 			}
 			m_descriptorPool->update(imageId, texturesDescriptors);
 		}
@@ -434,8 +472,6 @@ namespace vzt
 		VkSemaphoreCreateInfo semaphoreCreateInfo{};
 		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-		vzt::AttachmentList<vzt::ImageLayout> lastAttachmentsLayout;
-
 		std::cout << "Creating framebuffers data." << std::endl;
 		for (uint32_t i = 0; i < swapchainImages.size(); i++)
 		{
@@ -443,6 +479,7 @@ namespace vzt
 
 			auto swapchainImage = swapchainImages[i];
 			m_commandPools.emplace_back(device);
+			vzt::AttachmentList<vzt::ImageLayout> lastAttachmentsLayout;
 
 			// Create attachments
 			for (const auto& attachmentSettings : m_attachmentsSettings)
@@ -488,8 +525,6 @@ namespace vzt
 			for (const std::size_t sortedRenderPassIndice : m_sortedRenderPassIndices)
 			{
 				auto& renderPassHandler = m_renderPassHandlers[sortedRenderPassIndice];
-				auto  renderPass        = renderPassHandler.build(
-				            this, device, i, static_cast<uint32_t>(swapchainImages.size()), scImageSize, scColorFormat);
 
 				std::cout << "\t- Creating renderpass " + std::to_string(sortedRenderPassIndice) + " " +
 				                 renderPassHandler.m_name
@@ -498,38 +533,16 @@ namespace vzt
 				std::vector<const vzt::ImageView*> views;
 				views.reserve(renderPassHandler.m_colorOutputs.size());
 
-				if (i == 0)
-				{
-					std::cout << "\t\t- Creating color inputs synchronizations " << std::endl;
-
-					for (auto& colorInput : renderPassHandler.m_colorInputs)
-					{
-						colorInput.second.attachmentUse.initialLayout = lastAttachmentsLayout[colorInput.first];
-						lastAttachmentsLayout[colorInput.first]       = colorInput.second.attachmentUse.finalLayout;
-						std::cout << "\t\t\t- Synchronize to " << colorInput.second.name << " => "
-						          << std::to_string(colorInput.first.id) << " / "
-						          << std::to_string(colorInput.first.state) << std::endl;
-					}
-
-					if (renderPassHandler.m_depthInput)
-					{
-						renderPassHandler.m_depthInput->second.attachmentUse.initialLayout =
-						    lastAttachmentsLayout[renderPassHandler.m_depthInput->first];
-						lastAttachmentsLayout[renderPassHandler.m_depthInput->first] =
-						    renderPassHandler.m_depthInput->second.attachmentUse.finalLayout;
-
-						std::cout << "\t\t\t- Synchronize to " << renderPassHandler.m_depthInput->second.name << " => "
-						          << std::to_string(renderPassHandler.m_depthInput->first.id) << " / "
-						          << std::to_string(renderPassHandler.m_depthInput->first.state) << std::endl;
-					}
-				}
-
 				std::cout << "\t\t- Acquiring output targets" << std::endl;
 				for (auto& colorOutput : renderPassHandler.m_colorOutputs)
 				{
 					views.emplace_back(m_attachments[m_attachmentsIndices[i][colorOutput.first]]->getView());
+
 					colorOutput.second.attachmentUse.initialLayout = lastAttachmentsLayout[colorOutput.first];
-					lastAttachmentsLayout[colorOutput.first]       = colorOutput.second.attachmentUse.finalLayout;
+					if (isBackBuffer(colorOutput.first))
+						colorOutput.second.attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
+
+					lastAttachmentsLayout[colorOutput.first] = colorOutput.second.attachmentUse.finalLayout;
 
 					std::cout << "\t\t\t- Got target " + colorOutput.second.name + " => "
 					          << std::to_string(colorOutput.first.id) << " / "
@@ -540,6 +553,7 @@ namespace vzt
 				{
 					views.emplace_back(
 					    m_attachments[m_attachmentsIndices[i][renderPassHandler.m_depthOutput->first]]->getView());
+
 					renderPassHandler.m_depthOutput->second.attachmentUse.initialLayout =
 					    lastAttachmentsLayout[renderPassHandler.m_depthOutput->first];
 					lastAttachmentsLayout[renderPassHandler.m_depthOutput->first] =
@@ -550,6 +564,28 @@ namespace vzt
 					          << std::to_string(renderPassHandler.m_depthOutput->first.state) << std::endl;
 				}
 
+				std::cout << "\t\t- Creating color inputs synchronizations " << std::endl;
+				for (auto& colorInput : renderPassHandler.m_colorInputs)
+				{
+					colorInput.second.attachmentUse.initialLayout = lastAttachmentsLayout[colorInput.first];
+
+					std::cout << "\t\t\t- Synchronize to " << colorInput.second.name << " => "
+					          << std::to_string(colorInput.first.id) << " / " << std::to_string(colorInput.first.state)
+					          << std::endl;
+				}
+
+				if (renderPassHandler.m_depthInput)
+				{
+					renderPassHandler.m_depthInput->second.attachmentUse.initialLayout =
+					    lastAttachmentsLayout[renderPassHandler.m_depthInput->first];
+
+					std::cout << "\t\t\t- Synchronize to " << renderPassHandler.m_depthInput->second.name << " => "
+					          << std::to_string(renderPassHandler.m_depthInput->first.id) << " / "
+					          << std::to_string(renderPassHandler.m_depthInput->first.state) << std::endl;
+				}
+
+				auto renderPass = renderPassHandler.build(
+				    this, device, i, static_cast<uint32_t>(swapchainImages.size()), scImageSize, scColorFormat);
 				m_frameBuffers[i].emplace_back(
 				    std::make_unique<vzt::FrameBuffer>(device, std::move(renderPass), scImageSize, views));
 			}
@@ -574,45 +610,36 @@ namespace vzt
 			const auto&       currentFb     = frameBuffers[renderPassIdx];
 			const auto&       renderPass    = m_renderPassHandlers[renderPassIdx];
 
+			bool isPresentationPass = false;
 			m_commandPools[imageId].recordBuffer(i, [&](VkCommandBuffer commandBuffer) {
-				for (const auto& colorInput : renderPass.m_colorInputs)
+				for (const auto& colorOutput : renderPass.m_colorOutputs)
 				{
-					auto& attachment = m_attachments[m_attachmentsIndices[imageId][colorInput.first]];
-
-					VkImageMemoryBarrier textureBarrier{};
-					textureBarrier.sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-					textureBarrier.image         = attachment->getView()->image();
-					textureBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-					textureBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-					textureBarrier.srcQueueFamilyIndex = VK_QUEUE_GRAPHICS_BIT;
-					textureBarrier.dstQueueFamilyIndex = VK_QUEUE_GRAPHICS_BIT;
-
-					textureBarrier.oldLayout        = vzt::toVulkan(colorInput.second.attachmentUse.initialLayout);
-					textureBarrier.newLayout        = vzt::toVulkan(colorInput.second.attachmentUse.finalLayout);
-					textureBarrier.subresourceRange = VkImageSubresourceRange{VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
-
-					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-					                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1,
-					                     &textureBarrier);
+					if (isBackBuffer(colorOutput.first))
+						isPresentationPass = true;
 				}
 
-				if (renderPass.m_depthInput)
+				for (const auto& colorInput : renderPass.m_colorInputs)
 				{
-					auto& attachment = m_attachments[m_attachmentsIndices[imageId][renderPass.m_depthInput->first]];
+					if (isBackBuffer(colorInput.first))
+						return;
 
-					VkImageMemoryBarrier depthBarrier{};
-					depthBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-					depthBarrier.image = attachment->getView()->image();
-					depthBarrier.srcAccessMask =
-					    VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-					depthBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-					depthBarrier.oldLayout = vzt::toVulkan(renderPass.m_depthInput->second.attachmentUse.initialLayout);
-					depthBarrier.newLayout = vzt::toVulkan(renderPass.m_depthInput->second.attachmentUse.finalLayout);
-					depthBarrier.subresourceRange =
-					    VkImageSubresourceRange{VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1};
-					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-					                     VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1,
-					                     &depthBarrier);
+					const Attachment* attachment = getAttachment(imageId, colorInput.first);
+
+					VkImageMemoryBarrier inputBarrier{};
+					inputBarrier.sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+					inputBarrier.oldLayout        = vzt::toVulkan(colorInput.second.attachmentUse.initialLayout);
+					inputBarrier.newLayout        = vzt::toVulkan(colorInput.second.attachmentUse.usedLayout);
+					inputBarrier.srcAccessMask    = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+					inputBarrier.dstAccessMask    = VK_ACCESS_SHADER_READ_BIT;
+					inputBarrier.oldLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					inputBarrier.newLayout        = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					inputBarrier.image            = attachment->getView()->image();
+					inputBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+
+					vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+					                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+					                     VkDependencyFlagBits::VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 1,
+					                     &inputBarrier);
 				}
 
 				currentFb->bind(commandBuffer);
@@ -623,15 +650,11 @@ namespace vzt
 			VkSubmitInfo submitInfo{};
 			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-			std::vector<VkSemaphore> waitSemaphores{};
-			if (i == 0)
-				waitSemaphores.emplace_back(imageAvailable);
-
-			constexpr VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			submitInfo.pWaitDstStageMask              = &waitStages;
-
 			if (i == 0)
 			{
+				constexpr VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+				submitInfo.pWaitDstStageMask              = &waitStages;
+
 				submitInfo.waitSemaphoreCount = 1;
 				submitInfo.pWaitSemaphores    = &imageAvailable;
 			}
@@ -639,7 +662,7 @@ namespace vzt
 			submitInfo.commandBufferCount = 1;
 			submitInfo.pCommandBuffers    = &m_commandPools[imageId][i];
 
-			if (i == frameBuffers.size() - 1)
+			if (isPresentationPass)
 			{
 				submitInfo.signalSemaphoreCount = 1;
 				submitInfo.pSignalSemaphores    = &renderComplete;

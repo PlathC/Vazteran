@@ -11,11 +11,6 @@
 
 int main(int /* args */, char*[] /* argv */)
 {
-	vzt::Program fsBlinnPhongProgram = vzt::Program{};
-	fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/fs_triangle.vert.spv", vzt::ShaderStage::VertexShader));
-	fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/blinn_phong.frag.spv", vzt::ShaderStage::FragmentShader));
-	auto compositionPipeline = std::make_unique<vzt::GraphicPipeline>(std::move(fsBlinnPhongProgram));
-
 	vzt::DescriptorLayout meshDescriptorLayout{};
 	meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
 	meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::UniformBuffer);
@@ -42,28 +37,33 @@ int main(int /* args */, char*[] /* argv */)
 
 	auto& geometryBuffer = renderGraph.addPass("G-Buffer", vzt::QueueType::Graphic);
 	geometryBuffer.addColorOutput(position, "Position");
-	geometryBuffer.addColorOutput(albedo, "Albedo");
 	geometryBuffer.addColorOutput(normal, "Normal");
+	geometryBuffer.addColorOutput(albedo, "Albedo");
 	geometryBuffer.setDepthStencilOutput(depth, "Depth");
 	geometryBuffer.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
 		meshView.configure(settings.device, 2);
 		geometryPipeline->configure(std::move(settings));
 	});
 
-	geometryBuffer.setRecordFunction([&](uint32_t imageId, const VkCommandBuffer& cmd,
-	                                     const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-		geometryPipeline->bind(cmd);
-		if (!engineDescriptorSets.empty())
-		{
-			vkCmdBindDescriptorSets(cmd, vzt::toVulkan(vzt::PipelineBindPoint::Graphics), geometryPipeline->layout(), 0,
-			                        static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(), 0,
-			                        nullptr);
-		}
+	geometryBuffer.setRecordFunction(
+	    [&](uint32_t imageId, const VkCommandBuffer& cmd, const std::vector<VkDescriptorSet>& engineDescriptorSets) {
+		    geometryPipeline->bind(cmd);
+		    if (!engineDescriptorSets.empty())
+		    {
+			    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, geometryPipeline->layout(), 0,
+			                            static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(),
+			                            0, nullptr);
+		    }
 
-		meshView.record(imageId, cmd, geometryPipeline.get());
-	});
+		    meshView.record(imageId, cmd, geometryPipeline.get());
+	    });
 
-	vzt::AttachmentHandle composed   = renderGraph.addAttachment({});
+	vzt::Program fsBlinnPhongProgram = vzt::Program{};
+	fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/fs_triangle.vert.spv", vzt::ShaderStage::VertexShader));
+	fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/blinn_phong.frag.spv", vzt::ShaderStage::FragmentShader));
+	auto compositionPipeline = std::make_unique<vzt::GraphicPipeline>(std::move(fsBlinnPhongProgram));
+
+	vzt::AttachmentHandle composed   = renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment});
 	vzt::AttachmentHandle finalDepth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
 
 	auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
@@ -80,9 +80,9 @@ int main(int /* args */, char*[] /* argv */)
 		compositionPipeline->bind(cmd);
 		if (!engineDescriptorSets.empty())
 		{
-			vkCmdBindDescriptorSets(cmd, vzt::toVulkan(vzt::PipelineBindPoint::Graphics), compositionPipeline->layout(),
-			                        0, static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(),
-			                        0, nullptr);
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline->layout(), 0,
+			                        static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(), 0,
+			                        nullptr);
 		}
 
 		vkCmdDraw(cmd, 3, 1, 0, 0);

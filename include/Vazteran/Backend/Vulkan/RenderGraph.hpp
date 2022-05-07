@@ -27,29 +27,6 @@ namespace vzt
 	};
 	TO_VULKAN_FUNCTION(QueueType, VkQueueFlagBits)
 
-	enum class AccessFlag : uint32_t
-	{
-		IndirectCommandRead         = VK_ACCESS_INDIRECT_COMMAND_READ_BIT,
-		IndexRead                   = VK_ACCESS_INDEX_READ_BIT,
-		VertexAttributeRead         = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-		UniformRead                 = VK_ACCESS_UNIFORM_READ_BIT,
-		InputAttachmentRead         = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT,
-		ShaderRead                  = VK_ACCESS_SHADER_READ_BIT,
-		ShaderWrite                 = VK_ACCESS_SHADER_WRITE_BIT,
-		ColorAttachmentRead         = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
-		ColorAttachmentWrite        = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-		DepthStencilAttachmentRead  = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
-		DepthStencilAttachmentWrite = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-		TransferRead                = VK_ACCESS_TRANSFER_READ_BIT,
-		TransferWrite               = VK_ACCESS_TRANSFER_WRITE_BIT,
-		HostRead                    = VK_ACCESS_HOST_READ_BIT,
-		HostWrite                   = VK_ACCESS_HOST_WRITE_BIT,
-		MemoryRead                  = VK_ACCESS_MEMORY_READ_BIT,
-		MemoryWrite                 = VK_ACCESS_MEMORY_WRITE_BIT,
-	};
-	BITWISE_FUNCTION(AccessFlag)
-	TO_VULKAN_FUNCTION(AccessFlag, VkAccessFlagBits)
-
 	struct AttachmentSettings
 	{
 		vzt::ImageUsage                      usage;
@@ -92,15 +69,15 @@ namespace vzt
 
 	struct ImageBarrier
 	{
-		vzt::PipelineStage stages;
-		vzt::AccessFlag    accesses;
-		vzt::ImageLayout   layout;
+		vzt::PipelineStage    stages;
+		vzt::AttachmentAccess accesses;
+		vzt::ImageLayout      layout;
 	};
 
 	struct StorageBarrier
 	{
-		vzt::PipelineStage stages;
-		vzt::AccessFlag    accesses;
+		vzt::PipelineStage    stages;
+		vzt::AttachmentAccess accesses;
 	};
 
 	template <class Type>

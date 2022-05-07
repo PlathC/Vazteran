@@ -6,7 +6,6 @@ layout (binding = 1) uniform sampler2D samplerNormal;
 layout (binding = 2) uniform sampler2D samplerAlbedo;
 
 layout (location = 0) in vec2 inUV;
-
 layout (location = 0) out vec4 outFragcolor;
 
 const vec3  LightPosition  = vec3( 1.0f, 1.0f, 1.0f );
@@ -26,5 +25,5 @@ void main() {
     const vec3  halfWay  = normalize(viewDir + lightDir);
     const float specular = pow(max(dot(normal, halfWay), 0.0f), shininess);
 
-    outFragcolor = vec4(albedo.rgb * LightIntensity * ( cosTheta + specular ), 1.0f);
+    outFragcolor = vec4(1.);//vec4(albedo.rgb * LightIntensity * ( cosTheta + specular ), 1.0f);
 }

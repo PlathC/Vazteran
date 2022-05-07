@@ -18,7 +18,8 @@ namespace vzt
 			m_layout = vzt::ImageLayout::DepthStencilAttachmentOptimal;
 		}
 
-		m_imageView = std::make_unique<vzt::ImageView>(m_device, size, format, usage, aspect, m_layout);
+		m_imageView = std::make_unique<vzt::ImageView>(m_device, size, format, usage | vzt::ImageUsage::Sampled, aspect,
+		                                               m_layout);
 
 		vzt::SamplerSettings samplerSettings{vzt::Filter::Nearest, vzt::AddressMode::ClampToEdge,
 		                                     vzt::MipmapMode::Linear, vzt::BorderColor::FloatOpaqueWhite};
@@ -30,6 +31,10 @@ namespace vzt
 	    : m_device(device), m_format(format), m_layout(layout), m_sampleCount(vzt::SampleCount::Sample1)
 	{
 		m_imageView = std::make_unique<vzt::ImageView>(m_device, image, format, aspect);
+
+		vzt::SamplerSettings samplerSettings{vzt::Filter::Nearest, vzt::AddressMode::ClampToEdge,
+		                                     vzt::MipmapMode::Linear, vzt::BorderColor::FloatOpaqueWhite};
+		m_textureRepresentation = std::make_unique<vzt::Texture>(m_device, m_imageView.get(), samplerSettings);
 	}
 
 	Attachment::~Attachment() = default;
