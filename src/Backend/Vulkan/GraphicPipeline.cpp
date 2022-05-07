@@ -177,9 +177,7 @@ namespace vzt
 
 	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer) const
 	{
-		assert(m_vkHandle != VK_NULL_HANDLE &&
-		       "The engine must call configureDrawSettings before binding this pipeline");
-
+		assert(m_vkHandle != VK_NULL_HANDLE && "The engine must call configure before binding this pipeline");
 		vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
 	}
 

@@ -62,6 +62,7 @@ int main(int /* args */, char*[] /* argv */)
 	fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/fs_triangle.vert.spv", vzt::ShaderStage::VertexShader));
 	fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/blinn_phong.frag.spv", vzt::ShaderStage::FragmentShader));
 	auto compositionPipeline = std::make_unique<vzt::GraphicPipeline>(std::move(fsBlinnPhongProgram));
+	compositionPipeline->getRasterOptions().cullMode = vzt::CullMode::Front;
 
 	vzt::AttachmentHandle composed   = renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment});
 	vzt::AttachmentHandle finalDepth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
@@ -72,6 +73,10 @@ int main(int /* args */, char*[] /* argv */)
 	deferredPass.addColorInput(normal, "G-Normal");
 	deferredPass.setDepthStencilOutput(finalDepth, "Final Depth");
 	deferredPass.addColorOutput(composed, "Composed");
+	deferredPass.setColorClearFunction([](uint32_t /* renderTargetIdx */, vzt::Vec4* value) {
+		*value = {1.f, 1.f, 1.f, 1.f};
+		return true;
+	});
 	deferredPass.setConfigureFunction(
 	    [&](vzt::PipelineContextSettings settings) { compositionPipeline->configure(std::move(settings)); });
 

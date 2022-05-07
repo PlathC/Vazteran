@@ -25,5 +25,5 @@ void main() {
     const vec3  halfWay  = normalize(viewDir + lightDir);
     const float specular = pow(max(dot(normal, halfWay), 0.0f), shininess);
 
-    outFragcolor = vec4(1.);//vec4(albedo.rgb * LightIntensity * ( cosTheta + specular ), 1.0f);
+    outFragcolor = vec4(albedo.rgb * LightIntensity * ( cosTheta + specular ), 1.0f);
 }

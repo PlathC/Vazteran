@@ -50,7 +50,7 @@ namespace vzt
 		}
 
 		attachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::ColorAttachmentOptimal;
-		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ShaderReadOnlyOptimal;
+		attachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
 		attachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Clear;
 		attachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
 		attachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
@@ -606,9 +606,10 @@ namespace vzt
 
 		for (uint32_t i = 0; i < frameBuffers.size(); i++)
 		{
-			const std::size_t renderPassIdx = m_sortedRenderPassIndices[i];
-			const auto&       currentFb     = frameBuffers[renderPassIdx];
-			const auto&       renderPass    = m_renderPassHandlers[renderPassIdx];
+			const std::size_t              renderPassIdx = m_sortedRenderPassIndices[i];
+			const auto&                    currentFb     = frameBuffers[renderPassIdx];
+			const auto&                    renderPass    = m_renderPassHandlers[renderPassIdx];
+			constexpr VkPipelineStageFlags waitStages    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 			bool isPresentationPass = false;
 			m_commandPools[imageId].recordBuffer(i, [&](VkCommandBuffer commandBuffer) {
@@ -648,13 +649,11 @@ namespace vzt
 			});
 
 			VkSubmitInfo submitInfo{};
-			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.sType             = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+			submitInfo.pWaitDstStageMask = &waitStages;
 
 			if (i == 0)
 			{
-				constexpr VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				submitInfo.pWaitDstStageMask              = &waitStages;
-
 				submitInfo.waitSemaphoreCount = 1;
 				submitInfo.pWaitSemaphores    = &imageAvailable;
 			}
