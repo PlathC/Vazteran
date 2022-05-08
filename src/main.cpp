@@ -73,10 +73,6 @@ int main(int /* args */, char*[] /* argv */)
 	deferredPass.addColorInput(albedo, "G-Albedo");
 	deferredPass.setDepthStencilOutput(finalDepth, "Final Depth");
 	deferredPass.addColorOutput(composed, "Composed");
-	deferredPass.setColorClearFunction([](uint32_t /* renderTargetIdx */, vzt::Vec4* value) {
-		*value = {1.f, 1.f, 1.f, 1.f};
-		return true;
-	});
 	deferredPass.setConfigureFunction(
 	    [&](vzt::PipelineContextSettings settings) { compositionPipeline->configure(std::move(settings)); });
 
