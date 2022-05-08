@@ -1,14 +1,15 @@
 # Vazteran
 
-Vulkan based viewer for learning purposes. This aims to make available a simple but configurable and accurate way 
+Vulkan based viewer for learning purposes. This aims to make available a simpler way 
 to render my potential future test related to computer graphics. 
 
+Here is the roadmap :
 | Feature                                                         | Progress  |
 |-----------------------------------------------------------------|-----------|
-| Razterization (Vulkan)                                          | Done      |
-| Phong                                                           | WIP       |
-| PBR                                                             | To do     |
-| Path tracing                                                    | To do     |
+| Render Graph                                                    | WIP       |
+| Ui Library                                                      | WIP       |
+| Geometry helping library                                        | To Do     |
+| ECS                                                             | To Do     |
 
 ## Current state
 
