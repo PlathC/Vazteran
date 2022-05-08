@@ -56,8 +56,7 @@ namespace vzt
 		void setOnMousePosChangedCallback(OnMousePosChangedCallback callback);
 		void setOnMouseButtonCallback(OnMouseButtonCallback callback);
 
-		GLFWwindow* windowHandle() const { return m_window.get(); }
-
+		GLFWwindow*           getWindowHandle() const { return m_window.get(); }
 		vzt::Size2D<uint32_t> getFrameBufferSize() const;
 		VkSurfaceKHR          getSurface() const { return m_surface.vkHandle(); }
 		const vzt::Instance*  getInstance() const { return &m_instance; }

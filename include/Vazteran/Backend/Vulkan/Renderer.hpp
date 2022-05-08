@@ -38,12 +38,15 @@ namespace vzt
 
 		~Renderer();
 
-		void               setRenderFunction(RenderFunction drawFunction);
-		void               render();
 		const vzt::Device* getDevice() const { return &m_device; }
-		void               resize(vzt::Size2D<uint32_t> newSize);
-		void               configure(vzt::RenderGraph& renderGraph);
-		void               synchronize();
+		uint32_t           getImageCount() const;
+
+		void setRenderFunction(RenderFunction drawFunction);
+		void render();
+
+		void configure(vzt::RenderGraph& renderGraph);
+		void resize(vzt::Size2D<uint32_t> newSize);
+		void synchronize();
 
 	  private:
 		VkSurfaceKHR m_surface;

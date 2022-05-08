@@ -110,6 +110,7 @@ namespace vzt
 		if (m_vkHandle != VK_NULL_HANDLE)
 		{
 			vkDestroyCommandPool(m_logicalDevice->vkHandle(), m_vkHandle, nullptr);
+			m_vkHandle = VK_NULL_HANDLE;
 		}
 	}
 } // namespace vzt

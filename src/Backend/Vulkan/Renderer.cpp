@@ -1,4 +1,4 @@
-#include "Vazteran/Backend/Vulkan/VkRenderer.hpp"
+#include "Vazteran/Backend/Vulkan/Renderer.hpp"
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
@@ -108,5 +108,7 @@ namespace vzt
 	}
 
 	void Renderer::synchronize() { vkDeviceWaitIdle(m_device.vkHandle()); }
+
+	uint32_t Renderer::getImageCount() const { return m_swapChain.getImageCount(); }
 
 } // namespace vzt

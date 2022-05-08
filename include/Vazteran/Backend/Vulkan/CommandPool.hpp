@@ -19,9 +19,10 @@ namespace vzt
 	class CommandPool
 	{
 	  public:
+		CommandPool() = default;
 		CommandPool(const Device* logicalDevice);
 
-		CommandPool(CommandPool&) = delete;
+		CommandPool(CommandPool&)                  = delete;
 		CommandPool& operator=(const CommandPool&) = delete;
 
 		CommandPool(CommandPool&& other) noexcept;

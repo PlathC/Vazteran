@@ -1,9 +1,6 @@
-#include <cstdlib>
-#include <iostream>
-#include <memory>
-
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
-#include "Vazteran/Backend/Vulkan/VkRenderer.hpp"
+#include "Vazteran/Backend/Vulkan/Renderer.hpp"
+#include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
 #include "Vazteran/Core/Utils.hpp"
 #include "Vazteran/Data/Model.hpp"
 #include "Vazteran/Data/Scene.hpp"
@@ -14,8 +11,13 @@ int main(int /* args */, char*[] /* argv */)
 {
 	try
 	{
-		vzt::Window   window{"Vazteran", 800, 600};
-		vzt::Renderer renderer{&window};
+		vzt::Window     window{"Vazteran", 800, 600};
+		vzt::Renderer   renderer{&window};
+		vzt::UiRenderer uiRenderer{};
+
+		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::CrounchingBoys);
+		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
+		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
 
 		vzt::DescriptorLayout meshDescriptorLayout{};
 		meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
@@ -47,7 +49,7 @@ int main(int /* args */, char*[] /* argv */)
 		geometryBuffer.addColorOutput(albedo, "Albedo");
 		geometryBuffer.setDepthStencilOutput(depth, "Depth");
 		geometryBuffer.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
-			meshView.configure(settings.device, 3);
+			meshView.configure(settings.device, renderer.getImageCount());
 			geometryPipeline->configure(std::move(settings));
 		});
 
@@ -67,8 +69,8 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::Program fsBlinnPhongProgram = vzt::Program{};
 		fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/fs_triangle.vert.spv", vzt::ShaderStage::VertexShader));
 		fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/blinn_phong.frag.spv", vzt::ShaderStage::FragmentShader));
-		auto compositionPipeline = std::make_unique<vzt::GraphicPipeline>(std::move(fsBlinnPhongProgram));
-		compositionPipeline->getRasterOptions().cullMode = vzt::CullMode::Front;
+		vzt::GraphicPipeline compositionPipeline{std::move(fsBlinnPhongProgram)};
+		compositionPipeline.getRasterOptions().cullMode = vzt::CullMode::Front;
 
 		vzt::AttachmentHandle composed   = renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment});
 		vzt::AttachmentHandle finalDepth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
@@ -79,20 +81,25 @@ int main(int /* args */, char*[] /* argv */)
 		deferredPass.addColorInput(albedo, "G-Albedo");
 		deferredPass.setDepthStencilOutput(finalDepth, "Final Depth");
 		deferredPass.addColorOutput(composed, "Composed");
-		deferredPass.setConfigureFunction(
-		    [&](vzt::PipelineContextSettings settings) { compositionPipeline->configure(std::move(settings)); });
+		deferredPass.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
+			uiRenderer.configure(window.getInstance(), window.getWindowHandle(), settings.device,
+			                     settings.renderPassTemplate, renderer.getImageCount());
+			compositionPipeline.configure(std::move(settings));
+		});
 
 		deferredPass.setRecordFunction([&](uint32_t /* imageId */, const VkCommandBuffer& cmd,
 		                                   const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-			compositionPipeline->bind(cmd);
+			compositionPipeline.bind(cmd);
 			if (!engineDescriptorSets.empty())
 			{
-				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline->layout(), 0,
+				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline.layout(), 0,
 				                        static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(),
 				                        0, nullptr);
 			}
 
 			vkCmdDraw(cmd, 3, 1, 0, 0);
+
+			uiRenderer.record(cmd, *currentScene.sceneUi());
 		});
 
 		renderGraph.setBackBuffer(composed);
@@ -103,10 +110,6 @@ int main(int /* args */, char*[] /* argv */)
 		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
 			    renderGraph.render(imageId, imageAvailable, renderComplete, inFlightFence);
 		    });
-
-		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::CrounchingBoys);
-		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
-		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
 
 		const auto size                        = window.getFrameBufferSize();
 		currentScene.sceneCamera().aspectRatio = size.width / static_cast<float>(size.height);

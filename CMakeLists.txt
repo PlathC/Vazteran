@@ -172,12 +172,13 @@ set(VZT_HEADERS
         "include/Vazteran/Backend/Vulkan/ImageTypes.hpp"
         "include/Vazteran/Backend/Vulkan/ImageUtils.hpp"
         "include/Vazteran/Backend/Vulkan/Instance.hpp"
+        "include/Vazteran/Backend/Vulkan/Renderer.hpp"
         "include/Vazteran/Backend/Vulkan/RenderGraph.hpp"
         "include/Vazteran/Backend/Vulkan/RenderPass.hpp"
         "include/Vazteran/Backend/Vulkan/Shader.hpp"
         "include/Vazteran/Backend/Vulkan/SwapChain.hpp"
-        "include/Vazteran/Backend/Vulkan/VkUiRenderer.hpp"
-        "include/Vazteran/Backend/Vulkan/VkRenderer.hpp"
+        "include/Vazteran/Backend/Vulkan/UiRenderer.hpp"
+        
 )
 
 set(VZT_SOURCES
@@ -213,8 +214,8 @@ set(VZT_SOURCES
         "src/Backend/Vulkan/RenderPass.cpp"
         "src/Backend/Vulkan/Shader.cpp"
         "src/Backend/Vulkan/SwapChain.cpp"
-        "src/Backend/Vulkan/VkUiRenderer.cpp"
-        "src/Backend/Vulkan/VkRenderer.cpp"
+        "src/Backend/Vulkan/UiRenderer.cpp"
+        "src/Backend/Vulkan/Renderer.cpp"
 )
 
 add_executable(${PROJECT_NAME} ${VZT_HEADERS} ${VZT_SOURCES} ${VZT_EXTERN_SOURCES})
