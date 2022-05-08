@@ -69,8 +69,8 @@ int main(int /* args */, char*[] /* argv */)
 
 	auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
 	deferredPass.addColorInput(position, "G-Position");
-	deferredPass.addColorInput(albedo, "G-Albedo");
 	deferredPass.addColorInput(normal, "G-Normal");
+	deferredPass.addColorInput(albedo, "G-Albedo");
 	deferredPass.setDepthStencilOutput(finalDepth, "Final Depth");
 	deferredPass.addColorOutput(composed, "Composed");
 	deferredPass.setColorClearFunction([](uint32_t /* renderTargetIdx */, vzt::Vec4* value) {
