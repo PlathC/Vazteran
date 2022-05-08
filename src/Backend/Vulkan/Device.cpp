@@ -220,7 +220,9 @@ namespace vzt
 
 	static constexpr uint32_t GetVulkanApiVersion()
 	{
-#if VMA_VULKAN_VERSION == 1002000
+#if VMA_VULKAN_VERSION == 1003000
+		return VK_API_VERSION_1_3;
+#elif VMA_VULKAN_VERSION == 1002000
 		return VK_API_VERSION_1_2;
 #elif VMA_VULKAN_VERSION == 1001000
 		return VK_API_VERSION_1_1;

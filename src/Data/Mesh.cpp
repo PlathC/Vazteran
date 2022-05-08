@@ -1,4 +1,3 @@
-#include <set>
 #include <unordered_map>
 #include <utility>
 
@@ -14,9 +13,10 @@ namespace vzt
 		tinyobj::attrib_t                attrib;
 		std::vector<tinyobj::shape_t>    shapes;
 		std::vector<tinyobj::material_t> materials;
+		std::string                      warnMessage;
 		std::string                      errorMessage;
 
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &errorMessage, modelPath.string().c_str(),
+		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warnMessage, &errorMessage, modelPath.string().c_str(),
 		                      (modelPath.parent_path().string() + "/").c_str()))
 		{
 			throw std::runtime_error(errorMessage);

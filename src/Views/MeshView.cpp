@@ -44,7 +44,6 @@ namespace vzt
 
 	void MeshView::addModel(const vzt::Model* const model)
 	{
-		// m_models.emplace_back(model);
 		ModelDisplayInformation modelDisplayInfo = {model};
 
 		// Use one vertex buffer for the whole mesh
@@ -148,6 +147,7 @@ namespace vzt
 		{
 			m_materialInfoOffsetSize = (m_materialInfoOffsetSize + minOffset - 1) & ~(minOffset - 1);
 		}
+
 		m_materialInfoBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_materialInfoOffsetSize),
 		                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
 	}

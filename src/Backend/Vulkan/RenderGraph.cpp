@@ -437,23 +437,7 @@ namespace vzt
 	void RenderGraph::compile()
 	{
 		sortRenderPasses();
-
-		std::cout << "Sorted render passes :" << std::endl;
-		for (std::size_t i = 0; i < m_sortedRenderPassIndices.size(); i++)
-		{
-			std::cout << std::to_string(i) << " => " << m_renderPassHandlers[m_sortedRenderPassIndices[i]].m_name
-			          << std::endl;
-		}
-		std::cout << std::endl;
-
 		reorderRenderPasses();
-
-		std::cout << "Reordered render passes :" << std::endl;
-		for (std::size_t i = 0; i < m_sortedRenderPassIndices.size(); i++)
-		{
-			std::cout << std::to_string(i) << " => " << m_renderPassHandlers[m_sortedRenderPassIndices[i]].m_name
-			          << std::endl;
-		}
 	}
 
 	void RenderGraph::configure(const vzt::Device* device, const std::vector<VkImage>& swapchainImages,
@@ -461,22 +445,17 @@ namespace vzt
 	{
 		m_device = device;
 
+		m_attachmentsIndices.clear();
 		m_attachmentsIndices.resize(swapchainImages.size());
+		m_frameBuffers.clear();
 		m_frameBuffers.resize(swapchainImages.size());
 
 		m_attachments.clear();
 		m_attachments.reserve(m_attachmentsSettings.size() * swapchainImages.size());
 		m_commandPools.reserve(swapchainImages.size());
 
-		uint32_t              semaphoreCount = 0;
-		VkSemaphoreCreateInfo semaphoreCreateInfo{};
-		semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-		std::cout << "Creating framebuffers data." << std::endl;
 		for (uint32_t i = 0; i < swapchainImages.size(); i++)
 		{
-			std::cout << std::to_string(i) << " - Framebuffer creation" << std::endl;
-
 			auto swapchainImage = swapchainImages[i];
 			m_commandPools.emplace_back(device);
 			vzt::AttachmentList<vzt::ImageLayout> lastAttachmentsLayout;
@@ -509,11 +488,6 @@ namespace vzt
 					    attachmentSettings.second.usage);
 				}
 
-				std::cout << "\t- Creating attachment " << std::to_string(attachmentSettings.first.id) << " / "
-				          << std::to_string(attachmentSettings.first.state) << " ";
-				std::cout << (isFinalImage ? "Final attachment " : "Temp attachment ")
-				          << (isDepthStencil ? "Depth stencil " : "Image ") << std::endl;
-
 				m_attachmentsIndices[i][attachmentSettings.first] = m_attachments.size();
 				m_attachments.emplace_back(std::move(attachment));
 			}
@@ -526,14 +500,9 @@ namespace vzt
 			{
 				auto& renderPassHandler = m_renderPassHandlers[sortedRenderPassIndice];
 
-				std::cout << "\t- Creating renderpass " + std::to_string(sortedRenderPassIndice) + " " +
-				                 renderPassHandler.m_name
-				          << std::endl;
-
 				std::vector<const vzt::ImageView*> views;
 				views.reserve(renderPassHandler.m_colorOutputs.size());
 
-				std::cout << "\t\t- Acquiring output targets" << std::endl;
 				for (auto& colorOutput : renderPassHandler.m_colorOutputs)
 				{
 					views.emplace_back(m_attachments[m_attachmentsIndices[i][colorOutput.first]]->getView());
@@ -543,10 +512,6 @@ namespace vzt
 						colorOutput.second.attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
 
 					lastAttachmentsLayout[colorOutput.first] = colorOutput.second.attachmentUse.finalLayout;
-
-					std::cout << "\t\t\t- Got target " + colorOutput.second.name + " => "
-					          << std::to_string(colorOutput.first.id) << " / "
-					          << std::to_string(colorOutput.first.state) << std::endl;
 				}
 
 				if (renderPassHandler.m_depthOutput)
@@ -558,30 +523,17 @@ namespace vzt
 					    lastAttachmentsLayout[renderPassHandler.m_depthOutput->first];
 					lastAttachmentsLayout[renderPassHandler.m_depthOutput->first] =
 					    renderPassHandler.m_depthOutput->second.attachmentUse.finalLayout;
-
-					std::cout << "\t\t\t- Got depth target " + renderPassHandler.m_depthOutput->second.name + " "
-					          << std::to_string(renderPassHandler.m_depthOutput->first.id) << " / "
-					          << std::to_string(renderPassHandler.m_depthOutput->first.state) << std::endl;
 				}
 
-				std::cout << "\t\t- Creating color inputs synchronizations " << std::endl;
 				for (auto& colorInput : renderPassHandler.m_colorInputs)
 				{
 					colorInput.second.attachmentUse.initialLayout = lastAttachmentsLayout[colorInput.first];
-
-					std::cout << "\t\t\t- Synchronize to " << colorInput.second.name << " => "
-					          << std::to_string(colorInput.first.id) << " / " << std::to_string(colorInput.first.state)
-					          << std::endl;
 				}
 
 				if (renderPassHandler.m_depthInput)
 				{
 					renderPassHandler.m_depthInput->second.attachmentUse.initialLayout =
 					    lastAttachmentsLayout[renderPassHandler.m_depthInput->first];
-
-					std::cout << "\t\t\t- Synchronize to " << renderPassHandler.m_depthInput->second.name << " => "
-					          << std::to_string(renderPassHandler.m_depthInput->first.id) << " / "
-					          << std::to_string(renderPassHandler.m_depthInput->first.state) << std::endl;
 				}
 
 				auto renderPass = renderPassHandler.build(

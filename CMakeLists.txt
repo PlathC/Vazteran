@@ -14,54 +14,34 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-
-
 # Based on https://github.com/SaschaWillems/Vulkan/blob/master/CMakeLists.txt
-# Use FindVulkan module added with CMAKE 3.7
 if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
     message(STATUS "Using module to find Vulkan")
     find_package(Vulkan)
 endif()
 
 IF(WIN32)
-    IF (NOT Vulkan_FOUND)
-        find_library(Vulkan_LIBRARY NAMES vulkan-1 vulkan PATHS ${CMAKE_SOURCE_DIR}/libs/vulkan)
-        IF (Vulkan_LIBRARY)
-            set(Vulkan_FOUND ON)
-            MESSAGE("Using bundled Vulkan library version")
-        ENDIF()
-    ENDIF()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DVK_USE_PLATFORM_WIN32_KHR")
-ELSEIF(LINUX)
-    IF (NOT Vulkan_FOUND)
-        find_library(Vulkan_LIBRARY NAMES vulkan HINTS "$ENV{VULKAN_SDK}/lib" "${CMAKE_SOURCE_DIR}/libs/vulkan" REQUIRED)
-        IF (Vulkan_LIBRARY)
-            set(Vulkan_FOUND ON)
-            MESSAGE("Using bundled Vulkan library version")
-        ENDIF()
-    ENDIF()
+    set(VZT_COMPILE_DEFINITIONS "${VZT_COMPILE_DEFINITIONS} -DVK_USE_PLATFORM_WIN32_KHR")
 ELSEIF(APPLE)
-    set(VAZTERAN_COMPILATION_FLAGS "${VAZTERAN_COMPILATION_FLAGS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
-    # Todo : android?
+    set(VZT_COMPILE_DEFINITIONS "${VZT_COMPILE_DEFINITIONS} -DVK_USE_PLATFORM_MACOS_MVK -DVK_EXAMPLE_XCODE_GENERATED")
 ENDIF(WIN32)
 
 IF (NOT Vulkan_FOUND)
     message(FATAL_ERROR "Could not find Vulkan library!")
-ELSE()
-    message(STATUS ${Vulkan_LIBRARY})
 ENDIF()
 
-add_subdirectory(extern/glfw)
-add_subdirectory(extern/glm)
-add_subdirectory(extern/imgui)
+set(VZT_EXTERN_LIBRARIES
+    ${VZT_EXTERN_LIBRARIES}
+    Vulkan::Vulkan
+)
+
+add_subdirectory(extern)
 
 # Based on https://github.com/lefticus/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
 if (CMAKE_COMPILER_IS_GNUCC)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(VAZTERAN_COMPILATION_FLAGS
+        set(VZT_COMPILATION_FLAGS
+                ${VZT_COMPILATION_FLAGS}
                 -Wall
                 -Wextra
                 -Wshadow
@@ -83,7 +63,8 @@ if (CMAKE_COMPILER_IS_GNUCC)
                 -Wdouble-promotion
                 -Wformat=2)
     else()
-        set(VAZTERAN_COMPILATION_FLAGS
+        set(VZT_COMPILATION_FLAGS
+                ${VZT_COMPILATION_FLAGS}
                 -DNDEBUG
                 -Wall
                 -Wextra
@@ -108,7 +89,8 @@ if (CMAKE_COMPILER_IS_GNUCC)
     endif()
 elseif (MSVC)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(VAZTERAN_COMPILATION_FLAGS
+        set(VZT_COMPILATION_FLAGS
+                ${VZT_COMPILATION_FLAGS}
                 /WX
                 /permissive
                 /w14242
@@ -130,10 +112,13 @@ elseif (MSVC)
                 /w14928
                 
                 /wd4296)
-        set(VAZTERAN_LINKER_FLAGS
-                -DNOMINMAX -D_USE_MATH_DEFINES)
+        set(VZT_COMPILE_DEFINITIONS
+                ${VZT_COMPILE_DEFINITIONS}
+                -DNOMINMAX 
+                -D_USE_MATH_DEFINES)
     else()
-        set(VAZTERAN_COMPILATION_FLAGS
+        set(VZT_COMPILATION_FLAGS
+                ${VZT_COMPILATION_FLAGS}
                 /permissive
                 /w14242
                 /w14254
@@ -155,8 +140,7 @@ elseif (MSVC)
     endif()
 endif ()
 
-set(HEADERS
-        
+set(VZT_HEADERS
         "include/Vazteran/Window.hpp"
         "include/Vazteran/WindowTypes.hpp"
 
@@ -196,7 +180,7 @@ set(HEADERS
         "include/Vazteran/Backend/Vulkan/VkRenderer.hpp"
 )
 
-set(SOURCES
+set(VZT_SOURCES
         "src/main.cpp"
         
         "src/Window.cpp"
@@ -233,32 +217,20 @@ set(SOURCES
         "src/Backend/Vulkan/VkRenderer.cpp"
 )
 
-add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
+add_executable(${PROJECT_NAME} ${VZT_HEADERS} ${VZT_SOURCES} ${VZT_EXTERN_SOURCES})
 
 if (CMAKE_COMPILER_IS_GNUCC)
-    target_link_libraries(${PROJECT_NAME} PRIVATE stdc++fs)
+    set(VZT_EXTERN_LIBRARIES ${VZT_EXTERN_LIBRARIES} stdc++fs)
 endif ()
 
-target_compile_options(${PROJECT_NAME} PUBLIC ${VAZTERAN_COMPILATION_FLAGS})
-target_compile_definitions(${PROJECT_NAME} PUBLIC ${VAZTERAN_LINKER_FLAGS})
-
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/stb)
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/tinyobj)
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/vma)
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE extern/imgui)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE
-        glfw
-        glm::glm
-        Vulkan::Vulkan
-        imgui
-)
-
 if(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
+    set(${VZT_COMPILE_DEFINITIONS} -DNOMINMAX)
 endif()
+
+target_compile_options(${PROJECT_NAME} PUBLIC ${VZT_COMPILATION_FLAGS})
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${VZT_COMPILE_DEFINITIONS})
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include" ${VZT_EXTERN_INCLUDES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${VZT_EXTERN_LIBRARIES})
 
 # Based on https://www.reddit.com/r/vulkan/comments/kbaxlz/what_is_your_workflow_when_compiling_shader_files/gfg0s3s?utm_source=share&utm_medium=web2x&context=3
 function(add_shader TARGET SHADER)
@@ -282,7 +254,6 @@ function(add_shader TARGET SHADER)
     set_source_files_properties(${current-output-path} PROPERTIES GENERATED TRUE)
     target_sources(${TARGET} PRIVATE ${current-output-path})
 endfunction(add_shader)
-
 
 add_shader(${PROJECT_NAME} shaders/fs_triangle.vert)
 add_shader(${PROJECT_NAME} shaders/blinn_phong.frag)
