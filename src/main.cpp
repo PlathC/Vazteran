@@ -47,7 +47,7 @@ int main(int /* args */, char*[] /* argv */)
 		geometryBuffer.addColorOutput(albedo, "Albedo");
 		geometryBuffer.setDepthStencilOutput(depth, "Depth");
 		geometryBuffer.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
-			meshView.configure(settings.device, 2);
+			meshView.configure(settings.device, 3);
 			geometryPipeline->configure(std::move(settings));
 		});
 

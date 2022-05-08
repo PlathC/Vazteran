@@ -596,7 +596,7 @@ namespace vzt
 				}
 
 				currentFb->bind(commandBuffer);
-				renderPass.render(i, currentFb->getRenderPass(), commandBuffer);
+				renderPass.render(static_cast<uint32_t>(imageId), currentFb->getRenderPass(), commandBuffer);
 				currentFb->unbind(commandBuffer);
 			});
 
