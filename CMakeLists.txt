@@ -156,7 +156,7 @@ elseif (MSVC)
 endif ()
 
 set(HEADERS
-        "include/Vazteran/Application.hpp"
+        
         "include/Vazteran/Window.hpp"
         "include/Vazteran/WindowTypes.hpp"
 
@@ -198,7 +198,7 @@ set(HEADERS
 
 set(SOURCES
         "src/main.cpp"
-        "src/Application.cpp"
+        
         "src/Window.cpp"
         "src/Core/Math/Aabb.cpp"
         "src/Core/Utils.cpp"

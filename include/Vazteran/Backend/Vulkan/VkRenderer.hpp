@@ -18,18 +18,17 @@ struct GLFWwindow;
 namespace vzt
 {
 	class RenderGraph;
-	class GraphicPipeline;
-	class ImageView;
-	class MeshView;
 	class RenderPass;
 	class Scene;
-	class UiRenderer;
+	class Window;
 
 	class Renderer
 	{
 	  public:
-		Renderer(vzt::Instance* instance, GLFWwindow* window, VkSurfaceKHR surface, vzt::Size2D<uint32_t> size,
-		         vzt::RenderGraph renderGraph);
+		using RenderFunction = std::function<void(uint32_t /* imageId */, VkSemaphore /* imageAvailable */,
+		                                          VkSemaphore /* renderComplete */, VkFence /* inFlightFence */)>;
+
+		Renderer(const Window* window);
 
 		Renderer(const Renderer&)            = delete;
 		Renderer& operator=(const Renderer&) = delete;
@@ -39,20 +38,21 @@ namespace vzt
 
 		~Renderer();
 
-		void               setScene(vzt::Scene* scene);
-		void               draw(const vzt::Camera& camera);
+		void               setRenderFunction(RenderFunction drawFunction);
+		void               render();
 		const vzt::Device* getDevice() const { return &m_device; }
 		void               resize(vzt::Size2D<uint32_t> newSize);
+		void               configure(vzt::RenderGraph& renderGraph);
+		void               synchronize();
 
 	  private:
 		VkSurfaceKHR m_surface;
 
-		vzt::Instance* m_instance;
-		GLFWwindow*    m_window;
-
 		vzt::Device      m_device;
 		vzt::SwapChain   m_swapChain;
-		vzt::RenderGraph m_renderGraph;
+		vzt::CommandPool m_commandPool;
+
+		RenderFunction m_drawFunction;
 	};
 } // namespace vzt
 

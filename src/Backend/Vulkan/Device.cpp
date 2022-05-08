@@ -13,7 +13,7 @@ namespace vzt
 	    VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 	    VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME};
 
-	VkPhysicalDevice PhysicalDevice::findBestDevice(vzt::Instance* instance, VkSurfaceKHR surface,
+	VkPhysicalDevice PhysicalDevice::findBestDevice(const vzt::Instance* instance, VkSurfaceKHR surface,
 	                                                const std::vector<const char*>& deviceExtensions)
 	{
 		std::vector<VkPhysicalDevice> physicalDevices = instance->enumeratePhysicalDevice();
@@ -27,7 +27,7 @@ namespace vzt
 		return VK_NULL_HANDLE;
 	}
 
-	PhysicalDevice::PhysicalDevice(vzt::Instance* instance, VkSurfaceKHR surface,
+	PhysicalDevice::PhysicalDevice(const vzt::Instance* instance, VkSurfaceKHR surface,
 	                               const std::vector<const char*>& deviceExtensions)
 	    : m_vkHandle(findBestDevice(instance, surface, deviceExtensions)), m_extensions(deviceExtensions)
 	{
@@ -232,7 +232,7 @@ namespace vzt
 #endif
 	}
 
-	Device::Device(vzt::Instance* instance, VkSurfaceKHR surface)
+	Device::Device(const vzt::Instance* instance, VkSurfaceKHR surface)
 	    : m_physicalDevice(std::make_unique<vzt::PhysicalDevice>(instance, surface))
 	{
 		std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;

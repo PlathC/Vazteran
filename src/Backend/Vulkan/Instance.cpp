@@ -118,17 +118,18 @@ namespace vzt
 
 	Instance::~Instance()
 	{
-		const auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-		    vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
-		if (vkDestroyDebugUtilsMessengerEXT != nullptr && m_handle != VK_NULL_HANDLE &&
-		    m_debugMessenger != VK_NULL_HANDLE)
-		{
-			vkDestroyDebugUtilsMessengerEXT(m_handle, m_debugMessenger, nullptr);
-		}
-
 		if (m_handle != VK_NULL_HANDLE)
 		{
+			const auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+			    vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
+			if (vkDestroyDebugUtilsMessengerEXT != nullptr && m_handle != VK_NULL_HANDLE &&
+			    m_debugMessenger != VK_NULL_HANDLE)
+			{
+				vkDestroyDebugUtilsMessengerEXT(m_handle, m_debugMessenger, nullptr);
+			}
+
 			vkDestroyInstance(m_handle, nullptr);
+			m_handle = VK_NULL_HANDLE;
 		}
 	}
 

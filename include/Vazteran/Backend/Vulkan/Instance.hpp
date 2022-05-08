@@ -11,10 +11,11 @@ namespace vzt
 	class Instance
 	{
 	  public:
+		Instance() = default;
 		Instance(const std::string& name, std::vector<const char*> extensions,
 		         const std::vector<const char*>& validationLayers = DefaultValidationLayers);
 
-		Instance(const Instance&) = delete;
+		Instance(const Instance&)            = delete;
 		Instance& operator=(const Instance&) = delete;
 
 		Instance(Instance&& other) noexcept;

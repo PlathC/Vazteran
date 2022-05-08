@@ -17,13 +17,20 @@ namespace vzt
 	struct SurfaceHandler
 	{
 	  public:
+		SurfaceHandler() = default;
 		SurfaceHandler(vzt::Instance* instance, VkSurfaceKHR surface);
+
+		SurfaceHandler(const SurfaceHandler&)            = delete;
+		SurfaceHandler& operator=(const SurfaceHandler&) = delete;
+		SurfaceHandler(SurfaceHandler&&);
+		SurfaceHandler& operator=(SurfaceHandler&&);
+
 		VkSurfaceKHR vkHandle() const { return m_surface; }
 		~SurfaceHandler();
 
 	  private:
-		vzt::Instance* m_instance;
-		VkSurfaceKHR   m_surface;
+		vzt::Instance* m_instance = nullptr;
+		VkSurfaceKHR   m_surface  = VK_NULL_HANDLE;
 	};
 
 	using OnFrameBufferChangedCallback = std::function<void()>;
@@ -36,7 +43,7 @@ namespace vzt
 	class Window
 	{
 	  public:
-		Window(std::string_view name, uint32_t width, uint32_t height, OnFrameBufferChangedCallback callback);
+		Window(std::string_view name, uint32_t width, uint32_t height);
 		~Window();
 
 		void onFramebufferSizeChanged() const;
@@ -44,6 +51,7 @@ namespace vzt
 		void onMousePosChanged(const vzt::Dvec2 pos);
 		void onMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers);
 
+		void setOnFrameBufferChangedCallback(OnFrameBufferChangedCallback callback);
 		void setOnKeyActionCallback(OnKeyActionCallback callback);
 		void setOnMousePosChangedCallback(OnMousePosChangedCallback callback);
 		void setOnMouseButtonCallback(OnMouseButtonCallback callback);
@@ -51,7 +59,8 @@ namespace vzt
 		GLFWwindow* windowHandle() const { return m_window.get(); }
 
 		vzt::Size2D<uint32_t> getFrameBufferSize() const;
-		VkSurfaceKHR          getSurface(vzt::Instance* instance);
+		VkSurfaceKHR          getSurface() const { return m_surface.vkHandle(); }
+		const vzt::Instance*  getInstance() const { return &m_instance; }
 
 		bool update() const;
 		bool shouldClose() const { return glfwWindowShouldClose(m_window.get()); }
@@ -59,7 +68,8 @@ namespace vzt
 		static std::vector<const char*> vkExtensions();
 
 	  private:
-		std::unique_ptr<SurfaceHandler> m_surface = nullptr;
+		vzt::Instance  m_instance;
+		SurfaceHandler m_surface;
 
 		uint32_t m_width;
 		uint32_t m_height;

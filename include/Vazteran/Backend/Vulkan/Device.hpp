@@ -37,7 +37,7 @@ namespace vzt
 	class PhysicalDevice
 	{
 	  public:
-		PhysicalDevice(vzt::Instance* instance, VkSurfaceKHR surface,
+		PhysicalDevice(const vzt::Instance* instance, VkSurfaceKHR surface,
 		               const std::vector<const char*>& deviceExtensions = vzt::PhysicalDevice::DefaultDeviceExtensions);
 
 		~PhysicalDevice();
@@ -54,7 +54,7 @@ namespace vzt
 		VkPhysicalDevice vkHandle() const { return m_vkHandle; }
 
 	  private:
-		static VkPhysicalDevice               findBestDevice(vzt::Instance* instance, VkSurfaceKHR surface,
+		static VkPhysicalDevice               findBestDevice(const vzt::Instance* instance, VkSurfaceKHR surface,
 		                                                     const std::vector<const char*>& deviceExtensions);
 		static const std::vector<const char*> DefaultDeviceExtensions;
 
@@ -74,9 +74,9 @@ namespace vzt
 	class Device
 	{
 	  public:
-		Device(vzt::Instance* instance, VkSurfaceKHR surface);
+		Device(const vzt::Instance* instance, VkSurfaceKHR surface);
 
-		Device(const Device&) = delete;
+		Device(const Device&)            = delete;
 		Device& operator=(const Device&) = delete;
 
 		Device(Device&& other) noexcept;
