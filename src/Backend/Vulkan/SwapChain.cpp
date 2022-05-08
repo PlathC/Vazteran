@@ -14,7 +14,6 @@ namespace vzt
 	    : m_surface(surface), m_device(device), m_swapChainSize(swapChainSize)
 	{
 		createSwapChain();
-
 		createSynchronizationObjects();
 	}
 
