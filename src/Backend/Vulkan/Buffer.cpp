@@ -3,7 +3,7 @@
 
 namespace vzt
 {
-	Buffer::Buffer(const vzt::Device* device, const std::size_t size, uint8_t* data, VkBufferUsageFlags usage,
+	Buffer::Buffer(const vzt::Device* device, const std::size_t size, const uint8_t* data, VkBufferUsageFlags usage,
 	               MemoryUsage memoryUsage)
 	    : m_device(device)
 	{

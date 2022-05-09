@@ -59,10 +59,10 @@ namespace vzt
 		template <class Type>
 		Buffer(const vzt::Device* device, const std::vector<Type>& data, VkBufferUsageFlags usage,
 		       MemoryUsage memoryUsage = MemoryUsage::GPU_ONLY);
-		Buffer(const vzt::Device* device, const std::size_t size, uint8_t* data, VkBufferUsageFlags usage,
+		Buffer(const vzt::Device* device, const std::size_t size, const uint8_t* data, VkBufferUsageFlags usage,
 		       MemoryUsage memoryUsage = MemoryUsage::GPU_ONLY);
 
-		Buffer(const Buffer&) = delete;
+		Buffer(const Buffer&)            = delete;
 		Buffer& operator=(const Buffer&) = delete;
 
 		Buffer(Buffer&& other) noexcept;
