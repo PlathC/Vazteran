@@ -144,15 +144,20 @@ set(VZT_HEADERS
         "include/Vazteran/Window.hpp"
         "include/Vazteran/WindowTypes.hpp"
 
-        "include/Vazteran/Core/Math.hpp"
-        "include/Vazteran/Core/Math/Aabb.hpp"
-        "include/Vazteran/Core/Utils.hpp"
+        "include/Vazteran/Core/Io.hpp"
+        "include/Vazteran/Core/Logger.hpp"
+        "include/Vazteran/Core/Macro.hpp"
+        "include/Vazteran/Core/Type.hpp"
+
         "include/Vazteran/Data/Camera.hpp"
         "include/Vazteran/Data/Image.hpp"
         "include/Vazteran/Data/Material.hpp"
         "include/Vazteran/Data/Mesh.hpp"
         "include/Vazteran/Data/Model.hpp"
         "include/Vazteran/Data/Scene.hpp"
+
+        "include/Vazteran/Math/Math.hpp"
+        "include/Vazteran/Math/Aabb.hpp"
         
         "include/Vazteran/Ui/Component.hpp"
         "include/Vazteran/Ui/MainMenuBar.hpp"
@@ -178,21 +183,23 @@ set(VZT_HEADERS
         "include/Vazteran/Backend/Vulkan/Shader.hpp"
         "include/Vazteran/Backend/Vulkan/SwapChain.hpp"
         "include/Vazteran/Backend/Vulkan/UiRenderer.hpp"
-        
 )
 
 set(VZT_SOURCES
         "src/main.cpp"
-        
         "src/Window.cpp"
-        "src/Core/Math/Aabb.cpp"
-        "src/Core/Utils.cpp"
+        
+        "src/Core/Io.cpp"
+        "src/Core/Logger.cpp"
+
         "src/Data/Camera.cpp"
         "src/Data/Image.cpp"
         "src/Data/Material.cpp"
         "src/Data/Mesh.cpp"
         "src/Data/Model.cpp"
         "src/Data/Scene.cpp"
+
+        "src/Math/Aabb.cpp"
 
         "src/Ui/Component.cpp"
         "src/Ui/MainMenuBar.cpp"

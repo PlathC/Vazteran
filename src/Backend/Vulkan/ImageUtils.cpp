@@ -3,7 +3,6 @@
 
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
-#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
 {

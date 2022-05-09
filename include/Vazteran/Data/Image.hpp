@@ -5,7 +5,7 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-#include "Vazteran/Core/Math.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 namespace vzt
 {

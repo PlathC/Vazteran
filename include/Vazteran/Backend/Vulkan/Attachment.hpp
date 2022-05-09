@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
-#include "Vazteran/Core/Math.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 namespace vzt
 {
@@ -36,10 +36,10 @@ namespace vzt
 		           vzt::ImageAspect aspect);
 		~Attachment();
 
-		Attachment(const Attachment&) = delete;
+		Attachment(const Attachment&)            = delete;
 		Attachment& operator=(const Attachment&) = delete;
 
-		Attachment(Attachment&&) = default;
+		Attachment(Attachment&&)            = default;
 		Attachment& operator=(Attachment&&) = default;
 
 		const vzt::ImageView* getView() const { return m_imageView.get(); }

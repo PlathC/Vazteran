@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "Vazteran/Backend/Vulkan/ImageTypes.hpp"
-#include "Vazteran/Core/Math.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 namespace vzt
 {
@@ -19,7 +19,7 @@ namespace vzt
 		FrameBuffer(const vzt::Device* device, std::unique_ptr<vzt::RenderPass> renderPass, vzt::Size2D<uint32_t> size,
 		            const std::vector<const vzt::ImageView*>& extAttachmentViews);
 
-		FrameBuffer(const FrameBuffer&) = delete;
+		FrameBuffer(const FrameBuffer&)            = delete;
 		FrameBuffer& operator=(const FrameBuffer&) = delete;
 
 		FrameBuffer(FrameBuffer&&) noexcept;

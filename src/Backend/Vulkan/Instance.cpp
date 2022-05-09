@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
+#include "Vazteran/Core/Logger.hpp"
 
 namespace vzt
 {
@@ -173,22 +174,20 @@ namespace vzt
 		std::string severityDisplay;
 		if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
 		{
-			severityDisplay = "VERBOSE";
+			VZT_INFO("[VULKAN] {}", pCallbackData->pMessage);
 		}
 		else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
 		{
-			severityDisplay = "INFO";
+			VZT_INFO("[VULKAN] {}", pCallbackData->pMessage);
 		}
 		else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
 		{
-			severityDisplay = "WARNING";
+			VZT_WARNING("[VULKAN] {}", pCallbackData->pMessage);
 		}
 		else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 		{
-			severityDisplay = "ERROR";
+			VZT_ERROR("[VULKAN] {}", pCallbackData->pMessage);
 		}
-		std::cerr << "[" << severityDisplay << "] "
-		          << "Validation layer: " << pCallbackData->pMessage << std::endl;
 		return VK_FALSE;
 	}
 } // namespace vzt

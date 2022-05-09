@@ -3,8 +3,8 @@
 
 #include <optional>
 
-#include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Image.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 namespace vzt
 {

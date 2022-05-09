@@ -5,8 +5,8 @@
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Backend/Vulkan/ImageTypes.hpp"
-#include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Image.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 namespace vzt
 {

@@ -1,7 +1,6 @@
 #include "Vazteran/Backend/Vulkan/Descriptor.hpp"
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/Device.hpp"
-#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
 {

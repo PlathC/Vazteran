@@ -1,4 +1,4 @@
-#include "Vazteran/Core/Math/Aabb.hpp"
+#include "Vazteran/Math/Aabb.hpp"
 
 namespace vzt
 {

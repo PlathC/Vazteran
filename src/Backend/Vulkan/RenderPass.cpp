@@ -5,7 +5,6 @@
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
-#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
 {

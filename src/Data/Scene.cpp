@@ -1,9 +1,10 @@
 #include <iostream>
 
 #include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
-#include "Vazteran/Core/Math.hpp"
+#include "Vazteran/Core/Logger.hpp"
 #include "Vazteran/Data/Model.hpp"
 #include "Vazteran/Data/Scene.hpp"
+#include "Vazteran/Math/Math.hpp"
 #include "Vazteran/Views/MeshView.hpp"
 
 namespace vzt
@@ -75,11 +76,10 @@ namespace vzt
 			}
 
 			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
-			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
+			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { VZT_INFO("Open"); }));
 
 			vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
-			brdfMenuField.addItem(
-			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
+			brdfMenuField.addItem(vzt::ui::MainMenuItem("Blinn-Phong", []() { VZT_INFO("Blinn-Phong"); }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
 			mainMenuBar.addMenu(fileMenuField);
@@ -103,11 +103,10 @@ namespace vzt
 			mat.texture = tex;
 
 			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
-			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
+			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { VZT_INFO("Open"); }));
 
 			vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
-			brdfMenuField.addItem(
-			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
+			brdfMenuField.addItem(vzt::ui::MainMenuItem("Blinn-Phong", []() { VZT_INFO("Blinn-Phong"); }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
 			mainMenuBar.addMenu(fileMenuField);
@@ -129,11 +128,10 @@ namespace vzt
 			vzt::AABB fullBoundingBox = moriKnobModel->boundingBox();
 
 			vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
-			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { std::cout << "Open" << std::endl; }));
+			fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { VZT_INFO("Open"); }));
 
 			vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
-			brdfMenuField.addItem(
-			    vzt::ui::MainMenuItem("Blinn-Phong", []() { std::cout << "Blinn-Phong" << std::endl; }));
+			brdfMenuField.addItem(vzt::ui::MainMenuItem("Blinn-Phong", []() { VZT_INFO("Blinn-Phong"); }));
 
 			vzt::ui::MainMenuBar mainMenuBar;
 			mainMenuBar.addMenu(std::move(fileMenuField));

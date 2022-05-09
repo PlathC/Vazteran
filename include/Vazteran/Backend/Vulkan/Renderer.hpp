@@ -10,7 +10,6 @@
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/SwapChain.hpp"
-#include "Vazteran/Core/Utils.hpp"
 #include "Vazteran/Data/Camera.hpp"
 
 struct GLFWwindow;

@@ -7,7 +7,7 @@ namespace vzt
 {
 	Shader::Shader(const fs::path& compiled_file, vzt::ShaderStage shaderStage) : m_shaderStage(shaderStage)
 	{
-		m_compiledSource = vzt::ReadFile(compiled_file);
+		m_compiledSource = vzt::readFile(compiled_file);
 	}
 
 	VkShaderModuleCreateInfo Shader::getShaderModuleCreateInfo() const

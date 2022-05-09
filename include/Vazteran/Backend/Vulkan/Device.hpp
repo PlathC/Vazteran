@@ -9,7 +9,6 @@
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Backend/Vulkan/ImageTypes.hpp"
-#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
 {

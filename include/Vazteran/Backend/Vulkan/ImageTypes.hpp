@@ -2,7 +2,6 @@
 #define VAZTERAN_BACKEND_VULKAN_IMAGETYPES_HPP
 
 #include "Vazteran/Core/Macro.hpp"
-#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
 {

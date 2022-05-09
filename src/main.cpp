@@ -1,7 +1,6 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/Renderer.hpp"
 #include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
-#include "Vazteran/Core/Utils.hpp"
 #include "Vazteran/Data/Model.hpp"
 #include "Vazteran/Data/Scene.hpp"
 #include "Vazteran/Views/MeshView.hpp"

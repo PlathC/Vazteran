@@ -6,8 +6,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Material.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 namespace vzt
 {

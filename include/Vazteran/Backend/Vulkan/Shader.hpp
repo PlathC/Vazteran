@@ -9,7 +9,7 @@
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
 #include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
-#include "Vazteran/Core/Utils.hpp"
+#include "Vazteran/Core/Io.hpp"
 
 namespace vzt
 {
@@ -62,7 +62,7 @@ namespace vzt
 	  public:
 		ShaderModule(const vzt::Device* const logicalDevice, VkShaderModuleCreateInfo createInfo);
 
-		ShaderModule(const ShaderModule&) = delete;
+		ShaderModule(const ShaderModule&)            = delete;
 		ShaderModule& operator=(const ShaderModule&) = delete;
 
 		ShaderModule(ShaderModule&& other) noexcept;
@@ -84,7 +84,7 @@ namespace vzt
 	  public:
 		Program();
 
-		Program(const Program&) = delete;
+		Program(const Program&)            = delete;
 		Program& operator=(const Program&) = delete;
 
 		Program(Program&& other) noexcept;

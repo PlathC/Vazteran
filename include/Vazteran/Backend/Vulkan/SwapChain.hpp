@@ -6,8 +6,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Vazteran/Core/Math.hpp"
 #include "Vazteran/Data/Material.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
 #include "Vazteran/Backend/Vulkan/CommandPool.hpp"
@@ -31,10 +31,10 @@ namespace vzt
 	  public:
 		SwapChain(vzt::Device* device, VkSurfaceKHR surface, vzt::Size2D<uint32_t> swapChainSize);
 
-		SwapChain(const SwapChain&) = delete;
+		SwapChain(const SwapChain&)            = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
 
-		SwapChain(SwapChain&& other) noexcept = default;
+		SwapChain(SwapChain&& other) noexcept            = default;
 		SwapChain& operator=(SwapChain&& other) noexcept = default;
 
 		~SwapChain();

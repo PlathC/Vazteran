@@ -1,8 +1,8 @@
-#include "Vazteran/Core/Utils.hpp"
+#include "Vazteran/Core/Io.hpp"
 
 namespace vzt
 {
-	std::vector<char> ReadFile(const fs::path &filename)
+	std::vector<char> readFile(const fs::path& filename)
 	{
 		auto file = std::ifstream(filename.c_str(), std::ios::ate | std::ios::binary);
 
@@ -12,7 +12,7 @@ namespace vzt
 		}
 
 		std::size_t fileSize = static_cast<std::size_t>(file.tellg());
-		auto buffer = std::vector<char>(fileSize);
+		auto        buffer   = std::vector<char>(fileSize);
 		file.seekg(0);
 		file.read(buffer.data(), fileSize);
 

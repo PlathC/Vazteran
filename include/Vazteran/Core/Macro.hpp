@@ -1,6 +1,8 @@
 #ifndef VAZTERAN_CORE_MACRO_HPP
 #define VAZTERAN_CORE_MACRO_HPP
 
+#include "Vazteran/Core/Type.hpp"
+
 #define BITWISE_FUNCTION(Type)                                                 \
 	inline constexpr Type operator&(const Type l, const Type r)                \
 	{                                                                          \

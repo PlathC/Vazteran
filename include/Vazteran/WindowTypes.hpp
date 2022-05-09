@@ -3,9 +3,8 @@
 
 #include <type_traits>
 
+#include "Vazteran/Core/Type.hpp"
 #include <GLFW/glfw3.h>
-
-#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
 {

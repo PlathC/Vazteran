@@ -6,8 +6,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Vazteran/Core/Math.hpp"
-#include "Vazteran/Core/Math/Aabb.hpp"
+#include "Vazteran/Math/Aabb.hpp"
+#include "Vazteran/Math/Math.hpp"
 
 namespace vzt
 {

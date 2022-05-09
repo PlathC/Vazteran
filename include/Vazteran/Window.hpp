@@ -6,9 +6,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 
-#include "Vazteran/Core/Math.hpp"
-#include "Vazteran/Core/Utils.hpp"
-
+#include "Vazteran/Math/Math.hpp"
 #include "Vazteran/WindowTypes.hpp"
 
 namespace vzt

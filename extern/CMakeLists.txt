@@ -1,9 +1,12 @@
+add_subdirectory(entt)
+
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(glfw)
 
 add_subdirectory(glm)
+add_subdirectory(spdlog)
 
 set(IMGUI_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h"
@@ -31,8 +34,10 @@ set(VZT_EXTERN_INCLUDES
 
 set(VZT_EXTERN_LIBRARIES
     ${VZT_EXTERN_LIBRARIES}
+    EnTT
     glfw
     glm::glm
+    spdlog::spdlog
 )
 
 set(VZT_EXTERN_SOURCES

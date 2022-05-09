@@ -33,18 +33,11 @@ namespace vzt
 	using Mat3 = glm::mat3;
 	using Mat4 = glm::mat4;
 
-	template <typename Type>
-	struct Size2D
-	{
-		Type width;
-		Type height;
-	};
-
 	constexpr float toRadians(const float degrees) { return degrees * vzt::Pi / 180.f; }
 	constexpr float toDegrees(const float radians) { return radians * 180.f / vzt::Pi; }
 } // namespace vzt
 
-#include "Vazteran/Core/Math/Aabb.hpp"
-#include "Vazteran/Core/Math/random.hpp"
+#include "Vazteran/Math/Aabb.hpp"
+#include "Vazteran/Math/random.hpp"
 
 #endif // VAZTERAN_MATH_HPP

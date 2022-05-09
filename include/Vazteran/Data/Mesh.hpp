@@ -7,8 +7,8 @@
 namespace fs = std::filesystem;
 #include <vector>
 
-#include "Vazteran/Core/Math/Aabb.hpp"
 #include "Vazteran/Data/Material.hpp"
+#include "Vazteran/Math/Aabb.hpp"
 
 namespace vzt
 {

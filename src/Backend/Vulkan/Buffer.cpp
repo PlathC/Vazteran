@@ -1,5 +1,6 @@
+#include <stdexcept>
+
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
-#include "Vazteran/Core/Utils.hpp"
 
 namespace vzt
 {
