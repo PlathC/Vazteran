@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_MESHVIEW_HPP
-#define VAZTERAN_BACKEND_VULKAN_MESHVIEW_HPP
+#ifndef VAZTERAN_MESHVIEW_HPP
+#define VAZTERAN_MESHVIEW_HPP
 
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -10,8 +10,10 @@
 #include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
+#include "Vazteran/Core/Type.hpp"
 #include "Vazteran/Data/Camera.hpp"
-#include "Vazteran/Data/Model.hpp"
+#include "Vazteran/Data/Mesh.hpp"
+#include "Vazteran/System/Listener.hpp"
 
 namespace vzt
 {
@@ -31,7 +33,7 @@ namespace vzt
 	class MeshView
 	{
 	  public:
-		MeshView();
+		MeshView(Scene& scene);
 
 		MeshView(const MeshView&)            = delete;
 		MeshView& operator=(const MeshView&) = delete;
@@ -41,54 +43,55 @@ namespace vzt
 
 		~MeshView();
 
-		void addModel(const vzt::Model* const model);
 		void configure(const vzt::Device* device, uint32_t imageCount);
-
 		void record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const;
-
 		void update(const vzt::Camera& camera);
 
 	  private:
-		// Rendering objects
+		void add(Entity mesh);
+
 		const vzt::Device* m_device;
-		struct SubMeshData
-		{
-			uint32_t minOffset;
-			uint32_t maxOffset;
-			uint32_t materialDataIndex;
-		};
+		uint32_t           m_imageCount = 0;
 
-		struct TextureData
-		{
-			std::unique_ptr<vzt::ImageView> imageView;
-			std::unique_ptr<vzt::Texture>   texture;
-		};
+		vzt::DescriptorPool   m_descriptorPool;
+		vzt::DescriptorLayout m_meshDescriptorLayout;
 
-		struct ModelDisplayInformation
-		{
-			const vzt::Model* const modelData;
-
-			vzt::Buffer vertexBuffer;
-			vzt::Buffer subMeshesIndexBuffer;
-
-			std::vector<TextureData> textureData;
-			std::vector<SubMeshData> subMeshData;
-		};
-
-		vzt::DescriptorPool m_descriptorPool;
+		const std::size_t m_maxSupportedMesh = 128;
 
 		vzt::Buffer m_materialInfoBuffer;
 		uint32_t    m_materialNb             = 0;
 		uint32_t    m_materialInfoOffsetSize = 0;
 
 		vzt::Buffer m_transformBuffer;
+		uint32_t    m_transformNumber     = 0;
 		uint32_t    m_transformOffsetSize = 0;
 
-		vzt::DescriptorLayout m_meshDescriptorLayout;
+		struct MeshDeviceData
+		{
+			vzt::Buffer vertexBuffer;
+			vzt::Buffer subMeshesIndexBuffer;
+			std::size_t transformIndex;
 
-		std::vector<ModelDisplayInformation> m_models;
-		uint32_t                             m_imageCount = 0;
+			struct SubMeshData
+			{
+				uint32_t minOffset;
+				uint32_t maxOffset;
+				uint32_t materialDataIndex;
+			};
+
+			struct TextureData
+			{
+				vzt::ImageView imageView;
+				vzt::Texture   texture;
+			};
+			std::vector<TextureData> textureData;
+			std::vector<SubMeshData> subMeshData;
+		};
+
+		Ptr<Scene>     m_scene;
+		Listener<Mesh> m_meshListener;
 	};
+
 } // namespace vzt
 
-#endif // VAZTERAN_BACKEND_VULKAN_MESHVIEW_HPP
+#endif // VAZTERAN_MESHVIEW_HPP

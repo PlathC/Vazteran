@@ -7,6 +7,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/random.hpp>
 
 namespace vzt
@@ -32,6 +33,8 @@ namespace vzt
 
 	using Mat3 = glm::mat3;
 	using Mat4 = glm::mat4;
+
+	using Quat = glm::quat;
 
 	constexpr float toRadians(const float degrees) { return degrees * vzt::Pi / 180.f; }
 	constexpr float toDegrees(const float radians) { return radians * 180.f / vzt::Pi; }

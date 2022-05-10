@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_PHYSICAL_DEVICE_HPP
-#define VAZTERAN_BACKEND_VULKAN_PHYSICAL_DEVICE_HPP
+#ifndef VAZTERAN_VULKAN_DEVICE_HPP
+#define VAZTERAN_VULKAN_DEVICE_HPP
 
 #include <functional>
 #include <optional>
@@ -84,7 +84,8 @@ namespace vzt
 		~Device();
 
 		VkBuffer    createBuffer(VmaAllocation& bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
-		                         VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags = 0) const;
+		                         VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags flags,
+		                         VkMemoryPropertyFlags preferredFlags = 0) const;
 		VkImage     createImage(VmaAllocation& allocation, uint32_t width, uint32_t height, vzt::Format format,
 		                        VkSampleCountFlagBits numSamples, VkImageTiling tiling, vzt::ImageUsage usage) const;
 		VkImageView createImageView(VkImage image, vzt::Format format, vzt::ImageAspect aspectFlags) const;
@@ -119,4 +120,4 @@ namespace vzt
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_BACKEND_VULKAN_PHYSICAL_DEVICE_HPP
+#endif // VAZTERAN_VULKAN_DEVICE_HPP

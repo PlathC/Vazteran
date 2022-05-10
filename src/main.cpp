@@ -1,8 +1,8 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/Renderer.hpp"
 #include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
-#include "Vazteran/Data/Model.hpp"
-#include "Vazteran/Data/Scene.hpp"
+#include "Vazteran/Core/Logger.hpp"
+#include "Vazteran/System/Scene.hpp"
 #include "Vazteran/Views/MeshView.hpp"
 #include "Vazteran/Window.hpp"
 
@@ -18,6 +18,19 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
 		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
 
+		vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
+		fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { vzt::VZT_INFO("Open"); }));
+
+		vzt::ui::MainMenuField brdfMenuField = vzt::ui::MainMenuField("BRDF");
+		brdfMenuField.addItem(vzt::ui::MainMenuItem("Blinn-Phong", []() { vzt::VZT_INFO("Blinn-Phong"); }));
+
+		vzt::ui::MainMenuBar mainMenuBar;
+		mainMenuBar.addMenu(fileMenuField);
+		mainMenuBar.addMenu(brdfMenuField);
+
+		vzt::ui::UiManager uiManager;
+		uiManager.setMainMenuBar(mainMenuBar);
+
 		vzt::DescriptorLayout meshDescriptorLayout{};
 		meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
 		meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::UniformBuffer);
@@ -31,7 +44,7 @@ int main(int /* args */, char*[] /* argv */)
 		    vzt::VertexInputDescription{vzt::TriangleVertexInput::getBindingDescription(),
 		                                vzt::TriangleVertexInput::getAttributeDescription()});
 
-		vzt::MeshView meshView{};
+		vzt::MeshView meshView{currentScene};
 
 		vzt::RenderGraph      renderGraph{};
 		vzt::AttachmentHandle position =
@@ -98,7 +111,7 @@ int main(int /* args */, char*[] /* argv */)
 
 			vkCmdDraw(cmd, 3, 1, 0, 0);
 
-			uiRenderer.record(cmd, *currentScene.sceneUi());
+			uiRenderer.record(cmd, uiManager);
 		});
 
 		renderGraph.setBackBuffer(composed);
@@ -110,8 +123,9 @@ int main(int /* args */, char*[] /* argv */)
 			    renderGraph.render(imageId, imageAvailable, renderComplete, inFlightFence);
 		    });
 
-		const auto size                        = window.getFrameBufferSize();
-		currentScene.sceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
+		const auto size = window.getFrameBufferSize();
+
+		currentScene.getMainCamera().get<vzt::Camera>().aspectRatio = size.width / static_cast<float>(size.height);
 
 		static bool isMouseEnable = false;
 
@@ -121,18 +135,18 @@ int main(int /* args */, char*[] /* argv */)
 
 			const auto size = window.getFrameBufferSize();
 
-			currentScene.sceneCamera().aspectRatio = size.width / static_cast<float>(size.height);
+			currentScene.getMainCamera().get<vzt::Camera>().aspectRatio = size.width / static_cast<float>(size.height);
 		});
 		window.setOnMousePosChangedCallback([&](vzt::Dvec2 deltaPos) {
 			if (!isMouseEnable)
 				return;
 
-			currentScene.sceneCamera().update(deltaPos);
+			currentScene.getMainCamera().get<vzt::Camera>().update(deltaPos);
 		});
 
 		window.setOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
 			float cameraSpeed = 5e-2f;
-			auto& camera      = currentScene.sceneCamera();
+			auto& camera      = currentScene.getMainCamera().get<vzt::Camera>();
 
 			if ((modifiers & vzt::KeyModifier::Shift) == vzt::KeyModifier::Shift)
 			{
@@ -164,18 +178,18 @@ int main(int /* args */, char*[] /* argv */)
 			}
 		});
 
-		currentScene     = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
-		auto sceneModels = currentScene.cModels();
-		for (const auto* model : sceneModels)
-		{
-			meshView.addModel(model);
-		}
-		meshView.update(currentScene.cSceneCamera());
+		// currentScene     = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
+		// auto sceneModels = currentScene.cModels();
+		// for (const auto* model : sceneModels)
+		// {
+		// 	meshView.addModel(model);
+		// }
+		meshView.update(currentScene.getMainCamera().get<vzt::Camera>());
 
 		while (!window.update())
 		{
-			currentScene.update();
-			meshView.update(currentScene.cSceneCamera());
+			// currentScene.update();
+			meshView.update(currentScene.getMainCamera().get<vzt::Camera>());
 			renderer.render();
 		}
 

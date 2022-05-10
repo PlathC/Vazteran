@@ -1,6 +1,7 @@
 #ifndef VAZTERAN_TYPE_HPP
 #define VAZTERAN_TYPE_HPP
 
+#include <functional>
 #include <type_traits>
 
 namespace vzt
@@ -26,6 +27,12 @@ namespace vzt
 		Type width;
 		Type height;
 	};
+
+	template <class Type>
+	using Ptr = Type*;
+
+	template <class Type>
+	using Optional = std::reference_wrapper<Type>;
 } // namespace vzt
 
 #endif // VAZTERAN_TYPE_HPP

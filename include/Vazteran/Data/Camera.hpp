@@ -1,4 +1,3 @@
-
 #ifndef VAZTERAN_CAMERA_HPP
 #define VAZTERAN_CAMERA_HPP
 
@@ -11,7 +10,9 @@
 
 namespace vzt
 {
-
+	struct MainCamera
+	{
+	};
 	class Camera
 	{
 	  public:

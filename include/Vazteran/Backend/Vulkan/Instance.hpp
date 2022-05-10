@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_INSTANCE_HPP
-#define VAZTERAN_BACKEND_VULKAN_INSTANCE_HPP
+#ifndef VAZTERAN_VULKAN_INSTANCE_HPP
+#define VAZTERAN_VULKAN_INSTANCE_HPP
 
 #include <string>
 #include <vector>
@@ -49,4 +49,4 @@ namespace vzt
 	                                                    void*                                       pUserData);
 } // namespace vzt
 
-#endif // VAZTERAN_BACKEND_VULKAN_INSTANCE_HPP
+#endif // VAZTERAN_VULKAN_INSTANCE_HPP

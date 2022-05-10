@@ -2,6 +2,7 @@
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
+#include "Vazteran/System/Transform.hpp"
 
 namespace vzt
 {
@@ -38,18 +39,17 @@ namespace vzt
 		return attributeDescriptions;
 	}
 
-	MeshView::MeshView() {}
+	MeshView::MeshView(Scene& scene) : m_scene(&scene) {}
 
-	MeshView::~MeshView() = default;
+	MeshView::~MeshView() {}
 
-	void MeshView::addModel(const vzt::Model* const model)
+	void MeshView::add(Entity meshEntity)
 	{
-		ModelDisplayInformation modelDisplayInfo = {model};
+		const Mesh& mesh = meshEntity.get<Mesh>();
 
-		// Use one vertex buffer for the whole mesh
-		const auto& vertices = model->cMesh().cVertices();
-		const auto& normals  = model->cMesh().cNormals();
-		const auto& uvs      = model->cMesh().cUvs();
+		const auto& vertices = mesh.vertices;
+		const auto& normals  = mesh.normals;
+		const auto& uvs      = mesh.uvs;
 
 		std::vector<vzt::TriangleVertexInput> verticesData;
 		verticesData.reserve(vertices.size());
@@ -58,64 +58,67 @@ namespace vzt
 			verticesData.emplace_back(vzt::TriangleVertexInput{vertices[i], uvs[i], normals[i]});
 		}
 
-		modelDisplayInfo.vertexBuffer = vzt::Buffer(m_device, verticesData, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		MeshDeviceData& meshData    = meshEntity.emplace<MeshDeviceData>();
+		meshData.vertexBuffer       = {m_device, verticesData, BufferUsage::VertexBuffer};
+		meshData.transformIndex     = m_transformNumber;
+		auto subMeshRawIndices      = mesh.getVertexIndices();
+		auto subMeshMaterialIndices = mesh.getMaterialIndices();
 
-		auto subMeshRawIndices      = model->cMesh().getVertexIndices();
-		auto subMeshMaterialIndices = model->cMesh().getMaterialIndices();
-
-		modelDisplayInfo.subMeshData.reserve(subMeshRawIndices.size());
+		meshData.subMeshData.reserve(subMeshRawIndices.size());
 		std::vector<uint32_t> submeshIndices;
 		submeshIndices.reserve(subMeshRawIndices.size());
 		for (std::size_t i = 0; i < subMeshRawIndices.size(); i++)
 		{
-			modelDisplayInfo.subMeshData.emplace_back(
-			    SubMeshData{static_cast<uint32_t>(submeshIndices.size()),
-			                static_cast<uint32_t>(submeshIndices.size() + subMeshRawIndices[i].size()),
-			                m_materialNb + subMeshMaterialIndices[i]});
+			meshData.subMeshData.emplace_back();
+			meshData.subMeshData.back().minOffset = static_cast<uint32_t>(submeshIndices.size());
+			meshData.subMeshData.back().maxOffset =
+			    static_cast<uint32_t>(submeshIndices.size() + subMeshRawIndices[i].size());
+			meshData.subMeshData.back().materialDataIndex = m_materialNb + subMeshMaterialIndices[i];
 
 			submeshIndices.insert(submeshIndices.end(), subMeshRawIndices[i].begin(), subMeshRawIndices[i].end());
+
+			meshData.subMeshesIndexBuffer = {m_device, sizeof(uint32_t) * submeshIndices.size(),
+			                                 reinterpret_cast<uint8_t*>(submeshIndices.data()),
+			                                 BufferUsage::IndexBuffer};
+
+			IndexedUniform<vzt::BufferDescriptor> bufferDescriptors;
+			bufferDescriptors[0]        = {};
+			bufferDescriptors[0].buffer = &m_transformBuffer;
+			bufferDescriptors[0].offset = m_transformNumber * m_transformOffsetSize;
+			bufferDescriptors[0].range  = sizeof(vzt::Transforms);
+
+			const auto& materials = mesh.materials;
+			for (const auto& material : materials)
+			{
+				IndexedUniform<vzt::Texture*> texturesDescriptors;
+				bufferDescriptors[1]        = {};
+				bufferDescriptors[1].offset = m_materialNb * m_materialInfoOffsetSize;
+				bufferDescriptors[1].range  = sizeof(vzt::GenericMaterial);
+				bufferDescriptors[1].buffer = &m_materialInfoBuffer;
+
+				const auto genericMaterial = vzt::GenericMaterial::fromMaterial(material);
+				m_materialInfoBuffer.update(sizeof(vzt::GenericMaterial), m_materialNb * m_materialInfoOffsetSize,
+				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
+
+				if (material.texture)
+				{
+					meshData.textureData.emplace_back();
+
+					auto& textureData      = meshData.textureData.back();
+					textureData.imageView  = {m_device, *material.texture, vzt::Format::R8G8B8A8SRGB};
+					textureData.texture    = {m_device, &meshData.textureData.back().imageView};
+					texturesDescriptors[2] = &textureData.texture;
+				}
+
+				m_descriptorPool.allocate(m_imageCount, m_meshDescriptorLayout);
+				for (std::size_t i = 0; i < m_imageCount; i++)
+					m_descriptorPool.update(m_materialNb * m_imageCount + i, bufferDescriptors, texturesDescriptors);
+
+				m_materialNb++;
+			}
 		}
 
-		modelDisplayInfo.subMeshesIndexBuffer =
-		    vzt::Buffer(m_device, sizeof(uint32_t) * submeshIndices.size(),
-		                reinterpret_cast<uint8_t*>(submeshIndices.data()), VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-
-		IndexedUniform<vzt::BufferDescriptor> bufferDescriptors;
-		bufferDescriptors[0] = vzt::BufferDescriptor{static_cast<uint32_t>(m_models.size() * m_transformOffsetSize),
-		                                             sizeof(vzt::Transforms), &m_transformBuffer};
-
-		const auto& materials = model->cMesh().cMaterials();
-		for (const auto& material : materials)
-		{
-			IndexedUniform<vzt::Texture*> texturesDescriptors;
-			bufferDescriptors[1] = vzt::BufferDescriptor{m_materialNb * m_materialInfoOffsetSize,
-			                                             sizeof(vzt::GenericMaterial), &m_materialInfoBuffer};
-			auto genericMaterial = vzt::GenericMaterial::fromMaterial(material);
-
-			m_materialInfoBuffer.update(sizeof(vzt::GenericMaterial), m_materialNb * m_materialInfoOffsetSize,
-			                            reinterpret_cast<uint8_t*>(&genericMaterial));
-
-			if (material.texture.has_value())
-			{
-				auto textureData = TextureData{
-				    std::make_unique<vzt::ImageView>(m_device, material.texture.value(), vzt::Format::R8G8B8A8SRGB),
-				};
-
-				textureData.texture    = std::make_unique<vzt::Texture>(m_device, textureData.imageView.get());
-				texturesDescriptors[2] = textureData.texture.get();
-
-				modelDisplayInfo.textureData.emplace_back(std::move(textureData));
-			}
-
-			m_descriptorPool.allocate(m_imageCount, m_meshDescriptorLayout);
-			for (std::size_t i = 0; i < m_imageCount; i++)
-			{
-				m_descriptorPool.update(m_materialNb * m_imageCount + i, bufferDescriptors, texturesDescriptors);
-			}
-			m_materialNb++;
-		}
-
-		m_models.emplace_back(std::move(modelDisplayInfo));
+		m_transformNumber++;
 	}
 
 	void MeshView::configure(const vzt::Device* device, uint32_t imageCount)
@@ -132,36 +135,39 @@ namespace vzt
 		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);
 
 		const uint32_t minOffset = static_cast<uint32_t>(m_device->getMinUniformOffsetAlignment());
-
-		m_transformOffsetSize = sizeof(vzt::Transforms);
+		m_transformOffsetSize    = sizeof(vzt::Transforms);
 		if (minOffset > 0)
-		{
 			m_transformOffsetSize = (m_transformOffsetSize + minOffset - 1) & ~(minOffset - 1);
-		}
 
-		m_transformBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_transformOffsetSize),
-		                                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
+		m_transformBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_transformOffsetSize),
+		                                BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true);
 
 		m_materialInfoOffsetSize = sizeof(vzt::Transforms);
 		if (minOffset > 0)
-		{
 			m_materialInfoOffsetSize = (m_materialInfoOffsetSize + minOffset - 1) & ~(minOffset - 1);
-		}
 
-		m_materialInfoBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(128 * m_materialInfoOffsetSize),
-		                                   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, vzt::MemoryUsage::CPU_TO_GPU);
+		m_materialInfoBuffer =
+		    vzt::Buffer(m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_materialInfoOffsetSize),
+		                BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true);
+
+		m_scene->forAll<Mesh>([&](Entity entity) { add(entity); });
+
+		m_meshListener = Listener<Mesh>(m_scene, [&](Entity entity, SystemEvent eventType) {
+			if (eventType == SystemEvent::Construct)
+				add(entity);
+		});
 	}
 
 	void MeshView::record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const
 	{
-		for (const auto& model : m_models)
-		{
-			VkBuffer     vertexBuffers[] = {model.vertexBuffer.vkHandle()};
+		m_scene->forAll<Mesh>([&](Entity entity) {
+			const auto&  deviceData      = entity.get<MeshDeviceData>();
+			VkBuffer     vertexBuffers[] = {deviceData.vertexBuffer.vkHandle()};
 			VkDeviceSize offsets[]       = {0};
 
 			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-			const auto& indexBuffer = model.subMeshesIndexBuffer;
-			const auto& submeshes   = model.subMeshData;
+			const auto& indexBuffer = deviceData.subMeshesIndexBuffer;
+			const auto& submeshes   = deviceData.subMeshData;
 			for (const auto& subMesh : submeshes)
 			{
 				vkCmdBindIndexBuffer(commandBuffer, indexBuffer.vkHandle(), subMesh.minOffset * sizeof(uint32_t),
@@ -172,7 +178,7 @@ namespace vzt
 
 				vkCmdDrawIndexed(commandBuffer, subMesh.maxOffset - subMesh.minOffset, 1, 0, 0, 0);
 			}
-		}
+		});
 	}
 
 	void MeshView::update(const vzt::Camera& camera)
@@ -182,20 +188,22 @@ namespace vzt
 		projectionMatrix[1][1] *= -1;
 
 		std::size_t currentMaterialIndex = 0;
-		for (std::size_t i = 0; i < m_models.size(); i++)
-		{
-			const auto&     modelDisplayInfo = m_models[i];
-			const vzt::Mat4 modelMatrix      = modelDisplayInfo.modelData->getModelMatrix();
+		m_scene->forAll<Mesh>([&](Entity entity) {
+			const auto& deviceData = entity.get<MeshDeviceData>();
+
+			const Transform* transform   = entity.try_get<Transform>();
+			const vzt::Mat4  modelMatrix = transform ? transform->get() : Mat4(1.f);
 
 			const vzt::Mat4 modelViewMatrix = viewMatrix * modelMatrix;
 
 			const vzt::Transforms transforms =
 			    vzt::Transforms{modelViewMatrix, projectionMatrix, glm::transpose(glm::inverse(modelViewMatrix))};
 
-			m_transformBuffer.update(sizeof(vzt::Transforms), i * m_transformOffsetSize,
+			m_transformBuffer.update(sizeof(vzt::Transforms), deviceData.transformIndex * m_transformOffsetSize,
 			                         reinterpret_cast<const uint8_t* const>(&transforms));
 
-			const auto& materials = modelDisplayInfo.modelData->cMesh().cMaterials();
+			const Mesh& mesh      = entity.get<Mesh>();
+			const auto& materials = mesh.materials;
 			for (const auto& material : materials)
 			{
 				const auto genericMaterial = vzt::GenericMaterial::fromMaterial(material);
@@ -204,6 +212,6 @@ namespace vzt
 				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
 				currentMaterialIndex++;
 			}
-		}
+		});
 	}
 } // namespace vzt

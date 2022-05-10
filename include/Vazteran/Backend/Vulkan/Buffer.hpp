@@ -1,9 +1,11 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_BUFFER_HPP
-#define VAZTERAN_BACKEND_VULKAN_BUFFER_HPP
+#ifndef VAZTERAN_VULKAN_BUFFER_HPP
+#define VAZTERAN_VULKAN_BUFFER_HPP
 
 #include <vector>
 
 #include <vk_mem_alloc.h>
+
+#include "Vazteran/Core/Macro.hpp"
 
 namespace vzt
 {
@@ -11,9 +13,11 @@ namespace vzt
 
 	enum class MemoryUsage : uint8_t
 	{
-		GPU_ONLY   = VMA_MEMORY_USAGE_GPU_ONLY,
-		CPU_TO_GPU = VMA_MEMORY_USAGE_CPU_TO_GPU,
+		PreferDevice = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+		PreferHost   = VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
+		Auto         = VMA_MEMORY_USAGE_AUTO
 	};
+	TO_VULKAN_FUNCTION(MemoryUsage, VmaMemoryUsage)
 
 	enum class BufferUsage : uint32_t
 	{
@@ -50,6 +54,8 @@ namespace vzt
 		// Provided by VK_KHR_buffer_device_address
 		ShaderDeviceAddressKHR = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR,
 	};
+	BITWISE_FUNCTION(BufferUsage)
+	TO_VULKAN_FUNCTION(BufferUsage, VkBufferUsageFlagBits)
 
 	class Buffer
 	{
@@ -57,10 +63,10 @@ namespace vzt
 		Buffer() = default;
 
 		template <class Type>
-		Buffer(const vzt::Device* device, const std::vector<Type>& data, VkBufferUsageFlags usage,
-		       MemoryUsage memoryUsage = MemoryUsage::GPU_ONLY);
-		Buffer(const vzt::Device* device, const std::size_t size, const uint8_t* data, VkBufferUsageFlags usage,
-		       MemoryUsage memoryUsage = MemoryUsage::GPU_ONLY);
+		Buffer(const vzt::Device* device, const std::vector<Type>& data, BufferUsage usage,
+		       MemoryUsage memoryUsage = MemoryUsage::Auto, bool mappable = false, bool persistent = false);
+		Buffer(const vzt::Device* device, const std::size_t size, const uint8_t* data, BufferUsage usage,
+		       MemoryUsage memoryUsage = MemoryUsage::Auto, bool mappable = false, bool persistent = false);
 
 		Buffer(const Buffer&)            = delete;
 		Buffer& operator=(const Buffer&) = delete;
@@ -73,24 +79,24 @@ namespace vzt
 		template <class Type>
 		void update(const std::vector<Type>& newData);
 		void update(const std::size_t size, const uint8_t* const newData) const;
-
 		void update(const std::size_t size, const std::size_t offset, const uint8_t* const newData);
-
-		VkMemoryRequirements getMemoryRequirements() const;
 
 		VkBuffer vkHandle() const { return m_vkHandle; }
 
 	  private:
-		void create(const std::size_t size, const uint8_t* const data, VkBufferUsageFlags usage,
-		            MemoryUsage memoryUsage);
+		void create(const std::size_t size, const uint8_t* const data, BufferUsage usage, MemoryUsage memoryUsage,
+		            bool mappable, bool persistent);
 
 	  private:
 		const vzt::Device* m_device     = nullptr;
 		VkBuffer           m_vkHandle   = VK_NULL_HANDLE;
 		VmaAllocation      m_allocation = VK_NULL_HANDLE;
+
+		bool m_mappable   = false;
+		bool m_persistent = false;
 	};
 } // namespace vzt
 
 #include "Vazteran/Backend/Vulkan/Buffer.inl"
 
-#endif // VAZTERAN_BACKEND_VULKAN_BUFFER_HPP
+#endif // VAZTERAN_VULKAN_BUFFER_HPP

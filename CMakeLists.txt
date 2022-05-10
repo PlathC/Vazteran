@@ -153,12 +153,14 @@ set(VZT_HEADERS
         "include/Vazteran/Data/Image.hpp"
         "include/Vazteran/Data/Material.hpp"
         "include/Vazteran/Data/Mesh.hpp"
-        "include/Vazteran/Data/Model.hpp"
-        "include/Vazteran/Data/Scene.hpp"
+        
 
         "include/Vazteran/Math/Math.hpp"
         "include/Vazteran/Math/Aabb.hpp"
         
+        "include/Vazteran/System/Scene.hpp"
+        "include/Vazteran/System/Listener.hpp"
+
         "include/Vazteran/Ui/Component.hpp"
         "include/Vazteran/Ui/MainMenuBar.hpp"
         "include/Vazteran/Ui/UiManager.hpp"
@@ -196,8 +198,8 @@ set(VZT_SOURCES
         "src/Data/Image.cpp"
         "src/Data/Material.cpp"
         "src/Data/Mesh.cpp"
-        "src/Data/Model.cpp"
-        "src/Data/Scene.cpp"
+        
+        "src/System/Scene.cpp"
 
         "src/Math/Aabb.cpp"
 

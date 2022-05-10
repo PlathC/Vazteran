@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_CORE_MACRO_HPP
-#define VAZTERAN_CORE_MACRO_HPP
+#ifndef VAZTERAN_MACRO_HPP
+#define VAZTERAN_MACRO_HPP
 
 #include "Vazteran/Core/Type.hpp"
 
@@ -19,4 +19,4 @@
 #define TO_VULKAN_FUNCTION(BaseType, VulkanType) \
 	inline constexpr VulkanType toVulkan(const BaseType l) { return static_cast<VulkanType>(l); }
 
-#endif // VAZTERAN_CORE_MACRO_HPP
+#endif // VAZTERAN_MACRO_HPP

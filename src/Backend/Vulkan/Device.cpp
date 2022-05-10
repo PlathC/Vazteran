@@ -342,7 +342,8 @@ namespace vzt
 	}
 
 	VkBuffer Device::createBuffer(VmaAllocation& bufferAllocation, VkDeviceSize size, VkBufferUsageFlags usage,
-	                              VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags preferredFlags) const
+	                              VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags flags,
+	                              VkMemoryPropertyFlags preferredFlags) const
 	{
 		VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
 		bufferInfo.size               = size;
@@ -351,14 +352,12 @@ namespace vzt
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage                   = memoryUsage;
-		// allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		allocInfo.preferredFlags = preferredFlags;
+		allocInfo.flags                   = flags;
+		allocInfo.preferredFlags          = preferredFlags;
 
 		VkBuffer buffer;
 		if (vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo, &buffer, &bufferAllocation, nullptr) != VK_SUCCESS)
-		{
 			throw std::runtime_error("Failed to create vertex buffer!");
-		}
 
 		return buffer;
 	}

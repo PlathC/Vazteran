@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_CORE_LOGGER_HPP
-#define VAZTERAN_CORE_LOGGER_HPP
+#ifndef VAZTERAN_LOGGER_HPP
+#define VAZTERAN_LOGGER_HPP
 
 #include <spdlog/spdlog.h>
 
@@ -57,4 +57,4 @@ namespace vzt
 	}
 } // namespace vzt
 
-#endif // VAZTERAN_CORE_LOGGER_HPP
+#endif // VAZTERAN_LOGGER_HPP

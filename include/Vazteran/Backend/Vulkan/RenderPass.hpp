@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_RENDERPASS_HPP
-#define VAZTERAN_BACKEND_VULKAN_RENDERPASS_HPP
+#ifndef VAZTERAN_VULKAN_RENDERPASS_HPP
+#define VAZTERAN_VULKAN_RENDERPASS_HPP
 
 #include "GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
@@ -169,4 +169,4 @@ namespace vzt
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_BACKEND_VULKAN_RENDERPASS_HPP
+#endif // VAZTERAN_VULKAN_RENDERPASS_HPP

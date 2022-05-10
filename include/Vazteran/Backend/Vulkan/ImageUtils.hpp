@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_IMAGEUTILS_HPP
-#define VAZTERAN_BACKEND_VULKAN_IMAGEUTILS_HPP
+#ifndef VAZTERAN_VULKAN_IMAGEUTILS_HPP
+#define VAZTERAN_VULKAN_IMAGEUTILS_HPP
 
 #include <vk_mem_alloc.h>
 #include <vulkan/vulkan.h>
@@ -91,4 +91,4 @@ namespace vzt
 
 } // namespace vzt
 
-#endif // VAZTERAN_BACKEND_VULKAN_IMAGEUTILS_HPP
+#endif // VAZTERAN_VULKAN_IMAGEUTILS_HPP

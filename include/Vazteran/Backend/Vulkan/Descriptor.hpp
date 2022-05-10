@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_DESCRIPTOR_HPP
-#define VAZTERAN_BACKEND_VULKAN_DESCRIPTOR_HPP
+#ifndef VAZTERAN_VULKAN_DESCRIPTOR_HPP
+#define VAZTERAN_VULKAN_DESCRIPTOR_HPP
 
 #include <stack>
 #include <unordered_map>
@@ -73,7 +73,7 @@ namespace vzt
 		DescriptorPool(const vzt::Device* const device, const std::vector<DescriptorType> descriptorTypes,
 		               uint32_t maxSetNb = 64, VkDescriptorPoolCreateFlags flags = 0);
 
-		DescriptorPool(const DescriptorPool&) = delete;
+		DescriptorPool(const DescriptorPool&)            = delete;
 		DescriptorPool& operator=(const DescriptorPool&) = delete;
 
 		DescriptorPool(DescriptorPool&&) noexcept;
@@ -110,4 +110,4 @@ namespace vzt
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_BACKEND_VULKAN_DESCRIPTOR_HPP
+#endif // VAZTERAN_VULKAN_DESCRIPTOR_HPP

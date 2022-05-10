@@ -1,4 +1,3 @@
-
 #ifndef VAZTERAN_IMAGE_HPP
 #define VAZTERAN_IMAGE_HPP
 

@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_BACKEND_VULKAN_SHADER_HPP
-#define VAZTERAN_BACKEND_VULKAN_SHADER_HPP
+#ifndef VAZTERAN_VULKAN_SHADER_HPP
+#define VAZTERAN_VULKAN_SHADER_HPP
 
 #include <optional>
 #include <unordered_set>
@@ -111,4 +111,4 @@ namespace vzt
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_BACKEND_VULKAN_SHADER_HPP
+#endif // VAZTERAN_VULKAN_SHADER_HPP

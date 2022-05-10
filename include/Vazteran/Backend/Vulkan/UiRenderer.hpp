@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_VKUIRENDERER_HPP
-#define VAZTERAN_VKUIRENDERER_HPP
+#ifndef VAZTERAN_VULKAN_UIRENDERER_HPP
+#define VAZTERAN_VULKAN_UIRENDERER_HPP
 
 #include "Vazteran/Backend/Vulkan/CommandPool.hpp"
 #include "Vazteran/Backend/Vulkan/Descriptor.hpp"
@@ -36,4 +36,4 @@ namespace vzt
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_VKUIRENDERER_HPP
+#endif // VAZTERAN_VULKAN_UIRENDERER_HPP

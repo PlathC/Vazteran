@@ -26,15 +26,15 @@ namespace vzt
 		std::unordered_map<int, uint32_t> tinyObjToVazteranMaterialIndices;
 
 		// First material is default one in case of shape "-1" material index
-		m_materials.emplace_back();
+		materials.emplace_back();
 		for (int materialId = 0; materialId < materials.size(); materialId++)
 		{
-			tinyObjToVazteranMaterialIndices[materialId] = static_cast<uint32_t>(m_materials.size());
+			tinyObjToVazteranMaterialIndices[materialId] = static_cast<uint32_t>(materials.size());
 			auto currentMaterial                         = materials[materialId];
 
 			if (currentMaterial.name == "None")
 			{
-				m_materials.emplace_back();
+				materials.emplace_back();
 			}
 			else
 			{
@@ -48,7 +48,7 @@ namespace vzt
 				if (fs::exists(currentMaterial.specular_texname))
 					specularTexture = vzt::Image(currentMaterial.specular_texname);
 
-				m_materials.emplace_back(vzt::Material{
+				materials.emplace_back(vzt::Material{
 				    diffuseTexture,
 				    vzt::Vec4{currentMaterial.diffuse[0], currentMaterial.diffuse[1], currentMaterial.diffuse[2], 1.f},
 				    currentMaterial.shininess});
@@ -70,7 +70,7 @@ namespace vzt
 					tinyobj::index_t index = shape.mesh.indices[index_offset + vertexIndex];
 					if (tinyObjToVazteranVertexIndices.find(index.vertex_index) == tinyObjToVazteranVertexIndices.end())
 					{
-						tinyObjToVazteranVertexIndices[index.vertex_index] = static_cast<uint32_t>(m_vertices.size());
+						tinyObjToVazteranVertexIndices[index.vertex_index] = static_cast<uint32_t>(vertices.size());
 						vzt::Vec3 vertex{attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 0],
 						                 attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 1],
 						                 attrib.vertices[3 * static_cast<size_t>(index.vertex_index) + 2]};
@@ -92,9 +92,9 @@ namespace vzt
 							texCoord.y = attrib.texcoords[2 * static_cast<size_t>(index.texcoord_index) + 1];
 						}
 
-						m_vertices.emplace_back(vertex);
-						m_normals.emplace_back(normal);
-						m_uvs.emplace_back(texCoord);
+						vertices.emplace_back(vertex);
+						normals.emplace_back(normal);
+						uvs.emplace_back(texCoord);
 					}
 					subMeshVertexIndices.push_back(tinyObjToVazteranVertexIndices[index.vertex_index]);
 				}
@@ -103,45 +103,41 @@ namespace vzt
 
 			// Handle only one subMesh material
 			auto materialId = shape.mesh.material_ids[0];
-			m_subMeshes.push_back({tinyObjToVazteranMaterialIndices[materialId], subMeshVertexIndices});
+			subMeshes.push_back({tinyObjToVazteranMaterialIndices[materialId], subMeshVertexIndices});
 		}
 
-		m_aabb = vzt::AABB(m_vertices);
+		aabb = vzt::AABB(vertices);
 	}
 
 	Mesh::Mesh(std::vector<vzt::Vec3> vertices, std::vector<vzt::Vec3> normals, std::vector<vzt::Vec2> uvs,
 	           std::vector<uint32_t> vertexIndices, const vzt::Material& material)
-	    : m_subMeshes({vzt::SubMesh{0, std::move(vertexIndices)}}), m_vertices(std::move(vertices)),
-	      m_normals(std::move(normals)), m_uvs(std::move(uvs)), m_materials({material})
+	    : subMeshes({vzt::SubMesh{0, std::move(vertexIndices)}}), vertices(std::move(vertices)),
+	      normals(std::move(normals)), uvs(std::move(uvs)), materials({material})
 	{
 	}
 
 	Mesh::Mesh(std::vector<vzt::SubMesh> subMeshes, std::vector<vzt::Vec3> vertices, std::vector<vzt::Vec3> normals,
 	           std::vector<vzt::Vec2> uvs, std::vector<vzt::Material> materials)
-	    : m_subMeshes(std::move(subMeshes)), m_vertices(std::move(vertices)), m_normals(std::move(normals)),
-	      m_uvs(std::move(uvs)), m_materials(std::move(materials)), m_aabb(m_vertices)
+	    : subMeshes(std::move(subMeshes)), vertices(std::move(vertices)), normals(std::move(normals)),
+	      uvs(std::move(uvs)), materials(std::move(materials)), aabb(vertices)
 	{
 	}
 
 	std::vector<std::vector<uint32_t>> Mesh::getVertexIndices() const
 	{
 		std::vector<std::vector<uint32_t>> indices;
-		indices.reserve(m_subMeshes.size());
-		for (const auto& subMesh : m_subMeshes)
-		{
+		indices.reserve(subMeshes.size());
+		for (const auto& subMesh : subMeshes)
 			indices.emplace_back(subMesh.vertexIndices.begin(), subMesh.vertexIndices.end());
-		}
 		return indices;
 	}
 
 	std::vector<uint32_t> Mesh::getMaterialIndices() const
 	{
 		std::vector<uint32_t> indices;
-		indices.reserve(m_subMeshes.size());
-		for (const auto& subMesh : m_subMeshes)
-		{
+		indices.reserve(subMeshes.size());
+		for (const auto& subMesh : subMeshes)
 			indices.emplace_back(subMesh.materialIndex);
-		}
 		return indices;
 	}
 

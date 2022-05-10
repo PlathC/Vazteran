@@ -14,7 +14,8 @@ namespace vzt
 		VkDeviceSize  imageSize       = image.width() * image.height() * image.channels();
 
 		stagingBuffer = m_device->createBuffer(stagingBufAlloc, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-		                                       VMA_MEMORY_USAGE_CPU_ONLY);
+		                                       VMA_MEMORY_USAGE_AUTO_PREFER_HOST,
+		                                       VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
 		void* data;
 		auto  imageData = image.data();
