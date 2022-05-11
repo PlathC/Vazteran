@@ -260,7 +260,7 @@ function(add_shader TARGET SHADER)
 
     add_custom_command(
             OUTPUT ${current-output-path}
-            COMMAND ${GLSLC} -o ${current-output-path} ${current-shader-path}
+            COMMAND ${GLSLC} -o ${current-output-path} ${current-shader-path} -I ${current-shader-path}
             DEPENDS ${current-shader-path}
             IMPLICIT_DEPENDS CXX ${current-shader-path}
             VERBATIM)

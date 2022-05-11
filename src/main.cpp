@@ -52,7 +52,7 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::AttachmentHandle albedo =
 		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
 		vzt::AttachmentHandle normal =
-		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8UNorm});
+		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8UNorm});
 		vzt::AttachmentHandle depth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
 
 		auto& geometryBuffer = renderGraph.addPass("G-Buffer", vzt::QueueType::Graphic);
