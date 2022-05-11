@@ -9,7 +9,6 @@
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
 #include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
-#include "Vazteran/Core/Io.hpp"
 
 namespace vzt
 {

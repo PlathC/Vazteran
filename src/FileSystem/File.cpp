@@ -1,10 +1,12 @@
-#include "Vazteran/Core/Io.hpp"
+#include <fstream>
+
+#include "Vazteran/FileSystem/File.hpp"
 
 namespace vzt
 {
-	std::vector<char> readFile(const fs::path& filename)
+	std::vector<char> readFile(const Path& path)
 	{
-		auto file = std::ifstream(filename.c_str(), std::ios::ate | std::ios::binary);
+		auto file = std::ifstream(path, std::ios::ate | std::ios::binary);
 
 		if (!file.is_open())
 		{

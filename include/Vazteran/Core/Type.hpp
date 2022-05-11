@@ -1,6 +1,7 @@
 #ifndef VAZTERAN_TYPE_HPP
 #define VAZTERAN_TYPE_HPP
 
+#include <filesystem>
 #include <functional>
 #include <type_traits>
 
@@ -33,6 +34,7 @@ namespace vzt
 
 	template <class Type>
 	using Optional = std::reference_wrapper<Type>;
+
 } // namespace vzt
 
 #endif // VAZTERAN_TYPE_HPP

@@ -16,7 +16,7 @@ namespace vzt
 			subscribe(registeredEvent);
 	}
 	template <class ComponentType>
-	Listener<ComponentType>& Listener<ComponentType>::operator=(const Listener<ComponentType>& listener)
+	Listener<ComponentType>& Listener<ComponentType>::operator=(const Listener<ComponentType>& other)
 	{
 		m_scene    = other.m_scene;
 		m_callback = other.m_callback;
@@ -38,7 +38,7 @@ namespace vzt
 	template <class ComponentType>
 	void Listener<ComponentType>::subscribe(SystemEvent event)
 	{
-		entt::registry& registry = m_scene.m_registry;
+		entt::registry& registry = m_scene->m_registry;
 		switch (event)
 		{
 		case SystemEvent::Construct:
@@ -57,7 +57,7 @@ namespace vzt
 	template <class ComponentType>
 	void Listener<ComponentType>::unsubscribe(SystemEvent event)
 	{
-		entt::registry& registry = m_scene.m_registry;
+		entt::registry& registry = m_scene->m_registry;
 		switch (event)
 		{
 		case SystemEvent::Construct:

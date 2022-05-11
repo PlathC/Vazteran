@@ -144,7 +144,6 @@ set(VZT_HEADERS
         "include/Vazteran/Window.hpp"
         "include/Vazteran/WindowTypes.hpp"
 
-        "include/Vazteran/Core/Io.hpp"
         "include/Vazteran/Core/Logger.hpp"
         "include/Vazteran/Core/Macro.hpp"
         "include/Vazteran/Core/Type.hpp"
@@ -154,12 +153,15 @@ set(VZT_HEADERS
         "include/Vazteran/Data/Material.hpp"
         "include/Vazteran/Data/Mesh.hpp"
         
+        "include/Vazteran/FileSystem/File.hpp"
+        "include/Vazteran/FileSystem/MeshReader.hpp"
 
         "include/Vazteran/Math/Math.hpp"
         "include/Vazteran/Math/Aabb.hpp"
         
-        "include/Vazteran/System/Scene.hpp"
         "include/Vazteran/System/Listener.hpp"
+        "include/Vazteran/System/Scene.hpp"
+        "include/Vazteran/System/Transform.hpp"
 
         "include/Vazteran/Ui/Component.hpp"
         "include/Vazteran/Ui/MainMenuBar.hpp"
@@ -191,7 +193,6 @@ set(VZT_SOURCES
         "src/main.cpp"
         "src/Window.cpp"
         
-        "src/Core/Io.cpp"
         "src/Core/Logger.cpp"
 
         "src/Data/Camera.cpp"
@@ -199,9 +200,13 @@ set(VZT_SOURCES
         "src/Data/Material.cpp"
         "src/Data/Mesh.cpp"
         
-        "src/System/Scene.cpp"
+        "src/FileSystem/File.cpp"
+        "src/FileSystem/MeshReader.cpp"
 
         "src/Math/Aabb.cpp"
+
+        "src/System/Scene.cpp"
+        "src/System/Transform.cpp"
 
         "src/Ui/Component.cpp"
         "src/Ui/MainMenuBar.cpp"

@@ -2,13 +2,13 @@
 #define VAZTERAN_IO_HPP
 
 #include <filesystem>
-#include <fstream>
-
-namespace fs = std::filesystem;
+#include <vector>
 
 namespace vzt
 {
-	std::vector<char> readFile(const fs::path& filename);
+	using Path = std::filesystem::path;
+
+	std::vector<char> readFile(const Path& path);
 } // namespace vzt
 
 #endif // VAZTERAN_IO_HPP

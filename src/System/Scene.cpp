@@ -1,10 +1,8 @@
-#include <iostream>
-
 #include <entt/entity/handle.hpp>
 
-#include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
 #include "Vazteran/Core/Logger.hpp"
 #include "Vazteran/Data/Mesh.hpp"
+#include "Vazteran/FileSystem/MeshReader.hpp"
 #include "Vazteran/Math/Math.hpp"
 #include "Vazteran/System/Scene.hpp"
 #include "Vazteran/System/Transform.hpp"
@@ -27,6 +25,7 @@ namespace vzt
 		auto cameras = m_registry.view<Camera, MainCamera>();
 		for (const auto camera : cameras)
 			return {m_registry, camera};
+		throw std::runtime_error("Current scene does not hold any camera.");
 	}
 
 	Scene Scene::defaultScene(const Scene::DefaultScene defaultScene)
@@ -38,7 +37,7 @@ namespace vzt
 
 			Scene crounchingBoysScene{};
 
-			Mesh templateCrounchingBoy{"./samples/TheCrounchingBoy/TheCrounchingBoy.obj"};
+			Mesh templateCrounchingBoy = vzt::readObj("./samples/TheCrounchingBoy/TheCrounchingBoy.obj");
 
 			// vzt::ModelUpdateCallback modelUpdate = [](Model* model) {
 			// 	static auto startTime = std::chrono::high_resolution_clock::now();
@@ -55,9 +54,9 @@ namespace vzt
 			AABB fullBoundingBox{};
 			for (std::size_t i = 0; i < ModelNb; i++)
 			{
-				Entity    crounchingBoy = crounchingBoysScene.create();
-				Mesh      mesh          = crounchingBoy.emplace<Mesh>(templateCrounchingBoy);
-				Transform transform     = crounchingBoy.emplace<Transform>();
+				Entity     crounchingBoy = crounchingBoysScene.create();
+				Mesh&      mesh          = crounchingBoy.emplace<Mesh>(templateCrounchingBoy);
+				Transform& transform     = crounchingBoy.emplace<Transform>();
 
 				auto movement = glm::sphericalRand(5.f);
 				transform.position += movement;
@@ -67,7 +66,7 @@ namespace vzt
 
 				const Mat4 transformationMatrix = transform.get();
 				for (auto& position : mesh.aabb.getVertices())
-					position = (transformationMatrix * Vec4(position, 1.f);
+					position = (transformationMatrix * Vec4(position, 1.f));
 				mesh.aabb.refresh();
 
 				fullBoundingBox.extend(mesh.aabb);
@@ -84,7 +83,7 @@ namespace vzt
 			Scene vikingRoomScene{};
 
 			Entity room = vikingRoomScene.create();
-			auto   mesh = room.emplace<Mesh>("./samples/VikingRoom/viking_room.obj");
+			Mesh&  mesh = room.emplace<Mesh>(vzt::readObj("./samples/VikingRoom/viking_room.obj"));
 
 			mesh.materials[0].texture = vzt::Image("./samples/VikingRoom/viking_room.png");
 
@@ -98,7 +97,7 @@ namespace vzt
 			Scene moriKnobScene{};
 
 			Entity moriKnob = moriKnobScene.create();
-			moriKnob.emplace<Mesh>("./samples/MoriKnob/MoriKnob.obj");
+			moriKnob.emplace<Mesh>(vzt::readObj("./samples/MoriKnob/MoriKnob.obj"));
 
 			Entity  cameraEntity = moriKnobScene.create();
 			Camera& camera       = cameraEntity.emplace<Camera>();

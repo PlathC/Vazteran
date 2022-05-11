@@ -2,13 +2,12 @@
 
 namespace vzt
 {
-
 	template <class... ComponentTypes>
 	void Scene::forAll(ForAllFunction forAllFunction)
 	{
 		auto entities = m_registry.view<ComponentTypes...>();
 		for (const auto entity : entities)
-			forAllFunction(entity);
+			forAllFunction({m_registry, entity});
 	}
 	template <class... ComponentTypes>
 	void Scene::forAll(ForAllIndexedFunction forallIndexedFunction)

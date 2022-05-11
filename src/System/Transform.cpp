@@ -1,4 +1,4 @@
-#include "Vazteran/System/Transform.cpp"
+#include "Vazteran/System/Transform.hpp"
 
 #include <glm/gtx/quaternion.hpp>
 

@@ -2,6 +2,7 @@
 
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/Shader.hpp"
+#include "Vazteran/FileSystem/File.hpp"
 
 namespace vzt
 {

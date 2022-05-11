@@ -15,6 +15,7 @@ namespace vzt
 	class ImageView
 	{
 	  public:
+		ImageView() = default;
 		ImageView(const vzt::Device* device, vzt::Image image, vzt::Format format = vzt::Format::B8G8R8A8SRGB,
 		          vzt::ImageLayout layout = vzt::ImageLayout::ShaderReadOnlyOptimal);
 		ImageView(const vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
@@ -57,7 +58,8 @@ namespace vzt
 	class Sampler
 	{
 	  public:
-		explicit Sampler(const vzt::Device* logicalDevice, const SamplerSettings& samplerSettings = {});
+		Sampler() = default;
+		Sampler(const vzt::Device* logicalDevice, const SamplerSettings& samplerSettings = {});
 
 		Sampler(const Sampler&)            = delete;
 		Sampler& operator=(const Sampler&) = delete;
@@ -71,12 +73,13 @@ namespace vzt
 
 	  private:
 		const vzt::Device* m_device;
-		VkSampler          m_vkHandle;
+		VkSampler          m_vkHandle = VK_NULL_HANDLE;
 	};
 
 	class Texture
 	{
 	  public:
+		Texture() = default;
 		Texture(const vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings = {});
 
 		const vzt::ImageView* getView() const { return m_imageView; }
