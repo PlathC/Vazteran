@@ -1,6 +1,5 @@
-﻿float length2(vec3 v) { return dot(v,v); }
+float length2(vec3 v) { return dot(v,v); }
 
-// Found in this article by Aras Pranckevičius: https://aras-p.info/texts/CompactNormalStorage.html
 // Use oct encode from: A Survey of Efficient Representations for Independent Unit Vectors [Cigolle2014]
 vec2 signNotZero(vec2 v) 
 {

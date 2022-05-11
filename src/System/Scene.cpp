@@ -61,8 +61,8 @@ namespace vzt
 				auto movement = glm::sphericalRand(5.f);
 				transform.position += movement;
 
-				mesh.materials[0].color     = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.f);
-				mesh.materials[0].shininess = ((movement.z + 5.f) * 0.1f) * 200.f;
+				mesh.materials[1].color     = glm::vec4(((movement / 5.f) + 1.f) / 2.f, 1.f);
+				mesh.materials[1].shininess = ((movement.z + 5.f) * 0.1f) * 200.f;
 
 				const Mat4 transformationMatrix = transform.get();
 				for (auto& position : mesh.aabb.getVertices())

@@ -7,7 +7,7 @@ namespace vzt
 	Mat4 Transform::get() const
 	{
 		Mat4 transform = glm::toMat4(rotation);
-		glm::translate(transform, position);
+		transform      = glm::translate(transform, position);
 
 		if (parent)
 			transform = parent->get() * transform;

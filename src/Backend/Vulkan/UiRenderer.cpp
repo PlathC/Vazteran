@@ -36,6 +36,9 @@ namespace vzt
 	void UiRenderer::configure(const Instance* const instance, GLFWwindow* window, const Device* const device,
 	                           const RenderPass* const renderPass, uint32_t imageCount)
 	{
+		if (m_isInitialized)
+			return;
+
 		const std::vector<vzt::DescriptorType> descriptorTypes = {vzt::DescriptorType::Sampler,
 		                                                          vzt::DescriptorType::CombinedSampler,
 		                                                          vzt::DescriptorType::SampledImage,
@@ -55,6 +58,7 @@ namespace vzt
 		ImGui::StyleColorsDark();
 
 		ImGui_ImplGlfw_InitForVulkan(window, true);
+
 		ImGui_ImplVulkan_InitInfo init_info = {};
 		init_info.Instance                  = instance->vkHandle();
 		init_info.PhysicalDevice            = device->getPhysicalDevice()->vkHandle();

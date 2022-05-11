@@ -123,8 +123,13 @@ namespace vzt
 
 	void MeshView::configure(const vzt::Device* device, uint32_t imageCount)
 	{
-		m_imageCount           = imageCount;
-		m_device               = device;
+		m_scene->forAll<MeshDeviceData>([&](Entity entity) { entity.remove<MeshDeviceData>(); });
+
+		m_imageCount      = imageCount;
+		m_device          = device;
+		m_materialNb      = 0;
+		m_transformNumber = 0;
+
 		m_meshDescriptorLayout = vzt::DescriptorLayout();
 		m_meshDescriptorLayout.configure(device);
 		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
