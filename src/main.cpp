@@ -2,6 +2,7 @@
 #include "Vazteran/Backend/Vulkan/Renderer.hpp"
 #include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
 #include "Vazteran/Core/Logger.hpp"
+#include "Vazteran/Renderer/ShaderLibrary.hpp"
 #include "Vazteran/System/Scene.hpp"
 #include "Vazteran/Views/MeshView.hpp"
 #include "Vazteran/Window.hpp"
@@ -32,17 +33,21 @@ int main(int /* args */, char*[] /* argv */)
 		uiManager.setMainMenuBar(mainMenuBar);
 
 		vzt::DescriptorLayout meshDescriptorLayout{};
-		meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
-		meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::UniformBuffer);
-		meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 2, vzt::DescriptorType::CombinedSampler);
+		meshDescriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+		meshDescriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
+		meshDescriptorLayout.addBinding(2, vzt::DescriptorType::CombinedSampler);
+
+		vzt::ShaderLibrary   library{};
+		vzt::GraphicPipeline geometryPipeline;
+		vzt::GraphicPipeline compositionPipeline;
 
 		vzt::Program triangleProgram{};
-		triangleProgram.setShader(vzt::Shader("./shaders/triangle.vert.spv", vzt::ShaderStage::VertexShader));
-		triangleProgram.setShader(vzt::Shader("./shaders/triangle.frag.spv", vzt::ShaderStage::FragmentShader));
-		auto geometryPipeline = std::make_unique<vzt::GraphicPipeline>(
-		    std::move(triangleProgram), meshDescriptorLayout,
-		    vzt::VertexInputDescription{vzt::TriangleVertexInput::getBindingDescription(),
-		                                vzt::TriangleVertexInput::getAttributeDescription()});
+		triangleProgram.setShader(library.get("./shaders/triangle.vert"));
+		triangleProgram.setShader(library.get("./shaders/triangle.frag"));
+		geometryPipeline =
+		    vzt::GraphicPipeline(std::move(triangleProgram), meshDescriptorLayout,
+		                         vzt::VertexInputDescription{vzt::TriangleVertexInput::getBindingDescription(),
+		                                                     vzt::TriangleVertexInput::getAttributeDescription()});
 
 		vzt::MeshView meshView{currentScene};
 
@@ -62,26 +67,27 @@ int main(int /* args */, char*[] /* argv */)
 		geometryBuffer.setDepthStencilOutput(depth, "Depth");
 		geometryBuffer.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
 			meshView.configure(settings.device, renderer.getImageCount());
-			geometryPipeline->configure(std::move(settings));
+			geometryPipeline.configure(std::move(settings));
 		});
 
 		geometryBuffer.setRecordFunction([&](uint32_t imageId, const VkCommandBuffer& cmd,
 		                                     const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-			geometryPipeline->bind(cmd);
+			geometryPipeline.bind(cmd);
 			if (!engineDescriptorSets.empty())
 			{
-				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, geometryPipeline->layout(), 0,
+				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, geometryPipeline.layout(), 0,
 				                        static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(),
 				                        0, nullptr);
 			}
 
-			meshView.record(imageId, cmd, geometryPipeline.get());
+			meshView.record(imageId, cmd, &geometryPipeline);
 		});
 
 		vzt::Program fsBlinnPhongProgram = vzt::Program{};
-		fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/fs_triangle.vert.spv", vzt::ShaderStage::VertexShader));
-		fsBlinnPhongProgram.setShader(vzt::Shader("./shaders/blinn_phong.frag.spv", vzt::ShaderStage::FragmentShader));
-		vzt::GraphicPipeline compositionPipeline{std::move(fsBlinnPhongProgram)};
+		fsBlinnPhongProgram.setShader(library.get("./shaders/fs_triangle.vert"));
+		fsBlinnPhongProgram.setShader(library.get("./shaders/blinn_phong.frag"));
+
+		compositionPipeline                             = vzt::GraphicPipeline{std::move(fsBlinnPhongProgram)};
 		compositionPipeline.getRasterOptions().cullMode = vzt::CullMode::Front;
 
 		vzt::AttachmentHandle composed   = renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment});

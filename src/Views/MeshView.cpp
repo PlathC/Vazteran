@@ -132,9 +132,9 @@ namespace vzt
 
 		m_meshDescriptorLayout = vzt::DescriptorLayout();
 		m_meshDescriptorLayout.configure(device);
-		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::VertexShader, 0, vzt::DescriptorType::UniformBuffer);
-		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 1, vzt::DescriptorType::UniformBuffer);
-		m_meshDescriptorLayout.addBinding(vzt::ShaderStage::FragmentShader, 2, vzt::DescriptorType::CombinedSampler);
+		m_meshDescriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+		m_meshDescriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
+		m_meshDescriptorLayout.addBinding(2, vzt::DescriptorType::CombinedSampler);
 
 		m_descriptorPool = vzt::DescriptorPool(
 		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);

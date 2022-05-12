@@ -68,13 +68,14 @@ namespace vzt
 	class GraphicPipeline
 	{
 	  public:
+		GraphicPipeline() = default;
 		GraphicPipeline(vzt::Program&& program, std::optional<vzt::DescriptorLayout> userDefinedDescriptorLayout = {},
 		                std::optional<vzt::VertexInputDescription> vertexInputDescription = {});
 
-		GraphicPipeline(const GraphicPipeline&) = delete;
+		GraphicPipeline(const GraphicPipeline&)            = delete;
 		GraphicPipeline& operator=(const GraphicPipeline&) = delete;
 
-		GraphicPipeline(GraphicPipeline&& other) noexcept = default;
+		GraphicPipeline(GraphicPipeline&& other) noexcept            = default;
 		GraphicPipeline& operator=(GraphicPipeline&& other) noexcept = default;
 
 		~GraphicPipeline();

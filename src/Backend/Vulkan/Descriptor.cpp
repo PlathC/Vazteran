@@ -45,10 +45,9 @@ namespace vzt
 		return *this;
 	}
 
-	void DescriptorLayout::addBinding(const vzt::ShaderStage bindingStage, const uint32_t binding,
-	                                  const vzt::DescriptorType type)
+	void DescriptorLayout::addBinding(const uint32_t binding, const vzt::DescriptorType type)
 	{
-		m_bindings.emplace_back(Binding{binding, bindingStage, type});
+		m_bindings.emplace_back(Binding{binding, type});
 	}
 
 	void DescriptorLayout::configure(const vzt::Device* const device) { m_device = device; }
@@ -70,8 +69,8 @@ namespace vzt
 				layoutBinding.binding            = std::get<0>(descriptor);
 				layoutBinding.descriptorCount    = 1;
 				layoutBinding.pImmutableSamplers = nullptr; // Optional
-				layoutBinding.stageFlags         = static_cast<VkShaderStageFlags>(std::get<1>(descriptor));
-				layoutBinding.descriptorType     = static_cast<VkDescriptorType>(std::get<2>(descriptor));
+				layoutBinding.stageFlags         = static_cast<VkShaderStageFlags>(std::get<0>(descriptor));
+				layoutBinding.descriptorType     = static_cast<VkDescriptorType>(std::get<1>(descriptor));
 				layoutBindings.emplace_back(layoutBinding);
 			}
 

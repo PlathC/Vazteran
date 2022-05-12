@@ -53,7 +53,7 @@ namespace vzt
 
 		~DescriptorLayout();
 
-		void addBinding(const vzt::ShaderStage bindingStage, const uint32_t binding, const vzt::DescriptorType type);
+		void addBinding(const uint32_t binding, const vzt::DescriptorType type);
 		void configure(const vzt::Device* const device);
 
 		const VkDescriptorSetLayout& vkHandle() const;
@@ -62,8 +62,8 @@ namespace vzt
 		const vzt::Device*            m_device = nullptr;
 		mutable VkDescriptorSetLayout m_handle = VK_NULL_HANDLE;
 
-		using Binding = std::tuple<uint32_t /*binding*/, vzt::ShaderStage /* stage */, vzt::DescriptorType /*type */>;
-		std::vector<vzt::DescriptorLayout::Binding> m_bindings;
+		using Binding = std::tuple<uint32_t /*binding*/, vzt::DescriptorType /*type */>;
+		std::vector<Binding> m_bindings;
 	};
 
 	class DescriptorPool

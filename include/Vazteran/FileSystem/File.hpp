@@ -8,7 +8,7 @@ namespace vzt
 {
 	using Path = std::filesystem::path;
 
-	std::vector<char> readFile(const Path& path);
+	std::string readFile(const Path& path);
 } // namespace vzt
 
 #endif // VAZTERAN_IO_HPP

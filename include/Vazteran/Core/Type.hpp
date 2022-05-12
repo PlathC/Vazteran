@@ -1,7 +1,6 @@
 #ifndef VAZTERAN_TYPE_HPP
 #define VAZTERAN_TYPE_HPP
 
-#include <filesystem>
 #include <functional>
 #include <type_traits>
 

@@ -8,6 +8,11 @@ add_subdirectory(glfw)
 add_subdirectory(glm)
 add_subdirectory(spdlog)
 
+include(shaderc/cmake/utils.cmake)
+add_subdirectory(shaderc/libshaderc)
+add_subdirectory(shaderc/libshaderc_util)
+add_subdirectory(shaderc/libshaderc_util)
+
 set(IMGUI_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp"
@@ -30,6 +35,8 @@ set(VZT_EXTERN_INCLUDES
     "${CMAKE_CURRENT_SOURCE_DIR}/stb"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
     "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc_util/include"
 )
 
 set(VZT_EXTERN_LIBRARIES
@@ -38,6 +45,9 @@ set(VZT_EXTERN_LIBRARIES
     glfw
     glm::glm
     spdlog::spdlog
+    shaderc
+    shaderc_util
+    glslang 
 )
 
 set(VZT_EXTERN_SOURCES

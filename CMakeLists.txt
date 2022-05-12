@@ -156,8 +156,11 @@ set(VZT_HEADERS
         "include/Vazteran/FileSystem/File.hpp"
         "include/Vazteran/FileSystem/MeshReader.hpp"
 
-        "include/Vazteran/Math/Math.hpp"
         "include/Vazteran/Math/Aabb.hpp"
+        "include/Vazteran/Math/Math.hpp"
+
+        "include/Vazteran/Renderer/ShaderCompiler.hpp"
+        "include/Vazteran/Renderer/ShaderLibrary.hpp"
         
         "include/Vazteran/System/Listener.hpp"
         "include/Vazteran/System/Scene.hpp"
@@ -204,6 +207,9 @@ set(VZT_SOURCES
         "src/FileSystem/MeshReader.cpp"
 
         "src/Math/Aabb.cpp"
+
+        "src/Renderer/ShaderCompiler.cpp"
+        "src/Renderer/ShaderLibrary.cpp"
 
         "src/System/Scene.cpp"
         "src/System/Transform.cpp"

@@ -357,8 +357,7 @@ namespace vzt
 			m_descriptorLayout = vzt::DescriptorLayout{};
 			for (std::size_t i = 0; i < m_colorInputs.size(); i++)
 			{
-				m_descriptorLayout->addBinding(vzt::ShaderStage::FragmentShader, static_cast<uint32_t>(i),
-				                               vzt::DescriptorType::CombinedSampler);
+				m_descriptorLayout->addBinding(static_cast<uint32_t>(i), vzt::DescriptorType::CombinedSampler);
 			}
 			m_descriptorLayout->configure(device);
 
