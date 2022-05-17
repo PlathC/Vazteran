@@ -15,7 +15,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Based on https://github.com/SaschaWillems/Vulkan/blob/master/CMakeLists.txt
-if (NOT CMAKE_VERSION VERSION_LESS 3.7.0)
+if (NOT CMAKE_VERSION VERSION_LESS 3.19.0)
     message(STATUS "Using module to find Vulkan")
     find_package(Vulkan)
 endif()

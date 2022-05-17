@@ -3,27 +3,37 @@
 
 #include <string>
 
-#include <shaderc/shaderc.hpp>
+#include <glslang/Public/ShaderLang.h>
 
 #include "Vazteran/Backend/Vulkan/Shader.hpp"
 #include "Vazteran/FileSystem/File.hpp"
 
 namespace vzt
 {
+	enum class ShaderLanguage
+	{
+		GLSL,
+		HLSL
+	};
+
 	class ShaderCompiler
 	{
 	  public:
-		ShaderCompiler() = default;
+		ShaderCompiler();
 
 		void addIncludePath(Path path);
 
 		std::vector<uint32_t> compile(const Path& path, const std::string& source, ShaderStage stage,
-		                              bool optimize = true) const;
+		                              bool optimize = true, ShaderLanguage language = ShaderLanguage::GLSL) const;
 
 	  private:
-		static shaderc_shader_kind toShaderKind(ShaderStage stage);
+		static std::atomic<bool>        IsInitialized;
+		static std::atomic<std::size_t> InstanceCount;
 
-		shaderc::Compiler m_compiler;
+		static ShaderStage        extensionToStage(std::string_view extension);
+		static EShLanguage        toBackend(ShaderStage stage);
+		static glslang::EShSource toBackend(ShaderLanguage stage);
+
 		std::vector<Path> m_includePaths{};
 
 		class Includer : public shaderc::CompileOptions::IncluderInterface

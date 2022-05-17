@@ -5,13 +5,11 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(glfw)
 
+set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
+add_subdirectory(glslang)
+
 add_subdirectory(glm)
 add_subdirectory(spdlog)
-
-include(shaderc/cmake/utils.cmake)
-add_subdirectory(shaderc/libshaderc)
-add_subdirectory(shaderc/libshaderc_util)
-add_subdirectory(shaderc/libshaderc_util)
 
 set(IMGUI_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h"
@@ -35,8 +33,7 @@ set(VZT_EXTERN_INCLUDES
     "${CMAKE_CURRENT_SOURCE_DIR}/stb"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
     "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc_util/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/glslang"
 )
 
 set(VZT_EXTERN_LIBRARIES
@@ -47,7 +44,7 @@ set(VZT_EXTERN_LIBRARIES
     spdlog::spdlog
     shaderc
     shaderc_util
-    glslang 
+    glslang
 )
 
 set(VZT_EXTERN_SOURCES

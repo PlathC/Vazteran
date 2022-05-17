@@ -4,48 +4,115 @@
 
 namespace vzt
 {
-	std::vector<uint32_t> ShaderCompiler::compile(const Path& path, const std::string& source, ShaderStage stage,
-	                                              bool optimize) const
+	std::atomic<bool>        ShaderCompiler::IsInitialized = false;
+	std::atomic<std::size_t> ShaderCompiler::InstanceCount = 0;
+
+	ShaderCompiler::ShaderCompiler()
 	{
-		shaderc::Compiler       compiler;
-		shaderc::CompileOptions options;
+		// "Call this exactly once per process before using anything else"
+		if (!IsInitialized)
+		{
+			IsInitialized = glslang::InitializeProcess();
+		}
 
-		// options.AddMacroDefinition("MY_DEFINE", "1");
-		if (optimize)
-			options.SetOptimizationLevel(shaderc_optimization_level_size);
-
-		options.SetIncluder(std::make_unique<Includer>());
-
-		shaderc::SpvCompilationResult module =
-		    compiler.CompileGlslToSpv(source, toShaderKind(stage), path.string().c_str(), options);
-
-		if (module.GetCompilationStatus() != shaderc_compilation_status_success)
-			throw std::runtime_error(module.GetErrorMessage());
-
-		return {module.cbegin(), module.cend()};
+		InstanceCount++;
 	}
 
-	shaderc_shader_kind ShaderCompiler::toShaderKind(ShaderStage stage)
+	ShaderCompiler::~ShaderCompiler()
+	{
+		InstanceCount--;
+		if (InstanceCount == 0)
+		{
+			glslang::FinalizeProcess();
+			IsInitialized = false;
+		}
+	}
+
+	std::vector<uint32_t> ShaderCompiler::compile(const Path& path, const std::string& source, ShaderStage stage,
+	                                              bool optimize, ShaderLanguage language) const
+	{
+		ShHandle handle = ShConstructCompiler(toBackend(language), 0);
+		// options.AddMacroDefinition("MY_DEFINE", "1");
+		// if (optimize)
+		// 	options.SetOptimizationLevel(shaderc_optimization_level_size);
+
+		// options.SetIncluder(std::make_unique<Includer>());
+
+		// shaderc::SpvCompilationResult module =
+		//     compiler.CompileGlslToSpv(source, toShaderKind(stage), path.string().c_str(), options);
+
+		// if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+		// 	throw std::runtime_error(module.GetErrorMessage());
+
+		// return {module.cbegin(), module.cend()};
+	}
+
+	ShaderStage extensionToStage(std::string_view extension)
+	{
+		if (extension == ".vert")
+			return ShaderStage::Vertex;
+		if (extension == ".frag")
+			return ShaderStage::Fragment;
+		if (extension == ".comp")
+			return ShaderStage::Compute;
+		if (extension == ".geom")
+			return ShaderStage::Geometry;
+		if (extension == ".tesc")
+			return ShaderStage::TessellationControl;
+		if (extension == ".tese")
+			return ShaderStage::TessellationEvaluation;
+		if (extension == ".rgen")
+			return ShaderStage::RayGen;
+		if (extension == ".rint")
+			return ShaderStage::Intersection;
+		if (extension == ".rahit")
+			return ShaderStage::AnyHit;
+		if (extension == ".rchit")
+			return ShaderStage::ClosestHit;
+		if (extension == ".rmiss")
+			return ShaderStage::Miss;
+		if (extension == ".rcall")
+			return ShaderStage::Callable;
+		if (extension == ".task")
+			return ShaderStage::Task;
+		if (extension == ".mesh")
+			return ShaderStage::Mesh;
+
+		throw std::runtime_error("Unknown extension");
+	}
+
+	EShLanguage ShaderCompiler::toBackend(ShaderStage stage)
 	{
 		switch (stage)
 		{
-		case ShaderStage::Vertex: return shaderc_shader_kind::shaderc_vertex_shader; break;
-		case ShaderStage::Fragment: return shaderc_shader_kind::shaderc_fragment_shader; break;
-		case ShaderStage::Compute: return shaderc_shader_kind::shaderc_compute_shader; break;
-		case ShaderStage::Geometry: return shaderc_shader_kind::shaderc_geometry_shader; break;
-		case ShaderStage::TessellationControl: return shaderc_shader_kind::shaderc_tess_control_shader; break;
-		case ShaderStage::TessellationEvaluation: return shaderc_shader_kind::shaderc_tess_evaluation_shader; break;
-		case ShaderStage::RayGen: return shaderc_shader_kind::shaderc_raygen_shader; break;
-		case ShaderStage::AnyHit: return shaderc_shader_kind::shaderc_anyhit_shader; break;
-		case ShaderStage::ClosestHit: return shaderc_shader_kind::shaderc_closesthit_shader; break;
-		case ShaderStage::Miss: return shaderc_shader_kind::shaderc_miss_shader; break;
-		case ShaderStage::Intersection: return shaderc_shader_kind::shaderc_intersection_shader; break;
-		case ShaderStage::Callable: return shaderc_shader_kind::shaderc_callable_shader; break;
-		case ShaderStage::Task: return shaderc_shader_kind::shaderc_glsl_task_shader; break;
-		case ShaderStage::Mesh: return shaderc_shader_kind::shaderc_glsl_mesh_shader; break;
+		case ShaderStage::Vertex: return EShLanguage::EShLangVertex;
+		case ShaderStage::Fragment: return EShLanguage::EShLangFragment;
+		case ShaderStage::Compute: return EShLanguage::EShLangCompute;
+		case ShaderStage::Geometry: return EShLanguage::EShLangGeometry;
+		case ShaderStage::TessellationControl: return EShLanguage::EShLangTessControl;
+		case ShaderStage::TessellationEvaluation: return EShLanguage::EShLangTessEvaluation;
+		case ShaderStage::RayGen: return EShLanguage::EShLangRayGen;
+		case ShaderStage::AnyHit: return EShLanguage::EShLangAnyHit;
+		case ShaderStage::ClosestHit: return EShLanguage::EShLangClosestHit;
+		case ShaderStage::Miss: return EShLanguage::EShLangMiss;
+		case ShaderStage::Intersection: return EShLanguage::EShLangIntersect;
+		case ShaderStage::Callable: return EShLanguage::EShLangCallable;
+		case ShaderStage::Task: return EShLanguage::EShLangTaskNV;
+		case ShaderStage::Mesh: return EShLanguage::EShLangMeshNV;
 		}
 
 		throw std::runtime_error("Unknown shader type");
+	}
+
+	glslang::EShSource ShaderCompiler::toBackend(ShaderLanguage language)
+	{
+		switch (language)
+		{
+		case ShaderLanguage::GLSL: return glslang::EShSource::EShSourceGlsl;
+		case ShaderLanguage::HLSL: return glslang::EShSource::EShSourceHlsl;
+		}
+
+		throw std::runtime_error("Unknown shader language");
 	}
 
 	shaderc_include_result* ShaderCompiler::Includer::GetInclude(const char* requestedSource, shaderc_include_type type,
