@@ -5,12 +5,25 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory(glfw)
 
+set(SPIRV_HEADERS_SKIP_EXAMPLES ON CACHE BOOL "" FORCE)
+set(SPIRV_HEADERS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
+add_subdirectory(SPIRV-Headers)
+
+set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
+set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
+add_subdirectory(SPIRV-Tools)
+
+
 set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
-set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
 add_subdirectory(glslang)
 
 add_subdirectory(glm)
+
+add_subdirectory(fmt)
+
+set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "" FORCE)
 add_subdirectory(spdlog)
 
 set(IMGUI_SOURCES
@@ -41,12 +54,12 @@ set(VZT_EXTERN_INCLUDES
 set(VZT_EXTERN_LIBRARIES
     ${VZT_EXTERN_LIBRARIES}
     EnTT
+    fmt
     glfw
     glm::glm
-    spdlog::spdlog
-    shaderc
-    shaderc_util
     glslang
+    spdlog::spdlog
+    SPIRV 
 )
 
 set(VZT_EXTERN_SOURCES

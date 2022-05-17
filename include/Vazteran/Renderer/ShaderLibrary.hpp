@@ -19,14 +19,14 @@ namespace vzt
 		ShaderLibrary() = default;
 		~ShaderLibrary();
 
-		const Shader& get(const Path& path);
-		const Shader& get(const Path& path, ShaderUpdatedCallback callback);
+		const Shader& get(const Path& path, ShaderLanguage language = ShaderLanguage::GLSL,
+		                  ShaderUpdatedCallback callback = {});
 
 	  private:
 		struct ShaderSave;
 
-		ShaderSave& getOrAdd(const Path& path);
-		ShaderSave& add(std::size_t hash, const Path& path, ShaderStage stage);
+		ShaderSave& getOrAdd(const Path& path, ShaderLanguage language);
+		ShaderSave& add(std::size_t hash, const Path& path, ShaderStage stage, ShaderLanguage language);
 
 		void startThread();
 
@@ -38,6 +38,7 @@ namespace vzt
 		{
 			Path                               path;
 			Shader                             shader;
+			ShaderLanguage                     language;
 			FileTime                           lastWriteTime;
 			std::vector<ShaderUpdatedCallback> callbackList;
 		};

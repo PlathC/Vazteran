@@ -11,6 +11,23 @@ Here is the roadmap :
 | Geometry helping library                                        | To Do     |
 | ECS                                                             | To Do     |
 
+## Build 
+
+To clone the project and its dependencies:
+```
+git clone --recurse-submodules -j8 https://github.com/PlathC/Udock.git
+```
+
+Most of the dependencies are embedded but you must install Python3 and Vulkan SDK on your own.
+
+The project uses CMake, to build it you may use the following command or any IDE supporting it:
+```
+cd Vazteran
+mkdir build && cd build
+cmake ..
+cmake --build . --target Vazteran --config Release
+```
+
 ## Current state
 
 Render graph-based deferred rendering can be easily implemented:

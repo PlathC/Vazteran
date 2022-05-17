@@ -2,6 +2,7 @@
 #define VAZTERAN_SHADERCOMPILER_HPP
 
 #include <string>
+#include <unordered_map>
 
 #include <glslang/Public/ShaderLang.h>
 
@@ -23,12 +24,14 @@ namespace vzt
 
 		void addIncludePath(Path path);
 
-		std::vector<uint32_t> compile(const Path& path, const std::string& source, ShaderStage stage,
-		                              bool optimize = true, ShaderLanguage language = ShaderLanguage::GLSL) const;
+		Shader compile(const Path& path, ShaderStage stage, bool optimize = true,
+		               ShaderLanguage language = ShaderLanguage::GLSL) const;
 
 	  private:
 		static std::atomic<bool>        IsInitialized;
 		static std::atomic<std::size_t> InstanceCount;
+
+		static const TBuiltInResource DefaultBuiltInResource;
 
 		static ShaderStage        extensionToStage(std::string_view extension);
 		static EShLanguage        toBackend(ShaderStage stage);
@@ -36,29 +39,37 @@ namespace vzt
 
 		std::vector<Path> m_includePaths{};
 
-		class Includer : public shaderc::CompileOptions::IncluderInterface
+		class ShaderIncluder : public glslang::TShader::Includer
 		{
 		  public:
-			shaderc_include_result* GetInclude(const char* requestedSource, shaderc_include_type type,
-			                                   const char* requestingSource, size_t includeDepth) override;
+			using IncludeResult = glslang::TShader::Includer::IncludeResult;
+
+			ShaderIncluder(Path root) : m_root(std::move(root)) {}
+
+			IncludeResult* includeSystem(const char* headerName, const char* includerName,
+			                             size_t inclusionDepth) override;
+			IncludeResult* includeLocal(const char* headerName, const char* includerName,
+			                            size_t inclusionDepth) override;
 
 			// Handles shaderc_include_result_release_fn callbacks.
-			void ReleaseInclude(shaderc_include_result* data) override;
+			void releaseInclude(IncludeResult* data) override;
 
-			~Includer() override = default;
+			~ShaderIncluder() override = default;
 
 		  private:
-			static std::size_t hashPath(const Path& path);
+			static const std::size_t MaxDepth;
+			static std::size_t       hashPath(const Path& path);
 
-			struct IncludedFile
+			struct DataKeeper
 			{
-				shaderc_include_result result;
-
 				std::string sourceName;
 				std::string sourceContent;
+				std::size_t resultIndex;
 			};
 
-			std::unordered_map<std::size_t, IncludedFile> m_included;
+			Path                                        m_root;
+			std::unordered_map<std::size_t, DataKeeper> m_included;
+			std::vector<IncludeResult>                  m_resultsSave;
 		};
 	};
 } // namespace vzt

@@ -1,5 +1,7 @@
 #include <fstream>
 
+#include <fmt/core.h>
+
 #include "Vazteran/FileSystem/File.hpp"
 
 namespace vzt
@@ -8,7 +10,7 @@ namespace vzt
 	{
 		std::ifstream file{path, std::ios::ate | std::ios::binary};
 		if (!file.is_open())
-			throw std::runtime_error("Failed to open file!");
+			throw std::runtime_error(fmt::format("Failed to open file {} !", path.string()));
 
 		const std::size_t fileSize = file.tellg();
 		std::string       buffer{};

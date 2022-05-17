@@ -9,36 +9,34 @@ namespace vzt
 			m_updateThread.join();
 	}
 
-	const Shader& ShaderLibrary::get(const Path& path)
+	const Shader& ShaderLibrary::get(const Path& path, ShaderLanguage language, ShaderUpdatedCallback callback)
 	{
-		const ShaderSave& save = getOrAdd(path);
+		ShaderSave& save = getOrAdd(path, language);
+		if (!callback)
+		{
+			save.callbackList.emplace_back(std::move(callback));
+			if (!m_shouldUpdate)
+				startThread();
+		}
+
 		return save.shader;
 	}
 
-	const Shader& ShaderLibrary::get(const Path& path, ShaderUpdatedCallback callback)
-	{
-		ShaderSave& save = getOrAdd(path);
-		save.callbackList.emplace_back(std::move(callback));
-		if (!m_shouldUpdate)
-			startThread();
-
-		return save.shader;
-	}
-
-	ShaderLibrary::ShaderSave& ShaderLibrary::getOrAdd(const Path& path)
+	ShaderLibrary::ShaderSave& ShaderLibrary::getOrAdd(const Path& path, ShaderLanguage language)
 	{
 		const std::size_t hash = hashPath(path);
 
 		const auto save = m_shaders.find(hash);
 		if (save == m_shaders.end())
-			return add(hash, path, extensionToStage(path.extension().string()));
+			return add(hash, path, extensionToStage(path.extension().string()), language);
 
 		return save->second;
 	}
 
-	ShaderLibrary::ShaderSave& ShaderLibrary::add(std::size_t hash, const Path& path, ShaderStage stage)
+	ShaderLibrary::ShaderSave& ShaderLibrary::add(std::size_t hash, const Path& path, ShaderStage stage,
+	                                              ShaderLanguage language)
 	{
-		ShaderSave current{path, Shader{stage, m_compiler.compile(path, readFile(path), stage, true)}};
+		ShaderSave current{path, m_compiler.compile(path, stage, true, language), language};
 		current.lastWriteTime = std::filesystem::last_write_time(path);
 		m_shaders[hash]       = std::move(current);
 
@@ -58,11 +56,11 @@ namespace vzt
 
 					if (std::filesystem::last_write_time(save.second.path) != save.second.lastWriteTime)
 					{
-						ShaderStage stage  = save.second.shader.stage;
-						save.second.shader = {
-						    stage, m_compiler.compile(save.second.path, readFile(save.second.path), stage, true)};
+						const ShaderStage stage = save.second.shader.stage;
+						Shader shader = m_compiler.compile(save.second.path, stage, true, save.second.language);
 						for (auto& callback : save.second.callbackList)
 							callback(save.second.path, &save.second.shader);
+						save.second.shader = std::move(shader);
 					}
 				}
 

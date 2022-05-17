@@ -53,10 +53,7 @@ namespace vzt
 		return *this;
 	}
 
-	void Program::setShader(const Shader& shader)
-	{
-		m_shaders.emplace(shader.stage, getShaderModuleCreateInfo(shader));
-	}
+	void Program::setShader(Shader shader) { m_shaders.emplace(shader.stage, std::move(shader)); }
 
 	void Program::compile(const vzt::Device* const device)
 	{
@@ -64,7 +61,7 @@ namespace vzt
 		m_pipelineShaderStages.clear();
 		for (const auto& stage : m_shaders)
 		{
-			ShaderModule                    shaderModule{device, stage.second};
+			ShaderModule                    shaderModule{device, getShaderModuleCreateInfo(stage.second)};
 			VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
 			shaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 			shaderStageCreateInfo.stage  = static_cast<VkShaderStageFlagBits>(stage.first);
@@ -82,7 +79,7 @@ namespace vzt
 	{
 		VkShaderModuleCreateInfo shaderModuleCreateInfo{};
 		shaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		shaderModuleCreateInfo.codeSize = shader.compiledSource.size();
+		shaderModuleCreateInfo.codeSize = shader.compiledSource.size() * sizeof(uint32_t);
 		shaderModuleCreateInfo.pCode    = reinterpret_cast<const uint32_t*>(shader.compiledSource.data());
 
 		return shaderModuleCreateInfo;

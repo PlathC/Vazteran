@@ -25,3 +25,12 @@
 [submodule "extern/glslang"]
 	path = extern/glslang
 	url = https://github.com/KhronosGroup/glslang.git
+[submodule "extern/fmt"]
+	path = extern/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "extern/SPIRV-Tools"]
+	path = extern/SPIRV-Tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "extern/SPIRV-Headers"]
+	path = extern/SPIRV-Headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git

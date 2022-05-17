@@ -1,9 +1,6 @@
 #ifndef VAZTERAN_VULKAN_SHADER_HPP
 #define VAZTERAN_VULKAN_SHADER_HPP
 
-#include <optional>
-#include <unordered_set>
-
 #include <vulkan/vulkan.h>
 
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
@@ -84,7 +81,7 @@ namespace vzt
 
 		~Program() = default;
 
-		void setShader(const Shader& shader);
+		void setShader(Shader shader);
 
 		// Regenerate modules and stages
 		void compile(const vzt::Device* const device);
@@ -96,7 +93,7 @@ namespace vzt
 	  private:
 		static VkShaderModuleCreateInfo getShaderModuleCreateInfo(const Shader& shader);
 
-		using ShaderList = std::unordered_map<ShaderStage, VkShaderModuleCreateInfo>;
+		using ShaderList = std::unordered_map<ShaderStage, Shader>;
 		ShaderList m_shaders;
 		bool       m_isCompiled = false;
 
