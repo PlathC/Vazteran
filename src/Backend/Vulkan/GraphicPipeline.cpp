@@ -150,10 +150,8 @@ namespace vzt
 
 		std::vector<VkDescriptorSetLayout> descriptors;
 		descriptors.reserve(m_contextSettings.engineDescriptors.size());
-		for (const auto& descriptor : m_contextSettings.engineDescriptors)
-		{
+		for (const DescriptorLayout* const& descriptor : m_contextSettings.engineDescriptors)
 			descriptors.emplace_back(descriptor->vkHandle());
-		}
 
 		if (m_userDefinedDescriptorLayout)
 		{

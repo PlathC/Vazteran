@@ -59,12 +59,12 @@ namespace vzt
 	{
 		m_shaderModules.clear();
 		m_pipelineShaderStages.clear();
-		for (const auto& stage : m_shaders)
+		for (const auto& [stage, shader] : m_shaders)
 		{
-			ShaderModule                    shaderModule{device, getShaderModuleCreateInfo(stage.second)};
+			ShaderModule                    shaderModule{device, getShaderModuleCreateInfo(shader)};
 			VkPipelineShaderStageCreateInfo shaderStageCreateInfo{};
 			shaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-			shaderStageCreateInfo.stage  = static_cast<VkShaderStageFlagBits>(stage.first);
+			shaderStageCreateInfo.stage  = static_cast<VkShaderStageFlagBits>(stage);
 			shaderStageCreateInfo.module = shaderModule.vkHandle();
 			shaderStageCreateInfo.pName  = "main";
 

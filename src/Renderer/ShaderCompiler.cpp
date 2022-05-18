@@ -151,22 +151,20 @@ namespace vzt
 		glslang::EShTargetClientVersion clientVersion  = glslang::EShTargetClientVersion::EShTargetVulkan_1_3;
 		constexpr int                   DefaultVersion = 110;
 
+		shader.setEntryPoint("main");
 		shader.setEnvInput(toBackend(language), toBackend(stage), clientType, DefaultVersion);
 		shader.setEnvClient(clientType, clientVersion);
-		shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_5);
+		shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_6);
+
+#ifndef _NDEBUG
+		shader.setEnhancedMsgs();
+#endif // _NDEBUG
+
 		std::string preprocessed{};
 
 		constexpr EProfile DefaultProfile = EProfile::ECompatibilityProfile;
 
 		ShaderIncluder includer{path.parent_path()};
-		if (!shader.preprocess(&DefaultBuiltInResource, DefaultVersion, DefaultProfile, false, true,
-		                       EShMessages::EShMsgDefault, &preprocessed, includer))
-		{
-			VZT_DEBUG(shader.getInfoDebugLog());
-			VZT_INFO(shader.getInfoLog());
-			throw std::runtime_error(fmt::format("Fail to preprocess {}", path.string()));
-		}
-
 		if (!shader.parse(&DefaultBuiltInResource, DefaultVersion, DefaultProfile, false, true,
 		                  EShMessages::EShMsgDefault, includer))
 		{
@@ -180,8 +178,7 @@ namespace vzt
 
 		glslang::TProgram program{};
 		program.addShader(&shader);
-
-		if (!program.link(EShMessages::EShMsgDefault))
+		if (!program.link(EShMsgDefault))
 		{
 			VZT_DEBUG(shader.getInfoDebugLog());
 			VZT_INFO(shader.getInfoLog());
@@ -192,15 +189,13 @@ namespace vzt
 		std::vector<unsigned int> spirvData{};
 		glslang::SpvOptions       options{};
 		options.disableOptimizer = !optimize;
-
+		options.validate         = true;
 #ifndef _NDEBUG
 		options.generateDebugInfo = true;
 		options.stripDebugInfo    = true;
 #endif // _NDEBUG
 
-		const glslang::TIntermediate* intermediate = program.getIntermediate(shaderStage);
-		glslang::GlslangToSpv(*intermediate, spirvData, &buildLogger, &options);
-
+		glslang::GlslangToSpv(*program.getIntermediate(shaderStage), spirvData, &buildLogger, &options);
 		VZT_DEBUG(buildLogger.getAllMessages());
 
 		return {stage, std::vector<uint32_t>{spirvData.begin(), spirvData.end()}};

@@ -63,14 +63,14 @@ namespace vzt
 		{
 			std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 			layoutBindings.reserve(m_bindings.size());
-			for (const auto& descriptor : m_bindings)
+			for (const auto& [binding, type] : m_bindings)
 			{
 				VkDescriptorSetLayoutBinding layoutBinding{};
-				layoutBinding.binding            = std::get<0>(descriptor);
+				layoutBinding.binding            = binding;
 				layoutBinding.descriptorCount    = 1;
 				layoutBinding.pImmutableSamplers = nullptr; // Optional
-				layoutBinding.stageFlags         = static_cast<VkShaderStageFlags>(std::get<0>(descriptor));
-				layoutBinding.descriptorType     = static_cast<VkDescriptorType>(std::get<1>(descriptor));
+				layoutBinding.descriptorType     = vzt::toVulkan(type);
+				layoutBinding.stageFlags         = VK_SHADER_STAGE_ALL;
 				layoutBindings.emplace_back(layoutBinding);
 			}
 
@@ -198,16 +198,16 @@ namespace vzt
 		auto descriptorBufferInfo = std::vector<VkDescriptorBufferInfo>(bufferDescriptors.size());
 
 		std::size_t bufferIdx = 0;
-		for (const auto& bufferDescriptor : bufferDescriptors)
+		for (const auto& [binding, descriptor] : bufferDescriptors)
 		{
-			descriptorBufferInfo[bufferIdx].buffer = bufferDescriptor.second.buffer->vkHandle();
-			descriptorBufferInfo[bufferIdx].offset = bufferDescriptor.second.offset;
-			descriptorBufferInfo[bufferIdx].range  = bufferDescriptor.second.range;
+			descriptorBufferInfo[bufferIdx].buffer = descriptor.buffer->vkHandle();
+			descriptorBufferInfo[bufferIdx].offset = descriptor.offset;
+			descriptorBufferInfo[bufferIdx].range  = descriptor.range;
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrite.dstSet          = m_descriptors[i];
-			descriptorWrite.dstBinding      = bufferDescriptor.first;
+			descriptorWrite.dstBinding      = binding;
 			descriptorWrite.dstArrayElement = 0;
 			descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			descriptorWrite.descriptorCount = 1;
@@ -218,16 +218,16 @@ namespace vzt
 
 		bufferIdx                = 0;
 		auto descriptorImageInfo = std::vector<VkDescriptorImageInfo>(imageDescriptors.size());
-		for (const auto& imageDescriptor : imageDescriptors)
+		for (const auto& [binding, texture] : imageDescriptors)
 		{
 			descriptorImageInfo[bufferIdx].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			descriptorImageInfo[bufferIdx].imageView   = imageDescriptor.second->getView()->vkHandle();
-			descriptorImageInfo[bufferIdx].sampler     = imageDescriptor.second->getSampler()->vkHandle();
+			descriptorImageInfo[bufferIdx].imageView   = texture->getView()->vkHandle();
+			descriptorImageInfo[bufferIdx].sampler     = texture->getSampler()->vkHandle();
 
 			VkWriteDescriptorSet descriptorWrite{};
 			descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			descriptorWrite.dstSet          = m_descriptors[i];
-			descriptorWrite.dstBinding      = imageDescriptor.first;
+			descriptorWrite.dstBinding      = binding;
 			descriptorWrite.dstArrayElement = 0;
 			descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			descriptorWrite.descriptorCount = 1;
