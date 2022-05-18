@@ -18,7 +18,7 @@ const float Pi             = 3.14159265;
 
 void main() {
     const vec4  fragPosition = texture(samplerPosition, inUV);
-    const vec3  normal       = decodeNormal(texture(samplerNormal, inUV).xy);
+    const vec3  normal       = texture(samplerNormal, inUV).xyz;
     const vec4  albedo       = texture(samplerAlbedo, inUV);
     const float shininess    = fragPosition.w;
 

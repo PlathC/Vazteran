@@ -157,7 +157,7 @@ namespace vzt
 		shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_6);
 
 #ifndef _NDEBUG
-		shader.setEnhancedMsgs();
+		// shader.setEnhancedMsgs();
 #endif // _NDEBUG
 
 		std::string preprocessed{};
@@ -172,9 +172,6 @@ namespace vzt
 			VZT_INFO(shader.getInfoLog());
 			throw std::runtime_error(fmt::format("Failed to parse {}", path.string()));
 		}
-
-		VZT_DEBUG(shader.getInfoDebugLog());
-		VZT_INFO(shader.getInfoLog());
 
 		glslang::TProgram program{};
 		program.addShader(&shader);
@@ -196,7 +193,10 @@ namespace vzt
 #endif // _NDEBUG
 
 		glslang::GlslangToSpv(*program.getIntermediate(shaderStage), spirvData, &buildLogger, &options);
-		VZT_DEBUG(buildLogger.getAllMessages());
+
+		const std::string messages = buildLogger.getAllMessages();
+		if (!messages.empty())
+			VZT_DEBUG(messages);
 
 		return {stage, std::vector<uint32_t>{spirvData.begin(), spirvData.end()}};
 	}

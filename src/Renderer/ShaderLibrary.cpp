@@ -2,24 +2,25 @@
 
 namespace vzt
 {
-	ShaderLibrary::~ShaderLibrary()
-	{
-		m_shouldUpdate = false;
-		if (m_updateThread.joinable())
-			m_updateThread.join();
-	}
+	ShaderLibrary::~ShaderLibrary() = default;
 
-	const Shader& ShaderLibrary::get(const Path& path, ShaderLanguage language, ShaderUpdatedCallback callback)
+	const Shader& ShaderLibrary::get(const Path& path, ShaderLanguage language)
 	{
 		ShaderSave& save = getOrAdd(path, language);
-		if (!callback)
-		{
-			save.callbackList.emplace_back(std::move(callback));
-			if (!m_shouldUpdate)
-				startThread();
-		}
-
 		return save.shader;
+	}
+
+	void ShaderLibrary::reload()
+	{
+		for (auto& [_, save] : m_shaders)
+		{
+			const auto currentTime = std::filesystem::last_write_time(save.path);
+			if (currentTime > save.lastWriteTime)
+			{
+				save.lastWriteTime = currentTime;
+				save.shader        = m_compiler.compile(save.path, save.shader.stage, true, save.language);
+			}
+		}
 	}
 
 	ShaderLibrary::ShaderSave& ShaderLibrary::getOrAdd(const Path& path, ShaderLanguage language)
@@ -41,32 +42,6 @@ namespace vzt
 		m_shaders[hash]       = std::move(current);
 
 		return m_shaders[hash];
-	}
-
-	void ShaderLibrary::startThread()
-	{
-		m_shouldUpdate = true;
-		m_updateThread = std::thread([&] {
-			while (m_shouldUpdate)
-			{
-				for (auto& save : m_shaders)
-				{
-					if (save.second.callbackList.empty())
-						continue;
-
-					if (std::filesystem::last_write_time(save.second.path) != save.second.lastWriteTime)
-					{
-						const ShaderStage stage = save.second.shader.stage;
-						Shader shader = m_compiler.compile(save.second.path, stage, true, save.second.language);
-						for (auto& callback : save.second.callbackList)
-							callback(save.second.path, &save.second.shader);
-						save.second.shader = std::move(shader);
-					}
-				}
-
-				std::this_thread::sleep_for(m_threadSleepDuration);
-			}
-		});
 	}
 
 	std::size_t ShaderLibrary::hashPath(const Path& path) { return std::filesystem::hash_value(path); }

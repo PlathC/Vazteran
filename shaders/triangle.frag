@@ -15,7 +15,7 @@ layout(location = 1) in vec2 uv;
 layout(location = 2) in vec3 normal;
 
 layout (location = 0) out vec4 outPosition;
-layout (location = 1) out vec2 outNormal;
+layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec4 outAlbedo;
 
 
@@ -23,5 +23,5 @@ void main()
 {
     outPosition = vec4(vsPosition, material.color.w);
     outAlbedo = vec4(texture(colorMap, uv).rgb * material.color.rgb, 1.);
-    outNormal.xy = encodeNormal(normal);
+    outNormal.xyz = normal;
 }

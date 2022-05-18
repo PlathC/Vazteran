@@ -26,8 +26,7 @@ namespace vzt
 		vzt::Vec2 textureCoordinates;
 		vzt::Vec3 normal;
 
-		static VkVertexInputBindingDescription                getBindingDescription();
-		static std::vector<VkVertexInputAttributeDescription> getAttributeDescription();
+		static VertexInputDescription getInputDescription();
 	};
 
 	class MeshView

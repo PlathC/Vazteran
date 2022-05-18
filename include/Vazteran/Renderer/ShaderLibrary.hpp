@@ -14,13 +14,12 @@ namespace vzt
 	class ShaderLibrary
 	{
 	  public:
-		using ShaderUpdatedCallback = std::function<void(const Path& /* path */, const Shader*)>;
-
 		ShaderLibrary() = default;
 		~ShaderLibrary();
 
-		const Shader& get(const Path& path, ShaderLanguage language = ShaderLanguage::GLSL,
-		                  ShaderUpdatedCallback callback = {});
+		const Shader& get(const Path& path, ShaderLanguage language = ShaderLanguage::GLSL);
+
+		void reload();
 
 	  private:
 		struct ShaderSave;
@@ -28,28 +27,20 @@ namespace vzt
 		ShaderSave& getOrAdd(const Path& path, ShaderLanguage language);
 		ShaderSave& add(std::size_t hash, const Path& path, ShaderStage stage, ShaderLanguage language);
 
-		void startThread();
-
 		static std::size_t hashPath(const Path& path);
 		static ShaderStage extensionToStage(std::string_view extension);
 
 		using FileTime = std::filesystem::file_time_type;
 		struct ShaderSave
 		{
-			Path                               path;
-			Shader                             shader;
-			ShaderLanguage                     language;
-			FileTime                           lastWriteTime;
-			std::vector<ShaderUpdatedCallback> callbackList;
+			Path           path;
+			Shader         shader;
+			ShaderLanguage language;
+			FileTime       lastWriteTime;
 		};
 
 		ShaderCompiler                              m_compiler;
 		std::unordered_map<std::size_t, ShaderSave> m_shaders;
-
-		std::thread       m_updateThread;
-		std::atomic<bool> m_shouldUpdate = false;
-
-		const std::chrono::duration<float, std::milli>& m_threadSleepDuration = std::chrono::milliseconds(1000);
 	};
 } // namespace vzt
 

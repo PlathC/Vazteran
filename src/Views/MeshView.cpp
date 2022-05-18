@@ -6,21 +6,13 @@
 
 namespace vzt
 {
-	VkVertexInputBindingDescription TriangleVertexInput::getBindingDescription()
+	VertexInputDescription TriangleVertexInput::getInputDescription()
 	{
-		VkVertexInputBindingDescription bindingDescription{};
-		bindingDescription.binding   = 0;
-		bindingDescription.stride    = sizeof(vzt::TriangleVertexInput);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		constexpr VkVertexInputBindingDescription bindingDescription{0, sizeof(vzt::TriangleVertexInput),
+		                                                             VK_VERTEX_INPUT_RATE_VERTEX};
 
-		return bindingDescription;
-	}
-
-	std::vector<VkVertexInputAttributeDescription> TriangleVertexInput::getAttributeDescription()
-	{
 		std::vector<VkVertexInputAttributeDescription> attributeDescriptions =
 		    std::vector<VkVertexInputAttributeDescription>(3);
-
 		attributeDescriptions[0].binding  = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
@@ -36,7 +28,7 @@ namespace vzt
 		attributeDescriptions[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[2].offset   = offsetof(vzt::TriangleVertexInput, normal);
 
-		return attributeDescriptions;
+		return vzt::VertexInputDescription{bindingDescription, std::move(attributeDescriptions)};
 	}
 
 	MeshView::MeshView(Scene& scene) : m_scene(&scene) {}

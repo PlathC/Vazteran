@@ -40,24 +40,22 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::ShaderLibrary   library{};
 		vzt::GraphicPipeline geometryPipeline;
 		vzt::GraphicPipeline compositionPipeline;
+		vzt::RenderGraph     renderGraph{};
 
 		vzt::Program triangleProgram{};
 		triangleProgram.setShader(library.get("./shaders/triangle.vert"));
 		triangleProgram.setShader(library.get("./shaders/triangle.frag"));
-		geometryPipeline =
-		    vzt::GraphicPipeline(std::move(triangleProgram), meshDescriptorLayout,
-		                         vzt::VertexInputDescription{vzt::TriangleVertexInput::getBindingDescription(),
-		                                                     vzt::TriangleVertexInput::getAttributeDescription()});
+		geometryPipeline = vzt::GraphicPipeline(std::move(triangleProgram), meshDescriptorLayout,
+		                                        vzt::TriangleVertexInput::getInputDescription());
 
 		vzt::MeshView meshView{currentScene};
 
-		vzt::RenderGraph      renderGraph{};
 		vzt::AttachmentHandle position =
 		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
 		vzt::AttachmentHandle albedo =
 		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
 		vzt::AttachmentHandle normal =
-		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8UNorm});
+		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8UNorm});
 		vzt::AttachmentHandle depth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
 
 		auto& geometryBuffer = renderGraph.addPass("G-Buffer", vzt::QueueType::Graphic);
@@ -83,7 +81,7 @@ int main(int /* args */, char*[] /* argv */)
 			meshView.record(imageId, cmd, &geometryPipeline);
 		});
 
-		vzt::Program fsBlinnPhongProgram = vzt::Program{};
+		vzt::Program fsBlinnPhongProgram{};
 		fsBlinnPhongProgram.setShader(library.get("./shaders/fs_triangle.vert"));
 		fsBlinnPhongProgram.setShader(library.get("./shaders/blinn_phong.frag"));
 
@@ -175,6 +173,28 @@ int main(int /* args */, char*[] /* argv */)
 			{
 				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed;
 			}
+
+			if (code == vzt::KeyCode::F8)
+			{
+				renderer.synchronize();
+
+				library.reload();
+
+				triangleProgram = vzt::Program{};
+				triangleProgram.setShader(library.get("./shaders/triangle.vert"));
+				triangleProgram.setShader(library.get("./shaders/triangle.frag"));
+				geometryPipeline = vzt::GraphicPipeline(std::move(triangleProgram), meshDescriptorLayout,
+				                                        vzt::TriangleVertexInput::getInputDescription());
+
+				fsBlinnPhongProgram = vzt::Program{};
+				fsBlinnPhongProgram.setShader(library.get("./shaders/fs_triangle.vert"));
+				fsBlinnPhongProgram.setShader(library.get("./shaders/blinn_phong.frag"));
+
+				compositionPipeline                             = vzt::GraphicPipeline{std::move(fsBlinnPhongProgram)};
+				compositionPipeline.getRasterOptions().cullMode = vzt::CullMode::Front;
+
+				renderer.configure(renderGraph);
+			}
 		});
 
 		window.setOnMouseButtonCallback([](vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
@@ -190,8 +210,6 @@ int main(int /* args */, char*[] /* argv */)
 		// {
 		// 	meshView.addModel(model);
 		// }
-		meshView.update(currentScene.getMainCamera().get<vzt::Camera>());
-
 		while (!window.update())
 		{
 			// currentScene.update();
