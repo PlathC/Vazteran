@@ -204,15 +204,8 @@ int main(int /* args */, char*[] /* argv */)
 			}
 		});
 
-		// currentScene     = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
-		// auto sceneModels = currentScene.cModels();
-		// for (const auto* model : sceneModels)
-		// {
-		// 	meshView.addModel(model);
-		// }
 		while (!window.update())
 		{
-			// currentScene.update();
 			meshView.update(currentScene.getMainCamera().get<vzt::Camera>());
 			renderer.render();
 		}
