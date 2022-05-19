@@ -63,7 +63,7 @@ namespace vzt
 
 	ImageView& ImageView::operator=(ImageView&& original) noexcept
 	{
-		m_device = original.m_device;
+		std::swap(m_device, original.m_device);
 		std::swap(m_vkImage, original.m_vkImage);
 		std::swap(m_vkHandle, original.m_vkHandle);
 		std::swap(m_allocation, original.m_allocation);
