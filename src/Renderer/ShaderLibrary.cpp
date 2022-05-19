@@ -1,4 +1,5 @@
 #include "Vazteran/Renderer/ShaderLibrary.hpp"
+#include "Vazteran/Core/Logger.hpp"
 
 namespace vzt
 {
@@ -18,7 +19,15 @@ namespace vzt
 			if (currentTime > save.lastWriteTime)
 			{
 				save.lastWriteTime = currentTime;
-				save.shader        = m_compiler.compile(save.path, save.shader.stage, true, save.language);
+
+				try
+				{
+					save.shader = m_compiler.compile(save.path, save.shader.stage, true, save.language);
+				}
+				catch (const std::exception& e)
+				{
+					VZT_INFO("Error while compiling {}: {}", save.path.string(), e.what());
+				}
 			}
 		}
 	}
