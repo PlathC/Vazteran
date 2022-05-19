@@ -15,14 +15,18 @@ namespace vzt
 	{
 		for (auto& [_, save] : m_shaders)
 		{
-			const auto currentTime = std::filesystem::last_write_time(save.path);
+			auto currentTime = std::filesystem::last_write_time(save.path);
+			for (const Path& included : save.includes)
+				currentTime = std::max(std::filesystem::last_write_time(included), currentTime);
+
 			if (currentTime > save.lastWriteTime)
 			{
 				save.lastWriteTime = currentTime;
 
 				try
 				{
-					save.shader = m_compiler.compile(save.path, save.shader.stage, true, save.language);
+					std::tie(save.shader, save.includes) =
+					    m_compiler.compile(save.path, save.shader.stage, true, save.language);
 				}
 				catch (const std::exception& e)
 				{
@@ -46,7 +50,9 @@ namespace vzt
 	ShaderLibrary::ShaderSave& ShaderLibrary::add(std::size_t hash, const Path& path, ShaderStage stage,
 	                                              ShaderLanguage language)
 	{
-		ShaderSave current{path, m_compiler.compile(path, stage, true, language), language};
+		ShaderSave current{path, language};
+		std::tie(current.shader, current.includes) = m_compiler.compile(path, stage, true, language);
+
 		current.lastWriteTime = std::filesystem::last_write_time(path);
 		m_shaders[hash]       = std::move(current);
 

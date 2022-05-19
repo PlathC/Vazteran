@@ -34,9 +34,12 @@ namespace vzt
 		struct ShaderSave
 		{
 			Path           path;
-			Shader         shader;
 			ShaderLanguage language;
-			FileTime       lastWriteTime;
+
+			Shader            shader;
+			std::vector<Path> includes;
+
+			FileTime lastWriteTime;
 		};
 
 		ShaderCompiler                              m_compiler;

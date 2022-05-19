@@ -24,8 +24,8 @@ namespace vzt
 
 		void addIncludePath(Path path);
 
-		Shader compile(const Path& path, ShaderStage stage, bool optimize = true,
-		               ShaderLanguage language = ShaderLanguage::GLSL) const;
+		std::tuple<Shader, std::vector<Path>> compile(const Path& path, ShaderStage stage, bool optimize = true,
+		                                              ShaderLanguage language = ShaderLanguage::GLSL) const;
 
 	  private:
 		static std::atomic<bool>        IsInitialized;
@@ -54,6 +54,8 @@ namespace vzt
 			// Handles shaderc_include_result_release_fn callbacks.
 			void releaseInclude(IncludeResult* data) override;
 
+			const std::vector<Path>& getIncludedList() const { return m_includedSave; }
+
 			~ShaderIncluder() override = default;
 
 		  private:
@@ -70,6 +72,7 @@ namespace vzt
 			Path                                        m_root;
 			std::unordered_map<std::size_t, DataKeeper> m_included;
 			std::vector<IncludeResult>                  m_resultsSave;
+			std::vector<Path>                           m_includedSave;
 		};
 	};
 } // namespace vzt

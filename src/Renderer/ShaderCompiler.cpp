@@ -137,7 +137,8 @@ namespace vzt
 		InstanceCount++;
 	}
 
-	Shader ShaderCompiler::compile(const Path& path, ShaderStage stage, bool optimize, ShaderLanguage language) const
+	std::tuple<Shader, std::vector<Path>> ShaderCompiler::compile(const Path& path, ShaderStage stage, bool optimize,
+	                                                              ShaderLanguage language) const
 	{
 		const EShLanguage shaderStage = toBackend(stage);
 		glslang::TShader  shader{shaderStage};
@@ -156,14 +157,9 @@ namespace vzt
 		shader.setEnvClient(clientType, clientVersion);
 		shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_6);
 
-#ifndef _NDEBUG
-		// shader.setEnhancedMsgs();
-#endif // _NDEBUG
-
-		std::string preprocessed{};
-
 		constexpr EProfile DefaultProfile = EProfile::ECompatibilityProfile;
 
+		std::string    preprocessed{};
 		ShaderIncluder includer{path.parent_path()};
 		if (!shader.parse(&DefaultBuiltInResource, DefaultVersion, DefaultProfile, false, true,
 		                  EShMessages::EShMsgDefault, includer))
@@ -187,6 +183,7 @@ namespace vzt
 		glslang::SpvOptions       options{};
 		options.disableOptimizer = !optimize;
 		options.validate         = true;
+
 #ifndef _NDEBUG
 		options.generateDebugInfo = true;
 		options.stripDebugInfo    = true;
@@ -198,7 +195,7 @@ namespace vzt
 		if (!messages.empty())
 			VZT_DEBUG(messages);
 
-		return {stage, std::vector<uint32_t>{spirvData.begin(), spirvData.end()}};
+		return {{stage, std::vector<uint32_t>{spirvData.begin(), spirvData.end()}}, includer.getIncludedList()};
 	}
 
 	ShaderStage extensionToStage(std::string_view extension)
@@ -276,12 +273,14 @@ namespace vzt
 	{
 		const Path requested{headerName};
 		const Path requesting{includerName};
-
 		const Path completePath = requesting / requested;
 
 		std::string source{};
 		if (std::filesystem::exists(completePath))
+		{
+			m_includedSave.emplace_back(completePath);
 			source = vzt::readFile(completePath);
+		}
 
 		const std::size_t hash = hashPath(completePath);
 
@@ -302,11 +301,13 @@ namespace vzt
 
 		std::string source{};
 		if (std::filesystem::exists(completePath))
+		{
+			m_includedSave.emplace_back(completePath);
 			source = vzt::readFile(completePath);
+		}
 
 		const std::size_t hash = hashPath(completePath);
-
-		DataKeeper keeper{requested.string(), source, m_resultsSave.size()};
+		DataKeeper        keeper{requested.string(), source, m_resultsSave.size()};
 
 		m_resultsSave.emplace_back(
 		    IncludeResult{keeper.sourceName, keeper.sourceContent.c_str(), keeper.sourceContent.size(), nullptr});
