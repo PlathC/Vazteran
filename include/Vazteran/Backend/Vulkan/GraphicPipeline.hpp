@@ -75,8 +75,8 @@ namespace vzt
 		GraphicPipeline(const GraphicPipeline&)            = delete;
 		GraphicPipeline& operator=(const GraphicPipeline&) = delete;
 
-		GraphicPipeline(GraphicPipeline&& other) noexcept            = default;
-		GraphicPipeline& operator=(GraphicPipeline&& other) noexcept = default;
+		GraphicPipeline(GraphicPipeline&& other) noexcept;
+		GraphicPipeline& operator=(GraphicPipeline&& other) noexcept;
 
 		~GraphicPipeline();
 

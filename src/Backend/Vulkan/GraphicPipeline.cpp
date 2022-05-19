@@ -15,6 +15,31 @@ namespace vzt
 	{
 	}
 
+	GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept
+	{
+		std::swap(m_vkHandle, other.m_vkHandle);
+		std::swap(m_pipelineLayout, other.m_pipelineLayout);
+
+		std::swap(m_program, other.m_program);
+		std::swap(m_userDefinedDescriptorLayout, other.m_userDefinedDescriptorLayout);
+		std::swap(m_vertexInputDescription, other.m_vertexInputDescription);
+		std::swap(m_contextSettings, other.m_contextSettings);
+		std::swap(m_rasterOptions, other.m_rasterOptions);
+	}
+	GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept
+	{
+		std::swap(m_vkHandle, other.m_vkHandle);
+		std::swap(m_pipelineLayout, other.m_pipelineLayout);
+
+		std::swap(m_program, other.m_program);
+		std::swap(m_userDefinedDescriptorLayout, other.m_userDefinedDescriptorLayout);
+		std::swap(m_vertexInputDescription, other.m_vertexInputDescription);
+		std::swap(m_contextSettings, other.m_contextSettings);
+		std::swap(m_rasterOptions, other.m_rasterOptions);
+
+		return *this;
+	}
+
 	void GraphicPipeline::create()
 	{
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
