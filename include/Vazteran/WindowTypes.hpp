@@ -3,8 +3,10 @@
 
 #include <type_traits>
 
-#include "Vazteran/Core/Type.hpp"
 #include <GLFW/glfw3.h>
+
+#include "Vazteran/Core/Macro.hpp"
+#include "Vazteran/Core/Type.hpp"
 
 namespace vzt
 {
@@ -22,6 +24,7 @@ namespace vzt
 		Right   = GLFW_MOUSE_BUTTON_RIGHT,
 		Middle  = GLFW_MOUSE_BUTTON_MIDDLE
 	};
+	BITWISE_FUNCTION(MouseButton)
 
 	enum class KeyAction : uint8_t
 	{
@@ -29,6 +32,7 @@ namespace vzt
 		Press   = GLFW_PRESS,
 		Repeat  = GLFW_REPEAT
 	};
+	BITWISE_FUNCTION(KeyAction)
 
 	enum class KeyModifier : uint8_t
 	{
@@ -39,21 +43,7 @@ namespace vzt
 		CapsLock = GLFW_MOD_CAPS_LOCK,
 		NumLock  = GLFW_MOD_NUM_LOCK
 	};
-
-	inline KeyModifier operator&(KeyModifier l, KeyModifier r)
-	{
-		return static_cast<KeyModifier>(vzt::toUnderlying(l) & vzt::toUnderlying(r));
-	}
-
-	inline KeyModifier operator|(KeyModifier l, KeyModifier r)
-	{
-		return static_cast<KeyModifier>(vzt::toUnderlying(l) | vzt::toUnderlying(r));
-	}
-
-	inline constexpr KeyModifier operator~(const KeyModifier m)
-	{
-		return static_cast<KeyModifier>(~vzt::toUnderlying(m));
-	}
+	BITWISE_FUNCTION(KeyModifier)
 
 	enum class KeyCode : int32_t
 	{
@@ -185,6 +175,7 @@ namespace vzt
 		RightSuper   = GLFW_KEY_RIGHT_SUPER,
 		Menu         = GLFW_KEY_MENU,
 	};
+	BITWISE_FUNCTION(KeyCode)
 
 } // namespace vzt
 

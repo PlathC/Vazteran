@@ -164,26 +164,16 @@ int main(int /* args */, char*[] /* argv */)
 			auto& camera      = currentScene.getMainCamera().get<vzt::Camera>();
 
 			if ((modifiers & vzt::KeyModifier::Shift) == vzt::KeyModifier::Shift)
-			{
 				cameraSpeed *= 5.f;
-			}
 
 			if (code == vzt::KeyCode::W)
-			{
 				camera.position += camera.front * cameraSpeed;
-			}
-			else if (code == vzt::KeyCode::S)
-			{
+			if (code == vzt::KeyCode::S)
 				camera.position -= camera.front * cameraSpeed;
-			}
-			else if (code == vzt::KeyCode::A)
-			{
+			if (code == vzt::KeyCode::A)
 				camera.position -= glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed;
-			}
-			else if (code == vzt::KeyCode::D)
-			{
+			if (code == vzt::KeyCode::D)
 				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed;
-			}
 
 			if (code == vzt::KeyCode::F8)
 			{

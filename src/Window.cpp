@@ -71,9 +71,7 @@ namespace vzt
 
 		VkSurfaceKHR surface;
 		if (glfwCreateWindowSurface(m_instance.vkHandle(), m_window.get(), nullptr, &surface) != VK_SUCCESS)
-		{
 			throw std::runtime_error("Failed to create window surface!");
-		}
 		m_surface = SurfaceHandler(&m_instance, surface);
 	}
 
