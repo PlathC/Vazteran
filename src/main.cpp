@@ -11,7 +11,7 @@ int main(int /* args */, char*[] /* argv */)
 {
 	try
 	{
-		vzt::Window     window{"Vazteran", 800, 600};
+		vzt::Window     window{"Vazteran", 1280, 720};
 		vzt::Renderer   renderer{&window};
 		vzt::UiRenderer uiRenderer{};
 
@@ -58,28 +58,33 @@ int main(int /* args */, char*[] /* argv */)
 		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8UNorm});
 		vzt::AttachmentHandle depth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
 
-		auto& geometryBuffer = renderGraph.addPass("G-Buffer", vzt::QueueType::Graphic);
-		geometryBuffer.addColorOutput(position, "Position");
-		geometryBuffer.addColorOutput(normal, "Normal");
-		geometryBuffer.addColorOutput(albedo, "Albedo");
-		geometryBuffer.setDepthStencilOutput(depth, "Depth");
-		geometryBuffer.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
-			meshView.configure(settings.device, renderer.getImageCount());
-			geometryPipeline.configure(std::move(settings));
-		});
+		{
+			auto& geometryBuffer = renderGraph.addPass("G-Buffer", vzt::QueueType::Graphic);
+			geometryBuffer.addColorOutput(position, "Position");
+			geometryBuffer.addColorOutput(normal, "Normal");
+			geometryBuffer.addColorOutput(albedo, "Albedo");
+			geometryBuffer.setDepthStencilOutput(depth, "Depth");
 
-		geometryBuffer.setRecordFunction([&](uint32_t imageId, const VkCommandBuffer& cmd,
-		                                     const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-			geometryPipeline.bind(cmd);
-			if (!engineDescriptorSets.empty())
-			{
-				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, geometryPipeline.layout(), 0,
-				                        static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(),
-				                        0, nullptr);
-			}
+			geometryBuffer.setConfigureFunction(
+			    [&meshView, &geometryPipeline, &renderer](const vzt::RenderPassHandler& pass) {
+				    meshView.configure(pass.getDevice(), renderer.getImageCount());
+				    geometryPipeline.configure({pass.getDevice(), pass.getTemplate(), pass.getDescriptorLayout(),
+				                                pass.getOutputAttachmentNb(), pass.getExtent()});
+			    });
 
-			meshView.record(imageId, cmd, &geometryPipeline);
-		});
+			geometryBuffer.setRecordFunction([&](uint32_t imageId, const VkCommandBuffer& cmd,
+			                                     const std::vector<VkDescriptorSet>& engineDescriptorSets) {
+				geometryPipeline.bind(cmd);
+				if (!engineDescriptorSets.empty())
+				{
+					vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, geometryPipeline.layout(), 0,
+					                        static_cast<uint32_t>(engineDescriptorSets.size()),
+					                        engineDescriptorSets.data(), 0, nullptr);
+				}
+
+				meshView.record(imageId, cmd, &geometryPipeline);
+			});
+		}
 
 		vzt::Program fsBlinnPhongProgram{};
 		fsBlinnPhongProgram.setShader(library.get("./shaders/fs_triangle.vert"));
@@ -91,35 +96,41 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::AttachmentHandle composed   = renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment});
 		vzt::AttachmentHandle finalDepth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
 
-		auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
-		deferredPass.addColorInput(position, "G-Position");
-		deferredPass.addColorInput(normal, "G-Normal");
-		deferredPass.addColorInput(albedo, "G-Albedo");
-		deferredPass.setDepthStencilOutput(finalDepth, "Final Depth");
-		deferredPass.addColorOutput(composed, "Composed");
-		deferredPass.setConfigureFunction([&](vzt::PipelineContextSettings settings) {
-			uiRenderer.configure(window.getInstance(), window.getWindowHandle(), settings.device,
-			                     settings.renderPassTemplate, renderer.getImageCount());
-			compositionPipeline.configure(std::move(settings));
-		});
+		{
+			auto& deferredPass = renderGraph.addPass("Shading", vzt::QueueType::Graphic);
+			deferredPass.addColorInput(position, "G-Position");
+			deferredPass.addColorInput(normal, "G-Normal");
+			deferredPass.addColorInput(albedo, "G-Albedo");
+			deferredPass.setDepthStencilOutput(finalDepth, "Final Depth");
+			deferredPass.addColorOutput(composed, "Composed");
 
-		deferredPass.setRecordFunction([&](uint32_t /* imageId */, const VkCommandBuffer& cmd,
-		                                   const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-			compositionPipeline.bind(cmd);
-			if (!engineDescriptorSets.empty())
-			{
-				vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline.layout(), 0,
-				                        static_cast<uint32_t>(engineDescriptorSets.size()), engineDescriptorSets.data(),
-				                        0, nullptr);
-			}
+			deferredPass.setConfigureFunction(
+			    [&window, &uiRenderer, &compositionPipeline, &renderer](const vzt::RenderPassHandler& pass) {
+				    uiRenderer.configure(window.getInstance(), window.getWindowHandle(), pass.getDevice(),
+				                         pass.getTemplate(), renderer.getImageCount());
+				    compositionPipeline.configure({pass.getDevice(), pass.getTemplate(), pass.getDescriptorLayout(),
+				                                   pass.getOutputAttachmentNb(), pass.getExtent()});
+			    });
 
-			vkCmdDraw(cmd, 3, 1, 0, 0);
+			deferredPass.setRecordFunction([&](uint32_t /* imageId */, const VkCommandBuffer& cmd,
+			                                   const std::vector<VkDescriptorSet>& engineDescriptorSets) {
+				compositionPipeline.bind(cmd);
+				if (!engineDescriptorSets.empty())
+				{
+					vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline.layout(), 0,
+					                        static_cast<uint32_t>(engineDescriptorSets.size()),
+					                        engineDescriptorSets.data(), 0, nullptr);
+				}
 
-			uiRenderer.record(cmd, uiManager);
-		});
+				vkCmdDraw(cmd, 3, 1, 0, 0);
+
+				uiRenderer.record(cmd, uiManager);
+			});
+		}
 
 		renderGraph.setBackBuffer(composed);
 		renderGraph.compile();
+
 		renderer.configure(renderGraph);
 
 		renderer.setRenderFunction(
@@ -214,7 +225,7 @@ int main(int /* args */, char*[] /* argv */)
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << e.what() << std::endl;
+		vzt::VZT_ERROR(e.what());
 		return EXIT_FAILURE;
 	}
 

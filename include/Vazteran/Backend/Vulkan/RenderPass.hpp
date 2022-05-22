@@ -92,28 +92,18 @@ namespace vzt
 
 	struct AttachmentPassUse
 	{
-		vzt::ImageLayout    initialLayout;
-		vzt::ImageLayout    finalLayout;
-		vzt::ImageLayout    usedLayout;
-		vzt::LoadOperation  loadOp;
-		vzt::LoadOperation  stencilLoapOp;
-		vzt::StoreOperation storeOp;
-		vzt::StoreOperation stencilStoreOp;
+		ImageLayout    initialLayout;
+		ImageLayout    finalLayout;
+		ImageLayout    usedLayout;
+		LoadOperation  loadOp;
+		LoadOperation  stencilLoapOp;
+		StoreOperation storeOp;
+		StoreOperation stencilStoreOp;
 
-		vzt::Vec4 clearValue = {0.0f, 0.0f, 0.0f, 1.0f};
-	};
+		Format      format;
+		SampleCount sampleCount;
 
-	struct DepthAttachmentPassUse
-	{
-		vzt::ImageLayout    initialLayout;
-		vzt::ImageLayout    finalLayout;
-		vzt::ImageLayout    usedLayout;
-		vzt::LoadOperation  loadOp;
-		vzt::LoadOperation  stencilLoapOp;
-		vzt::StoreOperation storeOp;
-		vzt::StoreOperation stencilStoreOp;
-
-		vzt::Vec2 clearValue = {1.f, 0.f};
+		Optional<Vec4> clearValue;
 	};
 
 	struct SubpassDependency
@@ -132,13 +122,11 @@ namespace vzt
 		DependencyFlag dependencyFlags = DependencyFlag::ByRegion;
 	};
 
-	using AttachmentPassConfiguration      = std::pair<Attachment*, AttachmentPassUse>;
-	using DepthAttachmentPassConfiguration = std::pair<Attachment*, DepthAttachmentPassUse>;
 	struct RenderPassConfiguration
 	{
-		std::vector<AttachmentPassConfiguration> inputAttachments;
-		std::vector<AttachmentPassConfiguration> colorAttachments;
-		DepthAttachmentPassConfiguration         depthAttachment;
+		std::vector<AttachmentPassUse> inputAttachments;
+		std::vector<AttachmentPassUse> colorAttachments;
+		AttachmentPassUse              depthAttachment;
 
 		std::vector<SubpassDependency> dependencies;
 	};

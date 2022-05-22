@@ -4,13 +4,13 @@ namespace vzt
 {
 	namespace ui
 	{
-		void UiManager::setMainMenuBar(vzt::ui::MainMenuBar mainMenuBar) { m_mainMenuBar = mainMenuBar; }
+		void UiManager::setMainMenuBar(MainMenuBar mainMenuBar) { m_mainMenuBar = mainMenuBar; }
 
 		void UiManager::draw() const
 		{
-			if (m_mainMenuBar.has_value())
+			if (m_mainMenuBar)
 			{
-				m_mainMenuBar.value().draw();
+				m_mainMenuBar->draw();
 			}
 		}
 	} // namespace ui

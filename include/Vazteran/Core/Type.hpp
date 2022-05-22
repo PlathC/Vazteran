@@ -2,6 +2,7 @@
 #define VAZTERAN_TYPE_HPP
 
 #include <functional>
+#include <optional>
 #include <type_traits>
 
 namespace vzt
@@ -26,14 +27,20 @@ namespace vzt
 	{
 		Type width;
 		Type height;
+
+		bool operator==(const Size2D<Type>& other) const { return other.width == width && other.height == height; }
 	};
 
 	template <class Type>
 	using Ptr = Type*;
 
 	template <class Type>
-	using Optional = std::reference_wrapper<Type>;
+	using Optional = std::optional<Type>;
 
+	template <class Type>
+	using Ref = std::reference_wrapper<Type>;
+	template <class Type>
+	using CRef = std::reference_wrapper<const Type>;
 } // namespace vzt
 
 #endif // VAZTERAN_TYPE_HPP

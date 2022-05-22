@@ -31,9 +31,8 @@ namespace vzt
 	class Attachment
 	{
 	  public:
-		Attachment(const vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage);
-		Attachment(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageLayout layout,
-		           vzt::ImageAspect aspect);
+		Attachment(const Device* device, Size2D<uint32_t> size, Format format, ImageUsage usage);
+		Attachment(const Device* device, VkImage image, Format format, ImageLayout layout, ImageAspect aspect);
 		~Attachment();
 
 		Attachment(const Attachment&)            = delete;
@@ -42,22 +41,22 @@ namespace vzt
 		Attachment(Attachment&&)            = default;
 		Attachment& operator=(Attachment&&) = default;
 
-		const vzt::ImageView* getView() const { return m_imageView.get(); }
-		vzt::Format           getFormat() const { return m_format; }
-		vzt::ImageLayout      getLayout() const { return m_layout; }
-		vzt::SampleCount      getSampleCount() const { return m_sampleCount; }
-		void                  setSampleCount(const vzt::SampleCount sampleCount) { m_sampleCount = sampleCount; }
+		const ImageView* getView() const { return m_imageView.get(); }
+		Format           getFormat() const { return m_format; }
+		ImageLayout      getLayout() const { return m_layout; }
+		SampleCount      getSampleCount() const { return m_sampleCount; }
+		void             setSampleCount(const SampleCount sampleCount) { m_sampleCount = sampleCount; }
 
-		vzt::Texture* asTexture() const;
+		Texture* asTexture() const;
 
 	  private:
-		const vzt::Device*              m_device;
-		vzt::Format                     m_format;
-		vzt::ImageLayout                m_layout;
-		vzt::SampleCount                m_sampleCount;
-		std::unique_ptr<vzt::ImageView> m_imageView;
+		const Device* m_device;
+		Format        m_format;
+		ImageLayout   m_layout;
+		SampleCount   m_sampleCount;
 
-		std::unique_ptr<vzt::Texture> m_textureRepresentation;
+		std::unique_ptr<ImageView> m_imageView;
+		std::unique_ptr<Texture>   m_textureRepresentation;
 	};
 } // namespace vzt
 

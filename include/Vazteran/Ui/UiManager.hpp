@@ -3,6 +3,7 @@
 
 #include <optional>
 
+#include "Vazteran/Core/Type.hpp"
 #include "Vazteran/Ui/Component.hpp"
 #include "Vazteran/Ui/MainMenuBar.hpp"
 
@@ -17,11 +18,10 @@ namespace vzt
 			virtual ~UiManager() = default;
 
 			void setMainMenuBar(MainMenuBar mainMenuBar);
-
 			void draw() const;
 
 		  private:
-			std::optional<MainMenuBar> m_mainMenuBar;
+			Optional<MainMenuBar> m_mainMenuBar;
 		};
 	} // namespace ui
 } // namespace vzt

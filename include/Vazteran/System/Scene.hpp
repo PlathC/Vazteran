@@ -4,7 +4,6 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 
 #include <functional>
-#include <optional>
 #include <vector>
 
 #include <entt/entity/entity.hpp>

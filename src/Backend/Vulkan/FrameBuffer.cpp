@@ -11,8 +11,8 @@
 
 namespace vzt
 {
-	FrameBuffer::FrameBuffer(const vzt::Device* device, std::unique_ptr<vzt::RenderPass> renderPass,
-	                         vzt::Size2D<uint32_t> size, const std::vector<const vzt::ImageView*>& extAttachmentViews)
+	FrameBuffer::FrameBuffer(const Device* device, std::unique_ptr<RenderPass> renderPass, Size2D<uint32_t> size,
+	                         const std::vector<const ImageView*>& extAttachmentViews)
 	    : m_device(device), m_size(size), m_renderPass(std::move(renderPass))
 	{
 		std::vector<VkImageView> attachmentView{};

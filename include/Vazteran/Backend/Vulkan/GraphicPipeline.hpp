@@ -50,12 +50,11 @@ namespace vzt
 
 	struct PipelineContextSettings
 	{
-		const vzt::Device*                        device;
-		const vzt::RenderPass*                    renderPassTemplate;
-		std::vector<const vzt::DescriptorLayout*> engineDescriptors;
-		uint32_t                                  attachmentCount;
-		vzt::Format                               targetFormat;
-		vzt::Size2D<uint32_t>                     targetSize;
+		const Device*           device;
+		const RenderPass*       renderPassTemplate;
+		const DescriptorLayout* engineDescriptors;
+		uint32_t                attachmentCount;
+		vzt::Size2D<uint32_t>   targetSize;
 	};
 
 	struct RasterizationOptions
@@ -69,8 +68,10 @@ namespace vzt
 	{
 	  public:
 		GraphicPipeline() = default;
-		GraphicPipeline(vzt::Program&& program, std::optional<vzt::DescriptorLayout> userDefinedDescriptorLayout = {},
-		                std::optional<vzt::VertexInputDescription> vertexInputDescription = {});
+
+		GraphicPipeline(Program&& program, Optional<VertexInputDescription> vertexInputDescription = {});
+		GraphicPipeline(Program&& program, DescriptorLayout userDefinedDescriptorLayout,
+		                Optional<VertexInputDescription> vertexInputDescription = {});
 
 		GraphicPipeline(const GraphicPipeline&)            = delete;
 		GraphicPipeline& operator=(const GraphicPipeline&) = delete;
@@ -99,11 +100,11 @@ namespace vzt
 		VkPipeline       m_vkHandle       = VK_NULL_HANDLE;
 		VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-		vzt::Program                               m_program;
-		std::optional<vzt::DescriptorLayout>       m_userDefinedDescriptorLayout;
-		std::optional<vzt::VertexInputDescription> m_vertexInputDescription;
-		vzt::PipelineContextSettings               m_contextSettings{};
-		vzt::RasterizationOptions                  m_rasterOptions{};
+		Program                          m_program;
+		Optional<DescriptorLayout>       m_userDefinedDescriptorLayout;
+		Optional<VertexInputDescription> m_vertexInputDescription;
+		PipelineContextSettings          m_contextSettings{};
+		RasterizationOptions             m_rasterOptions{};
 	};
 } // namespace vzt
 

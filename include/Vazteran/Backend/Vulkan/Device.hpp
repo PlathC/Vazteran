@@ -2,7 +2,6 @@
 #define VAZTERAN_VULKAN_DEVICE_HPP
 
 #include <functional>
-#include <optional>
 #include <vector>
 
 #include <vk_mem_alloc.h>
@@ -16,8 +15,8 @@ namespace vzt
 
 	struct QueueFamilyIndices
 	{
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
+		Optional<uint32_t> graphicsFamily;
+		Optional<uint32_t> presentFamily;
 
 		bool isComplete()
 		{

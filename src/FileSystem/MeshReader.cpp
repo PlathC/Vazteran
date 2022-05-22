@@ -59,7 +59,7 @@ namespace vzt
 				if (fs::exists(currentMaterial.specular_texname))
 					specularTexture = vzt::Image(currentMaterial.specular_texname);
 
-				result.materials.emplace_back(vzt::Material{
+				result.materials.emplace_back(Material{
 				    diffuseTexture,
 				    vzt::Vec4{currentMaterial.diffuse[0], currentMaterial.diffuse[1], currentMaterial.diffuse[2], 1.f},
 				    currentMaterial.shininess});

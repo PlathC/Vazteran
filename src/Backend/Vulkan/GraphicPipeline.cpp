@@ -7,9 +7,13 @@
 
 namespace vzt
 {
-	GraphicPipeline::GraphicPipeline(vzt::Program&&                             program,
-	                                 std::optional<vzt::DescriptorLayout>       userDefinedDescriptorLayout,
-	                                 std::optional<vzt::VertexInputDescription> vertexInputDescription)
+	GraphicPipeline::GraphicPipeline(Program&& program, Optional<VertexInputDescription> vertexInputDescription)
+	    : m_program(std::move(program)), m_vertexInputDescription(std::move(vertexInputDescription))
+	{
+	}
+
+	GraphicPipeline::GraphicPipeline(Program&& program, DescriptorLayout userDefinedDescriptorLayout,
+	                                 Optional<VertexInputDescription> vertexInputDescription)
 	    : m_program(std::move(program)), m_userDefinedDescriptorLayout(std::move(userDefinedDescriptorLayout)),
 	      m_vertexInputDescription(std::move(vertexInputDescription))
 	{
@@ -174,9 +178,8 @@ namespace vzt
 			m_program.compile(m_contextSettings.device);
 
 		std::vector<VkDescriptorSetLayout> descriptors;
-		descriptors.reserve(m_contextSettings.engineDescriptors.size());
-		for (const DescriptorLayout* const& descriptor : m_contextSettings.engineDescriptors)
-			descriptors.emplace_back(descriptor->vkHandle());
+		if (m_contextSettings.engineDescriptors)
+			descriptors.emplace_back(m_contextSettings.engineDescriptors->vkHandle());
 
 		if (m_userDefinedDescriptorLayout)
 		{

@@ -8,31 +8,17 @@
 
 namespace vzt
 {
-	VkAttachmentDescription toVulkan(const AttachmentPassConfiguration& configuration)
+	VkAttachmentDescription toVulkan(const AttachmentPassUse& configuration)
 	{
 		VkAttachmentDescription description{};
-		description.initialLayout  = vzt::toVulkan(configuration.second.initialLayout);
-		description.finalLayout    = vzt::toVulkan(configuration.second.finalLayout);
-		description.stencilLoadOp  = vzt::toVulkan(configuration.second.stencilLoapOp);
-		description.stencilStoreOp = vzt::toVulkan(configuration.second.stencilStoreOp);
-		description.loadOp         = vzt::toVulkan(configuration.second.loadOp);
-		description.storeOp        = vzt::toVulkan(configuration.second.storeOp);
-		description.format         = vzt::toVulkan(configuration.first->getFormat());
-		description.samples        = vzt::toVulkan(configuration.first->getSampleCount());
-
-		return description;
-	}
-	VkAttachmentDescription toVulkan(const DepthAttachmentPassConfiguration& configuration)
-	{
-		VkAttachmentDescription description{};
-		description.initialLayout  = vzt::toVulkan(configuration.second.initialLayout);
-		description.finalLayout    = vzt::toVulkan(configuration.second.finalLayout);
-		description.stencilLoadOp  = vzt::toVulkan(configuration.second.stencilLoapOp);
-		description.stencilStoreOp = vzt::toVulkan(configuration.second.stencilStoreOp);
-		description.loadOp         = vzt::toVulkan(configuration.second.loadOp);
-		description.storeOp        = vzt::toVulkan(configuration.second.storeOp);
-		description.format         = vzt::toVulkan(configuration.first->getFormat());
-		description.samples        = vzt::toVulkan(configuration.first->getSampleCount());
+		description.initialLayout  = vzt::toVulkan(configuration.initialLayout);
+		description.finalLayout    = vzt::toVulkan(configuration.finalLayout);
+		description.stencilLoadOp  = vzt::toVulkan(configuration.stencilLoapOp);
+		description.stencilStoreOp = vzt::toVulkan(configuration.stencilStoreOp);
+		description.loadOp         = vzt::toVulkan(configuration.loadOp);
+		description.storeOp        = vzt::toVulkan(configuration.storeOp);
+		description.format         = vzt::toVulkan(configuration.format);
+		description.samples        = vzt::toVulkan(configuration.sampleCount);
 
 		return description;
 	}
@@ -52,25 +38,26 @@ namespace vzt
 
 			VkAttachmentReference& currentAttachmentRef = colorRefs[i];
 			currentAttachmentRef.attachment             = static_cast<uint32_t>(attachmentDescriptions.size() - 1);
-			currentAttachmentRef.layout                 = vzt::toVulkan(attachment.second.usedLayout);
+			currentAttachmentRef.layout                 = vzt::toVulkan(attachment.usedLayout);
 
+			const Vec4 clearValue  = attachment.clearValue.value_or(Vec4(0.f));
 			m_clearValues[i].color = {
-			    attachment.second.clearValue.x,
-			    attachment.second.clearValue.y,
-			    attachment.second.clearValue.z,
-			    attachment.second.clearValue.w,
+			    clearValue.x,
+			    clearValue.y,
+			    clearValue.z,
+			    clearValue.w,
 			};
 		}
 
-		m_clearValues[attachmentDescriptions.size()].depthStencil = {
-		    configuration.depthAttachment.second.clearValue.x,
-		    static_cast<uint32_t>(configuration.depthAttachment.second.clearValue.y)};
+		const Vec4 depthClearValue = configuration.depthAttachment.clearValue.value_or(Vec4(1.f, 0.f, 0.f, 0.f));
+		m_clearValues[attachmentDescriptions.size()].depthStencil = {depthClearValue.x,
+		                                                             static_cast<uint32_t>(depthClearValue.w)};
 
 		attachmentDescriptions.emplace_back(toVulkan(configuration.depthAttachment));
 
 		VkAttachmentReference depthRef{};
 		depthRef.attachment = static_cast<uint32_t>(attachmentDescriptions.size() - 1);
-		depthRef.layout     = vzt::toVulkan(configuration.depthAttachment.second.usedLayout);
+		depthRef.layout     = vzt::toVulkan(configuration.depthAttachment.usedLayout);
 
 		std::vector<VkAttachmentReference> inputRefs{};
 		inputRefs.resize(configuration.inputAttachments.size());
@@ -81,7 +68,7 @@ namespace vzt
 
 			VkAttachmentReference& currentAttachmentRef = inputRefs[i];
 			currentAttachmentRef.attachment             = static_cast<uint32_t>(attachmentDescriptions.size() - 1);
-			currentAttachmentRef.layout                 = vzt::toVulkan(attachment.second.usedLayout);
+			currentAttachmentRef.layout                 = vzt::toVulkan(attachment.usedLayout);
 		}
 
 		VkSubpassDescription subpass{};
@@ -115,9 +102,7 @@ namespace vzt
 		renderPassInfo.pDependencies   = subpassDependencies.data();
 
 		if (vkCreateRenderPass(m_device->vkHandle(), &renderPassInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
-		{
 			throw std::runtime_error("Failed to create render pass!");
-		}
 	}
 
 	RenderPass::RenderPass(RenderPass&& other) noexcept
@@ -147,8 +132,8 @@ namespace vzt
 
 	void RenderPass::bind(VkCommandBuffer commandBuffer, const vzt::FrameBuffer* const frameBuffer) const
 	{
-		VkRenderPassBeginInfo renderPassInfo{};
-		renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+
 		renderPassInfo.renderPass        = m_vkHandle;
 		renderPassInfo.framebuffer       = frameBuffer->vkHandle();
 		renderPassInfo.renderArea.offset = {0, 0};
