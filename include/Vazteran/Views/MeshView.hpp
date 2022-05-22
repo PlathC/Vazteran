@@ -7,7 +7,6 @@
 #include "Vazteran/Backend/Vulkan/Attachment.hpp"
 #include "Vazteran/Backend/Vulkan/CommandPool.hpp"
 #include "Vazteran/Backend/Vulkan/Descriptor.hpp"
-#include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
 #include "Vazteran/Core/Type.hpp"
@@ -87,7 +86,21 @@ namespace vzt
 			std::vector<SubMeshData> subMeshData;
 		};
 
-		Ptr<Scene>     m_scene;
+		struct GenericMaterial
+		{
+			vzt::Vec4 diffuse; // diffuse + shininess
+
+			static GenericMaterial fromMaterial(const vzt::Material& original);
+		};
+
+		struct Transforms
+		{
+			vzt::Mat4 modelViewMatrix;
+			vzt::Mat4 projectionMatrix;
+			vzt::Mat4 normalMatrix;
+		};
+
+		Scene*         m_scene;
 		Listener<Mesh> m_meshListener;
 	};
 

@@ -3,7 +3,7 @@
 namespace vzt
 {
 	template <class ComponentType>
-	Listener<ComponentType>::Listener(Ptr<const Scene> scene, ListenerCallback callback)
+	Listener<ComponentType>::Listener(const Scene* scene, ListenerCallback callback)
 	    : m_scene(std::move(scene)), m_callback(std::move(callback))
 	{
 	}

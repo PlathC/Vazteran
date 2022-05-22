@@ -17,7 +17,7 @@ namespace vzt
 		Vec3 position;
 		Quat rotation;
 
-		Ptr<const Transform> parent;
+		const Transform* parent;
 	};
 } // namespace vzt
 

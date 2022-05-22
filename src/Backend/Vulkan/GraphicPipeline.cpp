@@ -1,7 +1,6 @@
 #include <utility>
 
 #include "Vazteran/Backend/Vulkan/Device.hpp"
-#include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
 

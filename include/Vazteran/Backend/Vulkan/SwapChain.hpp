@@ -12,7 +12,6 @@
 #include "Vazteran/Backend/Vulkan/Buffer.hpp"
 #include "Vazteran/Backend/Vulkan/CommandPool.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
-#include "Vazteran/Backend/Vulkan/GpuObjects.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"

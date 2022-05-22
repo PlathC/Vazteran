@@ -6,6 +6,7 @@
 
 namespace vzt
 {
+
 	VertexInputDescription TriangleVertexInput::getInputDescription()
 	{
 		constexpr VkVertexInputBindingDescription bindingDescription{0, sizeof(vzt::TriangleVertexInput),
@@ -31,7 +32,18 @@ namespace vzt
 		return vzt::VertexInputDescription{bindingDescription, std::move(attributeDescriptions)};
 	}
 
-	MeshView::MeshView(Scene& scene) : m_scene(&scene) {}
+	MeshView::GenericMaterial MeshView::GenericMaterial::fromMaterial(const Material& original)
+	{
+		return GenericMaterial{glm::vec4(glm::vec3(original.color), original.shininess)};
+	}
+
+	MeshView::MeshView(Scene& scene) : m_scene(&scene)
+	{
+		m_meshDescriptorLayout = vzt::DescriptorLayout();
+		m_meshDescriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+		m_meshDescriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
+		m_meshDescriptorLayout.addBinding(2, vzt::DescriptorType::CombinedSampler);
+	}
 
 	MeshView::~MeshView() {}
 
@@ -77,7 +89,7 @@ namespace vzt
 			bufferDescriptors[0]        = {};
 			bufferDescriptors[0].buffer = &m_transformBuffer;
 			bufferDescriptors[0].offset = m_transformNumber * m_transformOffsetSize;
-			bufferDescriptors[0].range  = sizeof(vzt::Transforms);
+			bufferDescriptors[0].range  = sizeof(Transforms);
 
 			const auto& materials = mesh.materials;
 			for (const auto& material : materials)
@@ -85,11 +97,11 @@ namespace vzt
 				IndexedUniform<vzt::Texture*> texturesDescriptors;
 				bufferDescriptors[1]        = {};
 				bufferDescriptors[1].offset = m_materialNb * m_materialInfoOffsetSize;
-				bufferDescriptors[1].range  = sizeof(vzt::GenericMaterial);
+				bufferDescriptors[1].range  = sizeof(GenericMaterial);
 				bufferDescriptors[1].buffer = &m_materialInfoBuffer;
 
-				const auto genericMaterial = vzt::GenericMaterial::fromMaterial(material);
-				m_materialInfoBuffer.update(sizeof(vzt::GenericMaterial), m_materialNb * m_materialInfoOffsetSize,
+				const auto genericMaterial = GenericMaterial::fromMaterial(material);
+				m_materialInfoBuffer.update(sizeof(GenericMaterial), m_materialNb * m_materialInfoOffsetSize,
 				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
 
 				if (material.texture)
@@ -97,7 +109,7 @@ namespace vzt
 					meshData.textureData.emplace_back();
 
 					auto& textureData      = meshData.textureData.back();
-					textureData.imageView  = {m_device, *material.texture, vzt::Format::R8G8B8A8SRGB};
+					textureData.imageView  = {m_device, *material.texture, Format::R8G8B8A8SRGB};
 					textureData.texture    = {m_device, &meshData.textureData.back().imageView};
 					texturesDescriptors[2] = &textureData.texture;
 				}
@@ -121,34 +133,25 @@ namespace vzt
 		m_device          = device;
 		m_materialNb      = 0;
 		m_transformNumber = 0;
-
-		m_meshDescriptorLayout = vzt::DescriptorLayout();
 		m_meshDescriptorLayout.configure(device);
-		m_meshDescriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
-		m_meshDescriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
-		m_meshDescriptorLayout.addBinding(2, vzt::DescriptorType::CombinedSampler);
 
 		m_descriptorPool = vzt::DescriptorPool(
 		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);
 
 		const uint32_t minOffset = static_cast<uint32_t>(m_device->getMinUniformOffsetAlignment());
-		m_transformOffsetSize    = sizeof(vzt::Transforms);
+		m_transformOffsetSize    = sizeof(Transforms);
 		if (minOffset > 0)
 			m_transformOffsetSize = (m_transformOffsetSize + minOffset - 1) & ~(minOffset - 1);
+		m_transformBuffer = {m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_transformOffsetSize),
+		                     BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true};
 
-		m_transformBuffer = vzt::Buffer(m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_transformOffsetSize),
-		                                BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true);
-
-		m_materialInfoOffsetSize = sizeof(vzt::Transforms);
+		m_materialInfoOffsetSize = sizeof(Transforms);
 		if (minOffset > 0)
 			m_materialInfoOffsetSize = (m_materialInfoOffsetSize + minOffset - 1) & ~(minOffset - 1);
-
-		m_materialInfoBuffer =
-		    vzt::Buffer(m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_materialInfoOffsetSize),
-		                BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true);
+		m_materialInfoBuffer = {m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_materialInfoOffsetSize),
+		                        BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true};
 
 		m_scene->forAll<Mesh>([&](Entity entity) { add(entity); });
-
 		m_meshListener = Listener<Mesh>(m_scene, [&](Entity entity, SystemEvent eventType) {
 			if (eventType == SystemEvent::Construct)
 				add(entity);
@@ -189,23 +192,21 @@ namespace vzt
 			const auto& deviceData = entity.get<MeshDeviceData>();
 
 			const Transform* transform   = entity.try_get<Transform>();
-			const vzt::Mat4  modelMatrix = transform ? transform->get() : Mat4(1.f);
+			const Mat4       modelMatrix = transform ? transform->get() : Mat4(1.f);
 
-			const vzt::Mat4 modelViewMatrix = viewMatrix * modelMatrix;
+			const Mat4 modelViewMatrix = viewMatrix * modelMatrix;
 
-			const vzt::Transforms transforms =
-			    vzt::Transforms{modelViewMatrix, projectionMatrix, glm::transpose(glm::inverse(modelViewMatrix))};
-
-			m_transformBuffer.update(sizeof(vzt::Transforms), deviceData.transformIndex * m_transformOffsetSize,
+			const Transforms transforms = {modelViewMatrix, projectionMatrix,
+			                               glm::transpose(glm::inverse(modelViewMatrix))};
+			m_transformBuffer.update(sizeof(Transforms), deviceData.transformIndex * m_transformOffsetSize,
 			                         reinterpret_cast<const uint8_t* const>(&transforms));
 
 			const Mesh& mesh      = entity.get<Mesh>();
 			const auto& materials = mesh.materials;
 			for (const auto& material : materials)
 			{
-				const auto genericMaterial = vzt::GenericMaterial::fromMaterial(material);
-				m_materialInfoBuffer.update(sizeof(vzt::GenericMaterial),
-				                            currentMaterialIndex * m_materialInfoOffsetSize,
+				const auto genericMaterial = GenericMaterial::fromMaterial(material);
+				m_materialInfoBuffer.update(sizeof(GenericMaterial), currentMaterialIndex * m_materialInfoOffsetSize,
 				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
 				currentMaterialIndex++;
 			}

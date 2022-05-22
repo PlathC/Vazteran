@@ -23,7 +23,7 @@ namespace vzt
 		using ListenerCallback = std::function<void(Entity entity, SystemEvent eventType)>;
 
 		Listener() = default;
-		Listener(Ptr<const Scene> scene, ListenerCallback callback);
+		Listener(const Scene* scene, ListenerCallback callback);
 
 		Listener(const Listener<ComponentType>& other);
 		Listener& operator=(const Listener<ComponentType>& other);
@@ -41,7 +41,7 @@ namespace vzt
 		void onUpdate(entt::registry& registry, entt::entity entity);
 		void onDestroy(entt::registry& registry, entt::entity entity);
 
-		Ptr<const Scene>      m_scene;
+		const Scene*          m_scene;
 		ListenerCallback      m_callback;
 		std::set<SystemEvent> m_registeredEvent;
 	};

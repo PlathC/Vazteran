@@ -159,6 +159,7 @@ set(VZT_HEADERS
         "include/Vazteran/Math/Aabb.hpp"
         "include/Vazteran/Math/Math.hpp"
 
+        "include/Vazteran/Renderer/DescriptorBufferList.hpp"
         "include/Vazteran/Renderer/ShaderCompiler.hpp"
         "include/Vazteran/Renderer/ShaderLibrary.hpp"
         
@@ -179,7 +180,7 @@ set(VZT_HEADERS
         "include/Vazteran/Backend/Vulkan/Descriptor.hpp"
         "include/Vazteran/Backend/Vulkan/Device.hpp"
         "include/Vazteran/Backend/Vulkan/FrameBuffer.hpp"
-        "include/Vazteran/Backend/Vulkan/GpuObjects.hpp"
+        
         "include/Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
         "include/Vazteran/Backend/Vulkan/ImageTypes.hpp"
         "include/Vazteran/Backend/Vulkan/ImageUtils.hpp"
@@ -208,6 +209,7 @@ set(VZT_SOURCES
 
         "src/Math/Aabb.cpp"
 
+        "src/Renderer/DescriptorBufferList.cpp"
         "src/Renderer/ShaderCompiler.cpp"
         "src/Renderer/ShaderLibrary.cpp"
 
@@ -227,7 +229,7 @@ set(VZT_SOURCES
         "src/Backend/Vulkan/Device.cpp"
         "src/Backend/Vulkan/Instance.cpp"
         "src/Backend/Vulkan/GraphicPipeline.cpp"
-        "src/Backend/Vulkan/GpuObjects.cpp"
+        
         "src/Backend/Vulkan/ImageUtils.cpp"
         "src/Backend/Vulkan/FrameBuffer.cpp"
         "src/Backend/Vulkan/RenderGraph.cpp"

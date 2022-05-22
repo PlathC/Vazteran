@@ -32,9 +32,6 @@ namespace vzt
 	};
 
 	template <class Type>
-	using Ptr = Type*;
-
-	template <class Type>
 	using Optional = std::optional<Type>;
 
 	template <class Type>
