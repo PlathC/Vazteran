@@ -5,9 +5,16 @@
 
 namespace vzt
 {
+	BufferSpan::BufferSpan(Buffer& buffer) : parent(&buffer), offset(0), range(parent->m_size) {}
+
+	BufferSpan::BufferSpan(Buffer* buffer, std::size_t offset, std::size_t range)
+	    : parent(buffer), offset(offset), range(range)
+	{
+	}
+
 	Buffer::Buffer(const vzt::Device* device, const std::size_t size, const uint8_t* data, BufferUsage usage,
 	               MemoryUsage memoryUsage, bool mappable, bool persistent)
-	    : m_device(device), m_mappable(mappable), m_persistent(persistent)
+	    : m_device(device), m_mappable(mappable), m_persistent(persistent), m_size(size)
 	{
 		create(size, data, usage, memoryUsage, mappable, persistent);
 	}
@@ -19,6 +26,7 @@ namespace vzt
 		std::swap(m_allocation, other.m_allocation);
 		std::swap(m_mappable, other.m_mappable);
 		std::swap(m_persistent, other.m_persistent);
+		std::swap(m_size, other.m_size);
 	}
 
 	Buffer& Buffer::operator=(Buffer&& other) noexcept
@@ -28,6 +36,7 @@ namespace vzt
 		std::swap(m_allocation, other.m_allocation);
 		std::swap(m_mappable, other.m_mappable);
 		std::swap(m_persistent, other.m_persistent);
+		std::swap(m_size, other.m_size);
 
 		return *this;
 	}
@@ -61,11 +70,12 @@ namespace vzt
 		vmaUnmapMemory(m_device->getAllocatorHandle(), m_allocation);
 	}
 
+	BufferSpan Buffer::get(std::size_t from, std::size_t to) { return {this, from, to - from}; }
+
 	void Buffer::create(const std::size_t size, const uint8_t* const data, BufferUsage usage, MemoryUsage memoryUsage,
 	                    bool mappable, bool persistent)
 	{
-		const VkDeviceSize             bufferSize = size;
-		const VmaAllocationCreateFlags flags = mappable ? VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT : 0;
+		const VkDeviceSize bufferSize = size;
 		if (!mappable)
 		{
 			VkBuffer      stagingBuffer      = VK_NULL_HANDLE;
@@ -82,7 +92,7 @@ namespace vzt
 
 			m_vkHandle =
 			    m_device->createBuffer(m_allocation, bufferSize, vzt::toVulkan(BufferUsage::TransferDst | usage),
-			                           vzt::toVulkan(memoryUsage), flags);
+			                           vzt::toVulkan(memoryUsage), 0);
 
 			m_device->copyBuffer(stagingBuffer, m_vkHandle, bufferSize);
 
@@ -90,8 +100,9 @@ namespace vzt
 		}
 		else
 		{
-			m_vkHandle = m_device->createBuffer(m_allocation, bufferSize, vzt::toVulkan(usage),
-			                                    vzt::toVulkan(memoryUsage), flags);
+			m_vkHandle =
+			    m_device->createBuffer(m_allocation, bufferSize, vzt::toVulkan(usage), vzt::toVulkan(memoryUsage),
+			                           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT);
 
 			void* tempstagingData;
 			vmaMapMemory(m_device->getAllocatorHandle(), m_allocation, &tempstagingData);

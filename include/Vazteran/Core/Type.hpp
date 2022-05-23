@@ -5,6 +5,8 @@
 #include <optional>
 #include <type_traits>
 
+#include <gsl/span>
+
 namespace vzt
 {
 	template <class Enum>
@@ -38,6 +40,9 @@ namespace vzt
 	using Ref = std::reference_wrapper<Type>;
 	template <class Type>
 	using CRef = std::reference_wrapper<const Type>;
+
+	template <class Type>
+	using Span = gsl::span<Type>;
 } // namespace vzt
 
 #endif // VAZTERAN_TYPE_HPP

@@ -103,6 +103,7 @@ namespace vzt
 		vzt::QueueFamilyIndices getDeviceQueueFamilyIndices() const { return m_queueFamilyIndices; };
 		vzt::PhysicalDevice*    getPhysicalDevice() const { return m_physicalDevice.get(); }
 		uint64_t                getMinUniformOffsetAlignment() const;
+		uint64_t                getMinStorageOffsetAlignment() const;
 
 		VkDevice vkHandle() const { return m_vkHandle; }
 

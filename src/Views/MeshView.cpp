@@ -85,23 +85,19 @@ namespace vzt
 			                                 reinterpret_cast<uint8_t*>(submeshIndices.data()),
 			                                 BufferUsage::IndexBuffer};
 
-			IndexedUniform<vzt::BufferDescriptor> bufferDescriptors;
-			bufferDescriptors[0]        = {};
-			bufferDescriptors[0].buffer = &m_transformBuffer;
-			bufferDescriptors[0].offset = m_transformNumber * m_transformOffsetSize;
-			bufferDescriptors[0].range  = sizeof(Transforms);
+			IndexedUniform<BufferSpan> bufferDescriptors;
+			const std::size_t          transformFrom = m_transformNumber * m_transformOffsetSize;
+			bufferDescriptors[0] = m_transformBuffer.get(transformFrom, transformFrom + sizeof(Transforms));
 
 			const auto& materials = mesh.materials;
 			for (const auto& material : materials)
 			{
 				IndexedUniform<vzt::Texture*> texturesDescriptors;
-				bufferDescriptors[1]        = {};
-				bufferDescriptors[1].offset = m_materialNb * m_materialInfoOffsetSize;
-				bufferDescriptors[1].range  = sizeof(GenericMaterial);
-				bufferDescriptors[1].buffer = &m_materialInfoBuffer;
+				const std::size_t             materialFrom = m_materialNb * m_materialInfoOffsetSize;
+				bufferDescriptors[1] = m_materialInfoBuffer.get(materialFrom, materialFrom + sizeof(GenericMaterial));
 
 				const auto genericMaterial = GenericMaterial::fromMaterial(material);
-				m_materialInfoBuffer.update(sizeof(GenericMaterial), m_materialNb * m_materialInfoOffsetSize,
+				m_materialInfoBuffer.update(sizeof(GenericMaterial), materialFrom,
 				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
 
 				if (material.texture)

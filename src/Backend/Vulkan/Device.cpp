@@ -550,4 +550,12 @@ namespace vzt
 
 		return properties.limits.minUniformBufferOffsetAlignment;
 	}
+
+	uint64_t Device::getMinStorageOffsetAlignment() const
+	{
+		VkPhysicalDeviceProperties properties;
+		vkGetPhysicalDeviceProperties(m_physicalDevice->vkHandle(), &properties);
+
+		return properties.limits.minStorageBufferOffsetAlignment;
+	}
 } // namespace vzt

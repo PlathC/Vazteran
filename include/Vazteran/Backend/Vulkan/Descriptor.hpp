@@ -17,13 +17,6 @@ namespace vzt
 	template <class Type>
 	using IndexedUniform = std::unordered_map<uint32_t, Type>;
 
-	struct BufferDescriptor
-	{
-		uint32_t     offset;
-		uint32_t     range;
-		vzt::Buffer* buffer;
-	};
-
 	enum class DescriptorType
 	{
 		Sampler              = VK_DESCRIPTOR_TYPE_SAMPLER,
@@ -87,15 +80,15 @@ namespace vzt
 
 		VkDescriptorSet operator[](uint32_t i) const { return m_descriptors[i]; }
 
-		void update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
+		void update(const std::size_t i, const IndexedUniform<BufferSpan>& bufferDescriptors,
 		            const IndexedUniform<vzt::Texture*>& imageDescriptors);
-		void update(const std::size_t i, const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
-		void update(const std::size_t i, const IndexedUniform<vzt::Texture*>& imageDescriptors);
+		void update(const std::size_t i, const IndexedUniform<BufferSpan>& bufferDescriptors);
+		void update(const std::size_t i, const IndexedUniform<Texture*>& imageDescriptors);
 
-		void updateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors,
-		               const IndexedUniform<vzt::Texture*>&         imageDescriptors);
-		void updateAll(const IndexedUniform<vzt::BufferDescriptor>& bufferDescriptors);
-		void updateAll(const IndexedUniform<vzt::Texture*>& imageDescriptors);
+		void updateAll(const IndexedUniform<BufferSpan>& bufferDescriptors,
+		               const IndexedUniform<Texture*>&   imageDescriptors);
+		void updateAll(const IndexedUniform<BufferSpan>& bufferDescriptors);
+		void updateAll(const IndexedUniform<Texture*>& imageDescriptors);
 
 		uint32_t         getRemaining() const { return static_cast<uint32_t>(m_maxSetNb - m_descriptors.size()); }
 		uint32_t         getMaxSetNb() const { return m_maxSetNb; }

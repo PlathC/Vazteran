@@ -9,8 +9,6 @@
 
 namespace vzt
 {
-	class Device;
-
 	enum class MemoryUsage : uint8_t
 	{
 		PreferDevice = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
@@ -57,15 +55,34 @@ namespace vzt
 	BITWISE_FUNCTION(BufferUsage)
 	TO_VULKAN_FUNCTION(BufferUsage, VkBufferUsageFlagBits)
 
+	class Buffer;
+	class Device;
+	struct BufferSpan
+	{
+		Buffer*     parent;
+		std::size_t offset; // in byte
+		std::size_t range;  // in byte
+
+		template <class Type>
+		Type get(std::size_t i);
+
+		template <class Type>
+		void set(std::size_t i, const Type& type);
+
+		BufferSpan() = default;
+		BufferSpan(Buffer& buffer);
+		BufferSpan(Buffer* buffer, std::size_t offset, std::size_t range);
+	};
+
 	class Buffer
 	{
 	  public:
 		Buffer() = default;
 
 		template <class Type>
-		Buffer(const vzt::Device* device, const std::vector<Type>& data, BufferUsage usage,
+		Buffer(const Device* device, const std::vector<Type>& data, BufferUsage usage,
 		       MemoryUsage memoryUsage = MemoryUsage::Auto, bool mappable = false, bool persistent = false);
-		Buffer(const vzt::Device* device, const std::size_t size, const uint8_t* data, BufferUsage usage,
+		Buffer(const Device* device, const std::size_t size, const uint8_t* data, BufferUsage usage,
 		       MemoryUsage memoryUsage = MemoryUsage::Auto, bool mappable = false, bool persistent = false);
 
 		Buffer(const Buffer&)            = delete;
@@ -81,16 +98,21 @@ namespace vzt
 		void update(const std::size_t size, const uint8_t* const newData) const;
 		void update(const std::size_t size, const std::size_t offset, const uint8_t* const newData);
 
+		BufferSpan get(std::size_t from, std::size_t to);
+
 		VkBuffer vkHandle() const { return m_vkHandle; }
+
+		friend BufferSpan;
 
 	  private:
 		void create(const std::size_t size, const uint8_t* const data, BufferUsage usage, MemoryUsage memoryUsage,
 		            bool mappable, bool persistent);
 
-	  private:
 		const vzt::Device* m_device     = nullptr;
 		VkBuffer           m_vkHandle   = VK_NULL_HANDLE;
 		VmaAllocation      m_allocation = VK_NULL_HANDLE;
+
+		std::size_t m_size;
 
 		bool m_mappable   = false;
 		bool m_persistent = false;
