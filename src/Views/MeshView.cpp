@@ -55,17 +55,18 @@ namespace vzt
 		const auto& normals  = mesh.normals;
 		const auto& uvs      = mesh.uvs;
 
-		std::vector<vzt::TriangleVertexInput> verticesData;
+		std::vector<TriangleVertexInput> verticesData;
 		verticesData.reserve(vertices.size());
 		for (std::size_t i = 0; i < vertices.size(); i++)
 		{
-			verticesData.emplace_back(vzt::TriangleVertexInput{vertices[i], uvs[i], normals[i]});
+			verticesData.emplace_back(TriangleVertexInput{vertices[i], uvs[i], normals[i]});
 		}
 
-		MeshDeviceData& meshData    = meshEntity.emplace<MeshDeviceData>();
-		meshData.vertexBuffer       = {m_device, verticesData, BufferUsage::VertexBuffer};
-		meshData.transformIndex     = m_transformNumber;
-		auto subMeshRawIndices      = mesh.getVertexIndices();
+		MeshDeviceData& meshData = meshEntity.emplace<MeshDeviceData>();
+
+		meshData.vertexBuffer   = Buffer(m_device, Span<TriangleVertexInput>(verticesData), BufferUsage::VertexBuffer);
+		meshData.transformIndex = m_transformNumber;
+		auto subMeshRawIndices  = mesh.getVertexIndices();
 		auto subMeshMaterialIndices = mesh.getMaterialIndices();
 
 		meshData.subMeshData.reserve(subMeshRawIndices.size());
@@ -81,9 +82,7 @@ namespace vzt
 
 			submeshIndices.insert(submeshIndices.end(), subMeshRawIndices[i].begin(), subMeshRawIndices[i].end());
 
-			meshData.subMeshesIndexBuffer = {m_device, sizeof(uint32_t) * submeshIndices.size(),
-			                                 reinterpret_cast<uint8_t*>(submeshIndices.data()),
-			                                 BufferUsage::IndexBuffer};
+			meshData.subMeshesIndexBuffer = Buffer(m_device, Span<uint32_t>(submeshIndices), BufferUsage::IndexBuffer);
 
 			IndexedUniform<BufferSpan> bufferDescriptors;
 			const std::size_t          transformFrom = m_transformNumber * m_transformOffsetSize;
@@ -97,8 +96,7 @@ namespace vzt
 				bufferDescriptors[1] = m_materialInfoBuffer.get(materialFrom, materialFrom + sizeof(GenericMaterial));
 
 				const auto genericMaterial = GenericMaterial::fromMaterial(material);
-				m_materialInfoBuffer.update(sizeof(GenericMaterial), materialFrom,
-				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
+				m_materialInfoBuffer.update(genericMaterial, materialFrom);
 
 				if (material.texture)
 				{
@@ -194,16 +192,14 @@ namespace vzt
 
 			const Transforms transforms = {modelViewMatrix, projectionMatrix,
 			                               glm::transpose(glm::inverse(modelViewMatrix))};
-			m_transformBuffer.update(sizeof(Transforms), deviceData.transformIndex * m_transformOffsetSize,
-			                         reinterpret_cast<const uint8_t* const>(&transforms));
+			m_transformBuffer.update(transforms, deviceData.transformIndex * m_transformOffsetSize);
 
 			const Mesh& mesh      = entity.get<Mesh>();
 			const auto& materials = mesh.materials;
 			for (const auto& material : materials)
 			{
 				const auto genericMaterial = GenericMaterial::fromMaterial(material);
-				m_materialInfoBuffer.update(sizeof(GenericMaterial), currentMaterialIndex * m_materialInfoOffsetSize,
-				                            reinterpret_cast<const uint8_t*>(&genericMaterial));
+				m_materialInfoBuffer.update(genericMaterial, currentMaterialIndex * m_materialInfoOffsetSize);
 				currentMaterialIndex++;
 			}
 		});

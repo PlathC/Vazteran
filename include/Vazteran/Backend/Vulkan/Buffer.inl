@@ -30,17 +30,38 @@ namespace vzt
 	}
 
 	template <class Type>
-	Buffer::Buffer(const vzt::Device* device, const std::vector<Type>& data, BufferUsage usage, MemoryUsage memoryUsage,
+	Buffer::Buffer(const vzt::Device* device, const Span<Type> data, BufferUsage usage, MemoryUsage memoryUsage,
 	               bool mappable, bool persistent)
-	    : Buffer(device, sizeof(Type) * data.size(), reinterpret_cast<uint8_t const*>(data.data()), usage, memoryUsage,
-	             mappable, persistent)
+	    : Buffer(device, Span<const uint8_t>(reinterpret_cast<uint8_t const*>(data.data()), sizeof(Type) * data.size()),
+	             usage, memoryUsage, mappable, persistent)
+	{
+	}
+	template <class Type>
+	Buffer::Buffer(const vzt::Device* device, const Span<const Type> data, BufferUsage usage, MemoryUsage memoryUsage,
+	               bool mappable, bool persistent)
+	    : Buffer(device, Span<const uint8_t>(reinterpret_cast<uint8_t const*>(data.data()), sizeof(Type) * data.size()),
+	             usage, memoryUsage, mappable, persistent)
 	{
 	}
 
 	template <class Type>
-	void Buffer::update(const std::vector<Type>& newData)
+	void Buffer::update(const Type& newData, const std::size_t offset)
 	{
-		update(sizeof(Type) * newData.size(), reinterpret_cast<uint8_t const*>(newData.data()));
+		update(Span<const uint8_t>(reinterpret_cast<uint8_t const*>(&newData), sizeof(Type)), offset);
+	}
+
+	template <class Type>
+	void Buffer::update(const Span<Type> newData, const std::size_t offset)
+	{
+		update(Span<const uint8_t>(reinterpret_cast<uint8_t const*>(newData.data()), sizeof(Type) * newData.size()),
+		       offset);
+	}
+
+	template <class Type>
+	void Buffer::update(const Span<const Type> newData, const std::size_t offset)
+	{
+		update(Span<const uint8_t>(reinterpret_cast<uint8_t const*>(newData.data()), sizeof(Type) * newData.size()),
+		       offset);
 	}
 
 } // namespace vzt

@@ -12,11 +12,11 @@ namespace vzt
 	{
 	}
 
-	Buffer::Buffer(const vzt::Device* device, const std::size_t size, const uint8_t* data, BufferUsage usage,
+	Buffer::Buffer(const Device* device, const Span<const uint8_t> bufferData, BufferUsage usage,
 	               MemoryUsage memoryUsage, bool mappable, bool persistent)
-	    : m_device(device), m_mappable(mappable), m_persistent(persistent), m_size(size)
+	    : m_device(device), m_mappable(mappable), m_persistent(persistent), m_size(bufferData.size())
 	{
-		create(size, data, usage, memoryUsage, mappable, persistent);
+		create(bufferData, usage, memoryUsage, mappable, persistent);
 	}
 
 	Buffer::Buffer(Buffer&& other) noexcept
@@ -50,32 +50,22 @@ namespace vzt
 		}
 	}
 
-	void Buffer::update(const std::size_t size, const uint8_t* const newData) const
-	{
-		assert(m_mappable && "The buffer must be signaled as mappable before being mapped to CPU data");
-
-		void* data = nullptr;
-		vmaMapMemory(m_device->getAllocatorHandle(), m_allocation, &data);
-		std::memcpy(data, newData, size);
-		vmaUnmapMemory(m_device->getAllocatorHandle(), m_allocation);
-	}
-
-	void Buffer::update(const std::size_t size, const std::size_t offset, const uint8_t* const newData)
+	void Buffer::update(const Span<const uint8_t> newData, const std::size_t offset)
 	{
 		assert(m_mappable && "The buffer must be signaled as mappable before being mapped to CPU data");
 
 		uint8_t* data = nullptr;
 		vmaMapMemory(m_device->getAllocatorHandle(), m_allocation, reinterpret_cast<void**>(&data));
-		std::memcpy(data + offset, newData, size);
+		std::memcpy(data + offset, newData.data(), newData.size());
 		vmaUnmapMemory(m_device->getAllocatorHandle(), m_allocation);
 	}
 
 	BufferSpan Buffer::get(std::size_t from, std::size_t to) { return {this, from, to - from}; }
 
-	void Buffer::create(const std::size_t size, const uint8_t* const data, BufferUsage usage, MemoryUsage memoryUsage,
-	                    bool mappable, bool persistent)
+	void Buffer::create(const Span<const uint8_t> bufferData, BufferUsage usage, MemoryUsage memoryUsage, bool mappable,
+	                    bool persistent)
 	{
-		const VkDeviceSize bufferSize = size;
+		const VkDeviceSize bufferSize = bufferData.size();
 		if (!mappable)
 		{
 			VkBuffer      stagingBuffer      = VK_NULL_HANDLE;
@@ -87,7 +77,7 @@ namespace vzt
 
 			void* tempstagingData;
 			vmaMapMemory(m_device->getAllocatorHandle(), stagingBufferAlloc, &tempstagingData);
-			std::memcpy(tempstagingData, data, size);
+			std::memcpy(tempstagingData, bufferData.data(), bufferData.size());
 			vmaUnmapMemory(m_device->getAllocatorHandle(), stagingBufferAlloc);
 
 			m_vkHandle =
@@ -106,7 +96,7 @@ namespace vzt
 
 			void* tempstagingData;
 			vmaMapMemory(m_device->getAllocatorHandle(), m_allocation, &tempstagingData);
-			memcpy(tempstagingData, data, size);
+			memcpy(tempstagingData, bufferData.data(), bufferData.size());
 			vmaUnmapMemory(m_device->getAllocatorHandle(), m_allocation);
 		}
 	}

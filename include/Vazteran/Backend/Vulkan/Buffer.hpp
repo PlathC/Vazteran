@@ -6,6 +6,7 @@
 #include <vk_mem_alloc.h>
 
 #include "Vazteran/Core/Macro.hpp"
+#include "Vazteran/Core/Type.hpp"
 
 namespace vzt
 {
@@ -80,9 +81,12 @@ namespace vzt
 		Buffer() = default;
 
 		template <class Type>
-		Buffer(const Device* device, const std::vector<Type>& data, BufferUsage usage,
+		Buffer(const Device* device, const Span<Type> data, BufferUsage usage,
 		       MemoryUsage memoryUsage = MemoryUsage::Auto, bool mappable = false, bool persistent = false);
-		Buffer(const Device* device, const std::size_t size, const uint8_t* data, BufferUsage usage,
+		template <class Type>
+		Buffer(const Device* device, const Span<const Type> data, BufferUsage usage,
+		       MemoryUsage memoryUsage = MemoryUsage::Auto, bool mappable = false, bool persistent = false);
+		Buffer(const Device* device, const Span<const uint8_t> bufferData, BufferUsage usage,
 		       MemoryUsage memoryUsage = MemoryUsage::Auto, bool mappable = false, bool persistent = false);
 
 		Buffer(const Buffer&)            = delete;
@@ -94,9 +98,12 @@ namespace vzt
 		~Buffer();
 
 		template <class Type>
-		void update(const std::vector<Type>& newData);
-		void update(const std::size_t size, const uint8_t* const newData) const;
-		void update(const std::size_t size, const std::size_t offset, const uint8_t* const newData);
+		void update(const Type& newData, const std::size_t offset = 0);
+		template <class Type>
+		void update(const Span<Type> newData, const std::size_t offset = 0);
+		template <class Type>
+		void update(const Span<const Type> newData, const std::size_t offset = 0);
+		void update(const Span<const uint8_t> newData, const std::size_t offset = 0);
 
 		BufferSpan get(std::size_t from, std::size_t to);
 
@@ -105,8 +112,8 @@ namespace vzt
 		friend BufferSpan;
 
 	  private:
-		void create(const std::size_t size, const uint8_t* const data, BufferUsage usage, MemoryUsage memoryUsage,
-		            bool mappable, bool persistent);
+		void create(const Span<const uint8_t> bufferData, BufferUsage usage, MemoryUsage memoryUsage, bool mappable,
+		            bool persistent);
 
 		const vzt::Device* m_device     = nullptr;
 		VkBuffer           m_vkHandle   = VK_NULL_HANDLE;
