@@ -83,6 +83,7 @@ namespace vzt
 
 		void configure(vzt::PipelineContextSettings settings);
 		void bind(VkCommandBuffer commandsBuffer) const;
+		void bind(VkCommandBuffer commandsBuffer, const std::vector<VkDescriptorSet>& descriptorSets) const;
 
 		vzt::RasterizationOptions& getRasterOptions() { return m_rasterOptions; }
 		vzt::RasterizationOptions  getCRasterOptions() const { return m_rasterOptions; }

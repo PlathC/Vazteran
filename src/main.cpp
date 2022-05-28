@@ -41,6 +41,10 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::GraphicPipeline geometryPipeline;
 		vzt::GraphicPipeline compositionPipeline;
 		vzt::RenderGraph     renderGraph{};
+		renderer.setRenderFunction(
+		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
+			    renderGraph.render(imageId, imageAvailable, renderComplete, inFlightFence);
+		    });
 
 		vzt::Program triangleProgram{};
 		triangleProgram.setShader(library.get("./shaders/triangle.vert"));
@@ -72,18 +76,14 @@ int main(int /* args */, char*[] /* argv */)
 				                                pass.getOutputAttachmentNb(), pass.getExtent()});
 			    });
 
-			geometryBuffer.setRecordFunction([&](uint32_t imageId, const VkCommandBuffer& cmd,
-			                                     const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-				geometryPipeline.bind(cmd);
-				if (!engineDescriptorSets.empty())
-				{
-					vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, geometryPipeline.layout(), 0,
-					                        static_cast<uint32_t>(engineDescriptorSets.size()),
-					                        engineDescriptorSets.data(), 0, nullptr);
-				}
+			geometryBuffer.setRecordFunction(
+			    [&](uint32_t imageId, VkCommandBuffer cmd, const std::vector<VkDescriptorSet>& engineDescriptorSets) {
+				    geometryPipeline.bind(cmd);
+				    if (!engineDescriptorSets.empty())
+					    geometryPipeline.bind(cmd, engineDescriptorSets);
 
-				meshView.record(imageId, cmd, &geometryPipeline);
-			});
+				    meshView.record(imageId, cmd, &geometryPipeline);
+			    });
 		}
 
 		vzt::Program fsBlinnPhongProgram{};
@@ -112,15 +112,11 @@ int main(int /* args */, char*[] /* argv */)
 				                                   pass.getOutputAttachmentNb(), pass.getExtent()});
 			    });
 
-			deferredPass.setRecordFunction([&](uint32_t /* imageId */, const VkCommandBuffer& cmd,
+			deferredPass.setRecordFunction([&](uint32_t /* imageId */, VkCommandBuffer cmd,
 			                                   const std::vector<VkDescriptorSet>& engineDescriptorSets) {
 				compositionPipeline.bind(cmd);
 				if (!engineDescriptorSets.empty())
-				{
-					vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, compositionPipeline.layout(), 0,
-					                        static_cast<uint32_t>(engineDescriptorSets.size()),
-					                        engineDescriptorSets.data(), 0, nullptr);
-				}
+					compositionPipeline.bind(cmd, engineDescriptorSets);
 
 				vkCmdDraw(cmd, 3, 1, 0, 0);
 
@@ -130,13 +126,7 @@ int main(int /* args */, char*[] /* argv */)
 
 		renderGraph.setBackBuffer(composed);
 		renderGraph.compile();
-
 		renderer.configure(renderGraph);
-
-		renderer.setRenderFunction(
-		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
-			    renderGraph.render(imageId, imageAvailable, renderComplete, inFlightFence);
-		    });
 
 		const auto size = window.getFrameBufferSize();
 
@@ -200,9 +190,7 @@ int main(int /* args */, char*[] /* argv */)
 
 		window.setOnMouseButtonCallback([](vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
 			if (code == vzt::MouseButton::Left)
-			{
 				isMouseEnable = action == vzt::KeyAction::Press || action == vzt::KeyAction::Repeat;
-			}
 		});
 
 		while (!window.update())

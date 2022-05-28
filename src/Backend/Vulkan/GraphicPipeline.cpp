@@ -206,6 +206,12 @@ namespace vzt
 		vkCmdBindPipeline(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_vkHandle);
 	}
 
+	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer, const std::vector<VkDescriptorSet>& descriptorSets) const
+	{
+		vkCmdBindDescriptorSets(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSets.layout(), 0,
+		                        static_cast<uint32_t>(descriptorSets.size()), engineDescriptorSets.data(), 0, nullptr);
+	}
+
 	void GraphicPipeline::cleanup()
 	{
 		if (m_vkHandle != VK_NULL_HANDLE)

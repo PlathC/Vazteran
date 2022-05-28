@@ -212,17 +212,17 @@ namespace vzt
 		m_configureFunction = std::move(configureFunction);
 	}
 
-	void RenderPassHandler::setRecordFunction(vzt::RecordFunction recordFunction)
+	void RenderPassHandler::setRecordFunction(RecordFunction recordFunction)
 	{
 		m_recordFunction = std::move(recordFunction);
 	}
 
-	void RenderPassHandler::setDepthClearFunction(vzt::DepthClearFunction depthClearFunction)
+	void RenderPassHandler::setDepthClearFunction(DepthClearFunction depthClearFunction)
 	{
 		m_depthClearFunction = std::move(depthClearFunction);
 	}
 
-	void RenderPassHandler::setColorClearFunction(vzt::ColorClearFunction colorClearFunction)
+	void RenderPassHandler::setColorClearFunction(ColorClearFunction colorClearFunction)
 	{
 		m_colorClearFunction = std::move(colorClearFunction);
 	}

@@ -87,7 +87,7 @@ namespace vzt
 
 	class RenderPassHandler;
 	using ConfigureFunction  = std::function<void(const RenderPassHandler&)>;
-	using RecordFunction     = std::function<void(uint32_t /* imageId */, const VkCommandBuffer& /*cmd*/,
+	using RecordFunction     = std::function<void(uint32_t /* imageId */, VkCommandBuffer /* cmd */,
                                               const std::vector<VkDescriptorSet>& /* engineDescriptorSets */)>;
 	using DepthClearFunction = std::function<bool(vzt::Vec4* /* value */)>;
 	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, vzt::Vec4* /* value */)>;
