@@ -73,11 +73,11 @@ namespace vzt
 		submeshIndices.reserve(subMeshRawIndices.size());
 		for (std::size_t i = 0; i < subMeshRawIndices.size(); i++)
 		{
-			meshData.subMeshData.emplace_back();
-			meshData.subMeshData.back().minOffset = static_cast<uint32_t>(submeshIndices.size());
-			meshData.subMeshData.back().maxOffset =
-			    static_cast<uint32_t>(submeshIndices.size() + subMeshRawIndices[i].size());
-			meshData.subMeshData.back().materialDataIndex = m_materialNb + subMeshMaterialIndices[i];
+			MeshDeviceData::SubMeshData data;
+			data.minOffset         = static_cast<uint32_t>(submeshIndices.size());
+			data.maxOffset         = static_cast<uint32_t>(submeshIndices.size() + subMeshRawIndices[i].size());
+			data.materialDataIndex = m_materialNb + subMeshMaterialIndices[i];
+			meshData.subMeshData.emplace_back(std::move(data));
 
 			submeshIndices.insert(submeshIndices.end(), subMeshRawIndices[i].begin(), subMeshRawIndices[i].end());
 
