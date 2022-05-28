@@ -208,8 +208,9 @@ namespace vzt
 
 	void GraphicPipeline::bind(VkCommandBuffer commandsBuffer, const std::vector<VkDescriptorSet>& descriptorSets) const
 	{
-		vkCmdBindDescriptorSets(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, descriptorSets.layout(), 0,
-		                        static_cast<uint32_t>(descriptorSets.size()), engineDescriptorSets.data(), 0, nullptr);
+		assert(m_vkHandle != VK_NULL_HANDLE && "The engine must call configure before binding this pipeline");
+		vkCmdBindDescriptorSets(commandsBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0,
+		                        static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
 	}
 
 	void GraphicPipeline::cleanup()
