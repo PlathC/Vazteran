@@ -132,18 +132,13 @@ namespace vzt
 		m_descriptorPool = vzt::DescriptorPool(
 		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);
 
-		const uint32_t minOffset = static_cast<uint32_t>(m_device->getMinUniformOffsetAlignment());
-		m_transformOffsetSize    = sizeof(Transforms);
-		if (minOffset > 0)
-			m_transformOffsetSize = (m_transformOffsetSize + minOffset - 1) & ~(minOffset - 1);
-		m_transformBuffer = {m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_transformOffsetSize),
-		                     BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true};
+		m_transformOffsetSize = static_cast<uint32_t>(m_device->computeUniformOffsetAlignment<Transforms>());
+		m_transformBuffer     = Buffer(m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_transformOffsetSize),
+		                               BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true);
 
-		m_materialInfoOffsetSize = sizeof(Transforms);
-		if (minOffset > 0)
-			m_materialInfoOffsetSize = (m_materialInfoOffsetSize + minOffset - 1) & ~(minOffset - 1);
-		m_materialInfoBuffer = {m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_materialInfoOffsetSize),
-		                        BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true};
+		m_materialInfoOffsetSize = static_cast<uint32_t>(m_device->computeUniformOffsetAlignment<Material>());
+		m_materialInfoBuffer     = Buffer(m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_materialInfoOffsetSize),
+		                                  BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true);
 
 		m_scene->forAll<Mesh>([&](Entity entity) { add(entity); });
 		m_meshListener = Listener<Mesh>(m_scene, [&](Entity entity, SystemEvent eventType) {

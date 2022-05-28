@@ -179,6 +179,7 @@ set(VZT_HEADERS
         "include/Vazteran/Backend/Vulkan/CommandPool.hpp"
         "include/Vazteran/Backend/Vulkan/Descriptor.hpp"
         "include/Vazteran/Backend/Vulkan/Device.hpp"
+        "include/Vazteran/Backend/Vulkan/Device.inl"
         "include/Vazteran/Backend/Vulkan/FrameBuffer.hpp"
         
         "include/Vazteran/Backend/Vulkan/GraphicPipeline.hpp"

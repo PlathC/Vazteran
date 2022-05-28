@@ -105,6 +105,9 @@ namespace vzt
 		uint64_t                getMinUniformOffsetAlignment() const;
 		uint64_t                getMinStorageOffsetAlignment() const;
 
+		template <class Type>
+		uint64_t computeUniformOffsetAlignment() const;
+
 		VkDevice vkHandle() const { return m_vkHandle; }
 
 	  private:
@@ -119,5 +122,7 @@ namespace vzt
 		vzt::QueueFamilyIndices m_queueFamilyIndices;
 	};
 } // namespace vzt
+
+#include "Vazteran/Backend/Vulkan/Device.inl"
 
 #endif // VAZTERAN_VULKAN_DEVICE_HPP
