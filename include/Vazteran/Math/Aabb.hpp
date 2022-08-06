@@ -8,25 +8,18 @@
 
 namespace vzt
 {
-	class AABB
+	struct AABB
 	{
-	  public:
+		std::array<Vec3, 8> vertices;
+		Vec3                minimum = Vec3(vzt::typeMax<float>);
+		Vec3                maximum = Vec3(vzt::typeMin<float>);
+
 		AABB() = default;
-		AABB(const std::vector<vzt::Vec3>& vertices);
-		AABB(const std::vector<vzt::AABB>& aabbs);
+		AABB(const std::vector<Vec3>& vertices);
+		AABB(const std::vector<AABB>& aabbs);
 
 		void extend(const AABB& other);
 		void refresh();
-
-		const glm::vec3&                minimum() const { return m_minimum; }
-		const glm::vec3&                maximum() const { return m_maximum; }
-		const std::array<vzt::Vec3, 8>& getCVertices() const { return m_vertices; }
-		std::array<vzt::Vec3, 8>&       getVertices() { return m_vertices; }
-
-	  private:
-		std::array<vzt::Vec3, 8> m_vertices;
-		glm::vec3                m_minimum = vzt::Vec3(vzt::typeMax<float>);
-		glm::vec3                m_maximum = vzt::Vec3(vzt::typeMin<float>);
 	};
 } // namespace vzt
 

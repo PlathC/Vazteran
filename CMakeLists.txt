@@ -152,6 +152,7 @@ set(VZT_HEADERS
         "include/Vazteran/Data/Image.hpp"
         "include/Vazteran/Data/Material.hpp"
         "include/Vazteran/Data/Mesh.hpp"
+        "include/Vazteran/Data/Transform.hpp"
         
         "include/Vazteran/FileSystem/File.hpp"
         "include/Vazteran/FileSystem/MeshReader.hpp"
@@ -165,9 +166,9 @@ set(VZT_HEADERS
         
         "include/Vazteran/System/Listener.hpp"
         "include/Vazteran/System/Scene.hpp"
-        "include/Vazteran/System/Transform.hpp"
 
         "include/Vazteran/Ui/Component.hpp"
+        "include/Vazteran/Ui/Controller.hpp"
         "include/Vazteran/Ui/MainMenuBar.hpp"
         "include/Vazteran/Ui/UiManager.hpp"
 
@@ -204,6 +205,7 @@ set(VZT_SOURCES
         "src/Data/Image.cpp"
         "src/Data/Material.cpp"
         "src/Data/Mesh.cpp"
+        "src/Data/Transform.cpp"
         
         "src/FileSystem/File.cpp"
         "src/FileSystem/MeshReader.cpp"
@@ -215,9 +217,9 @@ set(VZT_SOURCES
         "src/Renderer/ShaderLibrary.cpp"
 
         "src/System/Scene.cpp"
-        "src/System/Transform.cpp"
 
         "src/Ui/Component.cpp"
+        "src/Ui/Controller.cpp"
         "src/Ui/MainMenuBar.cpp"
         "src/Ui/UiManager.cpp"
 

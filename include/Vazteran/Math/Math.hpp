@@ -1,4 +1,3 @@
-
 #ifndef VAZTERAN_MATH_HPP
 #define VAZTERAN_MATH_HPP
 
@@ -17,7 +16,7 @@ namespace vzt
 	template <class T>
 	constexpr T typeMax = std::numeric_limits<T>::max();
 	template <class T>
-	constexpr T typeMin = std::numeric_limits<T>::min();
+	constexpr T typeMin = std::numeric_limits<T>::lowest();
 	template <class T>
 	constexpr T typeEpsilon = std::numeric_limits<T>::epsilon();
 

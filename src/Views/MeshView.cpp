@@ -2,7 +2,7 @@
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
 #include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
-#include "Vazteran/System/Transform.hpp"
+#include "Vazteran/Data/Transform.hpp"
 
 namespace vzt
 {
@@ -170,10 +170,11 @@ namespace vzt
 		});
 	}
 
-	void MeshView::update(const vzt::Camera& camera)
+	void MeshView::update(const Entity& cameraEntity)
 	{
-		const auto viewMatrix       = camera.getViewMatrix();
-		auto       projectionMatrix = camera.getProjectionMatrix();
+		const auto& [setup, view]   = cameraEntity.get<Camera, Transform>();
+		const Mat4 viewMatrix       = setup.getViewMatrix(view);
+		Mat4       projectionMatrix = setup.getProjectionMatrix();
 		projectionMatrix[1][1] *= -1;
 
 		std::size_t currentMaterialIndex = 0;

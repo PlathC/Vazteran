@@ -2,11 +2,12 @@
 
 #include "Vazteran/Core/Logger.hpp"
 #include "Vazteran/Data/Mesh.hpp"
+#include "Vazteran/Data/Transform.hpp"
 #include "Vazteran/FileSystem/MeshReader.hpp"
 #include "Vazteran/Math/Math.hpp"
 #include "Vazteran/System/Scene.hpp"
-#include "Vazteran/System/Transform.hpp"
 #include "Vazteran/Views/MeshView.hpp"
+#include <include/Vazteran/Ui/Controller.hpp>
 
 namespace vzt
 {
@@ -65,15 +66,16 @@ namespace vzt
 				mesh.materials[1].shininess = ((movement.z + 5.f) * 0.1f) * 200.f;
 
 				const Mat4 transformationMatrix = transform.get();
-				for (auto& position : mesh.aabb.getVertices())
+				for (auto& position : mesh.aabb.vertices)
 					position = (transformationMatrix * Vec4(position, 1.f));
 				mesh.aabb.refresh();
 
 				fullBoundingBox.extend(mesh.aabb);
 			}
 
-			Entity cameraEntity = crounchingBoysScene.create();
-			cameraEntity.emplace<Camera>(fullBoundingBox);
+			Entity  cameraEntity = crounchingBoysScene.create();
+			Camera& camera       = cameraEntity.emplace<Camera>();
+			cameraEntity.emplace<Transform>(vzt::fromAabb(camera, fullBoundingBox));
 			cameraEntity.emplace<MainCamera>();
 
 			return std::move(crounchingBoysScene);
@@ -87,8 +89,9 @@ namespace vzt
 
 			mesh.materials[0].texture = vzt::Image("./samples/VikingRoom/viking_room.png");
 
-			Entity cameraEntity = vikingRoomScene.create();
-			cameraEntity.emplace<Camera>(mesh.aabb);
+			Entity  cameraEntity = vikingRoomScene.create();
+			Camera& camera       = cameraEntity.emplace<Camera>();
+			cameraEntity.emplace<Transform>(fromAabb(camera, mesh.aabb));
 			cameraEntity.emplace<MainCamera>();
 
 			return std::move(vikingRoomScene);
@@ -99,10 +102,9 @@ namespace vzt
 			Entity moriKnob = moriKnobScene.create();
 			moriKnob.emplace<Mesh>(vzt::readObj("./samples/MoriKnob/MoriKnob.obj"));
 
-			Entity  cameraEntity = moriKnobScene.create();
-			Camera& camera       = cameraEntity.emplace<Camera>();
-			camera.position      = vzt::Vec3(-0.011357f, 1.731663f, -4.142815f);
-			camera.front         = vzt::Vec3(0.011475, -0.438221, 0.898794);
+			Entity cameraEntity = moriKnobScene.create();
+			cameraEntity.emplace<Camera>();
+			cameraEntity.emplace<Transform>();
 			cameraEntity.emplace<MainCamera>();
 
 			return std::move(moriKnobScene);

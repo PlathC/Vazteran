@@ -4,8 +4,10 @@
 #include "Vazteran/Core/Logger.hpp"
 #include "Vazteran/Renderer/ShaderLibrary.hpp"
 #include "Vazteran/System/Scene.hpp"
+#include "Vazteran/Ui/Controller.hpp"
 #include "Vazteran/Views/MeshView.hpp"
 #include "Vazteran/Window.hpp"
+#include <include/Vazteran/Data/Transform.hpp>
 
 int main(int /* args */, char*[] /* argv */)
 {
@@ -142,28 +144,34 @@ int main(int /* args */, char*[] /* argv */)
 
 			currentScene.getMainCamera().get<vzt::Camera>().aspectRatio = size.width / static_cast<float>(size.height);
 		});
-		window.setOnMousePosChangedCallback([&](vzt::Dvec2 deltaPos) {
+		window.setOnMousePosChangedCallback([&](vzt::Vec2 deltaPos) {
 			if (!isMouseEnable)
 				return;
 
-			currentScene.getMainCamera().get<vzt::Camera>().update(deltaPos);
+			auto& transform = currentScene.getMainCamera().get<vzt::Transform>();
+			vzt::updateFirstPerson(deltaPos, transform);
 		});
 
 		window.setOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
 			float cameraSpeed = 5e-2f;
-			auto& camera      = currentScene.getMainCamera().get<vzt::Camera>();
+			auto& transform   = currentScene.getMainCamera().get<vzt::Transform>();
 
 			if ((modifiers & vzt::KeyModifier::Shift) == vzt::KeyModifier::Shift)
 				cameraSpeed *= 5.f;
 
+			vzt::Vec3 translation{};
 			if (code == vzt::KeyCode::W)
-				camera.position += camera.front * cameraSpeed;
+				translation += vzt::Camera::Front * cameraSpeed;
 			if (code == vzt::KeyCode::S)
-				camera.position -= camera.front * cameraSpeed;
-			if (code == vzt::KeyCode::A)
-				camera.position -= glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed;
+				translation -= vzt::Camera::Front * cameraSpeed;
+
 			if (code == vzt::KeyCode::D)
-				camera.position += glm::normalize(glm::cross(camera.front, camera.upVector)) * cameraSpeed;
+				translation += vzt::Camera::Right * cameraSpeed;
+			if (code == vzt::KeyCode::A)
+				translation -= vzt::Camera::Right * cameraSpeed;
+
+			if (glm::length(translation) > 0.f)
+				transform.translateRelative(translation);
 
 			if (code == vzt::KeyCode::F8)
 			{
@@ -195,7 +203,7 @@ int main(int /* args */, char*[] /* argv */)
 
 		while (!window.update())
 		{
-			meshView.update(currentScene.getMainCamera().get<vzt::Camera>());
+			meshView.update(currentScene.getMainCamera());
 			renderer.render();
 		}
 

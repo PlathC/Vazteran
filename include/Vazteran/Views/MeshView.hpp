@@ -43,7 +43,7 @@ namespace vzt
 
 		void configure(const vzt::Device* device, uint32_t imageCount);
 		void record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const;
-		void update(const vzt::Camera& camera);
+		void update(const Entity& cameraEntity);
 
 	  private:
 		void add(Entity mesh);

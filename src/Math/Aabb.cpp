@@ -2,56 +2,44 @@
 
 namespace vzt
 {
-	AABB::AABB(const std::vector<vzt::Vec3>& vertices)
+	AABB::AABB(const std::vector<vzt::Vec3>& input)
 	{
-		assert(!vertices.empty() && "Vertices array should not be empty");
+		assert(!input.empty() && "Vertices array should not be empty");
 
-		m_minimum = m_maximum = vertices[0];
-		for (const auto& vertex : vertices)
+		minimum = maximum = input[0];
+		for (const auto& vertex : input)
 		{
-			if (vertex.x < m_minimum.x)
-			{
-				m_minimum.x = vertex.x;
-			}
+			if (vertex.x < minimum.x)
+				minimum.x = vertex.x;
 
-			if (vertex.y < m_minimum.y)
-			{
-				m_minimum.y = vertex.y;
-			}
+			if (vertex.y < minimum.y)
+				minimum.y = vertex.y;
 
-			if (vertex.z < m_minimum.z)
-			{
-				m_minimum.z = vertex.z;
-			}
+			if (vertex.z < minimum.z)
+				minimum.z = vertex.z;
 
-			if (vertex.x > m_maximum.x)
-			{
-				m_maximum.x = vertex.x;
-			}
+			if (vertex.x > maximum.x)
+				maximum.x = vertex.x;
 
-			if (vertex.y > m_maximum.y)
-			{
-				m_maximum.y = vertex.y;
-			}
+			if (vertex.y > maximum.y)
+				maximum.y = vertex.y;
 
-			if (vertex.z > m_maximum.z)
-			{
-				m_maximum.z = vertex.z;
-			}
+			if (vertex.z > maximum.z)
+				maximum.z = vertex.z;
 		}
 
-		m_vertices = std::array<glm::vec3, 8>{
+		vertices = std::array<Vec3, 8>{
 		    // Bottom
-		    vzt::Vec3{m_minimum.x, m_minimum.y, m_minimum.z},
-		    vzt::Vec3{m_maximum.x, m_minimum.y, m_minimum.z},
-		    vzt::Vec3{m_minimum.x, m_maximum.y, m_minimum.z},
-		    vzt::Vec3{m_maximum.x, m_maximum.y, m_minimum.z},
+		    Vec3{minimum.x, minimum.y, minimum.z},
+		    Vec3{maximum.x, minimum.y, minimum.z},
+		    Vec3{minimum.x, maximum.y, minimum.z},
+		    Vec3{maximum.x, maximum.y, minimum.z},
 
 		    // Top
-		    vzt::Vec3{m_minimum.x, m_minimum.y, m_maximum.z},
-		    vzt::Vec3{m_maximum.x, m_minimum.y, m_maximum.z},
-		    vzt::Vec3{m_minimum.x, m_maximum.y, m_maximum.z},
-		    vzt::Vec3{m_maximum.x, m_maximum.y, m_maximum.z},
+		    Vec3{minimum.x, minimum.y, maximum.z},
+		    Vec3{maximum.x, minimum.y, maximum.z},
+		    Vec3{minimum.x, maximum.y, maximum.z},
+		    Vec3{maximum.x, maximum.y, maximum.z},
 		};
 	}
 
@@ -59,93 +47,81 @@ namespace vzt
 	{
 		assert(!aabbs.empty() && "Vertices array should not be empty");
 
-		m_minimum = aabbs[0].m_minimum;
-		m_maximum = aabbs[0].m_maximum;
+		minimum = aabbs[0].minimum;
+		maximum = aabbs[0].maximum;
 		for (const auto& aabb : aabbs)
 		{
-			m_minimum.x = std::min(aabb.m_minimum.x, m_minimum.x);
-			m_minimum.y = std::min(aabb.m_minimum.y, m_minimum.y);
-			m_minimum.z = std::min(aabb.m_minimum.z, m_minimum.z);
+			minimum.x = std::min(aabb.minimum.x, minimum.x);
+			minimum.y = std::min(aabb.minimum.y, minimum.y);
+			minimum.z = std::min(aabb.minimum.z, minimum.z);
 
-			m_maximum.x = std::max(aabb.m_maximum.x, m_maximum.x);
-			m_maximum.y = std::max(aabb.m_maximum.y, m_maximum.y);
-			m_maximum.z = std::max(aabb.m_maximum.z, m_maximum.z);
+			maximum.x = std::max(aabb.maximum.x, maximum.x);
+			maximum.y = std::max(aabb.maximum.y, maximum.y);
+			maximum.z = std::max(aabb.maximum.z, maximum.z);
 		}
 
-		m_vertices = std::array<vzt::Vec3, 8>{
+		vertices = std::array<Vec3, 8>{
 		    // Bottom
-		    vzt::Vec3{m_minimum.x, m_minimum.y, m_minimum.z},
-		    vzt::Vec3{m_maximum.x, m_minimum.y, m_minimum.z},
-		    vzt::Vec3{m_minimum.x, m_maximum.y, m_minimum.z},
-		    vzt::Vec3{m_maximum.x, m_maximum.y, m_minimum.z},
+		    Vec3{minimum.x, minimum.y, minimum.z},
+		    Vec3{maximum.x, minimum.y, minimum.z},
+		    Vec3{minimum.x, maximum.y, minimum.z},
+		    Vec3{maximum.x, maximum.y, minimum.z},
 
 		    // Top
-		    vzt::Vec3{m_minimum.x, m_minimum.y, m_maximum.z},
-		    vzt::Vec3{m_maximum.x, m_minimum.y, m_maximum.z},
-		    vzt::Vec3{m_minimum.x, m_maximum.y, m_maximum.z},
-		    vzt::Vec3{m_maximum.x, m_maximum.y, m_maximum.z},
+		    Vec3{minimum.x, minimum.y, maximum.z},
+		    Vec3{maximum.x, minimum.y, maximum.z},
+		    Vec3{minimum.x, maximum.y, maximum.z},
+		    Vec3{maximum.x, maximum.y, maximum.z},
 		};
 	}
 
 	void AABB::extend(const AABB& other)
 	{
-		m_minimum.x = std::min(other.m_minimum.x, m_minimum.x);
-		m_minimum.y = std::min(other.m_minimum.y, m_minimum.y);
-		m_minimum.z = std::min(other.m_minimum.z, m_minimum.z);
+		minimum.x = std::min(other.minimum.x, minimum.x);
+		minimum.y = std::min(other.minimum.y, minimum.y);
+		minimum.z = std::min(other.minimum.z, minimum.z);
 
-		m_maximum.x = std::max(other.m_maximum.x, m_maximum.x);
-		m_maximum.y = std::max(other.m_maximum.y, m_maximum.y);
-		m_maximum.z = std::max(other.m_maximum.z, m_maximum.z);
+		maximum.x = std::max(other.maximum.x, maximum.x);
+		maximum.y = std::max(other.maximum.y, maximum.y);
+		maximum.z = std::max(other.maximum.z, maximum.z);
 
-		m_vertices = std::array<glm::vec3, 8>{
+		vertices = std::array<Vec3, 8>{
 		    // Bottom
-		    vzt::Vec3{m_minimum.x, m_minimum.y, m_minimum.z},
-		    vzt::Vec3{m_maximum.x, m_minimum.y, m_minimum.z},
-		    vzt::Vec3{m_minimum.x, m_maximum.y, m_minimum.z},
-		    vzt::Vec3{m_maximum.x, m_maximum.y, m_minimum.z},
+		    Vec3{minimum.x, minimum.y, minimum.z},
+		    Vec3{maximum.x, minimum.y, minimum.z},
+		    Vec3{minimum.x, maximum.y, minimum.z},
+		    Vec3{maximum.x, maximum.y, minimum.z},
 
 		    // Top
-		    vzt::Vec3{m_minimum.x, m_minimum.y, m_maximum.z},
-		    vzt::Vec3{m_maximum.x, m_minimum.y, m_maximum.z},
-		    vzt::Vec3{m_minimum.x, m_maximum.y, m_maximum.z},
-		    vzt::Vec3{m_maximum.x, m_maximum.y, m_maximum.z},
+		    Vec3{minimum.x, minimum.y, maximum.z},
+		    Vec3{maximum.x, minimum.y, maximum.z},
+		    Vec3{minimum.x, maximum.y, maximum.z},
+		    Vec3{maximum.x, maximum.y, maximum.z},
 		};
 	}
 
 	void AABB::refresh()
 	{
-		m_minimum = m_maximum = m_vertices[0];
-		for (const auto& vertex : m_vertices)
+		minimum = maximum = vertices[0];
+		for (const auto& vertex : vertices)
 		{
-			if (vertex.x < m_minimum.x)
-			{
-				m_minimum.x = vertex.x;
-			}
+			if (vertex.x < minimum.x)
+				minimum.x = vertex.x;
 
-			if (vertex.y < m_minimum.y)
-			{
-				m_minimum.y = vertex.y;
-			}
+			if (vertex.y < minimum.y)
+				minimum.y = vertex.y;
 
-			if (vertex.z < m_minimum.z)
-			{
-				m_minimum.z = vertex.z;
-			}
+			if (vertex.z < minimum.z)
+				minimum.z = vertex.z;
 
-			if (vertex.x > m_maximum.x)
-			{
-				m_maximum.x = vertex.x;
-			}
+			if (vertex.x > maximum.x)
+				maximum.x = vertex.x;
 
-			if (vertex.y > m_maximum.y)
-			{
-				m_maximum.y = vertex.y;
-			}
+			if (vertex.y > maximum.y)
+				maximum.y = vertex.y;
 
-			if (vertex.z > m_maximum.z)
-			{
-				m_maximum.z = vertex.z;
-			}
+			if (vertex.z > maximum.z)
+				maximum.z = vertex.z;
 		}
 	}
 } // namespace vzt

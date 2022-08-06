@@ -32,21 +32,19 @@ namespace vzt
 	};
 
 	using OnFrameBufferChangedCallback = std::function<void()>;
-	using OnKeyActionCallback =
-	    std::function<void(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers)>;
-	using OnMousePosChangedCallback = std::function<void(const vzt::Dvec2 pos)>;
-	using OnMouseButtonCallback =
-	    std::function<void(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers)>;
+	using OnKeyActionCallback          = std::function<void(KeyCode code, KeyAction action, KeyModifier modifiers)>;
+	using OnMousePosChangedCallback    = std::function<void(const Vec2 pos)>;
+	using OnMouseButtonCallback        = std::function<void(MouseButton code, KeyAction action, KeyModifier modifiers)>;
 
 	class Window
 	{
 	  public:
-		Window(std::string_view name, uint32_t width, uint32_t height);
+		Window(const std::string& name, uint32_t width, uint32_t height);
 		~Window();
 
 		void onFramebufferSizeChanged() const;
 		void onKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers);
-		void onMousePosChanged(const vzt::Dvec2 pos);
+		void onMousePosChanged(const vzt::Vec2 pos);
 		void onMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers);
 
 		void setOnFrameBufferChangedCallback(OnFrameBufferChangedCallback callback);
@@ -54,10 +52,10 @@ namespace vzt
 		void setOnMousePosChangedCallback(OnMousePosChangedCallback callback);
 		void setOnMouseButtonCallback(OnMouseButtonCallback callback);
 
-		GLFWwindow*           getWindowHandle() const { return m_window.get(); }
-		vzt::Size2D<uint32_t> getFrameBufferSize() const;
-		VkSurfaceKHR          getSurface() const { return m_surface.vkHandle(); }
-		const vzt::Instance*  getInstance() const { return &m_instance; }
+		GLFWwindow*          getWindowHandle() const { return m_window.get(); }
+		Size2D<uint32_t>     getFrameBufferSize() const;
+		VkSurfaceKHR         getSurface() const { return m_surface.vkHandle(); }
+		const vzt::Instance* getInstance() const { return &m_instance; }
 
 		bool update() const;
 		bool shouldClose() const { return glfwWindowShouldClose(m_window.get()); }
@@ -65,7 +63,7 @@ namespace vzt
 		static std::vector<const char*> vkExtensions();
 
 	  private:
-		vzt::Instance  m_instance;
+		Instance       m_instance;
 		SurfaceHandler m_surface;
 
 		uint32_t m_width;
@@ -79,7 +77,7 @@ namespace vzt
 		OnMousePosChangedCallback    m_onMousePosChangedCallback;
 		OnMouseButtonCallback        m_onMouseButtonCallback;
 
-		vzt::Dvec2 m_lastMousePos;
+		Vec2 m_lastMousePos;
 	};
 } // namespace vzt
 

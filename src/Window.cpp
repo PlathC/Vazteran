@@ -34,37 +34,37 @@ namespace vzt
 		}
 	}
 
-	Window::Window(std::string_view name, const uint32_t width, const uint32_t height)
+	Window::Window(const std::string& name, const uint32_t width, const uint32_t height)
 	    : m_width(width), m_height(height)
 	{
 		if (!glfwInit())
 			throw std::runtime_error("Failed to load glfw.");
 
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-		m_window = GLFWwindowPtr(glfwCreateWindow(m_width, m_height, std::string(name).c_str(), nullptr, nullptr),
+		m_window = GLFWwindowPtr(glfwCreateWindow(m_width, m_height, name.c_str(), nullptr, nullptr),
 		                         [](GLFWwindow* window) { glfwDestroyWindow(window); });
 
 		glfwSetWindowUserPointer(m_window.get(), this);
 		glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
-			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
+			Window* windowHandle = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
 			windowHandle->onFramebufferSizeChanged();
 		});
 
 		glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos) {
-			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->onMousePosChanged(vzt::Dvec2{xPos, yPos});
+			Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
+			windowHandle->onMousePosChanged(Vec2{static_cast<float>(xPos), static_cast<float>(yPos)});
 		});
 
 		glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
-			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->onKeyAction(static_cast<vzt::KeyCode>(key), static_cast<vzt::KeyAction>(action),
-			                          static_cast<vzt::KeyModifier>(mods));
+			Window* windowHandle = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+			windowHandle->onKeyAction(static_cast<KeyCode>(key), static_cast<KeyAction>(action),
+			                          static_cast<KeyModifier>(mods));
 		});
 
 		glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int key, int action, int mods) {
-			vzt::Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->onMouseButton(static_cast<vzt::MouseButton>(key), static_cast<vzt::KeyAction>(action),
-			                            static_cast<vzt::KeyModifier>(mods));
+			Window* windowHandle = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+			windowHandle->onMouseButton(static_cast<MouseButton>(key), static_cast<KeyAction>(action),
+			                            static_cast<KeyModifier>(mods));
 		});
 
 		m_instance = Instance("Vazteran", vkExtensions());
@@ -79,7 +79,7 @@ namespace vzt
 
 	void Window::onFramebufferSizeChanged() const { m_onFrameBufferChangedCallback(); }
 
-	void Window::onKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers)
+	void Window::onKeyAction(KeyCode code, KeyAction action, KeyModifier modifiers)
 	{
 		if (m_onKeyActionCallback)
 		{
@@ -87,7 +87,7 @@ namespace vzt
 		}
 	}
 
-	void Window::onMousePosChanged(const vzt::Dvec2 pos)
+	void Window::onMousePosChanged(const Vec2 pos)
 	{
 		static bool firstChange = true;
 		if (firstChange)
@@ -97,19 +97,15 @@ namespace vzt
 		}
 
 		if (m_onMousePosChangedCallback)
-		{
-			m_onMousePosChangedCallback(vzt::Dvec2{pos.x - m_lastMousePos.x, m_lastMousePos.y - pos.y});
-		}
+			m_onMousePosChangedCallback({pos.x - m_lastMousePos.x, m_lastMousePos.y - pos.y});
 
 		m_lastMousePos = pos;
 	}
 
-	void Window::onMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers)
+	void Window::onMouseButton(MouseButton code, KeyAction action, KeyModifier modifiers)
 	{
 		if (m_onMouseButtonCallback)
-		{
 			m_onMouseButtonCallback(code, action, modifiers);
-		}
 	}
 
 	void Window::setOnFrameBufferChangedCallback(OnFrameBufferChangedCallback callback)
@@ -129,7 +125,7 @@ namespace vzt
 		m_onMouseButtonCallback = std::move(callback);
 	}
 
-	vzt::Size2D<uint32_t> Window::getFrameBufferSize() const
+	Size2D<uint32_t> Window::getFrameBufferSize() const
 	{
 		int frameBufferWidth = 0, frameBufferHeight = 0;
 		glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
