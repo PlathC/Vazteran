@@ -19,6 +19,8 @@ namespace vzt
 		FreeFly(Window& window, Camera& camera, Transform& transform, KeyCode toggleEnable = KeyCode::Tab);
 		~FreeFly() = default;
 
+		void setEnable(bool enable) { m_enabled = enable; }
+		bool getEnable() const;
 		void operator()(const Inputs& inputs);
 
 	  private:

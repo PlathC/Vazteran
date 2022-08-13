@@ -14,6 +14,9 @@ namespace vzt
 		m_inputConnection = window.subscribe<Inputs, &FreeFly::operator()>(*this);
 	}
 
+	void FreeFly::setEnable(bool enable) { m_enabled = enable; }
+	bool FreeFly::getEnable() const { return m_enabled; }
+
 	void FreeFly::operator()(const Inputs& inputs)
 	{
 		constexpr float sensitivity     = 1e-2f;
