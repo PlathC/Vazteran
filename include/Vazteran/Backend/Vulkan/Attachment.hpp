@@ -31,7 +31,7 @@ namespace vzt
 	class Attachment
 	{
 	  public:
-		Attachment(const Device* device, Size2D<uint32_t> size, Format format, ImageUsage usage);
+		Attachment(const Device* device, Uvec2 size, Format format, ImageUsage usage);
 		Attachment(const Device* device, VkImage image, Format format, ImageLayout layout, ImageAspect aspect);
 		~Attachment();
 

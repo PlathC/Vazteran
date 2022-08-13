@@ -138,7 +138,7 @@ namespace vzt
 		renderPassInfo.framebuffer       = frameBuffer->vkHandle();
 		renderPassInfo.renderArea.offset = {0, 0};
 		const auto fbSize                = frameBuffer->size();
-		renderPassInfo.renderArea.extent = VkExtent2D{fbSize.width, fbSize.height};
+		renderPassInfo.renderArea.extent = VkExtent2D{fbSize.x, fbSize.y};
 		renderPassInfo.clearValueCount   = static_cast<uint32_t>(m_clearValues.size());
 		renderPassInfo.pClearValues      = m_clearValues.data();
 

@@ -271,7 +271,7 @@ namespace vzt
 	}
 
 	void RenderPassHandler::configure(RenderGraph* correspondingGraph, const Device* device, const uint32_t imageCount,
-	                                  vzt::Size2D<uint32_t> targetSize)
+	                                  Uvec2 targetSize)
 	{
 		if (!m_recordFunction)
 			throw std::runtime_error("A render pass must have a record function");
@@ -483,8 +483,8 @@ namespace vzt
 		}
 	}
 
-	void RenderGraph::configure(const Device* device, const std::vector<VkImage>& swapchainImages,
-	                            Size2D<uint32_t> scImageSize, Format scColorFormat, Format scDepthFormat)
+	void RenderGraph::configure(const Device* device, const std::vector<VkImage>& swapchainImages, Uvec2 scImageSize,
+	                            Format scColorFormat, Format scDepthFormat)
 	{
 		m_device = device;
 

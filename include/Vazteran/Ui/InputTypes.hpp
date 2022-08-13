@@ -1,12 +1,9 @@
 #ifndef VAZTERAN_WINDOWTYPES_HPP
 #define VAZTERAN_WINDOWTYPES_HPP
 
-#include <type_traits>
-
 #include <GLFW/glfw3.h>
 
-#include "Vazteran/Core/Macro.hpp"
-#include "Vazteran/Core/Type.hpp"
+#include "Vazteran/Core/Meta.hpp"
 
 namespace vzt
 {
@@ -24,7 +21,6 @@ namespace vzt
 		Right   = GLFW_MOUSE_BUTTON_RIGHT,
 		Middle  = GLFW_MOUSE_BUTTON_MIDDLE
 	};
-	BITWISE_FUNCTION(MouseButton)
 
 	enum class KeyAction : uint8_t
 	{
@@ -32,10 +28,10 @@ namespace vzt
 		Press   = GLFW_PRESS,
 		Repeat  = GLFW_REPEAT
 	};
-	BITWISE_FUNCTION(KeyAction)
 
 	enum class KeyModifier : uint8_t
 	{
+		None     = 0,
 		Shift    = GLFW_MOD_SHIFT,
 		Control  = GLFW_MOD_CONTROL,
 		Alt      = GLFW_MOD_ALT,
@@ -175,7 +171,6 @@ namespace vzt
 		RightSuper   = GLFW_KEY_RIGHT_SUPER,
 		Menu         = GLFW_KEY_MENU,
 	};
-	BITWISE_FUNCTION(KeyCode)
 
 } // namespace vzt
 

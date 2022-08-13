@@ -5,9 +5,9 @@
 
 namespace vzt
 {
-	Renderer::Renderer(const Window* window)
-	    : m_surface(window->getSurface()), m_device(window->getInstance(), m_surface),
-	      m_swapChain(&m_device, m_surface, window->getFrameBufferSize()), m_commandPool(&m_device)
+	Renderer::Renderer(Window& window)
+	    : m_surface(window.getSurface()), m_device(window.getInstance(), m_surface),
+	      m_swapChain(&m_device, m_surface, window.getFrameBufferSize()), m_commandPool(&m_device)
 	{
 		const uint32_t             imageCount      = m_swapChain.getImageCount();
 		const std::vector<VkImage> swapChainImages = m_swapChain.getRenderImages();
@@ -32,6 +32,8 @@ namespace vzt
 				                     0, 0, nullptr, 0, nullptr, 1, &transition);
 			});
 		}
+
+		m_connectionHolder.subscribe<Window::FrameBufferResize, &Renderer::resize>(window, *this);
 	}
 
 	Renderer::Renderer(Renderer&& other) noexcept
@@ -39,7 +41,7 @@ namespace vzt
 	      m_commandPool(std::move(other.m_commandPool))
 	{
 		std::swap(m_surface, other.m_surface);
-		std::swap(m_drawFunction, other.m_drawFunction);
+		std::swap(m_renderGraph, other.m_renderGraph);
 	}
 
 	Renderer& Renderer::operator=(Renderer&& other) noexcept
@@ -49,22 +51,26 @@ namespace vzt
 		std::swap(m_device, other.m_device);
 		std::swap(m_swapChain, other.m_swapChain);
 		std::swap(m_commandPool, other.m_commandPool);
-		std::swap(m_drawFunction, other.m_drawFunction);
+		std::swap(m_renderGraph, other.m_renderGraph);
 
 		return *this;
 	}
 
 	Renderer::~Renderer() {}
 
-	void Renderer::setRenderFunction(RenderFunction drawFunction) { m_drawFunction = std::move(drawFunction); }
+	void Renderer::setRenderGraph(RenderGraph renderGraph)
+	{
+		m_renderGraph = std::move(renderGraph);
+		refresh();
+	}
 
 	void Renderer::render()
 	{
 		const bool recreate = m_swapChain.render(
 		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
-			    if (m_drawFunction)
+			    if (m_renderGraph)
 			    {
-				    m_drawFunction(imageId, imageAvailable, renderComplete, inFlightFence);
+				    m_renderGraph->render(imageId, imageAvailable, renderComplete, inFlightFence);
 			    }
 			    else
 			    {
@@ -92,16 +98,21 @@ namespace vzt
 		}
 	}
 
-	void Renderer::resize(vzt::Size2D<uint32_t> newSize)
+	void Renderer::resize(Window::FrameBufferResize newSize)
 	{
-		m_swapChain.setFrameBufferSize(std::move(newSize));
+		m_swapChain.setFrameBufferSize(std::move(newSize.size));
 		m_swapChain.recreate(m_surface);
+
+		refresh();
 	}
 
-	void Renderer::configure(vzt::RenderGraph& renderGraph)
+	void Renderer::refresh()
 	{
-		renderGraph.configure(&m_device, m_swapChain.getRenderImages(), m_swapChain.getFrameBufferSize(),
-		                      m_swapChain.getImageFormat(), m_device.getPhysicalDevice()->findDepthFormat());
+		if (!m_renderGraph)
+			return;
+
+		m_renderGraph->configure(&m_device, m_swapChain.getRenderImages(), m_swapChain.getFrameBufferSize(),
+		                         m_swapChain.getImageFormat(), m_device.getPhysicalDevice()->findDepthFormat());
 	}
 
 	void Renderer::synchronize() { vkDeviceWaitIdle(m_device.vkHandle()); }

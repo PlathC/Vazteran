@@ -10,7 +10,7 @@
 
 namespace vzt
 {
-	SwapChain::SwapChain(vzt::Device* device, VkSurfaceKHR surface, vzt::Size2D<uint32_t> swapChainSize)
+	SwapChain::SwapChain(vzt::Device* device, VkSurfaceKHR surface, Uvec2 swapChainSize)
 	    : m_surface(surface), m_device(device), m_swapChainSize(swapChainSize)
 	{
 		createSwapChain();
@@ -65,7 +65,7 @@ namespace vzt
 		return false;
 	}
 
-	void SwapChain::setFrameBufferSize(vzt::Size2D<uint32_t> newSize)
+	void SwapChain::setFrameBufferSize(Uvec2 newSize)
 	{
 		m_swapChainSize      = std::move(newSize);
 		m_framebufferResized = true;
@@ -232,7 +232,7 @@ namespace vzt
 		}
 		else
 		{
-			return {static_cast<uint32_t>(m_swapChainSize.width), static_cast<uint32_t>(m_swapChainSize.height)};
+			return {static_cast<uint32_t>(m_swapChainSize.x), static_cast<uint32_t>(m_swapChainSize.y)};
 		}
 	}
 } // namespace vzt

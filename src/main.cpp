@@ -1,10 +1,10 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/Renderer.hpp"
 #include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
+#include "Vazteran/Controller/FreeFly.hpp"
 #include "Vazteran/Core/Logger.hpp"
 #include "Vazteran/Renderer/ShaderLibrary.hpp"
 #include "Vazteran/System/Scene.hpp"
-#include "Vazteran/Ui/Controller.hpp"
 #include "Vazteran/Views/MeshView.hpp"
 #include "Vazteran/Window.hpp"
 #include <include/Vazteran/Data/Transform.hpp>
@@ -14,7 +14,7 @@ int main(int /* args */, char*[] /* argv */)
 	try
 	{
 		vzt::Window     window{"Vazteran", 1280, 720};
-		vzt::Renderer   renderer{&window};
+		vzt::Renderer   renderer{window};
 		vzt::UiRenderer uiRenderer{};
 
 		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::CrounchingBoys);
@@ -43,10 +43,6 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::GraphicPipeline geometryPipeline;
 		vzt::GraphicPipeline compositionPipeline;
 		vzt::RenderGraph     renderGraph{};
-		renderer.setRenderFunction(
-		    [&](uint32_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete, VkFence inFlightFence) {
-			    renderGraph.render(imageId, imageAvailable, renderComplete, inFlightFence);
-		    });
 
 		vzt::Program triangleProgram{};
 		triangleProgram.setShader(library.get("./shaders/triangle.vert"));
@@ -128,52 +124,16 @@ int main(int /* args */, char*[] /* argv */)
 
 		renderGraph.setBackBuffer(composed);
 		renderGraph.compile();
-		renderer.configure(renderGraph);
+		renderer.setRenderGraph(std::move(renderGraph));
 
-		const auto size = window.getFrameBufferSize();
+		const auto   size       = window.getFrameBufferSize();
+		vzt::Entity  mainCamera = currentScene.getMainCamera();
+		vzt::Camera& camera     = mainCamera.get<vzt::Camera>();
+		camera.aspectRatio      = size.x / static_cast<float>(size.y);
+		mainCamera.emplace<vzt::FreeFly>(window, camera, mainCamera.get<vzt::Transform>());
 
-		currentScene.getMainCamera().get<vzt::Camera>().aspectRatio = size.width / static_cast<float>(size.height);
-
-		static bool isMouseEnable = false;
-
-		window.setOnFrameBufferChangedCallback([&]() {
-			renderer.resize(window.getFrameBufferSize());
-			renderer.configure(renderGraph);
-
-			const auto size = window.getFrameBufferSize();
-
-			currentScene.getMainCamera().get<vzt::Camera>().aspectRatio = size.width / static_cast<float>(size.height);
-		});
-		window.setOnMousePosChangedCallback([&](vzt::Vec2 deltaPos) {
-			if (!isMouseEnable)
-				return;
-
-			auto& transform = currentScene.getMainCamera().get<vzt::Transform>();
-			vzt::updateFirstPerson(deltaPos, transform);
-		});
-
-		window.setOnKeyActionCallback([&](vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
-			float cameraSpeed = 5e-2f;
-			auto& transform   = currentScene.getMainCamera().get<vzt::Transform>();
-
-			if ((modifiers & vzt::KeyModifier::Shift) == vzt::KeyModifier::Shift)
-				cameraSpeed *= 5.f;
-
-			vzt::Vec3 translation{};
-			if (code == vzt::KeyCode::W)
-				translation += vzt::Camera::Front * cameraSpeed;
-			if (code == vzt::KeyCode::S)
-				translation -= vzt::Camera::Front * cameraSpeed;
-
-			if (code == vzt::KeyCode::D)
-				translation += vzt::Camera::Right * cameraSpeed;
-			if (code == vzt::KeyCode::A)
-				translation -= vzt::Camera::Right * cameraSpeed;
-
-			if (glm::length(translation) > 0.f)
-				transform.translateRelative(translation);
-
-			if (code == vzt::KeyCode::F8)
+		mainCamera.emplace<vzt::DynamicListener<vzt::Inputs>>(window, [&](const vzt::Inputs& inputs) {
+			if (inputs.get(vzt::KeyCode::F8))
 			{
 				renderer.synchronize();
 
@@ -192,13 +152,8 @@ int main(int /* args */, char*[] /* argv */)
 				compositionPipeline                             = vzt::GraphicPipeline{std::move(fsBlinnPhongProgram)};
 				compositionPipeline.getRasterOptions().cullMode = vzt::CullMode::Front;
 
-				renderer.configure(renderGraph);
+				renderer.refresh();
 			}
-		});
-
-		window.setOnMouseButtonCallback([](vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers) {
-			if (code == vzt::MouseButton::Left)
-				isMouseEnable = action == vzt::KeyAction::Press || action == vzt::KeyAction::Repeat;
 		});
 
 		while (!window.update())

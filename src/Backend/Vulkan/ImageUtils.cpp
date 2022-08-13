@@ -6,7 +6,7 @@
 
 namespace vzt
 {
-	ImageView::ImageView(const Device* device, vzt::Image image, vzt::Format format, vzt::ImageLayout layout)
+	ImageView::ImageView(const Device* device, Image image, Format format, ImageLayout layout)
 	    : m_device(device), m_format(format), m_layout(layout)
 	{
 		VkBuffer      stagingBuffer   = VK_NULL_HANDLE;
@@ -39,11 +39,11 @@ namespace vzt
 		m_vkHandle = m_device->createImageView(m_vkImage, format, vzt::ImageAspect::Color);
 	}
 
-	ImageView::ImageView(const Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
+	ImageView::ImageView(const Device* device, Uvec2 size, vzt::Format format, vzt::ImageUsage usage,
 	                     vzt::ImageAspect aspectFlags, vzt::ImageLayout layout)
 	    : m_device(device), m_format(format), m_layout(layout)
 	{
-		m_vkImage  = m_device->createImage(m_allocation, size.width, size.height, format, VK_SAMPLE_COUNT_1_BIT,
+		m_vkImage  = m_device->createImage(m_allocation, size.x, size.y, format, VK_SAMPLE_COUNT_1_BIT,
 		                                   VK_IMAGE_TILING_OPTIMAL, usage);
 		m_vkHandle = m_device->createImageView(m_vkImage, format, aspectFlags);
 	}
@@ -135,7 +135,7 @@ namespace vzt
 		}
 	}
 
-	Texture::Texture(const vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings)
+	Texture::Texture(const Device* device, const ImageView* imageView, SamplerSettings samplerSettings)
 	    : m_sampler(device, samplerSettings), m_imageView(imageView)
 	{
 	}

@@ -6,8 +6,10 @@
 
 #define GLFW_INCLUDE_VULKAN
 
+#include "Vazteran/Backend/Vulkan/Instance.hpp"
+#include "Vazteran/Core/Event.hpp"
 #include "Vazteran/Math/Math.hpp"
-#include "Vazteran/WindowTypes.hpp"
+#include "Vazteran/Ui/Inputs.hpp"
 
 namespace vzt
 {
@@ -16,7 +18,7 @@ namespace vzt
 	{
 	  public:
 		SurfaceHandler() = default;
-		SurfaceHandler(vzt::Instance* instance, VkSurfaceKHR surface);
+		SurfaceHandler(Instance* instance, VkSurfaceKHR surface);
 
 		SurfaceHandler(const SurfaceHandler&)            = delete;
 		SurfaceHandler& operator=(const SurfaceHandler&) = delete;
@@ -27,42 +29,39 @@ namespace vzt
 		~SurfaceHandler();
 
 	  private:
-		vzt::Instance* m_instance = nullptr;
-		VkSurfaceKHR   m_surface  = VK_NULL_HANDLE;
+		Instance*    m_instance = nullptr;
+		VkSurfaceKHR m_surface  = VK_NULL_HANDLE;
 	};
 
-	using OnFrameBufferChangedCallback = std::function<void()>;
-	using OnKeyActionCallback          = std::function<void(KeyCode code, KeyAction action, KeyModifier modifiers)>;
-	using OnMousePosChangedCallback    = std::function<void(const Vec2 pos)>;
-	using OnMouseButtonCallback        = std::function<void(MouseButton code, KeyAction action, KeyModifier modifiers)>;
-
-	class Window
+	class Window : public Provider
 	{
 	  public:
+		struct FrameBufferResize
+		{
+			Uvec2 size;
+		};
+
 		Window(const std::string& name, uint32_t width, uint32_t height);
 		~Window();
 
-		void onFramebufferSizeChanged() const;
-		void onKeyAction(vzt::KeyCode code, vzt::KeyAction action, vzt::KeyModifier modifiers);
-		void onMousePosChanged(const vzt::Vec2 pos);
-		void onMouseButton(vzt::MouseButton code, vzt::KeyAction action, vzt::KeyModifier modifiers);
+		GLFWwindow*     getWindowHandle() const { return m_window.get(); }
+		Uvec2           getFrameBufferSize() const;
+		VkSurfaceKHR    getSurface() const { return m_surface.vkHandle(); }
+		const Instance* getInstance() const { return &m_instance; }
 
-		void setOnFrameBufferChangedCallback(OnFrameBufferChangedCallback callback);
-		void setOnKeyActionCallback(OnKeyActionCallback callback);
-		void setOnMousePosChangedCallback(OnMousePosChangedCallback callback);
-		void setOnMouseButtonCallback(OnMouseButtonCallback callback);
+		bool update();
 
-		GLFWwindow*          getWindowHandle() const { return m_window.get(); }
-		Size2D<uint32_t>     getFrameBufferSize() const;
-		VkSurfaceKHR         getSurface() const { return m_surface.vkHandle(); }
-		const vzt::Instance* getInstance() const { return &m_instance; }
-
-		bool update() const;
-		bool shouldClose() const { return glfwWindowShouldClose(m_window.get()); }
-
-		static std::vector<const char*> vkExtensions();
+		// Should not be call by user's code
+		void processFrameBufferResize(Uvec2 size);
+		void processCursorInput(Vec2 pos);
+		void processKeyInput(KeyCode key, KeyAction action, KeyModifier mods);
+		void processMouseButtonInput(MouseButton key, KeyAction action, KeyModifier mods);
 
 	  private:
+		static std::vector<const char*> vkExtensions();
+
+		bool shouldClose() const;
+
 		Instance       m_instance;
 		SurfaceHandler m_surface;
 
@@ -72,12 +71,8 @@ namespace vzt
 		using GLFWwindowPtr = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
 		GLFWwindowPtr m_window;
 
-		OnFrameBufferChangedCallback m_onFrameBufferChangedCallback;
-		OnKeyActionCallback          m_onKeyActionCallback;
-		OnMousePosChangedCallback    m_onMousePosChangedCallback;
-		OnMouseButtonCallback        m_onMouseButtonCallback;
-
-		Vec2 m_lastMousePos;
+		bool   m_triggerUserInput = false;
+		Inputs m_inputs{};
 	};
 } // namespace vzt
 

@@ -12,7 +12,7 @@
 #include "Vazteran/Core/Type.hpp"
 #include "Vazteran/Data/Camera.hpp"
 #include "Vazteran/Data/Mesh.hpp"
-#include "Vazteran/System/Listener.hpp"
+#include "Vazteran/System/Scene.hpp"
 
 namespace vzt
 {
@@ -21,9 +21,9 @@ namespace vzt
 
 	struct TriangleVertexInput
 	{
-		vzt::Vec3 position;
-		vzt::Vec2 textureCoordinates;
-		vzt::Vec3 normal;
+		Vec3 position;
+		Vec2 textureCoordinates;
+		Vec3 normal;
 
 		static VertexInputDescription getInputDescription();
 	};
@@ -41,33 +41,33 @@ namespace vzt
 
 		~MeshView();
 
-		void configure(const vzt::Device* device, uint32_t imageCount);
+		void configure(const Device* device, uint32_t imageCount);
 		void record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const;
 		void update(const Entity& cameraEntity);
 
 	  private:
-		void add(Entity mesh);
+		void add(entt::registry& registry, entt::entity entity);
 
-		const vzt::Device* m_device;
-		uint32_t           m_imageCount = 0;
+		const Device* m_device;
+		uint32_t      m_imageCount = 0;
 
-		vzt::DescriptorPool   m_descriptorPool;
-		vzt::DescriptorLayout m_meshDescriptorLayout;
+		DescriptorPool   m_descriptorPool;
+		DescriptorLayout m_meshDescriptorLayout;
 
 		const std::size_t m_maxSupportedMesh = 128;
 
-		vzt::Buffer m_materialInfoBuffer;
-		uint32_t    m_materialNb             = 0;
-		uint32_t    m_materialInfoOffsetSize = 0;
+		Buffer   m_materialInfoBuffer;
+		uint32_t m_materialNb             = 0;
+		uint32_t m_materialInfoOffsetSize = 0;
 
-		vzt::Buffer m_transformBuffer;
-		uint32_t    m_transformNumber     = 0;
-		uint32_t    m_transformOffsetSize = 0;
+		Buffer   m_transformBuffer;
+		uint32_t m_transformNumber     = 0;
+		uint32_t m_transformOffsetSize = 0;
 
 		struct MeshDeviceData
 		{
-			vzt::Buffer vertexBuffer;
-			vzt::Buffer subMeshesIndexBuffer;
+			Buffer      vertexBuffer;
+			Buffer      subMeshesIndexBuffer;
 			std::size_t transformIndex;
 
 			struct SubMeshData
@@ -88,20 +88,21 @@ namespace vzt
 
 		struct GenericMaterial
 		{
-			vzt::Vec4 diffuse; // diffuse + shininess
+			Vec4 diffuse; // diffuse + shininess
 
-			static GenericMaterial fromMaterial(const vzt::Material& original);
+			static GenericMaterial fromMaterial(const Material& original);
 		};
 
 		struct Transforms
 		{
-			vzt::Mat4 modelViewMatrix;
-			vzt::Mat4 projectionMatrix;
-			vzt::Mat4 normalMatrix;
+			Mat4 modelViewMatrix;
+			Mat4 projectionMatrix;
+			Mat4 normalMatrix;
 		};
 
-		Scene*         m_scene;
-		Listener<Mesh> m_meshListener;
+		Scene*     m_scene;
+		Connection m_connection;
+		//  Listener<Mesh> m_meshListener;
 	};
 
 } // namespace vzt

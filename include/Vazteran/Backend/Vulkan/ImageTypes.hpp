@@ -1,7 +1,7 @@
 #ifndef VAZTERAN_VULKAN_IMAGETYPES_HPP
 #define VAZTERAN_VULKAN_IMAGETYPES_HPP
 
-#include "Vazteran/Core/Macro.hpp"
+#include "Vazteran/Core/Meta.hpp"
 
 namespace vzt
 {

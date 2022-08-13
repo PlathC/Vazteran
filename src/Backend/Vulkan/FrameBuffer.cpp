@@ -11,7 +11,7 @@
 
 namespace vzt
 {
-	FrameBuffer::FrameBuffer(const Device* device, std::unique_ptr<RenderPass> renderPass, Size2D<uint32_t> size,
+	FrameBuffer::FrameBuffer(const Device* device, std::unique_ptr<RenderPass> renderPass, Uvec2 size,
 	                         const std::vector<const ImageView*>& extAttachmentViews)
 	    : m_device(device), m_size(size), m_renderPass(std::move(renderPass))
 	{
@@ -27,8 +27,8 @@ namespace vzt
 		framebufferInfo.renderPass      = m_renderPass->vkHandle();
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachmentView.size());
 		framebufferInfo.pAttachments    = attachmentView.data();
-		framebufferInfo.width           = m_size.width;
-		framebufferInfo.height          = m_size.height;
+		framebufferInfo.width           = m_size.x;
+		framebufferInfo.height          = m_size.y;
 		framebufferInfo.layers          = 1;
 
 		if (vkCreateFramebuffer(m_device->vkHandle(), &framebufferInfo, nullptr, &m_vkHandle) != VK_SUCCESS)
@@ -70,14 +70,14 @@ namespace vzt
 		VkViewport viewport;
 		viewport.x        = 0.f;
 		viewport.y        = 0.f;
-		viewport.width    = static_cast<float>(m_size.width);
-		viewport.height   = static_cast<float>(m_size.height);
+		viewport.width    = static_cast<float>(m_size.x);
+		viewport.height   = static_cast<float>(m_size.y);
 		viewport.minDepth = 0.f;
 		viewport.maxDepth = 1.f;
 		vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
 		VkRect2D scissor;
-		scissor.extent = {m_size.width, m_size.height};
+		scissor.extent = {m_size.x, m_size.y};
 		scissor.offset = {0, 0};
 		vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 	}

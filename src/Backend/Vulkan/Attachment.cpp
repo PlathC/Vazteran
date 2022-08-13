@@ -2,8 +2,7 @@
 
 namespace vzt
 {
-	Attachment::Attachment(const vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format,
-	                       vzt::ImageUsage usage)
+	Attachment::Attachment(const vzt::Device* device, Uvec2 size, Format format, vzt::ImageUsage usage)
 	    : m_device(device), m_format(format), m_sampleCount(vzt::SampleCount::Sample1)
 	{
 		vzt::ImageAspect aspect;

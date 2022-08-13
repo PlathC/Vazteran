@@ -54,7 +54,7 @@ namespace vzt
 		const RenderPass*       renderPassTemplate;
 		const DescriptorLayout* engineDescriptors;
 		uint32_t                attachmentCount;
-		vzt::Size2D<uint32_t>   targetSize;
+		Uvec2                   targetSize;
 	};
 
 	struct RasterizationOptions

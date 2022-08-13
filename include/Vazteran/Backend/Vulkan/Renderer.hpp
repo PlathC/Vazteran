@@ -11,6 +11,7 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/SwapChain.hpp"
 #include "Vazteran/Data/Camera.hpp"
+#include "Vazteran/Window.hpp"
 
 struct GLFWwindow;
 
@@ -19,7 +20,6 @@ namespace vzt
 	class RenderGraph;
 	class RenderPass;
 	class Scene;
-	class Window;
 
 	class Renderer
 	{
@@ -27,7 +27,7 @@ namespace vzt
 		using RenderFunction = std::function<void(uint32_t /* imageId */, VkSemaphore /* imageAvailable */,
 		                                          VkSemaphore /* renderComplete */, VkFence /* inFlightFence */)>;
 
-		Renderer(const Window* window);
+		Renderer(Window& window);
 
 		Renderer(const Renderer&)            = delete;
 		Renderer& operator=(const Renderer&) = delete;
@@ -37,24 +37,26 @@ namespace vzt
 
 		~Renderer();
 
-		const vzt::Device* getDevice() const { return &m_device; }
-		uint32_t           getImageCount() const;
+		const Device* getDevice() const { return &m_device; }
+		uint32_t      getImageCount() const;
 
-		void setRenderFunction(RenderFunction drawFunction);
+		void setRenderGraph(RenderGraph renderGraph);
 		void render();
 
-		void configure(vzt::RenderGraph& renderGraph);
-		void resize(vzt::Size2D<uint32_t> newSize);
+		void refresh();
+		void resize(Window::FrameBufferResize newSize);
 		void synchronize();
 
 	  private:
 		VkSurfaceKHR m_surface;
 
-		vzt::Device      m_device;
-		vzt::SwapChain   m_swapChain;
-		vzt::CommandPool m_commandPool;
+		ConnectionHolder m_connectionHolder;
 
-		RenderFunction m_drawFunction;
+		Device      m_device;
+		SwapChain   m_swapChain;
+		CommandPool m_commandPool;
+
+		std::optional<RenderGraph> m_renderGraph;
 	};
 } // namespace vzt
 

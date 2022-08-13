@@ -25,6 +25,7 @@ namespace vzt
 		static constexpr Vec3 Right = Vec3(1.f, 0.f, 0.f);
 	};
 
+	Transform fromAabb(const Camera& camera, const AABB& reference);
 } // namespace vzt
 
 #endif // VAZTERAN_CAMERA_HPP

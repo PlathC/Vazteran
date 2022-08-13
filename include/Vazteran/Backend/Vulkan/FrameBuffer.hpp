@@ -16,7 +16,7 @@ namespace vzt
 	class FrameBuffer
 	{
 	  public:
-		FrameBuffer(const vzt::Device* device, std::unique_ptr<vzt::RenderPass> renderPass, vzt::Size2D<uint32_t> size,
+		FrameBuffer(const vzt::Device* device, std::unique_ptr<vzt::RenderPass> renderPass, Uvec2 size,
 		            const std::vector<const vzt::ImageView*>& extAttachmentViews);
 
 		FrameBuffer(const FrameBuffer&)            = delete;
@@ -28,7 +28,7 @@ namespace vzt
 		~FrameBuffer();
 
 		const vzt::RenderPass* getRenderPass() const { return m_renderPass.get(); }
-		vzt::Size2D<uint32_t>  size() const { return m_size; }
+		Uvec2                  size() const { return m_size; }
 
 		void bind(VkCommandBuffer commandBuffer) const;
 		void unbind(VkCommandBuffer commandBuffer) const;
@@ -38,7 +38,7 @@ namespace vzt
 	  private:
 		const vzt::Device*               m_device   = nullptr;
 		VkFramebuffer                    m_vkHandle = VK_NULL_HANDLE;
-		vzt::Size2D<uint32_t>            m_size{};
+		Uvec2                            m_size{};
 		std::unique_ptr<vzt::RenderPass> m_renderPass{};
 	};
 } // namespace vzt

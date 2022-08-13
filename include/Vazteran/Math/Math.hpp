@@ -21,12 +21,15 @@ namespace vzt
 	constexpr T typeEpsilon = std::numeric_limits<T>::epsilon();
 
 	using Vec2  = glm::vec2;
+	using Uvec2 = glm::uvec2;
 	using Ivec2 = glm::ivec2;
 	using Dvec2 = glm::dvec2;
 	using Vec3  = glm::vec3;
+	using Uvec3 = glm::uvec3;
 	using Ivec3 = glm::ivec3;
 	using Dvec3 = glm::dvec3;
 	using Vec4  = glm::vec4;
+	using Uvec4 = glm::uvec4;
 	using Ivec4 = glm::ivec4;
 	using Dvec4 = glm::dvec4;
 

@@ -28,7 +28,7 @@ namespace vzt
 	class SwapChain
 	{
 	  public:
-		SwapChain(vzt::Device* device, VkSurfaceKHR surface, vzt::Size2D<uint32_t> swapChainSize);
+		SwapChain(vzt::Device* device, VkSurfaceKHR surface, Uvec2 swapChainSize);
 
 		SwapChain(const SwapChain&)            = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
@@ -44,10 +44,10 @@ namespace vzt
 		void recreate(VkSurfaceKHR surface);
 		bool render(const SubmitFunction submitFunction);
 
-		void                  setFrameBufferSize(vzt::Size2D<uint32_t> newSize);
-		vzt::Size2D<uint32_t> getFrameBufferSize() const { return m_swapChainSize; }
-		uint32_t              getImageCount() const { return m_imageCount; }
-		vzt::Format           getImageFormat() const { return m_swapChainImageFormat; }
+		void        setFrameBufferSize(Uvec2 newSize);
+		Uvec2       getFrameBufferSize() const { return m_swapChainSize; }
+		uint32_t    getImageCount() const { return m_imageCount; }
+		vzt::Format getImageFormat() const { return m_swapChainImageFormat; }
 
 	  private:
 		void createSwapChain();
@@ -61,16 +61,16 @@ namespace vzt
 	  private:
 		constexpr static uint32_t MaxFramesInFlight = 2;
 
-		vzt::Device*   m_device;
+		Device*        m_device;
 		VkSwapchainKHR m_vkHandle;
 
 		std::size_t m_currentFrame       = 0;
 		bool        m_framebufferResized = false;
 
-		VkSurfaceKHR          m_surface;
-		uint32_t              m_imageCount;
-		vzt::Format           m_swapChainImageFormat;
-		vzt::Size2D<uint32_t> m_swapChainSize;
+		VkSurfaceKHR m_surface;
+		uint32_t     m_imageCount;
+		Format       m_swapChainImageFormat;
+		Uvec2        m_swapChainSize;
 
 		std::vector<VkSemaphore> m_imageAvailableSemaphores;
 		std::vector<VkSemaphore> m_renderFinishedSemaphores;

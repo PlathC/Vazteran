@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
+#include "Vazteran/Core/Logger.hpp"
 #include "Vazteran/Window.hpp"
 
 namespace vzt
@@ -47,24 +48,24 @@ namespace vzt
 		glfwSetWindowUserPointer(m_window.get(), this);
 		glfwSetFramebufferSizeCallback(m_window.get(), [](GLFWwindow* window, int width, int height) {
 			Window* windowHandle = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->onFramebufferSizeChanged();
+			windowHandle->processFrameBufferResize(Uvec2{static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
 		});
 
 		glfwSetCursorPosCallback(m_window.get(), [](GLFWwindow* window, double xPos, double yPos) {
 			Window* windowHandle = reinterpret_cast<vzt::Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->onMousePosChanged(Vec2{static_cast<float>(xPos), static_cast<float>(yPos)});
+			windowHandle->processCursorInput(Vec2{static_cast<float>(xPos), static_cast<float>(yPos)});
 		});
 
 		glfwSetKeyCallback(m_window.get(), [](GLFWwindow* window, int key, int /* scancode */, int action, int mods) {
 			Window* windowHandle = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->onKeyAction(static_cast<KeyCode>(key), static_cast<KeyAction>(action),
-			                          static_cast<KeyModifier>(mods));
+			windowHandle->processKeyInput(static_cast<KeyCode>(key), static_cast<KeyAction>(action),
+			                              static_cast<KeyModifier>(mods));
 		});
 
 		glfwSetMouseButtonCallback(m_window.get(), [](GLFWwindow* window, int key, int action, int mods) {
 			Window* windowHandle = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-			windowHandle->onMouseButton(static_cast<MouseButton>(key), static_cast<KeyAction>(action),
-			                            static_cast<KeyModifier>(mods));
+			windowHandle->processMouseButtonInput(static_cast<MouseButton>(key), static_cast<KeyAction>(action),
+			                                      static_cast<KeyModifier>(mods));
 		});
 
 		m_instance = Instance("Vazteran", vkExtensions());
@@ -77,55 +78,7 @@ namespace vzt
 
 	Window::~Window() { glfwTerminate(); }
 
-	void Window::onFramebufferSizeChanged() const { m_onFrameBufferChangedCallback(); }
-
-	void Window::onKeyAction(KeyCode code, KeyAction action, KeyModifier modifiers)
-	{
-		if (m_onKeyActionCallback)
-		{
-			m_onKeyActionCallback(code, action, modifiers);
-		}
-	}
-
-	void Window::onMousePosChanged(const Vec2 pos)
-	{
-		static bool firstChange = true;
-		if (firstChange)
-		{
-			firstChange    = false;
-			m_lastMousePos = pos;
-		}
-
-		if (m_onMousePosChangedCallback)
-			m_onMousePosChangedCallback({pos.x - m_lastMousePos.x, m_lastMousePos.y - pos.y});
-
-		m_lastMousePos = pos;
-	}
-
-	void Window::onMouseButton(MouseButton code, KeyAction action, KeyModifier modifiers)
-	{
-		if (m_onMouseButtonCallback)
-			m_onMouseButtonCallback(code, action, modifiers);
-	}
-
-	void Window::setOnFrameBufferChangedCallback(OnFrameBufferChangedCallback callback)
-	{
-		m_onFrameBufferChangedCallback = std::move(callback);
-	}
-
-	void Window::setOnKeyActionCallback(OnKeyActionCallback callback) { m_onKeyActionCallback = std::move(callback); }
-
-	void Window::setOnMousePosChangedCallback(OnMousePosChangedCallback callback)
-	{
-		m_onMousePosChangedCallback = std::move(callback);
-	}
-
-	void Window::setOnMouseButtonCallback(OnMouseButtonCallback callback)
-	{
-		m_onMouseButtonCallback = std::move(callback);
-	}
-
-	Size2D<uint32_t> Window::getFrameBufferSize() const
+	Uvec2 Window::getFrameBufferSize() const
 	{
 		int frameBufferWidth = 0, frameBufferHeight = 0;
 		glfwGetFramebufferSize(m_window.get(), &frameBufferWidth, &frameBufferHeight);
@@ -137,11 +90,61 @@ namespace vzt
 		return {static_cast<uint32_t>(frameBufferWidth), static_cast<uint32_t>(frameBufferHeight)};
 	}
 
-	bool Window::update() const
+	void Window::processFrameBufferResize(Uvec2 size)
 	{
+		m_dispatcher.enqueue(FrameBufferResize{size});
+		m_triggerUserInput = true;
+	}
+
+	void Window::processCursorInput(Vec2 pos)
+	{
+		m_inputs.updateMousePosition(pos);
+		m_triggerUserInput = true;
+	}
+
+	void Window::processKeyInput(KeyCode key, KeyAction action, KeyModifier mods)
+	{
+		if (m_triggerUserInput)
+			m_inputs.modifiers = KeyModifier::None;
+
+		m_inputs.keys.set(key, action);
+		if (mods == KeyModifier::None)
+			m_inputs.modifiers = KeyModifier::None;
+		else
+			m_inputs.modifiers = m_inputs.modifiers | mods;
+		m_triggerUserInput = true;
+	}
+
+	void Window::processMouseButtonInput(MouseButton key, KeyAction action, KeyModifier mods)
+	{
+		if (m_triggerUserInput)
+			m_inputs.modifiers = KeyModifier::None;
+
+		m_inputs.mouseButtons.set(key, action);
+
+		if (mods == KeyModifier::None)
+			m_inputs.modifiers = KeyModifier::None;
+		else
+			m_inputs.modifiers = m_inputs.modifiers | mods;
+		m_triggerUserInput = true;
+	}
+
+	bool Window::update()
+	{
+		m_inputs.reset();
 		glfwPollEvents();
 
-		return shouldClose();
+		const bool isOver = shouldClose();
+		if (!isOver)
+		{
+			if (m_triggerUserInput)
+				m_dispatcher.enqueue(m_inputs);
+			m_dispatcher.update();
+			if (!m_triggerUserInput)
+				m_inputs.modifiers = KeyModifier::None;
+		}
+
+		return isOver;
 	}
 
 	std::vector<const char*> Window::vkExtensions()
@@ -155,4 +158,5 @@ namespace vzt
 		return extensions;
 	}
 
+	bool Window::shouldClose() const { return glfwWindowShouldClose(m_window.get()); }
 } // namespace vzt

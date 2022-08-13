@@ -47,9 +47,10 @@ namespace vzt
 
 	MeshView::~MeshView() {}
 
-	void MeshView::add(Entity meshEntity)
+	void MeshView::add(entt::registry& registry, entt::entity entity)
 	{
-		const Mesh& mesh = meshEntity.get<Mesh>();
+		Entity      meshEntity = {registry, entity};
+		const Mesh& mesh       = meshEntity.get<Mesh>();
 
 		const auto& vertices = mesh.vertices;
 		const auto& normals  = mesh.normals;
@@ -140,11 +141,8 @@ namespace vzt
 		m_materialInfoBuffer     = Buffer(m_device, std::vector<uint8_t>(m_maxSupportedMesh * m_materialInfoOffsetSize),
 		                                  BufferUsage::UniformBuffer, MemoryUsage::PreferDevice, true);
 
-		m_scene->forAll<Mesh>([&](Entity entity) { add(entity); });
-		m_meshListener = Listener<Mesh>(m_scene, [&](Entity entity, SystemEvent eventType) {
-			if (eventType == SystemEvent::Construct)
-				add(entity);
-		});
+		m_scene->forAll<Mesh>([&](Entity entity) { add(*entity.registry(), entity.entity()); });
+		m_connection = m_scene->onConstruct<Mesh, &MeshView::add>(*this);
 	}
 
 	void MeshView::record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const

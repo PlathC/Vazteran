@@ -142,10 +142,14 @@ endif ()
 
 set(VZT_HEADERS
         "include/Vazteran/Window.hpp"
-        "include/Vazteran/WindowTypes.hpp"
+        "include/Vazteran/Ui/InputTypes.hpp"
 
+        "include/Vazteran/Controller/CameraController.hpp"
+        "include/Vazteran/Controller/FreeFly.hpp"
+
+        "include/Vazteran/Core/Event.hpp"
         "include/Vazteran/Core/Logger.hpp"
-        "include/Vazteran/Core/Macro.hpp"
+        "include/Vazteran/Core/Meta.hpp"
         "include/Vazteran/Core/Type.hpp"
 
         "include/Vazteran/Data/Camera.hpp"
@@ -164,11 +168,10 @@ set(VZT_HEADERS
         "include/Vazteran/Renderer/ShaderCompiler.hpp"
         "include/Vazteran/Renderer/ShaderLibrary.hpp"
         
-        "include/Vazteran/System/Listener.hpp"
         "include/Vazteran/System/Scene.hpp"
 
         "include/Vazteran/Ui/Component.hpp"
-        "include/Vazteran/Ui/Controller.hpp"
+        "include/Vazteran/Ui/Inputs.hpp"
         "include/Vazteran/Ui/MainMenuBar.hpp"
         "include/Vazteran/Ui/UiManager.hpp"
 
@@ -199,7 +202,11 @@ set(VZT_SOURCES
         "src/main.cpp"
         "src/Window.cpp"
         
+        "src/Controller/CameraController.cpp"
+        "src/Controller/FreeFly.cpp"
+
         "src/Core/Logger.cpp"
+        "src/Core/Event.cpp"
 
         "src/Data/Camera.cpp"
         "src/Data/Image.cpp"
@@ -219,7 +226,6 @@ set(VZT_SOURCES
         "src/System/Scene.cpp"
 
         "src/Ui/Component.cpp"
-        "src/Ui/Controller.cpp"
         "src/Ui/MainMenuBar.cpp"
         "src/Ui/UiManager.cpp"
 

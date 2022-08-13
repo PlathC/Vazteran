@@ -29,10 +29,10 @@ namespace vzt
 
 	struct AttachmentSettings
 	{
-		vzt::ImageUsage                 usage;
-		Optional<vzt::Format>           format{};    // if unset, use swapchain image formats
-		Optional<vzt::Size2D<uint32_t>> imageSize{}; // if unset, use frame buffer size
-		vzt::SampleCount                sampleCount = vzt::SampleCount::Sample1;
+		ImageUsage       usage;
+		Optional<Format> format{};    // if unset, use swapchain image formats
+		Optional<Uvec2>  imageSize{}; // if unset, use frame buffer size
+		SampleCount      sampleCount = vzt::SampleCount::Sample1;
 	};
 
 	struct StorageSettings
@@ -69,45 +69,45 @@ namespace vzt
 
 	struct ImageBarrier
 	{
-		vzt::PipelineStage    stages;
-		vzt::AttachmentAccess accesses;
-		vzt::ImageLayout      layout;
+		PipelineStage    stages;
+		AttachmentAccess accesses;
+		ImageLayout      layout;
 	};
 
 	struct StorageBarrier
 	{
-		vzt::PipelineStage    stages;
-		vzt::AttachmentAccess accesses;
+		PipelineStage    stages;
+		AttachmentAccess accesses;
 	};
 
 	template <class Type>
-	using AttachmentList = std::unordered_map<vzt::AttachmentHandle, Type, vzt::AttachmentHandle::hash>;
+	using AttachmentList = std::unordered_map<AttachmentHandle, Type, AttachmentHandle::hash>;
 	template <class Type>
-	using StorageList = std::unordered_map<vzt::StorageHandle, Type, vzt::StorageHandle::hash>;
+	using StorageList = std::unordered_map<StorageHandle, Type, StorageHandle::hash>;
 
 	class RenderPassHandler;
 	using ConfigureFunction  = std::function<void(const RenderPassHandler&)>;
 	using RecordFunction     = std::function<void(uint32_t /* imageId */, VkCommandBuffer /* cmd */,
                                               const std::vector<VkDescriptorSet>& /* engineDescriptorSets */)>;
-	using DepthClearFunction = std::function<bool(vzt::Vec4* /* value */)>;
-	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, vzt::Vec4* /* value */)>;
+	using DepthClearFunction = std::function<bool(Vec4* /* value */)>;
+	using ColorClearFunction = std::function<bool(uint32_t /* renderTargetIdx */, Vec4* /* value */)>;
 	class RenderPassHandler
 	{
 	  public:
 		RenderPassHandler() = delete;
 
-		void addColorInput(const vzt::AttachmentHandle attachment, const std::string& attachmentName = "");
-		void addColorOutput(vzt::AttachmentHandle& attachment, const std::string& attachmentName = "");
-		void addColorInputOutput(vzt::AttachmentHandle& attachment, const std::string& inName = "",
+		void addColorInput(const AttachmentHandle attachment, const std::string& attachmentName = "");
+		void addColorOutput(AttachmentHandle& attachment, const std::string& attachmentName = "");
+		void addColorInputOutput(AttachmentHandle& attachment, const std::string& inName = "",
 		                         const std::string& outName = "");
 
-		void addStorageInput(const vzt::StorageHandle storage, const std::string& storageName = "");
-		void addStorageOutput(vzt::StorageHandle& storage, const std::string& storageName = "");
-		void addStorageInputOutput(vzt::StorageHandle& storage, const std::string& inName = "",
+		void addStorageInput(const StorageHandle storage, const std::string& storageName = "");
+		void addStorageOutput(StorageHandle& storage, const std::string& storageName = "");
+		void addStorageInputOutput(StorageHandle& storage, const std::string& inName = "",
 		                           const std::string& outName = "");
 
-		void setDepthStencilInput(const vzt::AttachmentHandle depthStencil, const std::string& attachmentName = "");
-		void setDepthStencilOutput(vzt::AttachmentHandle& depthStencil, const std::string& attachmentName = "");
+		void setDepthStencilInput(const AttachmentHandle depthStencil, const std::string& attachmentName = "");
+		void setDepthStencilOutput(AttachmentHandle& depthStencil, const std::string& attachmentName = "");
 
 		void setConfigureFunction(ConfigureFunction configureFunction);
 		void setRecordFunction(RecordFunction recordFunction);
@@ -124,27 +124,27 @@ namespace vzt
 				return &(*m_descriptorLayout);
 			return nullptr;
 		}
-		uint32_t         getOutputAttachmentNb() const { return static_cast<uint32_t>(m_colorOutputs.size()); }
-		Size2D<uint32_t> getExtent() const { return m_extent; }
+		uint32_t getOutputAttachmentNb() const { return static_cast<uint32_t>(m_colorOutputs.size()); }
+		Uvec2    getExtent() const { return m_extent; }
 
 		friend class RenderGraph;
 
 	  private:
-		RenderPassHandler(std::string name, vzt::QueueType queueType);
+		RenderPassHandler(std::string name, QueueType queueType);
 
-		void configure(RenderGraph* const correspondingGraph, const vzt::Device* device, const uint32_t imageCount,
-		               Size2D<uint32_t> targetSize);
+		void configure(RenderGraph* const correspondingGraph, const Device* device, const uint32_t imageCount,
+		               Uvec2 targetSize);
 		std::unique_ptr<RenderPass> build(const uint32_t imageId);
 
 		void render(const uint32_t imageId, VkCommandBuffer commandBuffer) const;
 
-		std::string    m_name;
-		vzt::QueueType m_queueType;
+		std::string m_name;
+		QueueType   m_queueType;
 
 		const Device*           m_device             = nullptr;
 		const RenderGraph*      m_parent             = nullptr;
 		const RenderPass*       m_renderPassTemplate = nullptr;
-		Size2D<uint32_t>        m_extent{};
+		Uvec2                   m_extent{};
 		RenderPassConfiguration m_configuration{};
 
 		struct AttachmentInfo
@@ -180,13 +180,13 @@ namespace vzt
 
 	struct PhysicalAttachment
 	{
-		const vzt::AttachmentSettings settings;
+		const AttachmentSettings settings;
 	};
 
 	struct PhysicalStorage
 	{
-		const vzt::StorageSettings settings;
-		vzt::Buffer                buffer;
+		const StorageSettings settings;
+		Buffer                buffer;
 	};
 
 	class RenderGraph
@@ -203,55 +203,55 @@ namespace vzt
 		~RenderGraph();
 
 		// User configuration
-		vzt::AttachmentHandle addAttachment(AttachmentSettings settings);
-		vzt::StorageHandle    addStorage(StorageSettings settings);
+		AttachmentHandle addAttachment(AttachmentSettings settings);
+		StorageHandle    addStorage(StorageSettings settings);
 
-		vzt::RenderPassHandler& addPass(const std::string& name, const vzt::QueueType queueType);
-		void                    setBackBuffer(const vzt::AttachmentHandle backBufferHandle);
+		RenderPassHandler& addPass(const std::string& name, const QueueType queueType);
+		void               setBackBuffer(const AttachmentHandle backBufferHandle);
 
-		bool isBackBuffer(const vzt::AttachmentHandle backBufferHandle) const;
+		bool isBackBuffer(const AttachmentHandle backBufferHandle) const;
 
 		// User information check
 		void compile();
 
 		// Engine configuration
-		void configure(const vzt::Device* device, const std::vector<VkImage>& swapchainImages,
-		               vzt::Size2D<uint32_t> scImageSize, vzt::Format scColorFormat, vzt::Format scDepthFormat);
+		void configure(const Device* device, const std::vector<VkImage>& swapchainImages, Uvec2 scImageSize,
+		               Format scColorFormat, Format scDepthFormat);
 
 		void render(const std::size_t imageId, VkSemaphore imageAvailable, VkSemaphore renderComplete,
 		            VkFence inFlightFence);
 
-		const Attachment&         getAttachment(const std::size_t imageId, const vzt::AttachmentHandle& handle) const;
-		const AttachmentSettings& getAttachmentSettings(const vzt::AttachmentHandle& handle) const;
-		const StorageSettings&    getStorageSettings(const vzt::StorageHandle& handle) const;
+		const Attachment&         getAttachment(const std::size_t imageId, const AttachmentHandle& handle) const;
+		const AttachmentSettings& getAttachmentSettings(const AttachmentHandle& handle) const;
+		const StorageSettings&    getStorageSettings(const StorageHandle& handle) const;
 
 	  private:
 		void sortRenderPasses();
 		void reorderRenderPasses();
 
-		vzt::AttachmentHandle generateAttachmentHandle() const;
-		vzt::StorageHandle    generateStorageHandle() const;
+		AttachmentHandle generateAttachmentHandle() const;
+		StorageHandle    generateStorageHandle() const;
 
 		// TODO: Handle could be shared between render graphs
 		static inline std::size_t m_handleCounter = 0;
 
 		std::hash<std::size_t> m_hash{};
 
-		std::vector<std::size_t>                m_sortedRenderPassIndices;
-		std::vector<RenderPassHandler>          m_renderPassHandlers;
-		std::vector<std::vector<FrameBuffer>>   m_frameBuffers;
-		vzt::AttachmentList<AttachmentSettings> m_attachmentsSettings;
+		std::vector<std::size_t>              m_sortedRenderPassIndices;
+		std::vector<RenderPassHandler>        m_renderPassHandlers;
+		std::vector<std::vector<FrameBuffer>> m_frameBuffers;
+		AttachmentList<AttachmentSettings>    m_attachmentsSettings;
 
 		std::vector<AttachmentList<std::size_t>> m_attachmentsIndices;
 		std::vector<Attachment>                  m_attachments;
 
-		vzt::StorageList<StorageSettings> m_storagesSettings;
+		StorageList<StorageSettings> m_storagesSettings;
 
 		const Device*              m_device;
 		std::vector<CommandPool>   m_commandPools;
 		Optional<AttachmentHandle> m_backBuffer;
 
-		Size2D<uint32_t> m_lastScImageSize;
+		Uvec2 m_lastScImageSize;
 	};
 } // namespace vzt
 

@@ -16,11 +16,11 @@ namespace vzt
 	{
 	  public:
 		ImageView() = default;
-		ImageView(const vzt::Device* device, vzt::Image image, vzt::Format format = vzt::Format::B8G8R8A8SRGB,
-		          vzt::ImageLayout layout = vzt::ImageLayout::ShaderReadOnlyOptimal);
-		ImageView(const vzt::Device* device, vzt::Size2D<uint32_t> size, vzt::Format format, vzt::ImageUsage usage,
-		          vzt::ImageAspect aspectFlags, vzt::ImageLayout layout);
-		ImageView(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect);
+		ImageView(const Device* device, Image image, vzt::Format format = Format::B8G8R8A8SRGB,
+		          ImageLayout layout = ImageLayout::ShaderReadOnlyOptimal);
+		ImageView(const Device* device, Uvec2 size, Format format, ImageUsage usage, ImageAspect aspectFlags,
+		          vzt::ImageLayout layout);
+		ImageView(const Device* device, VkImage image, Format format, ImageAspect aspect);
 
 		ImageView(const ImageView&)            = delete;
 		ImageView& operator=(const ImageView&) = delete;
@@ -37,22 +37,22 @@ namespace vzt
 		~ImageView();
 
 	  private:
-		const vzt::Device* m_device;
+		const Device* m_device;
 
 		VkImage       m_vkImage    = VK_NULL_HANDLE;
 		VmaAllocation m_allocation = VK_NULL_HANDLE;
 		VkImageView   m_vkHandle   = VK_NULL_HANDLE;
 
-		vzt::ImageLayout m_layout = vzt::ImageLayout::Undefined;
-		vzt::Format      m_format;
+		ImageLayout m_layout = vzt::ImageLayout::Undefined;
+		Format      m_format;
 	};
 
 	struct SamplerSettings
 	{
-		vzt::Filter      filter      = vzt::Filter::Linear;
-		vzt::AddressMode addressMode = vzt::AddressMode::Repeat;
-		vzt::MipmapMode  mipmapMode  = vzt::MipmapMode::Linear;
-		vzt::BorderColor borderColor = vzt::BorderColor::IntOpaqueBlack;
+		Filter      filter      = vzt::Filter::Linear;
+		AddressMode addressMode = vzt::AddressMode::Repeat;
+		MipmapMode  mipmapMode  = vzt::MipmapMode::Linear;
+		BorderColor borderColor = vzt::BorderColor::IntOpaqueBlack;
 	};
 
 	class Sampler
@@ -72,24 +72,24 @@ namespace vzt
 		~Sampler();
 
 	  private:
-		const vzt::Device* m_device;
-		VkSampler          m_vkHandle = VK_NULL_HANDLE;
+		const Device* m_device;
+		VkSampler     m_vkHandle = VK_NULL_HANDLE;
 	};
 
 	class Texture
 	{
 	  public:
 		Texture() = default;
-		Texture(const vzt::Device* device, const vzt::ImageView* imageView, vzt::SamplerSettings samplerSettings = {});
+		Texture(const Device* device, const ImageView* imageView, SamplerSettings samplerSettings = {});
 
-		const vzt::ImageView* getView() const { return m_imageView; }
-		const vzt::Sampler*   getSampler() const { return &m_sampler; }
+		const ImageView* getView() const { return m_imageView; }
+		const Sampler*   getSampler() const { return &m_sampler; }
 
-		const vzt::Format format() const { return m_imageView->format(); }
+		const Format format() const { return m_imageView->format(); }
 
 	  private:
-		vzt::Sampler          m_sampler;
-		const vzt::ImageView* m_imageView;
+		Sampler          m_sampler;
+		const ImageView* m_imageView;
 	};
 
 } // namespace vzt

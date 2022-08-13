@@ -2,6 +2,8 @@
 #define VAZTERAN_SCENE_HPP
 
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
+#include "Vazteran/Core/Event.hpp"
+#include "Vazteran/Data/Camera.hpp"
 
 #include <functional>
 #include <vector>
@@ -10,14 +12,16 @@
 #include <entt/entity/handle.hpp>
 #include <entt/entity/registry.hpp>
 
-#include "Vazteran/Data/Camera.hpp"
-
 namespace vzt
 {
 	using Entity = entt::handle;
 
-	template <class ComponentType>
-	class Listener;
+	enum class SystemEvent
+	{
+		Construct,
+		Update,
+		Destroy
+	};
 
 	class Scene
 	{
@@ -51,10 +55,16 @@ namespace vzt
 		template <class... ComponentTypes>
 		void forAll(ForAllIndexedFunction forallIndexedFunction);
 
-		static Scene defaultScene(DefaultScene defaultScene);
+		template <class EventType, auto Candidate, typename... Type>
+		Connection onConstruct(Type&&... valueOrInstance);
 
-		template <typename>
-		friend class Listener;
+		template <class EventType, auto Candidate, typename... Type>
+		Connection onUpdate(Type&&... valueOrInstance);
+
+		template <class EventType, auto Candidate, typename... Type>
+		Connection onDestroy(Type&&... valueOrInstance);
+
+		static Scene defaultScene(DefaultScene defaultScene);
 
 	  private:
 		mutable entt::registry m_registry{};

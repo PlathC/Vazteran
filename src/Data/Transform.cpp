@@ -18,13 +18,13 @@ namespace vzt
 	}
 
 	void Transform::translate(const Vec3& translation) { position += translation; }
-	void Transform::translateRelative(const Vec3& translation) { position += rotation * translation; }
+	void Transform::translateRelative(Vec3 translation) { position += rotation * translation; }
 
 	void Transform::rotate(const Vec3& axis, const float radians)
 	{
-		rotation = rotation * glm::angleAxis(radians, axis);
+		rotation = glm::normalize(rotation * glm::angleAxis(radians, axis));
 	}
-
+	void Transform::rotate(const Quat& appliedRotation) { rotation = glm::normalize(rotation * appliedRotation); }
 	void Transform::rotateAround(const Vec3& pivot, const Vec3& axis, const float radians)
 	{
 		// Based on https://stackoverflow.com/a/49824672

@@ -14,9 +14,10 @@ namespace vzt
 		void set(const Mat4& value);
 
 		void translate(const Vec3& translation);
-		void translateRelative(const Vec3& translation);
+		void translateRelative(Vec3 translation);
 
 		void rotate(const Vec3& axis, const float radians);
+		void rotate(const Quat& appliedRotation);
 		void rotateAround(const Vec3& pivot, const Vec3& axis, const float radians);
 	};
 } // namespace vzt

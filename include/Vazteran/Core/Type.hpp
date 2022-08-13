@@ -9,6 +9,7 @@
 
 namespace vzt
 {
+
 	template <class Enum>
 	constexpr typename std::underlying_type<Enum>::type toUnderlying(const Enum e) noexcept
 	{
@@ -24,15 +25,6 @@ namespace vzt
 		s ^= h(v) + 0x9e3779b9 + (s << 6) + (s >> 2);
 	}
 
-	template <typename Type>
-	struct Size2D
-	{
-		Type width;
-		Type height;
-
-		bool operator==(const Size2D<Type>& other) const { return other.width == width && other.height == height; }
-	};
-
 	template <class Type>
 	using Optional = std::optional<Type>;
 
@@ -43,6 +35,7 @@ namespace vzt
 
 	template <class Type>
 	using Span = gsl::span<Type>;
+
 } // namespace vzt
 
 #endif // VAZTERAN_TYPE_HPP

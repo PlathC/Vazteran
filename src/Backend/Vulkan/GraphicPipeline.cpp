@@ -65,14 +65,14 @@ namespace vzt
 		VkViewport viewport{};
 		viewport.x        = 0.0f;
 		viewport.y        = 0.0f;
-		viewport.width    = static_cast<float>(m_contextSettings.targetSize.width);
-		viewport.height   = static_cast<float>(m_contextSettings.targetSize.height);
+		viewport.width    = static_cast<float>(m_contextSettings.targetSize.x);
+		viewport.height   = static_cast<float>(m_contextSettings.targetSize.y);
 		viewport.minDepth = 0.0f;
 		viewport.maxDepth = 1.0f;
 
 		VkRect2D scissor{};
 		scissor.offset = {0, 0};
-		scissor.extent = {m_contextSettings.targetSize.width, m_contextSettings.targetSize.height};
+		scissor.extent = {m_contextSettings.targetSize.x, m_contextSettings.targetSize.y};
 
 		VkPipelineViewportStateCreateInfo viewportState{};
 		viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
