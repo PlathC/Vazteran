@@ -1,6 +1,7 @@
 #include <entt/entity/handle.hpp>
 
 #include "Vazteran/Core/Logger.hpp"
+#include "Vazteran/Data/Light.hpp"
 #include "Vazteran/Data/Mesh.hpp"
 #include "Vazteran/Data/Transform.hpp"
 #include "Vazteran/FileSystem/MeshReader.hpp"
@@ -30,12 +31,18 @@ namespace vzt
 
 	Scene Scene::defaultScene(const Scene::DefaultScene defaultScene)
 	{
+		Scene scene{};
+
+		Entity directionalLightEntity = scene.create();
+
+		DirectionalLight light;
+		light.direction = Vec4(1.f);
+		light.color     = Vec4(1.f);
+		directionalLightEntity.emplace<DirectionalLight>(light);
 		switch (defaultScene)
 		{
 		case DefaultScene::CrounchingBoys: {
 			constexpr std::size_t ModelNb = 64;
-
-			Scene crounchingBoysScene{};
 
 			Mesh templateCrounchingBoy = vzt::readObj("./samples/TheCrounchingBoy/TheCrounchingBoy.obj");
 
@@ -54,7 +61,7 @@ namespace vzt
 			AABB fullBoundingBox{};
 			for (std::size_t i = 0; i < ModelNb; i++)
 			{
-				Entity     crounchingBoy = crounchingBoysScene.create();
+				Entity     crounchingBoy = scene.create();
 				Mesh&      mesh          = crounchingBoy.emplace<Mesh>(templateCrounchingBoy);
 				Transform& transform     = crounchingBoy.emplace<Transform>();
 
@@ -72,43 +79,37 @@ namespace vzt
 				fullBoundingBox.extend(mesh.aabb);
 			}
 
-			Entity  cameraEntity = crounchingBoysScene.create();
+			Entity  cameraEntity = scene.create();
 			Camera& camera       = cameraEntity.emplace<Camera>();
 			cameraEntity.emplace<Transform>(vzt::fromAabb(camera, fullBoundingBox));
 			cameraEntity.emplace<MainCamera>();
-
-			return std::move(crounchingBoysScene);
+			break;
 		}
 		case DefaultScene::VikingRoom: {
-
-			Scene vikingRoomScene{};
-
-			Entity room = vikingRoomScene.create();
+			Entity room = scene.create();
 			Mesh&  mesh = room.emplace<Mesh>(vzt::readObj("./samples/VikingRoom/viking_room.obj"));
 
 			mesh.materials[0].texture = vzt::Image("./samples/VikingRoom/viking_room.png");
 
-			Entity  cameraEntity = vikingRoomScene.create();
+			Entity  cameraEntity = scene.create();
 			Camera& camera       = cameraEntity.emplace<Camera>();
 			cameraEntity.emplace<Transform>(fromAabb(camera, mesh.aabb));
 			cameraEntity.emplace<MainCamera>();
-
-			return std::move(vikingRoomScene);
+			break;
 		}
 		case DefaultScene::MoriKnob: {
-			Scene moriKnobScene{};
-
-			Entity moriKnob = moriKnobScene.create();
+			Entity moriKnob = scene.create();
 			moriKnob.emplace<Mesh>(vzt::readObj("./samples/MoriKnob/MoriKnob.obj"));
 
-			Entity cameraEntity = moriKnobScene.create();
+			Entity cameraEntity = scene.create();
 			cameraEntity.emplace<Camera>();
 			cameraEntity.emplace<Transform>();
 			cameraEntity.emplace<MainCamera>();
-
-			return std::move(moriKnobScene);
+			break;
 		}
 		default: throw std::runtime_error("The specified scene is not currently implemented.");
 		}
+
+		return scene;
 	}
 } // namespace vzt

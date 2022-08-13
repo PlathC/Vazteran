@@ -130,7 +130,7 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::Entity  mainCamera = currentScene.getMainCamera();
 		vzt::Camera& camera     = mainCamera.get<vzt::Camera>();
 		camera.aspectRatio      = size.x / static_cast<float>(size.y);
-		mainCamera.emplace<vzt::FreeFly>(window, camera, mainCamera.get<vzt::Transform>());
+		mainCamera.emplace<vzt::FreeFly>(window, mainCamera);
 
 		mainCamera.emplace<vzt::DynamicListener<vzt::Inputs>>(window, [&](const vzt::Inputs& inputs) {
 			if (inputs.get(vzt::KeyCode::F8))
@@ -158,7 +158,6 @@ int main(int /* args */, char*[] /* argv */)
 
 		while (!window.update())
 		{
-			meshView.update(currentScene.getMainCamera());
 			renderer.render();
 		}
 

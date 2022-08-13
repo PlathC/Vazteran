@@ -8,8 +8,8 @@
 
 namespace vzt
 {
-	FreeFly::FreeFly(Window& window, Camera& camera, Transform& transform, KeyCode toggleEnable)
-	    : CameraController(window, camera), m_transform(&transform), m_toggleEnable(toggleEnable)
+	FreeFly::FreeFly(Window& window, Entity cameraEntity, KeyCode toggleEnable)
+	    : CameraController(window, cameraEntity), m_toggleEnable(toggleEnable)
 	{
 		m_inputConnection = window.subscribe<Inputs, &FreeFly::operator()>(*this);
 	}
@@ -28,14 +28,15 @@ namespace vzt
 		if (!m_enabled)
 			return;
 
+		Vec3 rotation{};
 		if (inputs.get(MouseButton::Left))
 		{
-			m_transform->rotate(Vec3(-static_cast<float>(inputs.deltaMousePosition.y) * sensitivity, 0.f,
-			                         -static_cast<float>(inputs.deltaMousePosition.x) * sensitivity));
+			rotation.x = -static_cast<float>(inputs.deltaMousePosition.y) * sensitivity;
+			rotation.z = -static_cast<float>(inputs.deltaMousePosition.x) * sensitivity;
 		}
 		else if (inputs.get(MouseButton::Right))
 		{
-			m_transform->rotate(Vec3(0.f, -static_cast<float>(inputs.deltaMousePosition.x) * sensitivity, 0.f));
+			rotation.z = -static_cast<float>(inputs.deltaMousePosition.x) * sensitivity;
 		}
 
 		float cameraSpeed = baseCameraSpeed;
@@ -53,8 +54,19 @@ namespace vzt
 		if (inputs.get(KeyCode::A))
 			translation -= Camera::Right * cameraSpeed;
 
-		if (glm::dot(translation, translation) > 0.f)
-			m_transform->translateRelative(translation);
+		const bool updateTranslation = glm::dot(translation, translation) > 0.f;
+		const bool updateRotation    = glm::dot(rotation, rotation) > 0.f;
+
+		if (!updateTranslation && !updateRotation)
+			return;
+
+		auto& transform = m_cameraEntity.get<Transform>();
+		if (updateTranslation)
+			transform.translateRelative(translation);
+		if (updateRotation)
+			transform.rotate(rotation);
+
+		m_cameraEntity.patch<MainCamera>();
 	}
 
 } // namespace vzt

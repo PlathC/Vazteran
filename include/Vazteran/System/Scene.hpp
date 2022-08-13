@@ -4,25 +4,16 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Core/Event.hpp"
 #include "Vazteran/Data/Camera.hpp"
+#include "Vazteran/System/System.hpp"
 
 #include <functional>
 #include <vector>
 
 #include <entt/entity/entity.hpp>
-#include <entt/entity/handle.hpp>
 #include <entt/entity/registry.hpp>
 
 namespace vzt
 {
-	using Entity = entt::handle;
-
-	enum class SystemEvent
-	{
-		Construct,
-		Update,
-		Destroy
-	};
-
 	class Scene
 	{
 	  public:

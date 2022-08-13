@@ -16,19 +16,17 @@ namespace vzt
 	class FreeFly : public CameraController
 	{
 	  public:
-		FreeFly(Window& window, Camera& camera, Transform& transform, KeyCode toggleEnable = KeyCode::Tab);
+		FreeFly(Window& window, Entity cameraEntity, KeyCode toggleEnable = KeyCode::Tab);
 		~FreeFly() = default;
 
-		void setEnable(bool enable) { m_enabled = enable; }
+		void setEnable(bool enable);
 		bool getEnable() const;
 		void operator()(const Inputs& inputs);
 
 	  private:
-		bool    m_enabled = true;
-		KeyCode m_toggleEnable;
-
+		bool       m_enabled = true;
+		KeyCode    m_toggleEnable;
 		Connection m_inputConnection;
-		Transform* m_transform;
 	};
 
 } // namespace vzt

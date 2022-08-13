@@ -43,10 +43,11 @@ namespace vzt
 
 		void configure(const Device* device, uint32_t imageCount);
 		void record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const;
-		void update(const Entity& cameraEntity);
 
 	  private:
-		void add(entt::registry& registry, entt::entity entity);
+		void addMesh(entt::registry& registry, entt::entity entity);
+		void updateMesh(entt::registry& registry, entt::entity entity);
+		void updateCamera(entt::registry& registry, entt::entity entity);
 
 		const Device* m_device;
 		uint32_t      m_imageCount = 0;
@@ -79,8 +80,8 @@ namespace vzt
 
 			struct TextureData
 			{
-				vzt::ImageView imageView;
-				vzt::Texture   texture;
+				ImageView imageView;
+				Texture   texture;
 			};
 			std::vector<TextureData> textureData;
 			std::vector<SubMeshData> subMeshData;
@@ -100,9 +101,8 @@ namespace vzt
 			Mat4 normalMatrix;
 		};
 
-		Scene*     m_scene;
-		Connection m_connection;
-		//  Listener<Mesh> m_meshListener;
+		Scene*                  m_scene;
+		std::vector<Connection> m_connections;
 	};
 
 } // namespace vzt

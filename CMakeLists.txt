@@ -154,6 +154,7 @@ set(VZT_HEADERS
 
         "include/Vazteran/Data/Camera.hpp"
         "include/Vazteran/Data/Image.hpp"
+        "include/Vazteran/Data/Light.hpp"
         "include/Vazteran/Data/Material.hpp"
         "include/Vazteran/Data/Mesh.hpp"
         "include/Vazteran/Data/Transform.hpp"
@@ -169,6 +170,7 @@ set(VZT_HEADERS
         "include/Vazteran/Renderer/ShaderLibrary.hpp"
         
         "include/Vazteran/System/Scene.hpp"
+        "include/Vazteran/System/System.hpp"
 
         "include/Vazteran/Ui/Component.hpp"
         "include/Vazteran/Ui/Inputs.hpp"
