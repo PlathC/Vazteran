@@ -39,9 +39,10 @@ namespace vzt
 	  private:
 		const Device* m_device;
 
-		VkImage       m_vkImage    = VK_NULL_HANDLE;
-		VmaAllocation m_allocation = VK_NULL_HANDLE;
-		VkImageView   m_vkHandle   = VK_NULL_HANDLE;
+		bool          m_isProprietary = false;
+		VkImage       m_vkImage       = VK_NULL_HANDLE;
+		VmaAllocation m_allocation    = VK_NULL_HANDLE;
+		VkImageView   m_vkHandle      = VK_NULL_HANDLE;
 
 		ImageLayout m_layout = vzt::ImageLayout::Undefined;
 		Format      m_format;

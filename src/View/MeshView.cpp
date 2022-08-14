@@ -1,20 +1,26 @@
-#include "Vazteran/Views/MeshView.hpp"
+#include "Vazteran/View/MeshView.hpp"
+#include "Vazteran/Backend/Vulkan/Attachment.hpp"
+#include "Vazteran/Backend/Vulkan/CommandPool.hpp"
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/FrameBuffer.hpp"
-#include "Vazteran/Backend/Vulkan/GraphicPipeline.hpp"
+#include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
+#include "Vazteran/Backend/Vulkan/RenderPass.hpp"
+#include "Vazteran/Core/Type.hpp"
+#include "Vazteran/Data/Camera.hpp"
 #include "Vazteran/Data/Light.hpp"
+#include "Vazteran/Data/Mesh.hpp"
 #include "Vazteran/Data/Transform.hpp"
+#include "Vazteran/Renderer/ShaderLibrary.hpp"
+#include "Vazteran/System/Scene.hpp"
 
 namespace vzt
 {
-
 	VertexInputDescription TriangleVertexInput::getInputDescription()
 	{
 		constexpr VkVertexInputBindingDescription bindingDescription{0, sizeof(vzt::TriangleVertexInput),
 		                                                             VK_VERTEX_INPUT_RATE_VERTEX};
 
-		std::vector<VkVertexInputAttributeDescription> attributeDescriptions =
-		    std::vector<VkVertexInputAttributeDescription>(3);
+		auto attributeDescriptions        = std::vector<VkVertexInputAttributeDescription>(3);
 		attributeDescriptions[0].binding  = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
@@ -33,30 +39,87 @@ namespace vzt
 		return vzt::VertexInputDescription{bindingDescription, std::move(attributeDescriptions)};
 	}
 
-	MeshView::GenericMaterial MeshView::GenericMaterial::fromMaterial(const Material& original)
+	struct MeshDeviceData
 	{
-		return GenericMaterial{glm::vec4(glm::vec3(original.color), original.shininess)};
-	}
+		Buffer      vertexBuffer;
+		Buffer      subMeshesIndexBuffer;
+		std::size_t transformIndex;
 
-	MeshView::MeshView(Scene& scene) : m_scene(&scene)
+		struct SubMeshData
+		{
+			uint32_t minOffset;
+			uint32_t maxOffset;
+			uint32_t materialDataIndex;
+		};
+
+		struct TextureData
+		{
+			ImageView imageView;
+			Texture   texture;
+		};
+		std::vector<TextureData> textureData;
+		std::vector<SubMeshData> subMeshData;
+	};
+
+	struct GenericMaterial
+	{
+		Vec4 diffuse; // diffuse + shininess
+
+		static GenericMaterial fromMaterial(const Material& original)
+		{
+			return GenericMaterial{glm::vec4(glm::vec3(original.color), original.shininess)};
+		}
+	};
+
+	struct Transforms
+	{
+		Mat4 modelViewMatrix;
+		Mat4 projectionMatrix;
+		Mat4 normalMatrix;
+	};
+
+	MeshView::MeshView(uint32_t imageNb, Scene& scene, ShaderLibrary& library)
+	    : View(imageNb), m_scene(&scene), m_library(&library)
 	{
 		m_meshDescriptorLayout = vzt::DescriptorLayout();
 		m_meshDescriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
 		m_meshDescriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
 		m_meshDescriptorLayout.addBinding(2, vzt::DescriptorType::CombinedSampler);
+
+		createPipeline();
+	}
+
+	MeshView::MeshView(uint32_t imageNb, Scene& scene, ShaderLibrary& library, RenderGraph& graph,
+	                   AttachmentHandle& position, AttachmentHandle& normal, AttachmentHandle& albedo,
+	                   AttachmentHandle& depth)
+	    : MeshView(imageNb, scene, library)
+	{
+		auto& geometryBuffer = graph.addPass("G-Buffer", vzt::QueueType::Graphic);
+		geometryBuffer.addColorOutput(position, "Position");
+		geometryBuffer.addColorOutput(normal, "Normal");
+		geometryBuffer.addColorOutput(albedo, "Albedo");
+		geometryBuffer.setDepthStencilOutput(depth, "Depth");
+
+		geometryBuffer.setConfigureFunction(
+		    [this](const vzt::PipelineContextSettings& settings) { configure(settings); });
+
+		geometryBuffer.setRecordFunction(
+		    [this](uint32_t imageId, VkCommandBuffer cmd, const std::vector<VkDescriptorSet>& engineDescriptorSets) {
+			    record(imageId, cmd, engineDescriptorSets);
+		    });
 	}
 
 	MeshView::~MeshView() {}
 
-	void MeshView::configure(const vzt::Device* device, uint32_t imageCount)
+	void MeshView::refresh() { createPipeline(); }
+
+	void MeshView::configure(const PipelineContextSettings& settings)
 	{
 		m_scene->forAll<MeshDeviceData>([&](Entity entity) { entity.remove<MeshDeviceData>(); });
 
-		m_imageCount      = imageCount;
-		m_device          = device;
-		m_materialNb      = 0;
+		m_device          = settings.device;
 		m_transformNumber = 0;
-		m_meshDescriptorLayout.configure(device);
+		m_meshDescriptorLayout.configure(settings.device);
 
 		m_descriptorPool = vzt::DescriptorPool(
 		    m_device, {vzt::DescriptorType::UniformBuffer, vzt::DescriptorType::CombinedSampler}, 512);
@@ -76,30 +139,47 @@ namespace vzt
 		m_scene->forAll<MainCamera>([&](Entity entity) { updateCamera(*entity.registry(), entity.entity()); });
 		m_connections.emplace_back(m_scene->onConstruct<MainCamera, &MeshView::updateCamera>(*this));
 		m_connections.emplace_back(m_scene->onUpdate<MainCamera, &MeshView::updateCamera>(*this));
+
+		m_pipeline.configure(settings);
 	}
 
-	void MeshView::record(uint32_t imageCount, VkCommandBuffer commandBuffer, GraphicPipeline* pipeline) const
+	void MeshView::record(uint32_t imageId, VkCommandBuffer cmd,
+	                      const std::vector<VkDescriptorSet>& engineDescriptorSets) const
 	{
+		m_pipeline.bind(cmd);
+		if (!engineDescriptorSets.empty())
+			m_pipeline.bind(cmd, engineDescriptorSets);
+
 		m_scene->forAll<Mesh>([&](Entity entity) {
 			const auto&  deviceData      = entity.get<MeshDeviceData>();
 			VkBuffer     vertexBuffers[] = {deviceData.vertexBuffer.vkHandle()};
 			VkDeviceSize offsets[]       = {0};
 
-			vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+			vkCmdBindVertexBuffers(cmd, 0, 1, vertexBuffers, offsets);
 			const auto& indexBuffer = deviceData.subMeshesIndexBuffer;
 			const auto& submeshes   = deviceData.subMeshData;
 			for (const auto& subMesh : submeshes)
 			{
-				vkCmdBindIndexBuffer(commandBuffer, indexBuffer.vkHandle(), subMesh.minOffset * sizeof(uint32_t),
+				vkCmdBindIndexBuffer(cmd, indexBuffer.vkHandle(), subMesh.minOffset * sizeof(uint32_t),
 				                     VK_INDEX_TYPE_UINT32);
 
-				m_descriptorPool.bind((subMesh.materialDataIndex) * m_imageCount + imageCount, commandBuffer,
-				                      VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->layout());
+				m_descriptorPool.bind((subMesh.materialDataIndex) * m_imageNb + imageId, cmd,
+				                      VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline.layout());
 
-				vkCmdDrawIndexed(commandBuffer, subMesh.maxOffset - subMesh.minOffset, 1, 0, 0, 0);
+				vkCmdDrawIndexed(cmd, subMesh.maxOffset - subMesh.minOffset, 1, 0, 0, 0);
 			}
 		});
 	}
+
+	void MeshView::createPipeline()
+	{
+		vzt::Program triangleProgram{};
+		triangleProgram.setShader(m_library->get("./shaders/triangle.vert"));
+		triangleProgram.setShader(m_library->get("./shaders/triangle.frag"));
+		m_pipeline = {std::move(triangleProgram), m_meshDescriptorLayout,
+		              vzt::TriangleVertexInput::getInputDescription()};
+	}
+
 	void MeshView::addMesh(entt::registry& registry, entt::entity entity)
 	{
 		Entity      meshEntity = {registry, entity};
@@ -160,9 +240,9 @@ namespace vzt
 					texturesDescriptors[2] = &textureData.texture;
 				}
 
-				m_descriptorPool.allocate(m_imageCount, m_meshDescriptorLayout);
-				for (std::size_t i = 0; i < m_imageCount; i++)
-					m_descriptorPool.update(m_materialNb * m_imageCount + i, bufferDescriptors, texturesDescriptors);
+				m_descriptorPool.allocate(m_imageNb, m_meshDescriptorLayout);
+				for (std::size_t i = 0; i < m_imageNb; i++)
+					m_descriptorPool.update(m_materialNb * m_imageNb + i, bufferDescriptors, texturesDescriptors);
 
 				m_materialNb++;
 			}
@@ -180,7 +260,7 @@ namespace vzt
 		{
 			const MeshDeviceData::SubMeshData& subMeshData = deviceData.subMeshData[i];
 			const auto genericMaterial = GenericMaterial::fromMaterial(mesh.materials[mesh.subMeshes[i].materialIndex]);
-			for (std::size_t j = 0; j < m_imageCount; j++)
+			for (std::size_t j = 0; j < m_imageNb; j++)
 			{
 				m_materialInfoBuffer.update(genericMaterial, subMeshData.materialDataIndex * m_materialInfoOffsetSize);
 			}

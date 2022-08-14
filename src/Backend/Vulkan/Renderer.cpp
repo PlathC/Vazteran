@@ -1,6 +1,5 @@
 #include "Vazteran/Backend/Vulkan/Renderer.hpp"
-#include "Vazteran/Backend/Vulkan/UiRenderer.hpp"
-#include "Vazteran/Views/MeshView.hpp"
+#include "Vazteran/View/MeshView.hpp"
 #include "Vazteran/Window.hpp"
 
 namespace vzt

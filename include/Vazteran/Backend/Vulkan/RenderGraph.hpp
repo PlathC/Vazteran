@@ -86,7 +86,7 @@ namespace vzt
 	using StorageList = std::unordered_map<StorageHandle, Type, StorageHandle::hash>;
 
 	class RenderPassHandler;
-	using ConfigureFunction  = std::function<void(const RenderPassHandler&)>;
+	using ConfigureFunction  = std::function<void(const PipelineContextSettings&)>;
 	using RecordFunction     = std::function<void(uint32_t /* imageId */, VkCommandBuffer /* cmd */,
                                               const std::vector<VkDescriptorSet>& /* engineDescriptorSets */)>;
 	using DepthClearFunction = std::function<bool(Vec4* /* value */)>;

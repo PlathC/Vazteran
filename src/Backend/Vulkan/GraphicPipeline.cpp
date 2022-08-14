@@ -167,7 +167,7 @@ namespace vzt
 		}
 	}
 
-	void GraphicPipeline::configure(vzt::PipelineContextSettings settings)
+	void GraphicPipeline::configure(PipelineContextSettings settings)
 	{
 		cleanup();
 

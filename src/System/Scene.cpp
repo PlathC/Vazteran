@@ -7,7 +7,6 @@
 #include "Vazteran/FileSystem/MeshReader.hpp"
 #include "Vazteran/Math/Math.hpp"
 #include "Vazteran/System/Scene.hpp"
-#include "Vazteran/Views/MeshView.hpp"
 
 namespace vzt
 {

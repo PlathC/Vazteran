@@ -177,7 +177,10 @@ set(VZT_HEADERS
         "include/Vazteran/Ui/MainMenuBar.hpp"
         "include/Vazteran/Ui/UiManager.hpp"
 
-        "include/Vazteran/Views/MeshView.hpp"
+        "include/Vazteran/View/MeshView.hpp"
+        "include/Vazteran/View/CompositionView.hpp"
+        "include/Vazteran/View/UiView.hpp"
+        "include/Vazteran/View/View.hpp"
 
         "include/Vazteran/Backend/Vulkan/Attachment.hpp"
         "include/Vazteran/Backend/Vulkan/Buffer.hpp"
@@ -197,7 +200,6 @@ set(VZT_HEADERS
         "include/Vazteran/Backend/Vulkan/RenderPass.hpp"
         "include/Vazteran/Backend/Vulkan/Shader.hpp"
         "include/Vazteran/Backend/Vulkan/SwapChain.hpp"
-        "include/Vazteran/Backend/Vulkan/UiRenderer.hpp"
 )
 
 set(VZT_SOURCES
@@ -231,7 +233,9 @@ set(VZT_SOURCES
         "src/Ui/MainMenuBar.cpp"
         "src/Ui/UiManager.cpp"
 
-        "src/Views/MeshView.cpp"
+        "src/View/MeshView.cpp"
+        "src/View/CompositionView.cpp"
+        "src/View/UiView.cpp"
 
         "src/Backend/Vulkan/Attachment.cpp"
         "src/Backend/Vulkan/Buffer.cpp"
@@ -247,7 +251,6 @@ set(VZT_SOURCES
         "src/Backend/Vulkan/RenderPass.cpp"
         "src/Backend/Vulkan/Shader.cpp"
         "src/Backend/Vulkan/SwapChain.cpp"
-        "src/Backend/Vulkan/UiRenderer.cpp"
         "src/Backend/Vulkan/Renderer.cpp"
 )
 

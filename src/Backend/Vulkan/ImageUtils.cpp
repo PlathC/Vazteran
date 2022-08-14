@@ -7,7 +7,7 @@
 namespace vzt
 {
 	ImageView::ImageView(const Device* device, Image image, Format format, ImageLayout layout)
-	    : m_device(device), m_format(format), m_layout(layout)
+	    : m_device(device), m_format(format), m_layout(layout), m_isProprietary(true)
 	{
 		VkBuffer      stagingBuffer   = VK_NULL_HANDLE;
 		VmaAllocation stagingBufAlloc = VK_NULL_HANDLE;
@@ -41,7 +41,7 @@ namespace vzt
 
 	ImageView::ImageView(const Device* device, Uvec2 size, vzt::Format format, vzt::ImageUsage usage,
 	                     vzt::ImageAspect aspectFlags, vzt::ImageLayout layout)
-	    : m_device(device), m_format(format), m_layout(layout)
+	    : m_device(device), m_format(format), m_layout(layout), m_isProprietary(true)
 	{
 		m_vkImage  = m_device->createImage(m_allocation, size.x, size.y, format, VK_SAMPLE_COUNT_1_BIT,
 		                                   VK_IMAGE_TILING_OPTIMAL, usage);
@@ -49,20 +49,24 @@ namespace vzt
 	}
 
 	ImageView::ImageView(const vzt::Device* device, VkImage image, vzt::Format format, vzt::ImageAspect aspect)
-	    : m_device(device), m_format(format)
+	    : m_device(device), m_format(format), m_isProprietary(false)
 	{
 		m_vkHandle = m_device->createImageView(image, format, aspect);
+		m_vkImage  = image;
 	}
 
 	ImageView::ImageView(ImageView&& original) noexcept : m_device(original.m_device)
 	{
-		m_vkImage    = std::exchange(original.m_vkImage, static_cast<decltype(m_vkImage)>(VK_NULL_HANDLE));
-		m_vkHandle   = std::exchange(original.m_vkHandle, static_cast<decltype(m_vkHandle)>(VK_NULL_HANDLE));
-		m_allocation = std::exchange(original.m_allocation, static_cast<decltype(m_allocation)>(VK_NULL_HANDLE));
+		std::swap(m_isProprietary, original.m_isProprietary);
+		std::swap(m_format, original.m_format);
+		std::swap(m_vkImage, original.m_vkImage);
+		std::swap(m_vkHandle, original.m_vkHandle);
+		std::swap(m_allocation, original.m_allocation);
 	}
 
 	ImageView& ImageView::operator=(ImageView&& original) noexcept
 	{
+		std::swap(m_isProprietary, original.m_isProprietary);
 		std::swap(m_device, original.m_device);
 		std::swap(m_vkImage, original.m_vkImage);
 		std::swap(m_vkHandle, original.m_vkHandle);
@@ -79,7 +83,7 @@ namespace vzt
 			m_vkHandle = VK_NULL_HANDLE;
 		}
 
-		if (m_vkImage != VK_NULL_HANDLE)
+		if (m_isProprietary && m_vkImage != VK_NULL_HANDLE)
 		{
 			vmaDestroyImage(m_device->getAllocatorHandle(), m_vkImage, m_allocation);
 			m_vkImage = VK_NULL_HANDLE;

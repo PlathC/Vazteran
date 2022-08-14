@@ -62,8 +62,6 @@ namespace vzt
 	void RenderPassHandler::addColorInputOutput(vzt::AttachmentHandle& attachment, const std::string& inName,
 	                                            const std::string& outName)
 	{
-		attachment.state++;
-
 		AttachmentInfo inAttachmentInfo{};
 		inAttachmentInfo.name = inName;
 		if (inAttachmentInfo.name.empty())
@@ -71,20 +69,24 @@ namespace vzt
 			inAttachmentInfo.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
 		}
 
-		inAttachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::ShaderReadOnlyOptimal;
-		inAttachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ShaderReadOnlyOptimal;
+		inAttachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::ColorAttachmentOptimal;
+		inAttachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
 		inAttachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
 		inAttachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
 		inAttachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
 		inAttachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
+		m_colorInputs[attachment]                     = inAttachmentInfo;
 
-		inAttachmentInfo.barrier = {vzt::PipelineStage::FragmentShader, vzt::AttachmentAccess::ShaderRead,
-		                            vzt::ImageLayout::ShaderReadOnlyOptimal};
-
-		m_colorInputs[attachment] = inAttachmentInfo;
+		attachment.state++;
 
 		AttachmentInfo outAttachmentInfo{};
-		outAttachmentInfo.name = outName;
+		outAttachmentInfo.name                         = outName;
+		outAttachmentInfo.attachmentUse.usedLayout     = vzt::ImageLayout::ColorAttachmentOptimal;
+		outAttachmentInfo.attachmentUse.finalLayout    = vzt::ImageLayout::ColorAttachmentOptimal;
+		outAttachmentInfo.attachmentUse.loadOp         = vzt::LoadOperation::Load;
+		outAttachmentInfo.attachmentUse.storeOp        = vzt::StoreOperation::Store;
+		outAttachmentInfo.attachmentUse.stencilLoapOp  = vzt::LoadOperation::DontCare;
+		outAttachmentInfo.attachmentUse.stencilStoreOp = vzt::StoreOperation::DontCare;
 		if (outAttachmentInfo.name.empty())
 		{
 			outAttachmentInfo.name = m_name + "ColorOut" + std::to_string(m_colorInputs.size());
@@ -229,41 +231,35 @@ namespace vzt
 
 	bool RenderPassHandler::isDependingOn(const RenderPassHandler& other) const
 	{
-		for (const auto& output : m_colorOutputs)
+		for (const auto& input : m_colorInputs)
 		{
-			const auto currentHandle = output.first;
-			for (const auto& input : other.m_colorInputs)
+			const auto currentHandle = input.first;
+			for (const auto& [output, _] : other.m_colorOutputs)
 			{
-				if (input.first.id == currentHandle.id && input.first.state == currentHandle.state)
-				{
+				if (output.id == currentHandle.id && output.state == currentHandle.state)
 					return true;
-				}
 			}
 		}
 
-		for (const auto& output : m_storageOutputs)
+		for (const auto& input : m_storageInputs)
 		{
-			const auto currentHandle = output.first;
-			for (const auto& input : other.m_storageOutputs)
+			const auto currentHandle = input.first;
+			for (const auto& [output, _] : other.m_storageOutputs)
 			{
-				if (input.first.id == currentHandle.id && input.first.state == currentHandle.state)
-				{
+				if (output.id == currentHandle.id && output.state == currentHandle.state)
 					return true;
-				}
 			}
 		}
 
 		// Depth attachment
-		if (m_depthOutput.has_value())
+		if (m_depthInput)
 		{
-			const auto currentHandle = m_depthOutput.value().first;
-			if (other.m_depthInput.has_value())
+			const auto currentHandle = m_depthInput->first;
+			if (other.m_depthOutput)
 			{
-				const auto otherHandle = other.m_depthInput.value().first;
+				const auto otherHandle = other.m_depthOutput->first;
 				if (otherHandle.id == currentHandle.id && otherHandle.state == currentHandle.state)
-				{
 					return true;
-				}
 			}
 		}
 
@@ -384,11 +380,15 @@ namespace vzt
 		if (!m_colorInputs.empty())
 		{
 			IndexedUniform<vzt::Texture*> texturesDescriptors;
-			auto                          input = m_colorInputs.begin();
-			for (uint32_t i = 0; i < m_colorInputs.size(); ++input, i++)
+			uint32_t                      bindingId = 0;
+			for (auto& [state, info] : m_colorInputs)
 			{
-				const Attachment& attachment = m_parent->getAttachment(imageId, input->first);
-				texturesDescriptors[i]       = attachment.asTexture();
+				if (info.attachmentUse.usedLayout == ImageLayout::ShaderReadOnlyOptimal)
+				{
+					const Attachment& attachment   = m_parent->getAttachment(imageId, state);
+					texturesDescriptors[bindingId] = attachment.asTexture();
+					bindingId++;
+				}
 			}
 			m_descriptorPool->update(imageId, texturesDescriptors);
 		}
@@ -397,7 +397,8 @@ namespace vzt
 		if (imageId == 0)
 		{
 			m_renderPassTemplate = renderPass.get();
-			m_configureFunction(*this);
+			m_configureFunction(
+			    {getDevice(), getTemplate(), getDescriptorLayout(), getOutputAttachmentNb(), getExtent()});
 		}
 
 		return renderPass;
@@ -440,7 +441,8 @@ namespace vzt
 	void RenderGraph::setBackBuffer(const vzt::AttachmentHandle backBufferHandle) { m_backBuffer = backBufferHandle; }
 	bool RenderGraph::isBackBuffer(const vzt::AttachmentHandle backBufferHandle) const
 	{
-		return m_backBuffer == backBufferHandle;
+		return m_backBuffer ? m_backBuffer->id == backBufferHandle.id && m_backBuffer->state == backBufferHandle.state
+		                    : false;
 	}
 
 	void RenderGraph::compile()
@@ -456,6 +458,10 @@ namespace vzt
 		for (const std::size_t sortedRenderPassIndice : m_sortedRenderPassIndices)
 		{
 			auto& renderPassHandler = m_renderPassHandlers[sortedRenderPassIndice];
+
+			for (auto& [id, info] : renderPassHandler.m_colorInputs)
+				info.attachmentUse.initialLayout = lastAttachmentsLayout[id];
+
 			for (auto& [id, info] : renderPassHandler.m_colorOutputs)
 			{
 				info.attachmentUse.initialLayout = lastAttachmentsLayout[id];
@@ -471,9 +477,6 @@ namespace vzt
 				info.attachmentUse.initialLayout = lastAttachmentsLayout[id];
 				lastAttachmentsLayout[id]        = info.attachmentUse.finalLayout;
 			}
-
-			for (auto& [id, info] : renderPassHandler.m_colorInputs)
-				info.attachmentUse.initialLayout = lastAttachmentsLayout[id];
 
 			if (renderPassHandler.m_depthInput)
 			{
@@ -525,7 +528,7 @@ namespace vzt
 			for (const auto& [id, settings] : m_attachmentsSettings)
 			{
 				attachmentIndices[id] = m_attachments.size();
-				if (isBackBuffer(id))
+				if (m_backBuffer && m_backBuffer->id == id.id)
 				{
 					m_attachments.emplace_back(device, swapchainImage, *settings.format,
 					                           ImageLayout::ColorAttachmentOptimal, ImageAspect::Color);
@@ -588,9 +591,6 @@ namespace vzt
 			m_commandPools[imageId].recordBuffer(i, [&](VkCommandBuffer commandBuffer) {
 				for (const auto& [id, info] : renderPass.m_colorInputs)
 				{
-					if (isBackBuffer(id))
-						return;
-
 					const Attachment& attachment = getAttachment(imageId, id);
 
 					VkImageMemoryBarrier inputBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
@@ -645,6 +645,9 @@ namespace vzt
 			                                 : throw std::runtime_error("Compute pipeline is not currently supported");
 
 			graphicSubmissions.emplace_back(std::move(submitInfo));
+
+			if (isPresentationPass)
+				break;
 		}
 
 		vkResetFences(m_device->vkHandle(), 1, &inFlightFence);
@@ -723,7 +726,7 @@ namespace vzt
 			}
 
 			nodeStatus[idx] = 2;
-			m_sortedRenderPassIndices.emplace(m_sortedRenderPassIndices.begin(), idx);
+			m_sortedRenderPassIndices.emplace_back(idx);
 			remainingNodes.erase(std::remove(remainingNodes.begin(), remainingNodes.end(), idx), remainingNodes.end());
 		};
 

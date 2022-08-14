@@ -32,7 +32,7 @@ namespace vzt
 		const float distance        = glm::length(targetDirection);
 		if (distance < 1e-6f)
 		{
-			rotation = Quat{1., 0., 0., 0.};
+			rotation = Quat{1.f, 0.f, 0.f, 0.f};
 			return;
 		}
 
