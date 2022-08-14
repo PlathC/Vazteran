@@ -322,7 +322,7 @@ namespace vzt
 			outcomingDependency.dstAccess = vzt::AttachmentAccess::MemoryRead;
 		}
 
-		std::unique_ptr<vzt::RenderPass> renderPass{};
+		std::unique_ptr<RenderPass> renderPass{};
 		if (m_depthOutput)
 		{
 			auto& [handle, info] = *m_depthOutput;

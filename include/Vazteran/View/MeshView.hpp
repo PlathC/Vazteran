@@ -28,8 +28,6 @@ namespace vzt
 	{
 	  public:
 		MeshView(uint32_t imageNb, Scene& scene, ShaderLibrary& library);
-		MeshView(uint32_t imageNb, Scene& scene, ShaderLibrary& library, RenderGraph& graph, AttachmentHandle& position,
-		         AttachmentHandle& normal, AttachmentHandle& albedo, AttachmentHandle& depth);
 
 		MeshView(const MeshView&)            = delete;
 		MeshView& operator=(const MeshView&) = delete;
@@ -39,6 +37,8 @@ namespace vzt
 
 		~MeshView();
 
+		void apply(RenderGraph& graph, AttachmentHandle& position, AttachmentHandle& normal, AttachmentHandle& albedo,
+		           AttachmentHandle& depth);
 		void refresh() override;
 		void configure(const PipelineContextSettings& settings) override;
 		void record(uint32_t imageId, VkCommandBuffer cmd,

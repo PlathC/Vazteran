@@ -17,22 +17,6 @@ namespace vzt
 	{
 	}
 
-	UiView::UiView(const Window& window, uint32_t imageCount, RenderGraph& graph, AttachmentHandle& depth,
-	               AttachmentHandle& composed)
-	    : UiView(window, imageCount)
-	{
-		auto& UiPass = graph.addPass("UiPass", vzt::QueueType::Graphic);
-		UiPass.setDepthStencilOutput(depth, "Depth");
-		UiPass.addColorInputOutput(composed, "Composed", "ComposedWithUi");
-
-		UiPass.setConfigureFunction([this](const vzt::PipelineContextSettings& settings) { configure(settings); });
-
-		UiPass.setRecordFunction(
-		    [this](uint32_t imageId, VkCommandBuffer cmd, const std::vector<VkDescriptorSet>& engineDescriptorSets) {
-			    record(imageId, cmd, engineDescriptorSets);
-		    });
-	}
-
 	UiView::UiView(UiView&& other) noexcept : View(static_cast<View&&>(other))
 	{
 		std::swap(m_instance, other.m_instance);
@@ -64,6 +48,20 @@ namespace vzt
 	}
 
 	void UiView::setManager(const ui::UiManager& manager) { m_manager = &manager; }
+
+	void UiView::apply(RenderGraph& graph, AttachmentHandle& depth, AttachmentHandle& composed)
+	{
+		auto& UiPass = graph.addPass("UiPass", vzt::QueueType::Graphic);
+		UiPass.setDepthStencilOutput(depth, "Depth");
+		UiPass.addColorInputOutput(composed, "Composed", "ComposedWithUi");
+
+		UiPass.setConfigureFunction([this](const vzt::PipelineContextSettings& settings) { configure(settings); });
+
+		UiPass.setRecordFunction(
+		    [this](uint32_t imageId, VkCommandBuffer cmd, const std::vector<VkDescriptorSet>& engineDescriptorSets) {
+			    record(imageId, cmd, engineDescriptorSets);
+		    });
+	}
 
 	void UiView::refresh() {}
 

@@ -89,10 +89,10 @@ namespace vzt
 		createPipeline();
 	}
 
-	MeshView::MeshView(uint32_t imageNb, Scene& scene, ShaderLibrary& library, RenderGraph& graph,
-	                   AttachmentHandle& position, AttachmentHandle& normal, AttachmentHandle& albedo,
-	                   AttachmentHandle& depth)
-	    : MeshView(imageNb, scene, library)
+	MeshView::~MeshView() {}
+
+	void MeshView::apply(RenderGraph& graph, AttachmentHandle& position, AttachmentHandle& normal,
+	                     AttachmentHandle& albedo, AttachmentHandle& depth)
 	{
 		auto& geometryBuffer = graph.addPass("G-Buffer", vzt::QueueType::Graphic);
 		geometryBuffer.addColorOutput(position, "Position");
@@ -108,8 +108,6 @@ namespace vzt
 			    record(imageId, cmd, engineDescriptorSets);
 		    });
 	}
-
-	MeshView::~MeshView() {}
 
 	void MeshView::refresh() { createPipeline(); }
 

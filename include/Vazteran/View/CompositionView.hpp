@@ -16,9 +16,6 @@ namespace vzt
 	{
 	  public:
 		CompositionView(uint32_t imageNb, Scene& scene, ShaderLibrary& library);
-		CompositionView(uint32_t imageNb, Scene& scene, ShaderLibrary& library, RenderGraph& graph,
-		                AttachmentHandle position, AttachmentHandle normal, AttachmentHandle albedo,
-		                AttachmentHandle& depth, AttachmentHandle& composed);
 
 		CompositionView(const CompositionView&)            = delete;
 		CompositionView& operator=(const CompositionView&) = delete;
@@ -28,6 +25,8 @@ namespace vzt
 
 		~CompositionView() = default;
 
+		void apply(RenderGraph& graph, AttachmentHandle position, AttachmentHandle normal, AttachmentHandle albedo,
+		           AttachmentHandle& depth, AttachmentHandle& composed);
 		void refresh() override;
 		void configure(const PipelineContextSettings& settings) override;
 		void record(uint32_t imageId, VkCommandBuffer cmd,

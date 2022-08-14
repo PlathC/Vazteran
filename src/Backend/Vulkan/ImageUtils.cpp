@@ -3,6 +3,7 @@
 
 #include "Vazteran/Backend/Vulkan/Device.hpp"
 #include "Vazteran/Backend/Vulkan/ImageUtils.hpp"
+#include "Vazteran/Core/Logger.hpp"
 
 namespace vzt
 {
@@ -66,8 +67,9 @@ namespace vzt
 
 	ImageView& ImageView::operator=(ImageView&& original) noexcept
 	{
-		std::swap(m_isProprietary, original.m_isProprietary);
 		std::swap(m_device, original.m_device);
+		std::swap(m_isProprietary, original.m_isProprietary);
+		std::swap(m_format, original.m_format);
 		std::swap(m_vkImage, original.m_vkImage);
 		std::swap(m_vkHandle, original.m_vkHandle);
 		std::swap(m_allocation, original.m_allocation);

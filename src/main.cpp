@@ -21,6 +21,37 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
 		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
 
+		vzt::ShaderLibrary   library{};
+		vzt::GraphicPipeline compositionPipeline;
+
+		vzt::MeshView        meshView{renderer.getImageCount(), currentScene, library};
+		vzt::CompositionView compositionView{renderer.getImageCount(), currentScene, library};
+		vzt::UiView          uiView{window, renderer.getImageCount()};
+
+		// Rendergraph defintion
+		vzt::RenderGraph graph{};
+
+		vzt::AttachmentHandle position =
+		    graph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
+		vzt::AttachmentHandle albedo =
+		    graph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
+		vzt::AttachmentHandle normal =
+		    graph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8UNorm});
+		vzt::AttachmentHandle depth = graph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
+		meshView.apply(graph, position, normal, albedo, depth);
+
+		vzt::AttachmentHandle composed      = graph.addAttachment({vzt::ImageUsage::ColorAttachment});
+		vzt::AttachmentHandle composedDepth = graph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
+		compositionView.apply(graph, position, normal, albedo, composedDepth, composed);
+
+		vzt::AttachmentHandle finalDepth = graph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
+		uiView.apply(graph, finalDepth, composed);
+
+		graph.setBackBuffer(composed);
+		graph.compile();
+		renderer.setRenderGraph(std::move(graph));
+
+		// Ui definition
 		vzt::ui::MainMenuField fileMenuField = vzt::ui::MainMenuField("File");
 		fileMenuField.addItem(vzt::ui::MainMenuItem("Open", []() { vzt::VZT_INFO("Open"); }));
 
@@ -33,43 +64,9 @@ int main(int /* args */, char*[] /* argv */)
 
 		vzt::ui::UiManager uiManager;
 		uiManager.setMainMenuBar(mainMenuBar);
+		uiView.setManager(uiManager);
 
-		vzt::ShaderLibrary   library{};
-		vzt::GraphicPipeline compositionPipeline;
-		vzt::RenderGraph     renderGraph{};
-
-		vzt::AttachmentHandle position =
-		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
-		vzt::AttachmentHandle albedo =
-		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R16G16B16A16SFloat});
-		vzt::AttachmentHandle normal =
-		    renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8UNorm});
-		vzt::AttachmentHandle depth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
-
-		vzt::MeshView meshView{
-		    renderer.getImageCount(), currentScene, library, renderGraph, position, normal, albedo, depth};
-
-		vzt::AttachmentHandle composed      = renderGraph.addAttachment({vzt::ImageUsage::ColorAttachment});
-		vzt::AttachmentHandle composedDepth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
-
-		vzt::CompositionView compositionView{renderer.getImageCount(),
-		                                     currentScene,
-		                                     library,
-		                                     renderGraph,
-		                                     position,
-		                                     normal,
-		                                     albedo,
-		                                     composedDepth,
-		                                     composed};
-
-		vzt::AttachmentHandle finalDepth = renderGraph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
-		vzt::UiView           uiRenderer{window, renderer.getImageCount(), renderGraph, finalDepth, composed};
-		uiRenderer.setManager(uiManager);
-
-		renderGraph.setBackBuffer(composed);
-		renderGraph.compile();
-		renderer.setRenderGraph(std::move(renderGraph));
-
+		// Callback definition
 		const auto   size       = window.getFrameBufferSize();
 		vzt::Entity  mainCamera = currentScene.getMainCamera();
 		vzt::Camera& camera     = mainCamera.get<vzt::Camera>();
@@ -94,9 +91,12 @@ int main(int /* args */, char*[] /* argv */)
 			}
 		});
 
+		// Rendering loop
 		while (!window.update())
 			renderer.render();
 
+		// Don't forget to synchronize the CPU and GPU before closing
+		// TODO: Make this automatic
 		renderer.synchronize();
 	}
 	catch (const std::exception& e)

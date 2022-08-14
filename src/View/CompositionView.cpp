@@ -10,10 +10,8 @@ namespace vzt
 		createPipeline();
 	}
 
-	CompositionView::CompositionView(uint32_t imageNb, Scene& scene, ShaderLibrary& library, RenderGraph& graph,
-	                                 AttachmentHandle position, AttachmentHandle normal, AttachmentHandle albedo,
-	                                 AttachmentHandle& depth, AttachmentHandle& composed)
-	    : CompositionView(imageNb, scene, library)
+	void CompositionView::apply(RenderGraph& graph, AttachmentHandle position, AttachmentHandle normal,
+	                            AttachmentHandle albedo, AttachmentHandle& depth, AttachmentHandle& composed)
 	{
 		auto& deferredPass = graph.addPass("Shading", vzt::QueueType::Graphic);
 		deferredPass.addColorInput(position, "G-Position");

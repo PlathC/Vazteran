@@ -21,8 +21,6 @@ namespace vzt
 	{
 	  public:
 		UiView(const Window& window, uint32_t imageCount);
-		UiView(const Window& window, uint32_t imageCount, RenderGraph& graph, AttachmentHandle& depth,
-		       AttachmentHandle& composed);
 
 		UiView(const UiView&)            = delete;
 		UiView& operator=(const UiView&) = delete;
@@ -34,6 +32,7 @@ namespace vzt
 
 		void setManager(const ui::UiManager& manager);
 
+		void apply(RenderGraph& graph, AttachmentHandle& depth, AttachmentHandle& composed);
 		void refresh() override;
 		void configure(const PipelineContextSettings& settings) override;
 		void record(uint32_t imageId, VkCommandBuffer cmd,
