@@ -30,16 +30,16 @@ namespace vzt
 		{
 			targetDirection /= distance;
 
-			const glm::vec3 up       = Vec3(0.f, 1.f, 0.f);
-			float           cosTheta = glm::dot(targetDirection, up);
-			if (glm::abs(glm::abs(cosTheta) - 1.f) < 1e-6f)
-				rotation = glm::quatLookAt(targetDirection, Vec3(0.f, 0.f, 1.f));
+			const glm::vec3 up       = Vec3(0.f, 0.f, 1.f);
+			const float     cosTheta = glm::dot(targetDirection, up);
+			if (glm::abs(glm::dot(targetDirection, up)) > 1.f - 1e-4f)
+				rotation = glm::quatLookAt(targetDirection, Vec3(0.f, 1.f, 0.f));
 			else
 				rotation = glm::quatLookAt(targetDirection, up);
 		}
 	}
-
 	void Transform::translate(const Vec3& translation) { position += translation; }
+
 	void Transform::translateRelative(Vec3 translation) { position += rotation * translation; }
 
 	void Transform::rotate(const Vec3& axis, const float radians)

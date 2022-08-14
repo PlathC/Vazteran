@@ -19,7 +19,6 @@ namespace vzt
 
 		const glm::vec3 direction = Camera::Front;
 		result.position           = target + direction * 2.f * distance;
-		// result.lookAt(target);
 
 		return result;
 	}
