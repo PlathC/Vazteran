@@ -38,6 +38,7 @@ namespace vzt
 
 		// First material is default one in case of shape "-1" material index
 		result.materials.emplace_back();
+		tinyObjToVazteranMaterialIndices[-1] = 0;
 		for (int materialId = 0; materialId < materials.size(); materialId++)
 		{
 			tinyObjToVazteranMaterialIndices[materialId] = static_cast<uint32_t>(result.materials.size());
@@ -49,9 +50,9 @@ namespace vzt
 			}
 			else
 			{
-				vzt::Image ambientTexture{};
-				vzt::Image diffuseTexture{};
-				vzt::Image specularTexture{};
+				Image ambientTexture{};
+				Image diffuseTexture{};
+				Image specularTexture{};
 				if (fs::exists(currentMaterial.ambient_texname))
 					ambientTexture = vzt::Image(currentMaterial.ambient_texname);
 				if (fs::exists(currentMaterial.diffuse_texname))

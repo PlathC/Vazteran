@@ -19,7 +19,7 @@ int main(int /* args */, char*[] /* argv */)
 
 		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::CrounchingBoys);
 		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
-		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
+		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::Bunny);
 
 		vzt::ShaderLibrary   library{};
 		vzt::GraphicPipeline compositionPipeline;

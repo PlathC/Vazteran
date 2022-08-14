@@ -38,6 +38,9 @@ Render graph-based deferred rendering can be easily implemented:
 
 ## Samples 
 
+The large majority of the samples are coming from [Morgan McGuire's samples libary](https://casual-effects.com/data/).
+
 - [The Crounching Boy Open source model by SMK - Statens Museum for Kunst Creative Commons Attribution 4.0 International License](https://www.myminifactory.com/object/3d-print-the-crouching-boy-104413)
 - [Mori Knob Open source model by Yasutoshi "Mirage" Mori Creative Commons Attribution 4.0 International License](https://github.com/lighttransport/lighttransportequation-orb)
 - [Viking Room Open source model by nigelgoh Creative Commons Attribution 4.0 International License](https://sketchfab.com/3d-models/viking-room-a49f1b8e4f5c4ecf9e1fe7d81915ad38)
+- [Bunny scan by Greg Turk and Marc Levoy](https://faculty.cc.gatech.edu/~turk/bunny/bunny.html)

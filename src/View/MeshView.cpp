@@ -219,6 +219,9 @@ namespace vzt
 			bufferDescriptors[0] = m_transformBuffer.get(transformFrom, transformFrom + sizeof(Transforms));
 
 			const auto& materials = mesh.materials;
+			if (!materials.empty())
+				meshData.textureData.resize(meshData.textureData.size() + materials.size());
+
 			for (const auto& material : materials)
 			{
 				const std::size_t materialFrom = m_materialNb * m_materialInfoOffsetSize;
@@ -228,15 +231,12 @@ namespace vzt
 				m_materialInfoBuffer.update(genericMaterial, materialFrom);
 
 				IndexedUniform<vzt::Texture*> texturesDescriptors;
-				if (material.texture)
-				{
-					meshData.textureData.emplace_back();
-					auto& textureData = meshData.textureData.back();
 
-					textureData.imageView  = {m_device, *material.texture, Format::R8G8B8A8SRGB};
-					textureData.texture    = {m_device, &meshData.textureData.back().imageView};
-					texturesDescriptors[2] = &textureData.texture;
-				}
+				auto& textureData = meshData.textureData.back();
+
+				textureData.imageView  = {m_device, material.texture, Format::R8G8B8A8SRGB};
+				textureData.texture    = {m_device, &meshData.textureData.back().imageView};
+				texturesDescriptors[2] = &textureData.texture;
 
 				m_descriptorPool.allocate(m_imageNb, m_meshDescriptorLayout);
 				for (std::size_t i = 0; i < m_imageNb; i++)

@@ -1,7 +1,5 @@
-Open source model by SMK - Statens Museum for Kunst
-Creative Commons Attribution 4.0 International License
+Copyright: SMK - Statens Museum for Kunst
 
+License: Creative Commons Attribution 4.0 International License
 
-STL source file available at:
- https://www.myminifactory.com/object/3d-print-the-crouching-boy-104413
-
+Source: https://www.myminifactory.com/object/3d-print-the-crouching-boy-104413

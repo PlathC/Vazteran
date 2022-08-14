@@ -40,6 +40,16 @@ namespace vzt
 		directionalLightEntity.emplace<DirectionalLight>(light);
 		switch (defaultScene)
 		{
+		case DefaultScene::Bunny: {
+			Entity room = scene.create();
+			Mesh&  mesh = room.emplace<Mesh>(vzt::readObj("./samples/Bunny/bunny.obj"));
+
+			Entity  cameraEntity = scene.create();
+			Camera& camera       = cameraEntity.emplace<Camera>();
+			cameraEntity.emplace<Transform>(fromAabb(camera, mesh.aabb));
+			cameraEntity.emplace<MainCamera>();
+			break;
+		}
 		case DefaultScene::CrounchingBoys: {
 			constexpr std::size_t ModelNb = 64;
 
@@ -84,18 +94,6 @@ namespace vzt
 			cameraEntity.emplace<MainCamera>();
 			break;
 		}
-		case DefaultScene::VikingRoom: {
-			Entity room = scene.create();
-			Mesh&  mesh = room.emplace<Mesh>(vzt::readObj("./samples/VikingRoom/viking_room.obj"));
-
-			mesh.materials[0].texture = vzt::Image("./samples/VikingRoom/viking_room.png");
-
-			Entity  cameraEntity = scene.create();
-			Camera& camera       = cameraEntity.emplace<Camera>();
-			cameraEntity.emplace<Transform>(fromAabb(camera, mesh.aabb));
-			cameraEntity.emplace<MainCamera>();
-			break;
-		}
 		case DefaultScene::MoriKnob: {
 			Entity moriKnob = scene.create();
 			moriKnob.emplace<Mesh>(vzt::readObj("./samples/MoriKnob/MoriKnob.obj"));
@@ -105,6 +103,18 @@ namespace vzt
 			Transform& transform = cameraEntity.emplace<Transform>();
 			transform.position   = Vec3(-0.21498573f, 1.1878444f, -1.884456f);
 			transform.rotation   = glm::normalize(Quat(0.012553758f, -0.0049332553f, 0.46932048f, 0.88292503f));
+			cameraEntity.emplace<MainCamera>();
+			break;
+		}
+		case DefaultScene::VikingRoom: {
+			Entity room = scene.create();
+			Mesh&  mesh = room.emplace<Mesh>(vzt::readObj("./samples/VikingRoom/viking_room.obj"));
+
+			mesh.materials[0].texture = vzt::Image("./samples/VikingRoom/viking_room.png");
+
+			Entity  cameraEntity = scene.create();
+			Camera& camera       = cameraEntity.emplace<Camera>();
+			cameraEntity.emplace<Transform>(fromAabb(camera, mesh.aabb));
 			cameraEntity.emplace<MainCamera>();
 			break;
 		}

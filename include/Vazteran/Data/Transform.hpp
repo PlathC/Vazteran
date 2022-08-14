@@ -13,6 +13,8 @@ namespace vzt
 		Mat4 get() const;
 		void set(const Mat4& value);
 
+		void lookAt(const Vec3& target);
+
 		void translate(const Vec3& translation);
 		void translateRelative(Vec3 translation);
 

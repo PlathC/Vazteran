@@ -9,9 +9,9 @@ namespace vzt
 {
 	struct Material
 	{
-		Optional<Image> texture   = {};
-		Vec4            color     = vzt::Vec4{.7f};
-		float           shininess = 50.f;
+		Image texture   = Image{};
+		Vec4  color     = vzt::Vec4{.7f};
+		float shininess = 50.f;
 
 		static const vzt::Material default;
 	};
