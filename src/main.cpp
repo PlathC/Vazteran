@@ -7,7 +7,7 @@
 #include "Vazteran/View/CompositionView.hpp"
 #include "Vazteran/View/MeshView.hpp"
 #include "Vazteran/View/UiView.hpp"
-#include "Vazteran/Window.hpp"
+#include "Vazteran/Window/Window.hpp"
 #include <include/Vazteran/Data/Transform.hpp>
 
 int main(int /* args */, char*[] /* argv */)
@@ -73,7 +73,7 @@ int main(int /* args */, char*[] /* argv */)
 		camera.aspectRatio      = size.x / static_cast<float>(size.y);
 		mainCamera.emplace<vzt::FreeFly>(window, mainCamera);
 
-		mainCamera.emplace<vzt::DynamicListener<vzt::Inputs>>(window, [&](const vzt::Inputs& inputs) {
+		mainCamera.emplace<vzt::DynamicListener<vzt::InputHandler>>(window, [&](const vzt::InputHandler& inputs) {
 			if (inputs.get(vzt::KeyCode::F8))
 			{
 				// Stop rendering

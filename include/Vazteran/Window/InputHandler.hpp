@@ -1,12 +1,11 @@
-#ifndef VAZTERAN_INPUTS_HPP
-#define VAZTERAN_INPUTS_HPP
+#ifndef VAZTERAN_INPUTHANDLER_HPP
+#define VAZTERAN_INPUTHANDLER_HPP
 
 #include <map>
 #include <optional>
 #include <unordered_set>
 
-#include "Vazteran/Core/Logger.hpp"
-#include "Vazteran/Ui/InputTypes.hpp"
+#include "Vazteran/Window/Input.hpp"
 
 namespace vzt
 {
@@ -61,7 +60,7 @@ namespace vzt
 		mutable std::map<Actionable, KeyAction> m_actions;
 	};
 
-	struct Inputs
+	struct InputHandler
 	{
 		bool get(MouseButton button, KeyAction action = KeyAction::Press) const
 		{
@@ -104,4 +103,4 @@ namespace vzt
 	};
 } // namespace vzt
 
-#endif // VAZTERAN_INPUTS_HPP
+#endif // VAZTERAN_INPUTHANDLER_HPP

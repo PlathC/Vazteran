@@ -1,6 +1,6 @@
 #include "Vazteran/Backend/Vulkan/Renderer.hpp"
 #include "Vazteran/View/MeshView.hpp"
-#include "Vazteran/Window.hpp"
+#include "Vazteran/Window/Window.hpp"
 
 namespace vzt
 {
@@ -32,7 +32,7 @@ namespace vzt
 			});
 		}
 
-		m_connectionHolder.subscribe<Window::FrameBufferResize, &Renderer::resize>(window, *this);
+		m_connectionHolder.subscribe<FrameBufferResize, &Renderer::resize>(window, *this);
 	}
 
 	Renderer::Renderer(Renderer&& other) noexcept
@@ -97,7 +97,7 @@ namespace vzt
 		}
 	}
 
-	void Renderer::resize(Window::FrameBufferResize newSize)
+	void Renderer::resize(FrameBufferResize newSize)
 	{
 		m_swapChain.setFrameBufferSize(std::move(newSize.size));
 		m_swapChain.recreate(m_surface);

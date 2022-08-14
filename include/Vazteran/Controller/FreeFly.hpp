@@ -2,16 +2,11 @@
 #define VATERAN_FREEFLY_HPP
 
 #include "Vazteran/Controller/CameraController.hpp"
-#include "Vazteran/Core/Event.hpp"
-#include "Vazteran/Math/Math.hpp"
-#include "Vazteran/Ui/Inputs.hpp"
+#include "Vazteran/Window/Input.hpp"
 
 namespace vzt
 {
-	struct AABB;
-	struct Camera;
-	struct Transform;
-	class Window;
+	struct InputHandler;
 
 	class FreeFly : public CameraController
 	{
@@ -21,7 +16,7 @@ namespace vzt
 
 		void setEnable(bool enable);
 		bool getEnable() const;
-		void operator()(const Inputs& inputs);
+		void operator()(const InputHandler& inputs);
 
 	  private:
 		bool       m_enabled = true;

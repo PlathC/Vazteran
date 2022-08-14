@@ -5,7 +5,7 @@
 
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
 #include "Vazteran/Core/Logger.hpp"
-#include "Vazteran/Window.hpp"
+#include "Vazteran/Window/Window.hpp"
 
 namespace vzt
 {

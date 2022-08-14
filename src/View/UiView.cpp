@@ -8,7 +8,7 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/RenderPass.hpp"
 #include "Vazteran/View/UiView.hpp"
-#include "Vazteran/Window.hpp"
+#include "Vazteran/Window/Window.hpp"
 
 namespace vzt
 {

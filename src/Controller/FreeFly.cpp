@@ -4,20 +4,20 @@
 #include "Vazteran/Data/Transform.hpp"
 #include "Vazteran/Math/Math.hpp"
 #include "Vazteran/System/Scene.hpp"
-#include "Vazteran/Window.hpp"
+#include "Vazteran/Window/Window.hpp"
 
 namespace vzt
 {
 	FreeFly::FreeFly(Window& window, Entity cameraEntity, KeyCode toggleEnable)
 	    : CameraController(window, cameraEntity), m_toggleEnable(toggleEnable)
 	{
-		m_inputConnection = window.subscribe<Inputs, &FreeFly::operator()>(*this);
+		m_inputConnection = window.subscribe<InputHandler, &FreeFly::operator()>(*this);
 	}
 
 	void FreeFly::setEnable(bool enable) { m_enabled = enable; }
 	bool FreeFly::getEnable() const { return m_enabled; }
 
-	void FreeFly::operator()(const Inputs& inputs)
+	void FreeFly::operator()(const InputHandler& inputs)
 	{
 		constexpr float sensitivity     = 1e-2f;
 		constexpr float baseCameraSpeed = 5e-3f;

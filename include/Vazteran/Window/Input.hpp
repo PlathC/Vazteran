@@ -1,5 +1,5 @@
-#ifndef VAZTERAN_WINDOWTYPES_HPP
-#define VAZTERAN_WINDOWTYPES_HPP
+#ifndef VAZTERAN_INPUT_HPP
+#define VAZTERAN_INPUT_HPP
 
 #include <GLFW/glfw3.h>
 
@@ -174,4 +174,4 @@ namespace vzt
 
 } // namespace vzt
 
-#endif // VAZTERAN_WINDOWTYPES_HPP
+#endif // VAZTERAN_INPUT_HPP

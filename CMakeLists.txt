@@ -141,8 +141,8 @@ elseif (MSVC)
 endif ()
 
 set(VZT_HEADERS
-        "include/Vazteran/Window.hpp"
-        "include/Vazteran/Ui/InputTypes.hpp"
+        "include/Vazteran/Window/Window.hpp"
+        "include/Vazteran/Window/Input.hpp"
 
         "include/Vazteran/Controller/CameraController.hpp"
         "include/Vazteran/Controller/FreeFly.hpp"
@@ -173,7 +173,7 @@ set(VZT_HEADERS
         "include/Vazteran/System/System.hpp"
 
         "include/Vazteran/Ui/Component.hpp"
-        "include/Vazteran/Ui/Inputs.hpp"
+        "include/Vazteran/Window/InputHandler.hpp"
         "include/Vazteran/Ui/MainMenuBar.hpp"
         "include/Vazteran/Ui/UiManager.hpp"
 
@@ -204,7 +204,7 @@ set(VZT_HEADERS
 
 set(VZT_SOURCES
         "src/main.cpp"
-        "src/Window.cpp"
+        "src/Window/Window.cpp"
         
         "src/Controller/CameraController.cpp"
         "src/Controller/FreeFly.cpp"

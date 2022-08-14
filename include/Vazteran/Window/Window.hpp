@@ -9,7 +9,7 @@
 #include "Vazteran/Backend/Vulkan/Instance.hpp"
 #include "Vazteran/Core/Event.hpp"
 #include "Vazteran/Math/Math.hpp"
-#include "Vazteran/Ui/Inputs.hpp"
+#include "Vazteran/Window/InputHandler.hpp"
 
 namespace vzt
 {
@@ -33,14 +33,14 @@ namespace vzt
 		VkSurfaceKHR m_surface  = VK_NULL_HANDLE;
 	};
 
+	struct FrameBufferResize
+	{
+		Uvec2 size;
+	};
+
 	class Window : public Provider
 	{
 	  public:
-		struct FrameBufferResize
-		{
-			Uvec2 size;
-		};
-
 		Window(const std::string& name, uint32_t width, uint32_t height);
 		~Window();
 
@@ -71,8 +71,8 @@ namespace vzt
 		using GLFWwindowPtr = std::unique_ptr<GLFWwindow, std::function<void(GLFWwindow*)>>;
 		GLFWwindowPtr m_window;
 
-		bool   m_triggerUserInput = false;
-		Inputs m_inputs{};
+		bool         m_triggerUserInput = false;
+		InputHandler m_inputs{};
 	};
 } // namespace vzt
 

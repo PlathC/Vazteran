@@ -11,7 +11,7 @@
 #include "Vazteran/Backend/Vulkan/RenderGraph.hpp"
 #include "Vazteran/Backend/Vulkan/SwapChain.hpp"
 #include "Vazteran/Data/Camera.hpp"
-#include "Vazteran/Window.hpp"
+#include "Vazteran/Window/Window.hpp"
 
 struct GLFWwindow;
 
@@ -44,7 +44,7 @@ namespace vzt
 		void render();
 
 		void refresh();
-		void resize(Window::FrameBufferResize newSize);
+		void resize(FrameBufferResize newSize);
 		void synchronize();
 
 	  private:

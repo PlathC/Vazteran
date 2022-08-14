@@ -9,9 +9,7 @@ namespace vzt
 		void UiManager::draw() const
 		{
 			if (m_mainMenuBar)
-			{
 				m_mainMenuBar->draw();
-			}
 		}
 	} // namespace ui
 } // namespace vzt
