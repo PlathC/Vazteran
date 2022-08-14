@@ -102,7 +102,9 @@ namespace vzt
 
 			Entity cameraEntity = scene.create();
 			cameraEntity.emplace<Camera>();
-			cameraEntity.emplace<Transform>();
+			Transform& transform = cameraEntity.emplace<Transform>();
+			transform.position   = Vec3(-0.21498573f, 1.1878444f, -1.884456f);
+			transform.rotation   = glm::normalize(Quat(0.012553758f, -0.0049332553f, 0.46932048f, 0.88292503f));
 			cameraEntity.emplace<MainCamera>();
 			break;
 		}

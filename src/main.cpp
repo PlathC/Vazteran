@@ -18,8 +18,8 @@ int main(int /* args */, char*[] /* argv */)
 		vzt::Renderer renderer{window};
 
 		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::CrounchingBoys);
-		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
-		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
+		// vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::VikingRoom);
+		vzt::Scene currentScene = vzt::Scene::defaultScene(vzt::Scene::DefaultScene::MoriKnob);
 
 		vzt::ShaderLibrary   library{};
 		vzt::GraphicPipeline compositionPipeline;
@@ -88,6 +88,15 @@ int main(int /* args */, char*[] /* argv */)
 
 				// Recreate full rendering pipeline
 				renderer.refresh();
+			}
+			if (inputs.get(vzt::KeyCode::Space, vzt::KeyAction::Release))
+			{
+				vzt::Entity           mainCamera = currentScene.getMainCamera();
+				const vzt::Transform& transform  = mainCamera.get<vzt::Transform>();
+				vzt::VZT_INFO("Position = [{}, {}, {}]", transform.position.x, transform.position.y,
+				              transform.position.z);
+				vzt::VZT_INFO("Rotation = [{}, {}, {}, {}]", transform.rotation.x, transform.rotation.y,
+				              transform.rotation.z, transform.rotation.w);
 			}
 		});
 

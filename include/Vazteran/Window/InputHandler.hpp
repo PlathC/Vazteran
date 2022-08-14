@@ -40,7 +40,7 @@ namespace vzt
 				}
 				else if (pastAction.first < newAction.first)
 				{
-					m_actions.erase(pastAction);
+					pastAction = m_actions.erase(pastAction);
 				}
 				else
 				{
@@ -54,6 +54,17 @@ namespace vzt
 			if (m_actions.find(actionable) != m_actions.end())
 				return m_actions[actionable];
 			return {};
+		}
+
+		void removeAll(const KeyAction& type)
+		{
+			for (auto action = m_actions.begin(); action != m_actions.end();)
+			{
+				if (action->second == type)
+					action = m_actions.erase(action);
+				else
+					action++;
+			}
 		}
 
 	  private:
@@ -89,7 +100,12 @@ namespace vzt
 			mousePosition      = position;
 		}
 
-		void reset() { deltaMousePosition = {}; }
+		void reset()
+		{
+			deltaMousePosition = {};
+			mouseButtons.removeAll(KeyAction::Release);
+			keys.removeAll(KeyAction::Release);
+		}
 
 		ActionableList<MouseButton> mouseButtons;
 		ActionableList<KeyCode>     keys;
