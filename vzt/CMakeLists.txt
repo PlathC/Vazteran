@@ -19,14 +19,16 @@ set(VZT_EXTERN_LIBRARIES
 
 set(VZT_HEADERS
     include/vzt/Core/Logger.hpp
+    include/vzt/Core/Vulkan.hpp
 
-    include/vzt/Device.hpp
+    include/vzt/Instance.hpp
 )
 
 set(VZT_SOURCES
     src/Core/Logger.cpp
+    src/Core/Vulkan.cpp
 
-    src/Device.cpp
+    src/Instance.cpp
 )
 
 add_library(Vazteran STATIC ${VZT_HEADERS} ${VZT_SOURCES} ${VZT_EXTERN_SOURCES})
@@ -34,7 +36,9 @@ add_library(Vazteran STATIC ${VZT_HEADERS} ${VZT_SOURCES} ${VZT_EXTERN_SOURCES})
 get_cxx_flags(VZT_COMPILATION_FLAGS VZT_COMPILE_DEFINITIONS)
 target_compile_options(    Vazteran PRIVATE ${VZT_COMPILATION_FLAGS})
 target_compile_definitions(Vazteran PRIVATE ${VZT_COMPILE_DEFINITIONS})
-target_include_directories(Vazteran PRIVATE ${VZT_EXTERN_INCLUDES})
+target_include_directories(Vazteran PRIVATE ${VZT_EXTERN_INCLUDES} include/)
 target_link_libraries(     Vazteran PRIVATE ${VZT_EXTERN_LIBRARIES})
+target_compile_features(   Vazteran PRIVATE cxx_std_17)
+
 
 target_include_directories(Vazteran INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)

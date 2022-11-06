@@ -1,0 +1,3 @@
+[submodule "vzt/extern/fmt"]
+	path = vzt/extern/fmt
+	url = https://github.com/fmtlib/fmt.git

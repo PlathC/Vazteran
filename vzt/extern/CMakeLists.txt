@@ -1,4 +1,4 @@
-
+add_subdirectory(fmt)
 
 # Prepare data for parent scope
 set(VZT_EXTERN_INCLUDES
@@ -8,6 +8,7 @@ set(VZT_EXTERN_INCLUDES
 set(VZT_EXTERN_LIBRARIES
     ${VZT_EXTERN_LIBRARIES}
 
+    fmt
     Vulkan::Vulkan
 )
 

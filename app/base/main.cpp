@@ -1,9 +1,9 @@
 #include <cstdlib>
 
-#include <vzt/Device.hpp>
+#include <vzt/Instance.hpp>
 
 int main(int argc, char** argv)
 {
-    vzt::Device device{};
+    vzt::Instance instance{"Vazteran Base"};
     return EXIT_SUCCESS;
 }
