@@ -22,6 +22,7 @@ set(VZT_HEADERS
     include/vzt/Core/Vulkan.hpp
 
     include/vzt/Instance.hpp
+    include/vzt/Window.hpp
 )
 
 set(VZT_SOURCES
@@ -29,6 +30,7 @@ set(VZT_SOURCES
     src/Core/Vulkan.cpp
 
     src/Instance.cpp
+    src/Window.cpp
 )
 
 add_library(Vazteran STATIC ${VZT_HEADERS} ${VZT_SOURCES} ${VZT_EXTERN_SOURCES})

@@ -10,6 +10,7 @@
 namespace vzt
 {
     class Device;
+    class Window;
 
     namespace validation
     {
@@ -40,16 +41,19 @@ namespace vzt
     {
       public:
         Instance(const std::string& name, Configuration configuration = {});
+        Instance(Window& window, Configuration configuration = {});
 
         Instance(const Instance&)            = delete;
         Instance& operator=(const Instance&) = delete;
 
-        Instance(Instance&&);
-        Instance& operator=(Instance&&);
+        Instance(Instance&&) noexcept;
+        Instance& operator=(Instance&&) noexcept;
 
         ~Instance();
 
-        Device getDevice(std::optional<uint32_t> id = {});
+        inline VkInstance getHandle() const;
+        Device            getDevice();
+        Device            getDevice(VkSurfaceKHR surface);
 
       private:
         VkInstance               m_handle         = VK_NULL_HANDLE;
@@ -61,9 +65,29 @@ namespace vzt
         std::vector<DeviceHandle> m_devices;
     };
 
+    class Surface
+    {
+      public:
+        Surface(const Window& window, const Instance& instance);
+
+        Surface(const Surface&)            = delete;
+        Surface& operator=(const Surface&) = delete;
+
+        Surface(Surface&&) noexcept;
+        Surface& operator=(Surface&&) noexcept;
+
+        ~Surface();
+
+      private:
+        const Instance* m_instance = nullptr;
+        VkSurfaceKHR    m_handle   = VK_NULL_HANDLE;
+    };
+
     class Device
     {
     };
 } // namespace vzt
+
+#include "vzt/Instance.inl"
 
 #endif // VZT_INSTANCE_HPP

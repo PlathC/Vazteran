@@ -1,5 +1,10 @@
 add_subdirectory(fmt)
 
+set(SDL2_DISABLE_UNINSTALL      ON  CACHE BOOL "" FORCE)
+set(SDL_TEST                    OFF CACHE BOOL "" FORCE)
+set(SDL_TESTS                   OFF CACHE BOOL "" FORCE)
+add_subdirectory(SDL)
+
 # Prepare data for parent scope
 set(VZT_EXTERN_INCLUDES
     ${VZT_EXTERN_INCLUDES}
@@ -9,6 +14,7 @@ set(VZT_EXTERN_LIBRARIES
     ${VZT_EXTERN_LIBRARIES}
 
     fmt
+    SDL2::SDL2 SDL2::SDL2main
     Vulkan::Vulkan
 )
 

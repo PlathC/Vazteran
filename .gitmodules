@@ -1,3 +1,6 @@
 [submodule "vzt/extern/fmt"]
 	path = vzt/extern/fmt
 	url = https://github.com/fmtlib/fmt.git
+[submodule "vzt/extern/SDL"]
+	path = vzt/extern/SDL
+	url = https://github.com/libsdl-org/SDL.git

@@ -3,10 +3,11 @@
 #include <iostream>
 #include <stdexcept>
 
+#include <SDL_vulkan.h>
 #include <vulkan/vulkan.h>
 
 #include "vzt/Core/Logger.hpp"
-#include "vzt/Core/Vulkan.hpp"
+#include "vzt/Window.hpp"
 
 namespace vzt
 {
@@ -76,12 +77,13 @@ namespace vzt
         createInfo.ppEnabledExtensionNames = configuration.extensions.data();
 
         createInfo.enabledLayerCount = 0;
+
+        VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreate;
         if (configuration.enableValidation)
         {
             createInfo.enabledLayerCount   = static_cast<uint32_t>(configuration.validationLayers.size());
             createInfo.ppEnabledLayerNames = configuration.validationLayers.data();
 
-            VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreate;
             debugMessengerCreate                 = {};
             debugMessengerCreate.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
             debugMessengerCreate.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
@@ -100,34 +102,28 @@ namespace vzt
         if (!configuration.enableValidation)
             return;
 
-        VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{};
-        debugMessengerCreateInfo                 = {};
-        debugMessengerCreateInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugMessengerCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                                   VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        debugMessengerCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                               VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                               VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugMessengerCreateInfo.pfnUserCallback = debugCallback;
-
         auto vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
             vkGetInstanceProcAddr(m_handle, "vkCreateDebugUtilsMessengerEXT"));
 
         if (!vkCreateDebugUtilsMessengerEXT)
             logger::error("Failed to create debug messenger");
 
-        vkCheck(vkCreateDebugUtilsMessengerEXT(m_handle, &debugMessengerCreateInfo, nullptr, &m_debugMessenger),
+        vkCheck(vkCreateDebugUtilsMessengerEXT(m_handle, &debugMessengerCreate, nullptr, &m_debugMessenger),
                 "Failed to create debug messenger");
     }
 
-    Instance::Instance(Instance&& other)
+    Instance::Instance(Window& window, Configuration configuration)
+        : Instance(std::string(window.getTitle()), window.getConfiguration(configuration))
+    {
+    }
+
+    Instance::Instance(Instance&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_devices, other.m_devices);
     }
 
-    Instance& Instance::operator=(Instance&& other)
+    Instance& Instance::operator=(Instance&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_devices, other.m_devices);
@@ -149,7 +145,32 @@ namespace vzt
         }
 
         vkDestroyInstance(m_handle, nullptr);
-        m_handle = VK_NULL_HANDLE;
+    }
+
+    Surface::Surface(const Window& window, const Instance& instance) : m_instance(&instance)
+    {
+        if (!SDL_Vulkan_CreateSurface(window.getHandle(), instance.getHandle(), &m_handle))
+            logger::error("[SDL] {}", SDL_GetError());
+    }
+
+    Surface::Surface(Surface&& other) noexcept
+    {
+        std::swap(m_instance, other.m_instance);
+        std::swap(m_handle, other.m_handle);
+    }
+
+    Surface& Surface::operator=(Surface&& other) noexcept
+    {
+        std::swap(m_instance, other.m_instance);
+        std::swap(m_handle, other.m_handle);
+
+        return *this;
+    }
+
+    Surface::~Surface()
+    {
+        if (m_handle != VK_NULL_HANDLE)
+            vkDestroySurfaceKHR(m_instance->getHandle(), m_handle, nullptr);
     }
 
 } // namespace vzt
