@@ -1,15 +1,14 @@
 # Vazteran
 
-Vulkan based rendering engine for learning purposes. It main goal is to make available a simpler way 
-to render my small projects related to computer graphics. 
+Vulkan based rendering engine for learning purposes. Its main goal is to offer a base interface
+for my personal projects in computer graphics. 
 
 Here is the roadmap :
 | Feature                                                         | Progress  |
 |-----------------------------------------------------------------|-----------|
-| Render Graph                                                    | WIP       |
-| Ui Library                                                      | WIP       |
-| Geometry helping library                                        | To Do     |
-| ECS                                                             | To Do     |
+| Window                                                          | To do     |
+| Ui                                                              | To do     |
+| Renderer architecture                                           | To do     |
 
 ## Build 
 
@@ -30,11 +29,7 @@ cmake --build . --target Vazteran --config Release
 
 ## Current state
 
-Render graph-based deferred rendering can be easily implemented:
-
-![](./readmefiles/Texture.png)
-
-![](./readmefiles/MultipleObject.png)
+Currently doing a fresh restart in order to fix several architectural and implementation problems.
 
 ## Samples 
 

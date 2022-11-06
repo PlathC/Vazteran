@@ -18,7 +18,20 @@ AlwaysBreakTemplateDeclarations: Yes
 BasedOnStyle: Microsoft
 Cpp11BracedListStyle: 'true'
 NamespaceIndentation: All
-UseTab: ForIndentation
+UseTab: Never
+IndentWidth: 4
 PointerAlignment: Left
 
-...
+# From https://stackoverflow.com/a/55794142
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  # Headers in <> without extension.
+  - Regex:           '<([A-Za-z0-9\Q/-_\E])+>'
+    Priority:        1
+  # Headers in <> with extension.
+  - Regex:           '<([A-Za-z0-9.\Q/-_\E])+>'
+    Priority:        2
+  # Headers in "" with extension.
+  - Regex:           '"([A-Za-z0-9.\Q/-_\E])+"'
+    Priority:        3
