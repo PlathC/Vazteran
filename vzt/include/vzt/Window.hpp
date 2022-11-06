@@ -24,14 +24,13 @@ namespace vzt
         inline std::string_view getTitle() const;
         inline uint32_t         getWith() const;
         inline uint32_t         getHeight() const;
-        inline SDL_Window*      getHandle() const;
-
-        Configuration getConfiguration(Configuration configuration = {});
 
         friend Instance;
+        friend Surface;
 
       private:
-        void assign(const Instance& instance);
+        inline SDL_Window* getHandle() const;
+        Configuration      getConfiguration(Configuration configuration = {});
 
         static std::atomic_size_t m_instanceCount;
 

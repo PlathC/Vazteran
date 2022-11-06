@@ -53,7 +53,6 @@ namespace vzt
 
         inline VkInstance getHandle() const;
         Device            getDevice();
-        Device            getDevice(VkSurfaceKHR surface);
 
       private:
         VkInstance               m_handle         = VK_NULL_HANDLE;
