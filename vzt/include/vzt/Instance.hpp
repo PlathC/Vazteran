@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Vulkan.hpp"
+#include "vzt/Device.hpp"
 
 namespace vzt
 {
@@ -24,7 +26,7 @@ namespace vzt
         constexpr const char* VkDebugUtils = "VK_EXT_debug_utils";
     } // namespace extension
 
-    struct Configuration
+    struct InstanceConfiguration
     {
 #ifdef NDEBUG
         bool                     enableValidation = false;
@@ -37,11 +39,12 @@ namespace vzt
 #endif
     };
 
+    bool hasValidationLayers(const std::vector<const char*>& validationLayers);
     class Instance
     {
       public:
-        Instance(const std::string& name, Configuration configuration = {});
-        Instance(Window& window, Configuration configuration = {});
+        Instance(const std::string& name, InstanceConfiguration configuration = {});
+        Instance(Window& window, InstanceConfiguration configuration = {});
 
         Instance(const Instance&)            = delete;
         Instance& operator=(const Instance&) = delete;
@@ -51,17 +54,14 @@ namespace vzt
 
         ~Instance();
 
-        inline VkInstance getHandle() const;
-        Device            getDevice();
+        inline VkInstance                   getHandle() const;
+        inline const InstanceConfiguration& getConfiguration() const;
+        std::optional<Device> getDevice(DeviceConfiguration configuration = {}, View<Surface> surface = {});
 
       private:
         VkInstance               m_handle         = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
-
-        struct DeviceHandle
-        {
-        };
-        std::vector<DeviceHandle> m_devices;
+        InstanceConfiguration    m_configuration;
     };
 
     class Surface
@@ -77,13 +77,12 @@ namespace vzt
 
         ~Surface();
 
-      private:
-        const Instance* m_instance = nullptr;
-        VkSurfaceKHR    m_handle   = VK_NULL_HANDLE;
-    };
+        inline VkSurfaceKHR getHandle() const;
 
-    class Device
-    {
+      private:
+        const Instance*                        m_instance = nullptr;
+        VkSurfaceKHR                           m_handle   = VK_NULL_HANDLE;
+        std::unordered_map<QueueType, VkQueue> m_queues;
     };
 } // namespace vzt
 

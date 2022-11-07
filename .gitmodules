@@ -4,3 +4,6 @@
 [submodule "vzt/extern/SDL"]
 	path = vzt/extern/SDL
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "vzt/extern/VulkanMemoryAllocator"]
+	path = vzt/extern/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

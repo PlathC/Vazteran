@@ -50,18 +50,17 @@ namespace vzt
 
     Window::~Window()
     {
+        if (!m_handle)
+            return;
 
-        if (m_handle)
-        {
-            SDL_DestroyWindow(m_handle);
+        SDL_DestroyWindow(m_handle);
 
-            m_instanceCount--;
-            if (m_instanceCount == 0)
-                SDL_Quit();
-        }
+        m_instanceCount--;
+        if (m_instanceCount == 0)
+            SDL_Quit();
     }
 
-    Configuration Window::getConfiguration(Configuration configuration)
+    InstanceConfiguration Window::getConfiguration(InstanceConfiguration configuration)
     {
         uint32_t count = 0;
         if (!SDL_Vulkan_GetInstanceExtensions(m_handle, &count, nullptr))

@@ -9,6 +9,7 @@ int main(int argc, char** argv)
     auto window   = vzt::Window{ApplicationName};
     auto instance = vzt::Instance{window};
     auto surface  = vzt::Surface{window, instance};
+    auto device   = instance.getDevice(vzt::DeviceConfiguration{}, surface);
 
     return EXIT_SUCCESS;
 }

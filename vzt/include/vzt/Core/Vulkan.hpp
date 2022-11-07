@@ -1,7 +1,10 @@
 #ifndef VZT_CORE_VULKAN_HPP
 #define VZT_CORE_VULKAN_HPP
 
+#include <optional>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
 // Forward declarations
 #ifndef VULKAN_H_
@@ -22,14 +25,19 @@ VK_DEFINE_HANDLE(VkInstance)
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkDebugUtilsMessengerEXT)
 VK_DEFINE_HANDLE(VkPhysicalDevice)
 VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSurfaceKHR)
+VK_DEFINE_HANDLE(VkDevice)
+VK_DEFINE_HANDLE(VkQueue)
+VK_DEFINE_HANDLE(VmaAllocator)
 
 enum VkResult : int;
 
 #endif // VULKAN_H_
+
 // Helpers
 namespace vzt
 {
-    void vkCheck(VkResult result, std::string_view msg);
-}
+    void     vkCheck(VkResult result, std::string_view msg);
+    uint32_t getAPIVersion();
+} // namespace vzt
 
 #endif // VZT_CORE_VULKAN_HPP

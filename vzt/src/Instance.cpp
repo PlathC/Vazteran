@@ -11,7 +11,7 @@
 
 namespace vzt
 {
-    bool checkConfiguration(const Configuration& configuration)
+    bool hasValidationLayers(const std::vector<const char*>& validationLayers)
     {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -19,7 +19,7 @@ namespace vzt
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-        for (const std::string& layerName : configuration.validationLayers)
+        for (const std::string& layerName : validationLayers)
         {
             bool layerFound = false;
             for (const auto& layerProperties : availableLayers)
@@ -58,9 +58,9 @@ namespace vzt
         return VK_FALSE;
     }
 
-    Instance::Instance(const std::string& name, Configuration configuration)
+    Instance::Instance(const std::string& name, InstanceConfiguration configuration) : m_configuration(configuration)
     {
-        if (configuration.enableValidation && !checkConfiguration(configuration))
+        if (configuration.enableValidation && !hasValidationLayers(configuration.validationLayers))
             logger::error("Instance configuration validation failed");
 
         VkApplicationInfo appInfo{};
@@ -112,7 +112,7 @@ namespace vzt
                 "Failed to create debug messenger");
     }
 
-    Instance::Instance(Window& window, Configuration configuration)
+    Instance::Instance(Window& window, InstanceConfiguration configuration)
         : Instance(std::string(window.getTitle()), window.getConfiguration(configuration))
     {
     }
@@ -120,13 +120,15 @@ namespace vzt
     Instance::Instance(Instance&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-        std::swap(m_devices, other.m_devices);
+        std::swap(m_debugMessenger, other.m_debugMessenger);
+        std::swap(m_configuration, other.m_configuration);
     }
 
     Instance& Instance::operator=(Instance&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
-        std::swap(m_devices, other.m_devices);
+        std::swap(m_debugMessenger, other.m_debugMessenger);
+        std::swap(m_configuration, other.m_configuration);
 
         return *this;
     }
@@ -140,11 +142,36 @@ namespace vzt
             vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
         if (vkDestroyDebugUtilsMessengerEXT != nullptr && m_handle != VK_NULL_HANDLE &&
             m_debugMessenger != VK_NULL_HANDLE)
-        {
             vkDestroyDebugUtilsMessengerEXT(m_handle, m_debugMessenger, nullptr);
-        }
 
         vkDestroyInstance(m_handle, nullptr);
+    }
+
+    std::optional<Device> Instance::getDevice(DeviceConfiguration configuration, View<Surface> surface)
+    {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
+        if (deviceCount == 0)
+            logger::error("Failed to find GPUs with Vulkan support!");
+
+        auto devices = std::vector<VkPhysicalDevice>(deviceCount);
+        vkEnumeratePhysicalDevices(m_handle, &deviceCount, devices.data());
+
+        View<PhysicalDevice> selectedDevice{};
+        for (uint32_t i = 0; i < deviceCount; i++)
+        {
+            const auto& device = PhysicalDevice(devices[i]);
+            if (device.isSuitable(configuration, surface))
+            {
+                selectedDevice = device;
+                break;
+            }
+        }
+
+        if (!selectedDevice)
+            return {};
+
+        return Device(this, *selectedDevice, configuration);
     }
 
     Surface::Surface(const Window& window, const Instance& instance) : m_instance(&instance)

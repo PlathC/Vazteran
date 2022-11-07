@@ -8,6 +8,8 @@ add_subdirectory(SDL)
 # Prepare data for parent scope
 set(VZT_EXTERN_INCLUDES
     ${VZT_EXTERN_INCLUDES}
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
 )
 
 set(VZT_EXTERN_LIBRARIES

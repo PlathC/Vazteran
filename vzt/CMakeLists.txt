@@ -19,8 +19,10 @@ set(VZT_EXTERN_LIBRARIES
 
 set(VZT_HEADERS
     include/vzt/Core/Logger.hpp
+    include/vzt/Core/Type.hpp
     include/vzt/Core/Vulkan.hpp
 
+    include/vzt/Device.hpp
     include/vzt/Instance.hpp
     include/vzt/Window.hpp
 )
@@ -29,6 +31,7 @@ set(VZT_SOURCES
     src/Core/Logger.cpp
     src/Core/Vulkan.cpp
 
+    src/Device.cpp
     src/Instance.cpp
     src/Window.cpp
 )
