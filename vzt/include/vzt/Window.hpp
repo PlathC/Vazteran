@@ -3,6 +3,7 @@
 
 #include <atomic>
 
+#include "vzt/Core/Math.hpp"
 #include "vzt/Instance.hpp"
 
 struct SDL_Window;
@@ -24,6 +25,7 @@ namespace vzt
         inline std::string_view getTitle() const;
         inline uint32_t         getWith() const;
         inline uint32_t         getHeight() const;
+        inline Extent2D         getExtent() const;
 
         friend Instance;
         friend Surface;

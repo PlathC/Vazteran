@@ -1,37 +1,15 @@
 #ifndef VZT_CORE_VULKAN_HPP
 #define VZT_CORE_VULKAN_HPP
 
-#include <optional>
-#include <string_view>
 #include <unordered_map>
-#include <vector>
 
-// Forward declarations
-#ifndef VULKAN_H_
+#include <vulkan/vulkan_core.h>
 
-#define NO_SDL_VULKAN_TYPEDEFS
-
-#define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
-
-#if defined(__LP64__) || defined(_WIN64) || defined(__x86_64__) || defined(_M_X64) || defined(__ia64) || \
-    defined(_M_IA64) || defined(__aarch64__) || defined(__powerpc64__)
-#define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef struct object##_T* object;
-#else
-#define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef uint64_t object;
-#endif
-
-#define VK_NULL_HANDLE nullptr
-VK_DEFINE_HANDLE(VkInstance)
-VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkDebugUtilsMessengerEXT)
-VK_DEFINE_HANDLE(VkPhysicalDevice)
-VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSurfaceKHR)
-VK_DEFINE_HANDLE(VkDevice)
-VK_DEFINE_HANDLE(VkQueue)
-VK_DEFINE_HANDLE(VmaAllocator)
-
-enum VkResult : int;
-
-#endif // VULKAN_H_
+#define VZT_DEFINE_TO_VULKAN_FUNCTION(BaseType, VulkanType) \
+    inline constexpr VulkanType toVulkan(const BaseType l)  \
+    {                                                       \
+        return static_cast<VulkanType>(l);                  \
+    }
 
 // Helpers
 namespace vzt

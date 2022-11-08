@@ -11,19 +11,17 @@ if( NOT TARGET Vulkan::Vulkan)
     message("Can't find fulkan")
 endif()
 
-set(VZT_EXTERN_LIBRARIES
-    ${VZT_EXTERN_LIBRARIES}
-
-    Vulkan::Vulkan
-)
-
 set(VZT_HEADERS
     include/vzt/Core/Logger.hpp
+    include/vzt/Core/Math.hpp
+    include/vzt/Core/Meta.hpp
     include/vzt/Core/Type.hpp
     include/vzt/Core/Vulkan.hpp
 
     include/vzt/Device.hpp
     include/vzt/Instance.hpp
+    include/vzt/Surface.hpp
+    include/vzt/Swapchain.hpp
     include/vzt/Window.hpp
 )
 
@@ -33,6 +31,8 @@ set(VZT_SOURCES
 
     src/Device.cpp
     src/Instance.cpp
+    src/Surface.cpp
+    src/Swapchain.cpp
     src/Window.cpp
 )
 
@@ -45,5 +45,7 @@ target_include_directories(Vazteran PRIVATE ${VZT_EXTERN_INCLUDES} include/)
 target_link_libraries(     Vazteran PRIVATE ${VZT_EXTERN_LIBRARIES})
 target_compile_features(   Vazteran PRIVATE cxx_std_17)
 
+target_link_libraries(     Vazteran PUBLIC  Vulkan::Vulkan)
+target_include_directories(Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_INCLUDES})
 
 target_include_directories(Vazteran INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)

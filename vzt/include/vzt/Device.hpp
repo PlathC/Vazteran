@@ -1,8 +1,12 @@
 #ifndef VZT_DEVICE_HPP
 #define VZT_DEVICE_HPP
 
+#include <optional>
 #include <set>
 #include <vector>
+
+#include <vk_mem_alloc.h>
+#include <vulkan/vulkan_core.h>
 
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
@@ -24,10 +28,11 @@ namespace vzt
     enum class QueueType : uint8_t
     {
         None     = 0,
-        Transfer = 1,
-        Compute  = 2,
-        Graphics = 4
+        Transfer = VK_QUEUE_TRANSFER_BIT,
+        Compute  = VK_QUEUE_COMPUTE_BIT,
+        Graphics = VK_QUEUE_GRAPHICS_BIT
     };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(QueueType, VkQueueFlagBits)
     VZT_DEFINE_BITWISE_FUNCTIONS(QueueType)
 
     struct DeviceConfiguration
@@ -49,10 +54,11 @@ namespace vzt
     {
       public:
         PhysicalDevice(VkPhysicalDevice handle);
-        ~PhysicalDevice() = default;
 
         bool isSuitable(DeviceConfiguration configuration, View<Surface> surface = {}) const;
         bool hasExtensions(const std::vector<const char*>& extensions) const;
+        std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
+        std::optional<uint32_t>              getPresentQueueFamilyIndex(View<Surface> surface) const;
 
         inline VkPhysicalDevice getHandle() const;
 
@@ -60,22 +66,7 @@ namespace vzt
         VkPhysicalDevice m_handle = VK_NULL_HANDLE;
     };
 
-    class Queue
-    {
-      public:
-        Queue(View<Device> device, QueueType type, uint32_t id);
-        ~Queue() = default;
-
-        inline QueueType getType() const;
-
-      private:
-        View<Device> m_device{};
-
-        VkQueue   m_handle{};
-        QueueType m_type;
-        uint32_t  m_id;
-    };
-
+    class Queue;
     class Device
     {
       public:
@@ -89,8 +80,10 @@ namespace vzt
 
         ~Device();
 
-        bool            hasQueue() const;
-        inline VkDevice getHandle() const;
+        std::vector<View<Queue>> getQueues() const;
+        View<Queue>              getQueue(QueueType type) const;
+        inline VkDevice          getHandle() const;
+        inline PhysicalDevice    getHardware() const;
 
       private:
         View<Instance> m_instance;
@@ -98,8 +91,25 @@ namespace vzt
         VkDevice       m_handle    = VK_NULL_HANDLE;
         VmaAllocator   m_allocator = VK_NULL_HANDLE;
 
-        static bool isSameQueue(const Queue& q1, const Queue& q2) { return q1.getType() < q2.getType(); }
+        static inline bool                      isSameQueue(const Queue& q1, const Queue& q2);
         std::set<Queue, decltype(&isSameQueue)> m_queues{&isSameQueue};
+    };
+
+    class Queue
+    {
+      public:
+        Queue(View<Device> device, QueueType type, uint32_t id);
+        ~Queue() = default;
+
+        inline QueueType getType() const;
+        inline uint32_t  getId() const;
+
+      private:
+        View<Device> m_device{};
+
+        VkQueue   m_handle{};
+        QueueType m_type;
+        uint32_t  m_id;
     };
 } // namespace vzt
 

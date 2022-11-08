@@ -1,14 +1,14 @@
 #include "vzt/Device.hpp"
 
 #include <set>
-#include <stdexcept>
+#include <unordered_map>
 
 #define VMA_IMPLEMENTATION
-
 #include <vk_mem_alloc.h>
-#include <vulkan/vulkan_core.h>
 
+#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Instance.hpp"
+#include "vzt/Surface.hpp"
 
 namespace vzt
 {
@@ -44,14 +44,10 @@ namespace vzt
 
     bool PhysicalDevice::isSuitable(DeviceConfiguration configuration, View<Surface> surface) const
     {
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(m_handle, &queueFamilyCount, nullptr);
-
-        std::vector<VkQueueFamilyProperties> queueFamilies{queueFamilyCount};
-        vkGetPhysicalDeviceQueueFamilyProperties(m_handle, &queueFamilyCount, queueFamilies.data());
+        std::vector<VkQueueFamilyProperties> queueFamilies = getQueueFamiliesProperties();
 
         VkBool32 presentSupport = false;
-        for (uint32_t i = 0; i < queueFamilyCount; i++)
+        for (uint32_t i = 0; i < queueFamilies.size(); i++)
         {
             const auto& queueFamily = queueFamilies[i];
 
@@ -99,23 +95,45 @@ namespace vzt
         return requiredExtensions.empty();
     }
 
+    std::vector<VkQueueFamilyProperties> PhysicalDevice::getQueueFamiliesProperties() const
+    {
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(m_handle, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies{queueFamilyCount};
+        vkGetPhysicalDeviceQueueFamilyProperties(m_handle, &queueFamilyCount, queueFamilies.data());
+
+        return queueFamilies;
+    }
+
+    std::optional<uint32_t> PhysicalDevice::getPresentQueueFamilyIndex(View<Surface> surface) const
+    {
+        const auto queueFamiliesProperties = getQueueFamiliesProperties();
+        for (std::size_t i = 0; i < queueFamiliesProperties.size(); i++)
+        {
+            VkQueueFamilyProperties properties     = queueFamiliesProperties[i];
+            VkBool32                presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(m_handle, static_cast<uint32_t>(i), surface->getHandle(),
+                                                 &presentSupport);
+            if (presentSupport)
+                return static_cast<uint32_t>(i);
+        }
+
+        return {};
+    }
+
     Device::Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration)
         : m_instance(instance), m_device(device)
     {
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
-
-        QueueType   queueTypes    = configuration.queueTypes;
-        const float queuePriority = 1.0f;
-
+        std::vector<VkDeviceQueueCreateInfo>    queueCreateInfos{};
         std::unordered_map<QueueType, uint32_t> queueIds{};
-        uint32_t                                queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(m_device.getHandle(), &queueFamilyCount, nullptr);
 
-        std::vector<VkQueueFamilyProperties> queueFamilies{queueFamilyCount};
-        vkGetPhysicalDeviceQueueFamilyProperties(m_device.getHandle(), &queueFamilyCount, queueFamilies.data());
-        for (uint32_t i = 0; i < queueFamilyCount; i++)
+        const auto      queuesFamilies = m_device.getQueueFamiliesProperties();
+        QueueType       queueTypes     = configuration.queueTypes;
+        constexpr float queuePriority  = 1.0f;
+        for (uint32_t i = 0; any(queueTypes) && i < queuesFamilies.size(); i++)
         {
-            const auto& queueFamily = queueFamilies[i];
+            const auto& queueFamily = queuesFamilies[i];
 
             QueueType selected = QueueType::None;
             if (any(queueTypes & QueueType::Graphics) && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
@@ -125,7 +143,11 @@ namespace vzt
             else if (any(queueTypes & QueueType::Transfer) && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT))
                 selected = QueueType::Transfer;
 
+            if (!any(selected))
+                continue;
+
             queueIds[selected] = i;
+            queueTypes         = queueTypes & ~selected;
 
             VkDeviceQueueCreateInfo queueCreateInfo{};
             queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -200,9 +222,28 @@ namespace vzt
             vkDestroyDevice(m_handle, nullptr);
     }
 
+    std::vector<View<Queue>> Device::getQueues() const
+    {
+        std::vector<View<Queue>> queues{};
+        for (const auto& queue : m_queues)
+            queues.emplace_back(queue);
+
+        return queues;
+    }
+
+    View<Queue> Device::getQueue(QueueType type) const
+    {
+        for (const auto& queue : m_queues)
+        {
+            if (queue.getType() == type)
+                return queue;
+        }
+
+        return {};
+    }
+
     Queue::Queue(View<Device> device, QueueType type, uint32_t id) : m_device(device), m_type(type), m_id(id)
     {
         vkGetDeviceQueue(device->getHandle(), id, 0, &m_handle);
     }
-
 } // namespace vzt

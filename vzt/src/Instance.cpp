@@ -1,12 +1,7 @@
 #include "vzt/Instance.hpp"
 
-#include <iostream>
-#include <stdexcept>
-
-#include <SDL_vulkan.h>
-#include <vulkan/vulkan.h>
-
 #include "vzt/Core/Logger.hpp"
+#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Window.hpp"
 
 namespace vzt
@@ -147,7 +142,7 @@ namespace vzt
         vkDestroyInstance(m_handle, nullptr);
     }
 
-    std::optional<Device> Instance::getDevice(DeviceConfiguration configuration, View<Surface> surface)
+    Device Instance::getDevice(DeviceConfiguration configuration, View<Surface> surface)
     {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
@@ -160,44 +155,13 @@ namespace vzt
         View<PhysicalDevice> selectedDevice{};
         for (uint32_t i = 0; i < deviceCount; i++)
         {
-            const auto& device = PhysicalDevice(devices[i]);
+            const auto device = PhysicalDevice(devices[i]);
             if (device.isSuitable(configuration, surface))
-            {
-                selectedDevice = device;
-                break;
-            }
+                return Device(this, device, configuration);
         }
 
-        if (!selectedDevice)
-            return {};
-
-        return Device(this, *selectedDevice, configuration);
-    }
-
-    Surface::Surface(const Window& window, const Instance& instance) : m_instance(&instance)
-    {
-        if (!SDL_Vulkan_CreateSurface(window.getHandle(), instance.getHandle(), &m_handle))
-            logger::error("[SDL] {}", SDL_GetError());
-    }
-
-    Surface::Surface(Surface&& other) noexcept
-    {
-        std::swap(m_instance, other.m_instance);
-        std::swap(m_handle, other.m_handle);
-    }
-
-    Surface& Surface::operator=(Surface&& other) noexcept
-    {
-        std::swap(m_instance, other.m_instance);
-        std::swap(m_handle, other.m_handle);
-
-        return *this;
-    }
-
-    Surface::~Surface()
-    {
-        if (m_handle != VK_NULL_HANDLE)
-            vkDestroySurfaceKHR(m_instance->getHandle(), m_handle, nullptr);
+        logger::error("Can't find suitable device, defaulting.");
+        return Device(this, PhysicalDevice(devices[0]), configuration);
     }
 
 } // namespace vzt

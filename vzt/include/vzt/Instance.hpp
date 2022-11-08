@@ -3,10 +3,11 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include "vzt/Core/Meta.hpp"
-#include "vzt/Core/Vulkan.hpp"
+#include <vulkan/vulkan_core.h>
+
 #include "vzt/Device.hpp"
 
 namespace vzt
@@ -56,33 +57,12 @@ namespace vzt
 
         inline VkInstance                   getHandle() const;
         inline const InstanceConfiguration& getConfiguration() const;
-        std::optional<Device> getDevice(DeviceConfiguration configuration = {}, View<Surface> surface = {});
+        Device getDevice(DeviceConfiguration configuration = {}, View<Surface> surface = {});
 
       private:
         VkInstance               m_handle         = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
         InstanceConfiguration    m_configuration;
-    };
-
-    class Surface
-    {
-      public:
-        Surface(const Window& window, const Instance& instance);
-
-        Surface(const Surface&)            = delete;
-        Surface& operator=(const Surface&) = delete;
-
-        Surface(Surface&&) noexcept;
-        Surface& operator=(Surface&&) noexcept;
-
-        ~Surface();
-
-        inline VkSurfaceKHR getHandle() const;
-
-      private:
-        const Instance*                        m_instance = nullptr;
-        VkSurfaceKHR                           m_handle   = VK_NULL_HANDLE;
-        std::unordered_map<QueueType, VkQueue> m_queues;
     };
 } // namespace vzt
 

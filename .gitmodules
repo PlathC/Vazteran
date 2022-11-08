@@ -7,3 +7,6 @@
 [submodule "vzt/extern/VulkanMemoryAllocator"]
 	path = vzt/extern/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "app/extern/glm"]
+	path = app/extern/glm
+	url = https://github.com/g-truc/glm.git
