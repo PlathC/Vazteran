@@ -157,11 +157,11 @@ namespace vzt
         {
             const auto device = PhysicalDevice(devices[i]);
             if (device.isSuitable(configuration, surface))
-                return Device(this, device, configuration);
+                return Device(this, device, configuration, surface);
         }
 
         logger::error("Can't find suitable device, defaulting.");
-        return Device(this, PhysicalDevice(devices[0]), configuration);
+        return Device(this, PhysicalDevice(devices[0]), configuration, surface);
     }
 
 } // namespace vzt

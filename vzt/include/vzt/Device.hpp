@@ -70,7 +70,8 @@ namespace vzt
     class Device
     {
       public:
-        Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration = {});
+        Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration = {},
+               View<Surface> surface = {});
 
         Device(const Device&)            = delete;
         Device& operator=(const Device&) = delete;
@@ -80,10 +81,14 @@ namespace vzt
 
         ~Device();
 
+        void wait() const;
+
         std::vector<View<Queue>> getQueues() const;
         View<Queue>              getQueue(QueueType type) const;
-        inline VkDevice          getHandle() const;
-        inline PhysicalDevice    getHardware() const;
+        View<Queue>              getPresentQueue() const;
+
+        inline VkDevice       getHandle() const;
+        inline PhysicalDevice getHardware() const;
 
       private:
         View<Instance> m_instance;
@@ -98,11 +103,13 @@ namespace vzt
     class Queue
     {
       public:
-        Queue(View<Device> device, QueueType type, uint32_t id);
+        Queue(View<Device> device, QueueType type, uint32_t id, bool canPresent = false);
         ~Queue() = default;
 
+        inline VkQueue   getHandle() const;
         inline QueueType getType() const;
         inline uint32_t  getId() const;
+        inline bool      canPresent() const;
 
       private:
         View<Device> m_device{};
@@ -110,6 +117,7 @@ namespace vzt
         VkQueue   m_handle{};
         QueueType m_type;
         uint32_t  m_id;
+        bool      m_canPresent = false;
     };
 } // namespace vzt
 

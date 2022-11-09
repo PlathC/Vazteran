@@ -111,8 +111,7 @@ namespace vzt
         const auto queueFamiliesProperties = getQueueFamiliesProperties();
         for (std::size_t i = 0; i < queueFamiliesProperties.size(); i++)
         {
-            VkQueueFamilyProperties properties     = queueFamiliesProperties[i];
-            VkBool32                presentSupport = false;
+            VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(m_handle, static_cast<uint32_t>(i), surface->getHandle(),
                                                  &presentSupport);
             if (presentSupport)
@@ -122,7 +121,8 @@ namespace vzt
         return {};
     }
 
-    Device::Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration)
+    Device::Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration,
+                   View<Surface> surface)
         : m_instance(instance), m_device(device)
     {
         std::vector<VkDeviceQueueCreateInfo>    queueCreateInfos{};
@@ -181,8 +181,15 @@ namespace vzt
                 "Failed to create logical device.");
 
         queueTypes = configuration.queueTypes;
+
+        uint32_t presentQueueId = ~0;
+        if (surface)
+        {
+            const auto id  = m_device.getPresentQueueFamilyIndex(surface);
+            presentQueueId = id ? *id : presentQueueId;
+        }
         for (auto [type, id] : queueIds)
-            m_queues.emplace(this, type, id);
+            m_queues.emplace(this, type, id, id == presentQueueId);
 
         VmaAllocatorCreateInfo allocatorInfo = {};
         allocatorInfo                        = {};
@@ -222,6 +229,8 @@ namespace vzt
             vkDestroyDevice(m_handle, nullptr);
     }
 
+    void Device::wait() const { vkDeviceWaitIdle(m_handle); }
+
     std::vector<View<Queue>> Device::getQueues() const
     {
         std::vector<View<Queue>> queues{};
@@ -242,7 +251,19 @@ namespace vzt
         return {};
     }
 
-    Queue::Queue(View<Device> device, QueueType type, uint32_t id) : m_device(device), m_type(type), m_id(id)
+    View<Queue> Device::getPresentQueue() const
+    {
+        for (const auto& queue : m_queues)
+        {
+            if (queue.canPresent())
+                return queue;
+        }
+
+        return {};
+    }
+
+    Queue::Queue(View<Device> device, QueueType type, uint32_t id, bool canPresent)
+        : m_device(device), m_type(type), m_id(id), m_canPresent(canPresent)
     {
         vkGetDeviceQueue(device->getHandle(), id, 0, &m_handle);
     }

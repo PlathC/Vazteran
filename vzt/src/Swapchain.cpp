@@ -1,5 +1,7 @@
 #include "vzt/Swapchain.hpp"
 
+#include <cassert>
+
 #include <vulkan/vulkan_core.h>
 
 #include "vzt/Core/Logger.hpp"
@@ -38,6 +40,7 @@ namespace vzt
                          SwapchainConfiguration configuration)
         : m_configuration(configuration), m_device(device), m_surface(surface), m_extent(extent)
     {
+        assert(m_device->getPresentQueue() && "Device must have a present queue to use the swapchain");
         create();
     }
 
@@ -54,6 +57,61 @@ namespace vzt
             imageInFlight = VK_NULL_HANDLE;
 
         cleanup();
+    }
+
+    std::optional<Submission> Swapchain::getSubmission()
+    {
+        vkWaitForFences(m_device->getHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
+
+        uint32_t       imageIndex;
+        const VkResult result =
+            vkAcquireNextImageKHR(m_device->getHandle(), m_handle, UINT64_MAX,
+                                  m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+            return {};
+        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+            logger::error("Failed to acquire swapchain image!");
+
+        // Check if a previous frame is using this image (i.e. there is its fence to wait on)
+        if (m_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
+            vkWaitForFences(m_device->getHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+
+        // Mark the image as now being in use by this frame
+        m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
+
+        Submission submission;
+        submission.imageId        = imageIndex;
+        submission.imageAvailable = m_imageAvailableSemaphores[m_currentFrame];
+        submission.renderComplete = m_renderFinishedSemaphores[m_currentFrame];
+        submission.frameComplete  = m_inFlightFences[m_currentFrame];
+        return submission;
+    }
+
+    bool Swapchain::present(const Submission& submission)
+    {
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores    = &m_renderFinishedSemaphores[m_currentFrame];
+
+        const VkSwapchainKHR swapChains[] = {m_handle};
+        presentInfo.swapchainCount        = 1;
+        presentInfo.pSwapchains           = swapChains;
+        presentInfo.pImageIndices         = &submission.imageId;
+
+        const View<Queue> presentQueue = m_device->getPresentQueue();
+        const VkResult    result       = vkQueuePresentKHR(presentQueue->getHandle(), &presentInfo);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
+        {
+            m_framebufferResized = false;
+            return true;
+        }
+
+        if (result != VK_SUCCESS)
+            logger::error("Failed to present swap chain image!");
+
+        m_currentFrame = (m_currentFrame + 1) % m_configuration.maxFramesInFlight;
+        return false;
     }
 
     void Swapchain::create()
@@ -78,16 +136,16 @@ namespace vzt
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage       = toVulkan(ImageUsage::ColorAttachment);
 
-        PhysicalDevice physicalDevice = m_device->getHardware();
-        auto           presentId      = physicalDevice.getPresentQueueFamilyIndex(m_surface);
-        if (!presentId)
+        auto queues = m_device->getQueues();
+        if (!m_device->getPresentQueue())
             logger::error("Picked device does not have presentation capabilities.");
 
-        View<Queue> graphicsQueue = m_device->getQueue(QueueType::Graphics);
+        std::vector<uint32_t> queueFamilyIndices{};
+        queueFamilyIndices.reserve(queues.size());
+        for (const auto& queue : queues)
+            queueFamilyIndices.emplace_back(queue->getId());
 
-        const uint32_t graphicsQueueId      = graphicsQueue->getId();
-        const uint32_t queueFamilyIndices[] = {graphicsQueueId, *presentId};
-        if (graphicsQueue->getId() == *presentId)
+        if (queueFamilyIndices.size() == 1)
         {
             createInfo.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
             createInfo.queueFamilyIndexCount = 0;
@@ -96,8 +154,8 @@ namespace vzt
         else
         {
             createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
-            createInfo.queueFamilyIndexCount = 2;
-            createInfo.pQueueFamilyIndices   = queueFamilyIndices;
+            createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
+            createInfo.pQueueFamilyIndices   = queueFamilyIndices.data();
         }
 
         createInfo.preTransform   = capabilities.currentTransform;
@@ -129,6 +187,9 @@ namespace vzt
             vkCheck(vkCreateFence(m_device->getHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]),
                     "Failed to create synchronization objects for a frame");
         }
+
+        m_images.resize(m_imageNb);
+        vkGetSwapchainImagesKHR(m_device->getHandle(), m_handle, &m_imageNb, m_images.data());
     }
 
     void Swapchain::cleanup()

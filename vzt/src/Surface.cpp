@@ -7,20 +7,22 @@
 
 namespace vzt
 {
-    Surface::Surface(const Window& window, const Instance& instance) : m_instance(&instance)
+    Surface::Surface(const Window& window, const Instance& instance) : m_window(window), m_instance(&instance)
     {
-        if (!SDL_Vulkan_CreateSurface(window.getHandle(), instance.getHandle(), &m_handle))
+        if (!SDL_Vulkan_CreateSurface(m_window->getHandle(), m_instance->getHandle(), &m_handle))
             logger::error("[SDL] {}", SDL_GetError());
     }
 
     Surface::Surface(Surface&& other) noexcept
     {
+        std::swap(m_window, other.m_window);
         std::swap(m_instance, other.m_instance);
         std::swap(m_handle, other.m_handle);
     }
 
     Surface& Surface::operator=(Surface&& other) noexcept
     {
+        std::swap(m_window, other.m_window);
         std::swap(m_instance, other.m_instance);
         std::swap(m_handle, other.m_handle);
 
@@ -72,5 +74,12 @@ namespace vzt
         }
 
         return presentModes;
+    }
+
+    Extent2D Surface::getExtent() const
+    {
+        int width, height;
+        SDL_Vulkan_GetDrawableSize(m_window->getHandle(), &width, &height);
+        return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
     }
 } // namespace vzt

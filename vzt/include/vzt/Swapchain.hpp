@@ -17,6 +17,14 @@ namespace vzt
         uint32_t maxFramesInFlight = 2;
     };
 
+    struct Submission
+    {
+        uint32_t    imageId;
+        VkSemaphore imageAvailable;
+        VkSemaphore renderComplete;
+        VkFence     frameComplete;
+    };
+
     class Swapchain
     {
       public:
@@ -24,9 +32,14 @@ namespace vzt
                   SwapchainConfiguration configuration = {});
         ~Swapchain();
 
+        // Empty submission if frame buffer changed
+        std::optional<Submission> getSubmission();
+        bool                      present(const Submission& submission);
+
+        std::vector<VkImage> getImages() const;
+
       private:
         void create();
-
         void cleanup();
 
         VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
@@ -37,8 +50,11 @@ namespace vzt
         View<Device>  m_device;
         View<Surface> m_surface;
         Extent2D      m_extent;
+        bool          m_framebufferResized = false;
 
-        uint32_t                 m_imageNb = 0u;
+        uint32_t                 m_currentFrame = 0u;
+        uint32_t                 m_imageNb      = 0u;
+        std::vector<VkImage>     m_images{};
         std::vector<VkSemaphore> m_imageAvailableSemaphores;
         std::vector<VkSemaphore> m_renderFinishedSemaphores;
         std::vector<VkFence>     m_inFlightFences;
