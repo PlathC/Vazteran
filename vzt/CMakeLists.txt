@@ -18,6 +18,7 @@ set(VZT_HEADERS
     include/vzt/Core/Type.hpp
     include/vzt/Core/Vulkan.hpp
 
+    include/vzt/Command.hpp
     include/vzt/Device.hpp
     include/vzt/Instance.hpp
     include/vzt/Surface.hpp
@@ -29,6 +30,7 @@ set(VZT_SOURCES
     src/Core/Logger.cpp
     src/Core/Vulkan.cpp
 
+    src/Command.cpp
     src/Device.cpp
     src/Instance.cpp
     src/Surface.cpp

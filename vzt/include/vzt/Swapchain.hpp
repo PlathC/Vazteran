@@ -36,13 +36,13 @@ namespace vzt
         std::optional<Submission> getSubmission();
         bool                      present(const Submission& submission);
 
-        std::vector<VkImage> getImages() const;
+        inline const std::vector<VkImage>& getImages() const;
 
       private:
         void create();
         void cleanup();
 
-        VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+        VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
         VkSwapchainKHR         m_handle = VK_NULL_HANDLE;
         SwapchainConfiguration m_configuration;
@@ -61,5 +61,7 @@ namespace vzt
         std::vector<VkFence>     m_imagesInFlight;
     };
 } // namespace vzt
+
+#include "vzt/Swapchain.inl"
 
 #endif // VZT_SWAPCHAIN_HPP

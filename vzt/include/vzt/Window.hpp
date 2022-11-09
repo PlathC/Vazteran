@@ -27,6 +27,8 @@ namespace vzt
         inline uint32_t         getHeight() const;
         inline Extent2D         getExtent() const;
 
+        bool update();
+
         friend Instance;
         friend Surface;
 

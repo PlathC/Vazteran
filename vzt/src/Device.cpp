@@ -123,7 +123,7 @@ namespace vzt
 
     Device::Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration,
                    View<Surface> surface)
-        : m_instance(instance), m_device(device)
+        : m_instance(instance), m_device(device), m_configuration(configuration)
     {
         std::vector<VkDeviceQueueCreateInfo>    queueCreateInfos{};
         std::unordered_map<QueueType, uint32_t> queueIds{};
@@ -242,6 +242,9 @@ namespace vzt
 
     View<Queue> Device::getQueue(QueueType type) const
     {
+        assert(any(m_configuration.queueTypes & type) &&
+               "This device has not been configured with the requested queue.");
+
         for (const auto& queue : m_queues)
         {
             if (queue.getType() == type)

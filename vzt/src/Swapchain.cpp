@@ -120,7 +120,7 @@ namespace vzt
         const VkPresentModeKHR   presentMode   = chooseSwapPresentMode(m_surface->getPresentModes(m_device));
 
         const VkSurfaceCapabilitiesKHR capabilities = m_surface->getCapabilities(m_device);
-        const VkExtent2D               extent       = chooseSwapExtent(capabilities);
+        const VkExtent2D               extent       = chooseExtent(capabilities);
 
         m_imageNb = capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && m_imageNb > capabilities.maxImageCount)
@@ -203,7 +203,7 @@ namespace vzt
         vkDestroySwapchainKHR(m_device->getHandle(), m_handle, nullptr);
     }
 
-    VkExtent2D Swapchain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+    VkExtent2D Swapchain::chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities) const
     {
         if (capabilities.currentExtent.width != UINT32_MAX)
             return capabilities.currentExtent;

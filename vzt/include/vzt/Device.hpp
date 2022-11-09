@@ -93,8 +93,10 @@ namespace vzt
       private:
         View<Instance> m_instance;
         PhysicalDevice m_device;
-        VkDevice       m_handle    = VK_NULL_HANDLE;
-        VmaAllocator   m_allocator = VK_NULL_HANDLE;
+
+        VkDevice            m_handle    = VK_NULL_HANDLE;
+        VmaAllocator        m_allocator = VK_NULL_HANDLE;
+        DeviceConfiguration m_configuration;
 
         static inline bool                      isSameQueue(const Queue& q1, const Queue& q2);
         std::set<Queue, decltype(&isSameQueue)> m_queues{&isSameQueue};

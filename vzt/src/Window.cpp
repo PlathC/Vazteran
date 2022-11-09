@@ -60,6 +60,19 @@ namespace vzt
             SDL_Quit();
     }
 
+    bool Window::update()
+    {
+        bool      closing = false;
+        SDL_Event windowEvent;
+        while (SDL_PollEvent(&windowEvent))
+        {
+            if (windowEvent.type == SDL_QUIT)
+                closing = true;
+        }
+
+        return !closing;
+    }
+
     InstanceConfiguration Window::getConfiguration(InstanceConfiguration configuration)
     {
         uint32_t count = 0;
