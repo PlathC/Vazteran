@@ -6,9 +6,11 @@
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
+#include "vzt/Command.hpp"
 #include "vzt/Core/Vulkan.hpp"
 #include "vzt/Instance.hpp"
 #include "vzt/Surface.hpp"
+#include "vzt/Swapchain.hpp"
 
 namespace vzt
 {
@@ -106,19 +108,14 @@ namespace vzt
         return queueFamilies;
     }
 
-    std::optional<uint32_t> PhysicalDevice::getPresentQueueFamilyIndex(View<Surface> surface) const
+    bool PhysicalDevice::canQueueFamilyPresent(uint32_t id, View<Surface> surface) const
     {
         const auto queueFamiliesProperties = getQueueFamiliesProperties();
-        for (std::size_t i = 0; i < queueFamiliesProperties.size(); i++)
-        {
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(m_handle, static_cast<uint32_t>(i), surface->getHandle(),
-                                                 &presentSupport);
-            if (presentSupport)
-                return static_cast<uint32_t>(i);
-        }
 
-        return {};
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(m_handle, id, surface->getHandle(), &presentSupport);
+
+        return presentSupport;
     }
 
     Device::Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration,
@@ -183,13 +180,8 @@ namespace vzt
         queueTypes = configuration.queueTypes;
 
         uint32_t presentQueueId = ~0;
-        if (surface)
-        {
-            const auto id  = m_device.getPresentQueueFamilyIndex(surface);
-            presentQueueId = id ? *id : presentQueueId;
-        }
         for (auto [type, id] : queueIds)
-            m_queues.emplace(this, type, id, id == presentQueueId);
+            m_queues.emplace(this, type, id, m_device.canQueueFamilyPresent(id, surface));
 
         VmaAllocatorCreateInfo allocatorInfo = {};
         allocatorInfo                        = {};
@@ -222,11 +214,13 @@ namespace vzt
 
     Device::~Device()
     {
-        if (m_allocator != VK_NULL_HANDLE)
-            vmaDestroyAllocator(m_allocator);
+        if (m_handle == VK_NULL_HANDLE)
+            return;
 
-        if (m_handle != VK_NULL_HANDLE)
-            vkDestroyDevice(m_handle, nullptr);
+        wait();
+
+        vmaDestroyAllocator(m_allocator);
+        vkDestroyDevice(m_handle, nullptr);
     }
 
     void Device::wait() const { vkDeviceWaitIdle(m_handle); }
@@ -270,4 +264,28 @@ namespace vzt
     {
         vkGetDeviceQueue(device->getHandle(), id, 0, &m_handle);
     }
+
+    void Queue::submit(const CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const
+    {
+        assert(m_canPresent && "This queue is unable to present and is used for a swapchain submission");
+
+        const VkCommandBuffer commands = commandBuffer.getHandle();
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        constexpr VkPipelineStageFlags waitStage =
+            VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        submitInfo.pWaitDstStageMask    = &waitStage;
+        submitInfo.waitSemaphoreCount   = 1;
+        submitInfo.pWaitSemaphores      = &submission.imageAvailable;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores    = &submission.renderComplete;
+        submitInfo.commandBufferCount   = 1;
+        submitInfo.pCommandBuffers      = &commands;
+
+        vkResetFences(m_device->getHandle(), 1, &submission.frameComplete);
+        vzt::vkCheck(vkQueueSubmit(m_handle, 1, &submitInfo, submission.frameComplete),
+                     "Failed to submit swapchain submission");
+    }
+
 } // namespace vzt

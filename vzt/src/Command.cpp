@@ -6,7 +6,7 @@
 
 namespace vzt
 {
-    CommandBuffer::CommandBuffer(VkCommandBuffer& handle) : m_handle(&handle)
+    CommandBuffer::CommandBuffer(VkCommandBuffer handle) : m_handle(handle)
     {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -14,22 +14,93 @@ namespace vzt
         vkCheck(vkBeginCommandBuffer(handle, &beginInfo), "Failed to start the recording of the command buffer");
     }
 
-    CommandBuffer::CommandBuffer(CommandBuffer&& other) noexcept { std::swap(m_handle, other.m_handle); }
+    CommandBuffer::CommandBuffer(CommandBuffer&& other) noexcept
+    {
+        std::swap(m_handle, other.m_handle);
+        std::swap(m_flushed, other.m_flushed);
+    }
+
     CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
+        std::swap(m_flushed, other.m_flushed);
 
         return *this;
     }
 
-    CommandBuffer::~CommandBuffer() { flush(); }
+    CommandBuffer::~CommandBuffer()
+    {
+        if (m_handle)
+            flush();
+    }
+
+    void CommandBuffer::barrier(PipelineBarrier barrier)
+    {
+        std::vector<VkImageMemoryBarrier> imageBarriers{};
+        imageBarriers.reserve(barrier.imageBarriers.size());
+
+        for (const auto& baseBarrier : barrier.imageBarriers)
+        {
+            VkImageMemoryBarrier imageBarrier{};
+            imageBarrier.sType     = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarrier.oldLayout = toVulkan(baseBarrier.oldLayout);
+            imageBarrier.newLayout = toVulkan(baseBarrier.newLayout);
+            imageBarrier.srcQueueFamilyIndex =
+                baseBarrier.srcQueue ? baseBarrier.srcQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex =
+                baseBarrier.dstQueue ? baseBarrier.dstQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
+
+            imageBarrier.image = baseBarrier.image;
+
+            // TODO: Rewrite based on image properties
+            imageBarrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBarrier.subresourceRange.baseMipLevel   = 0;
+            imageBarrier.subresourceRange.levelCount     = 1;
+            imageBarrier.subresourceRange.baseArrayLayer = 0;
+            imageBarrier.subresourceRange.layerCount     = 1;
+
+            imageBarriers.emplace_back(std::move(imageBarrier));
+        }
+
+        std::vector<VkBufferMemoryBarrier> bufferBarriers{};
+        bufferBarriers.reserve(barrier.bufferBarriers.size());
+        for (const auto& baseBarrier : barrier.bufferBarriers)
+        {
+            VkBufferMemoryBarrier bufferBarrier{};
+            bufferBarrier.sType         = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+            bufferBarrier.srcAccessMask = toVulkan(baseBarrier.src);
+            bufferBarrier.dstAccessMask = toVulkan(baseBarrier.dst);
+            bufferBarrier.srcQueueFamilyIndex =
+                baseBarrier.srcQueue ? baseBarrier.srcQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
+            bufferBarrier.dstQueueFamilyIndex =
+                baseBarrier.dstQueue ? baseBarrier.dstQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
+
+            bufferBarriers.emplace_back(std::move(bufferBarrier));
+        }
+
+        vkCmdPipelineBarrier(m_handle, toVulkan(barrier.src), toVulkan(barrier.dst), toVulkan(barrier.dependency), 0,
+                             nullptr, static_cast<uint32_t>(bufferBarriers.size()), bufferBarriers.data(),
+                             static_cast<uint32_t>(imageBarriers.size()), imageBarriers.data());
+    }
+
+    void CommandBuffer::barrier(PipelineStage src, PipelineStage dst, ImageBarrier imageBarrier)
+    {
+        PipelineBarrier pipelineBarrier{src, dst, std::vector{std::move(imageBarrier)}};
+        barrier(std::move(pipelineBarrier));
+    }
+
+    void CommandBuffer::barrier(PipelineStage src, PipelineStage dst, BufferBarrier bufferBarrier)
+    {
+        PipelineBarrier pipelineBarrier{src, dst, {}, std::vector{std::move(bufferBarrier)}};
+        barrier(std::move(pipelineBarrier));
+    }
 
     void CommandBuffer::flush()
     {
         if (m_flushed)
             return;
 
-        vkCheck(vkEndCommandBuffer(*m_handle), "Failed to end command buffer recording");
+        vkCheck(vkEndCommandBuffer(m_handle), "Failed to end command buffer recording");
 
         m_flushed = true;
     }
@@ -64,14 +135,15 @@ namespace vzt
 
     CommandPool::~CommandPool()
     {
-        if (!m_commandBuffers.empty())
-        {
-            const uint32_t commandBufferNb = static_cast<uint32_t>(m_commandBuffers.size());
-            vkFreeCommandBuffers(m_device->getHandle(), m_handle, commandBufferNb, m_commandBuffers.data());
-        }
+        if (m_handle == VK_NULL_HANDLE || m_commandBuffers.empty())
+            return;
 
-        if (m_handle != VK_NULL_HANDLE)
-            vkDestroyCommandPool(m_device->getHandle(), m_handle, nullptr);
+        // Avoid deleting command buffers while they're being processed by the device;
+        m_device->wait();
+
+        const uint32_t commandBufferNb = static_cast<uint32_t>(m_commandBuffers.size());
+        vkFreeCommandBuffers(m_device->getHandle(), m_handle, commandBufferNb, m_commandBuffers.data());
+        vkDestroyCommandPool(m_device->getHandle(), m_handle, nullptr);
     }
 
     void CommandPool::allocateCommandBuffers(const uint32_t count)

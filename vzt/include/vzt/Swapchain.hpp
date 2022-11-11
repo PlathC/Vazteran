@@ -17,7 +17,7 @@ namespace vzt
         uint32_t maxFramesInFlight = 2;
     };
 
-    struct Submission
+    struct SwapchainSubmission
     {
         uint32_t    imageId;
         VkSemaphore imageAvailable;
@@ -33,10 +33,11 @@ namespace vzt
         ~Swapchain();
 
         // Empty submission if frame buffer changed
-        std::optional<Submission> getSubmission();
-        bool                      present(const Submission& submission);
+        std::optional<SwapchainSubmission> getSubmission();
+        bool                               present();
 
         inline const std::vector<VkImage>& getImages() const;
+        inline uint32_t                    getImageNb() const;
 
       private:
         void create();
@@ -53,6 +54,7 @@ namespace vzt
         bool          m_framebufferResized = false;
 
         uint32_t                 m_currentFrame = 0u;
+        uint32_t                 m_currentImage = 0u;
         uint32_t                 m_imageNb      = 0u;
         std::vector<VkImage>     m_images{};
         std::vector<VkSemaphore> m_imageAvailableSemaphores;

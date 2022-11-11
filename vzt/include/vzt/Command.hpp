@@ -6,6 +6,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "vzt/Core/Type.hpp"
+#include "vzt/Pipeline.hpp"
 
 namespace vzt
 {
@@ -26,14 +27,18 @@ namespace vzt
 
         ~CommandBuffer();
 
-        void                    flush();
-        inline VkCommandBuffer& getHandle();
+        void barrier(PipelineBarrier barrier);
+        void barrier(PipelineStage src, PipelineStage dst, ImageBarrier barrier);
+        void barrier(PipelineStage src, PipelineStage dst, BufferBarrier barrier);
+
+        void                   flush();
+        inline VkCommandBuffer getHandle() const;
 
       private:
-        CommandBuffer(VkCommandBuffer& handle);
+        CommandBuffer(VkCommandBuffer handle);
 
-        VkCommandBuffer* m_handle;
-        bool             m_flushed = false;
+        VkCommandBuffer m_handle  = nullptr;
+        bool            m_flushed = false;
     };
     class CommandPool
     {

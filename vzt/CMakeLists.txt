@@ -21,6 +21,8 @@ set(VZT_HEADERS
     include/vzt/Command.hpp
     include/vzt/Device.hpp
     include/vzt/Instance.hpp
+    include/vzt/Pipeline.hpp
+    include/vzt/Program.hpp
     include/vzt/Surface.hpp
     include/vzt/Swapchain.hpp
     include/vzt/Window.hpp
@@ -33,6 +35,8 @@ set(VZT_SOURCES
     src/Command.cpp
     src/Device.cpp
     src/Instance.cpp
+    src/Pipeline.cpp
+    src/Program.cpp
     src/Surface.cpp
     src/Swapchain.cpp
     src/Window.cpp
@@ -49,5 +53,6 @@ target_compile_features(   Vazteran PRIVATE cxx_std_17)
 
 target_link_libraries(     Vazteran PUBLIC  Vulkan::Vulkan)
 target_include_directories(Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_INCLUDES})
+target_link_libraries(     Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_LIBRARIES})
 
 target_include_directories(Vazteran INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)

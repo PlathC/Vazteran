@@ -10,6 +10,12 @@ namespace vzt
         uint32_t width;
         uint32_t height;
     };
+
+    struct Vec2u
+    {
+        uint32_t x;
+        uint32_t y;
+    };
 } // namespace vzt
 
 #endif // VZT_CORE_MATH_HPP

@@ -1,6 +1,8 @@
 #ifndef VZT_TYPE_HPP
 #define VZT_TYPE_HPP
 
+#include <vector>
+
 namespace vzt
 {
     template <class Type>
@@ -17,6 +19,17 @@ namespace vzt
 
       private:
         const Type* m_ptr = nullptr;
+    };
+
+    template <class Type>
+    struct Span
+    {
+        Type*       data = nullptr;
+        std::size_t size = 0;
+
+        Span() = default;
+        Span(Type* ptr, std::size_t size);
+        Span(const std::vector<Type>& buffer);
     };
 } // namespace vzt
 

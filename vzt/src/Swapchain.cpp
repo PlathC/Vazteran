@@ -59,35 +59,34 @@ namespace vzt
         cleanup();
     }
 
-    std::optional<Submission> Swapchain::getSubmission()
+    std::optional<SwapchainSubmission> Swapchain::getSubmission()
     {
         vkWaitForFences(m_device->getHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 
-        uint32_t       imageIndex;
         const VkResult result =
             vkAcquireNextImageKHR(m_device->getHandle(), m_handle, UINT64_MAX,
-                                  m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &imageIndex);
+                                  m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_currentImage);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
             return {};
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
             logger::error("Failed to acquire swapchain image!");
 
         // Check if a previous frame is using this image (i.e. there is its fence to wait on)
-        if (m_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
-            vkWaitForFences(m_device->getHandle(), 1, &m_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+        if (m_imagesInFlight[m_currentImage] != VK_NULL_HANDLE)
+            vkWaitForFences(m_device->getHandle(), 1, &m_imagesInFlight[m_currentImage], VK_TRUE, UINT64_MAX);
 
         // Mark the image as now being in use by this frame
-        m_imagesInFlight[imageIndex] = m_inFlightFences[m_currentFrame];
+        m_imagesInFlight[m_currentImage] = m_inFlightFences[m_currentFrame];
 
-        Submission submission;
-        submission.imageId        = imageIndex;
+        SwapchainSubmission submission;
+        submission.imageId        = m_currentImage;
         submission.imageAvailable = m_imageAvailableSemaphores[m_currentFrame];
         submission.renderComplete = m_renderFinishedSemaphores[m_currentFrame];
         submission.frameComplete  = m_inFlightFences[m_currentFrame];
         return submission;
     }
 
-    bool Swapchain::present(const Submission& submission)
+    bool Swapchain::present()
     {
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -97,7 +96,7 @@ namespace vzt
         const VkSwapchainKHR swapChains[] = {m_handle};
         presentInfo.swapchainCount        = 1;
         presentInfo.pSwapchains           = swapChains;
-        presentInfo.pImageIndices         = &submission.imageId;
+        presentInfo.pImageIndices         = &m_currentImage;
 
         const View<Queue> presentQueue = m_device->getPresentQueue();
         const VkResult    result       = vkQueuePresentKHR(presentQueue->getHandle(), &presentInfo);

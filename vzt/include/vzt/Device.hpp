@@ -58,7 +58,7 @@ namespace vzt
         bool isSuitable(DeviceConfiguration configuration, View<Surface> surface = {}) const;
         bool hasExtensions(const std::vector<const char*>& extensions) const;
         std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
-        std::optional<uint32_t>              getPresentQueueFamilyIndex(View<Surface> surface) const;
+        bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;
 
         inline VkPhysicalDevice getHandle() const;
 
@@ -102,11 +102,15 @@ namespace vzt
         std::set<Queue, decltype(&isSameQueue)> m_queues{&isSameQueue};
     };
 
+    class CommandBuffer;
+    struct SwapchainSubmission;
     class Queue
     {
       public:
         Queue(View<Device> device, QueueType type, uint32_t id, bool canPresent = false);
         ~Queue() = default;
+
+        void submit(const CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const;
 
         inline VkQueue   getHandle() const;
         inline QueueType getType() const;

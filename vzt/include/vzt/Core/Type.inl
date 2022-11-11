@@ -30,4 +30,13 @@ namespace vzt
         return m_ptr;
     }
 
+    template <class Type>
+    Span<Type>::Span(Type* ptr, std::size_t size) : data(ptr), size(size)
+    {
+    }
+
+    template <class Type>
+    Span<Type>::Span(const std::vector<Type>& buffer) : data(buffer.data()), size(buffer.size())
+    {
+    }
 } // namespace vzt
