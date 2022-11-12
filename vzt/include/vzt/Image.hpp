@@ -58,7 +58,7 @@ namespace vzt
         Plane1KHR       = VK_IMAGE_ASPECT_PLANE_1_BIT_KHR,
         Plane2KHR       = VK_IMAGE_ASPECT_PLANE_2_BIT_KHR,
     };
-    VZT_DEFINE_TO_VULKAN_FUNCTION(ImageAspect, VkImageAspectFlagBits)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(ImageAspect, VkImageAspectFlags)
     VZT_DEFINE_BITWISE_FUNCTIONS(ImageAspect)
 
     enum class ImageUsage : uint32_t
@@ -76,7 +76,7 @@ namespace vzt
         InvocationMask                = VK_IMAGE_USAGE_INVOCATION_MASK_BIT_HUAWEI,
         ShadingRateImage              = VK_IMAGE_USAGE_SHADING_RATE_IMAGE_BIT_NV
     };
-    VZT_DEFINE_TO_VULKAN_FUNCTION(ImageUsage, VkImageUsageFlagBits)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(ImageUsage, VkImageUsageFlags)
     VZT_DEFINE_BITWISE_FUNCTIONS(ImageUsage)
 
     enum class Format : uint32_t
@@ -404,18 +404,6 @@ namespace vzt
         IntCustomExt          = VK_BORDER_COLOR_INT_CUSTOM_EXT
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(BorderColor, VkBorderColor)
-
-    enum class SampleCount : uint32_t
-    {
-        Sample1  = VK_SAMPLE_COUNT_1_BIT,
-        Sample2  = VK_SAMPLE_COUNT_2_BIT,
-        Sample4  = VK_SAMPLE_COUNT_4_BIT,
-        Sample8  = VK_SAMPLE_COUNT_8_BIT,
-        Sample16 = VK_SAMPLE_COUNT_16_BIT,
-        Sample32 = VK_SAMPLE_COUNT_32_BIT,
-        Sample64 = VK_SAMPLE_COUNT_64_BIT
-    };
-    VZT_DEFINE_TO_VULKAN_FUNCTION(SampleCount, VkSampleCountFlagBits)
 } // namespace vzt
 
 #endif // VZT_IMAGE_HPP

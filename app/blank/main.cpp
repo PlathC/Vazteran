@@ -24,17 +24,19 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        const auto&        images   = swapchain.getImages();
-        vzt::CommandBuffer commands = commandPool[submission->imageId];
+        const auto& images = swapchain.getImages();
         {
+            vzt::CommandBuffer commands = commandPool[submission->imageId];
+
             vzt::ImageBarrier imageBarrier{};
             imageBarrier.image     = images[submission->imageId];
             imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, std::move(imageBarrier));
+
+            graphicsQueue->submit(commands, *submission);
         }
 
-        graphicsQueue->submit(commands, *submission);
         if (!swapchain.present())
             continue;
     }

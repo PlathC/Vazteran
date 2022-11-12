@@ -25,6 +25,7 @@ set(VZT_HEADERS
     include/vzt/Instance.hpp
     include/vzt/Pipeline.hpp
     include/vzt/Program.hpp
+    include/vzt/RenderPass.hpp
     include/vzt/Surface.hpp
     include/vzt/Swapchain.hpp
     include/vzt/Window.hpp
@@ -34,6 +35,7 @@ set(VZT_SOURCES
     src/Core/Logger.cpp
     src/Core/Vulkan.cpp
 
+    src/Attachment.cpp
     src/Buffer.cpp
     src/Command.cpp
     src/Descriptor.cpp
@@ -41,6 +43,7 @@ set(VZT_SOURCES
     src/Instance.cpp
     src/Pipeline.cpp
     src/Program.cpp
+    src/RenderPass.cpp
     src/Surface.cpp
     src/Swapchain.cpp
     src/Window.cpp

@@ -90,8 +90,8 @@ namespace vzt
       public:
         Pipeline(View<Device> device);
 
-        Pipeline(const Pipeline&);
-        Pipeline& operator=(const Pipeline&);
+        Pipeline(const Pipeline&)            = delete;
+        Pipeline& operator=(const Pipeline&) = delete;
 
         Pipeline(Pipeline&&) noexcept;
         Pipeline& operator=(Pipeline&&) noexcept;
@@ -100,19 +100,19 @@ namespace vzt
 
         void compile();
 
-        inline void            setViewport(Viewport viewport);
+        inline void            setViewport(Viewport config);
         inline const Viewport& getViewport() const;
         inline Viewport&       getViewport();
 
-        inline void                 setRasterization(Rasterization viewport);
+        inline void                 setRasterization(Rasterization config);
         inline const Rasterization& getRasterization() const;
         inline Rasterization&       getRasterization();
 
-        inline void                 setMultiSampling(MultiSampling viewport);
+        inline void                 setMultiSampling(MultiSampling config);
         inline const MultiSampling& getMultiSampling() const;
         inline MultiSampling&       getMultiSampling();
 
-        inline void                setDepthStencil(DepthStencil viewport);
+        inline void                setDepthStencil(DepthStencil config);
         inline const DepthStencil& getDepthStencil() const;
         inline DepthStencil&       getDepthStencil();
 
