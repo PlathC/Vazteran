@@ -95,6 +95,16 @@ namespace vzt
         barrier(std::move(pipelineBarrier));
     }
 
+    void CommandBuffer::copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset,
+                             uint64_t dstOffset)
+    {
+        VkBufferCopy copyRegion{};
+        copyRegion.size      = size;
+        copyRegion.srcOffset = srcOffset;
+        copyRegion.dstOffset = dstOffset;
+        vkCmdCopyBuffer(m_handle, src.getHandle(), dst.getHandle(), 1, &copyRegion);
+    }
+
     void CommandBuffer::flush()
     {
         if (m_flushed)

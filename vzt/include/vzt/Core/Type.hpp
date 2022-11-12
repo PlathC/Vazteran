@@ -1,6 +1,8 @@
 #ifndef VZT_TYPE_HPP
 #define VZT_TYPE_HPP
 
+#include <memory>
+#include <optional>
 #include <vector>
 
 namespace vzt
@@ -30,6 +32,14 @@ namespace vzt
         Span() = default;
         Span(Type* ptr, std::size_t size);
         Span(const std::vector<Type>& buffer);
+    };
+
+    template <class HandleType>
+    struct HandleSpan
+    {
+        HandleSpan  data{};
+        std::size_t size   = 0;
+        std::size_t offset = 0;
     };
 } // namespace vzt
 

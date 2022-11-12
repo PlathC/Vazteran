@@ -18,7 +18,9 @@ set(VZT_HEADERS
     include/vzt/Core/Type.hpp
     include/vzt/Core/Vulkan.hpp
 
+    include/vzt/Buffer.hpp
     include/vzt/Command.hpp
+    include/vzt/Descriptor.hpp
     include/vzt/Device.hpp
     include/vzt/Instance.hpp
     include/vzt/Pipeline.hpp
@@ -32,7 +34,9 @@ set(VZT_SOURCES
     src/Core/Logger.cpp
     src/Core/Vulkan.cpp
 
+    src/Buffer.cpp
     src/Command.cpp
+    src/Descriptor.cpp
     src/Device.cpp
     src/Instance.cpp
     src/Pipeline.cpp

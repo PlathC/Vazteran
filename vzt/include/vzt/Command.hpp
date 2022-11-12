@@ -5,6 +5,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "vzt/Buffer.hpp"
 #include "vzt/Core/Type.hpp"
 #include "vzt/Pipeline.hpp"
 
@@ -31,6 +32,8 @@ namespace vzt
         void barrier(PipelineStage src, PipelineStage dst, ImageBarrier barrier);
         void barrier(PipelineStage src, PipelineStage dst, BufferBarrier barrier);
 
+        void copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
+
         void                   flush();
         inline VkCommandBuffer getHandle() const;
 
@@ -44,7 +47,7 @@ namespace vzt
     {
       public:
         CommandPool() = default;
-        CommandPool(View<Device> device, View<Queue> queue, uint32_t bufferNb);
+        CommandPool(View<Device> device, View<Queue> queue, uint32_t bufferNb = 1);
 
         CommandPool(CommandPool&)                  = delete;
         CommandPool& operator=(const CommandPool&) = delete;
@@ -54,9 +57,8 @@ namespace vzt
 
         ~CommandPool();
 
-        CommandBuffer operator[](const uint32_t bufferNumber);
-
-        void allocateCommandBuffers(const uint32_t count);
+        CommandBuffer operator[](uint32_t bufferNumber);
+        void          allocateCommandBuffers(uint32_t count);
 
       private:
         VkCommandPool m_handle{};

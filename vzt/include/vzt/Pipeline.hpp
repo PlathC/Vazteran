@@ -1,21 +1,28 @@
 #ifndef VZT_PIPELINE_HPP
 #define VZT_PIPELINE_HPP
 
+#include <optional>
+
 #include "vzt/Core/Math.hpp"
 #include "vzt/Program.hpp"
 #include "vzt/Synchronization.hpp"
 
 namespace vzt
 {
-    // TODO: Move to render pass ?
     struct Viewport
     {
-        Extent2D extent;
+        Extent2D size;
+        Vec2u    upperLeftCorner = {0, 0};
+
+        float minDepth = 0.f;
+        float maxDepth = 1.f;
+
         struct Scissor
         {
-            Vec2u start;
-            Vec2u size;
-        } scissor;
+            Extent2D size;
+            Vec2i    offset = {0, 0};
+        };
+        std::optional<Scissor> scissor{};
     };
 
     enum class PolygonMode
@@ -52,36 +59,72 @@ namespace vzt
         FrontFace   frontFace     = FrontFace::Clockwise; // Only if cull mode is not None
     };
 
-    struct MultiSample
+    struct MultiSampling
     {
         bool     enable      = false;
         uint32_t sampleCount = 1u; // /!\ must be a power of two \in [0, 64]
     };
 
+    enum class CompareOp
+    {
+        Never          = VK_COMPARE_OP_NEVER,
+        Less           = VK_COMPARE_OP_LESS,
+        Equal          = VK_COMPARE_OP_EQUAL,
+        LessOrEqual    = VK_COMPARE_OP_LESS_OR_EQUAL,
+        Greater        = VK_COMPARE_OP_GREATER,
+        NotEqual       = VK_COMPARE_OP_NOT_EQUAL,
+        GreaterOrEqual = VK_COMPARE_OP_GREATER_OR_EQUAL,
+        Always         = VK_COMPARE_OP_ALWAYS,
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(CompareOp, VkCompareOp)
+
+    struct DepthStencil
+    {
+        bool      enable           = true;
+        bool      depthWriteEnable = true;
+        CompareOp compareOp        = CompareOp::LessOrEqual;
+    };
+
     class Pipeline
     {
       public:
-        Pipeline() = default;
+        Pipeline(View<Device> device);
+
+        Pipeline(const Pipeline&);
+        Pipeline& operator=(const Pipeline&);
+
+        Pipeline(Pipeline&&) noexcept;
+        Pipeline& operator=(Pipeline&&) noexcept;
+
         ~Pipeline();
 
         void compile();
 
-        void            setViewport(Viewport viewport);
-        const Viewport& getViewport() const;
+        inline void            setViewport(Viewport viewport);
+        inline const Viewport& getViewport() const;
+        inline Viewport&       getViewport();
+
+        inline void                 setRasterization(Rasterization viewport);
+        inline const Rasterization& getRasterization() const;
+        inline Rasterization&       getRasterization();
+
+        inline void                 setMultiSampling(MultiSampling viewport);
+        inline const MultiSampling& getMultiSampling() const;
+        inline MultiSampling&       getMultiSampling();
+
+        inline void                setDepthStencil(DepthStencil viewport);
+        inline const DepthStencil& getDepthStencil() const;
+        inline DepthStencil&       getDepthStencil();
 
       private:
-        VkPipeline       m_vkHandle       = VK_NULL_HANDLE;
+        View<Device>     m_device;
+        VkPipeline       m_handle         = VK_NULL_HANDLE;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-        Program m_program;
-
-        Viewport      m_viewport;
+        Viewport      m_viewport = {{0u, 0u}};
         Rasterization m_rasterization;
-        MultiSample   m_multiSample;
-        // Optional<DescriptorLayout>       m_userDefinedDescriptorLayout;
-        // Optional<VertexInputDescription> m_vertexInputDescription;
-        // PipelineContextSettings          m_contextSettings{};
-        // RasterizationOptions             m_rasterOptions{};
+        MultiSampling m_multiSample;
+        DepthStencil  m_depthStencil;
     };
 } // namespace vzt
 

@@ -33,7 +33,6 @@ int main(int /* argc */, char** /* argv */)
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, std::move(imageBarrier));
         }
-        commands.flush();
 
         graphicsQueue->submit(commands, *submission);
         if (!swapchain.present())

@@ -265,10 +265,21 @@ namespace vzt
         vkGetDeviceQueue(device->getHandle(), id, 0, &m_handle);
     }
 
-    void Queue::submit(const CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const
+    void Queue::oneShot(const SingleTimeCommandFunction& function) const
+    {
+        CommandPool pool{m_device, this, 1};
+        pool.allocateCommandBuffers(1);
+
+        CommandBuffer commands = pool[0];
+        function(commands);
+        submit(commands);
+    }
+
+    void Queue::submit(CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const
     {
         assert(m_canPresent && "This queue is unable to present and is used for a swapchain submission");
 
+        commandBuffer.flush();
         const VkCommandBuffer commands = commandBuffer.getHandle();
 
         VkSubmitInfo submitInfo{};
@@ -284,8 +295,22 @@ namespace vzt
         submitInfo.pCommandBuffers      = &commands;
 
         vkResetFences(m_device->getHandle(), 1, &submission.frameComplete);
-        vzt::vkCheck(vkQueueSubmit(m_handle, 1, &submitInfo, submission.frameComplete),
-                     "Failed to submit swapchain submission");
+        vkCheck(vkQueueSubmit(m_handle, 1, &submitInfo, submission.frameComplete),
+                "Failed to submit swapchain submission");
+    }
+
+    void Queue::submit(CommandBuffer& commandBuffer) const
+    {
+        commandBuffer.flush();
+        const VkCommandBuffer commands = commandBuffer.getHandle();
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers    = &commands;
+
+        vkQueueSubmit(m_handle, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(m_handle);
     }
 
 } // namespace vzt

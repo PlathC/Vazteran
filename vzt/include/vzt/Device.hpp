@@ -1,6 +1,7 @@
 #ifndef VZT_DEVICE_HPP
 #define VZT_DEVICE_HPP
 
+#include <functional>
 #include <optional>
 #include <set>
 #include <vector>
@@ -88,6 +89,7 @@ namespace vzt
         View<Queue>              getPresentQueue() const;
 
         inline VkDevice       getHandle() const;
+        inline VmaAllocator   getAllocator() const;
         inline PhysicalDevice getHardware() const;
 
       private:
@@ -110,7 +112,10 @@ namespace vzt
         Queue(View<Device> device, QueueType type, uint32_t id, bool canPresent = false);
         ~Queue() = default;
 
-        void submit(const CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const;
+        using SingleTimeCommandFunction = std::function<void(CommandBuffer&)>;
+        void oneShot(const SingleTimeCommandFunction& function) const;
+        void submit(CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const;
+        void submit(CommandBuffer& commandBuffer) const;
 
         inline VkQueue   getHandle() const;
         inline QueueType getType() const;

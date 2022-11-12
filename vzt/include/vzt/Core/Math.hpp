@@ -16,6 +16,12 @@ namespace vzt
         uint32_t x;
         uint32_t y;
     };
+
+    struct Vec2i
+    {
+        int32_t x;
+        int32_t y;
+    };
 } // namespace vzt
 
 #endif // VZT_CORE_MATH_HPP
