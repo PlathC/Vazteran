@@ -58,7 +58,7 @@ namespace vzt
         static Buffer fromData(View<Device> device, Span<Type> data, BufferUsage usage,
                                MemoryLocation location = MemoryLocation::Device, bool mappable = false);
         template <class Type>
-        static Buffer fromData(View<Device> device, Span<const Type> data, BufferUsage usage,
+        static Buffer fromData(View<Device> device, CSpan<Type> data, BufferUsage usage,
                                MemoryLocation location = MemoryLocation::Device, bool mappable = false);
 
         Buffer() = default;
@@ -74,13 +74,11 @@ namespace vzt
         ~Buffer();
 
         template <class Type>
-        void update(const Span<Type> newData, const std::size_t offset = 0);
-        template <class Type>
-        void update(const Span<const Type> newData, const std::size_t offset = 0);
-        void update(Span<const uint8_t> newData, const std::size_t offset = 0);
+        void update(CSpan<Type> newData, const std::size_t offset = 0);
+        void update(CSpan<uint8_t> newData, const std::size_t offset = 0);
 
         uint8_t* map();
-        uint8_t* unMap();
+        void     unMap();
 
         inline MemoryLocation getLocation() const;
         inline VkBuffer       getHandle() const;
@@ -95,6 +93,8 @@ namespace vzt
         BufferUsage    m_usage;
         bool           m_mappable = false;
     };
+
+    using BufferSpan = OffsetSpan<Buffer>;
 
 } // namespace vzt
 

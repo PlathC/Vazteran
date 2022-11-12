@@ -3,13 +3,12 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "vzt/Buffer.hpp"
 #include "vzt/Core/Type.hpp"
 #include "vzt/Core/Vulkan.hpp"
 
 namespace vzt
 {
-    class Buffer;
-    class Device;
     class DescriptorPool;
     class Texture;
 
@@ -73,7 +72,7 @@ namespace vzt
     class DescriptorPool
     {
       public:
-        const inline static std::vector<DescriptorType> DefaultDescriptors;
+        const static std::vector<DescriptorType> DefaultDescriptors;
 
         DescriptorPool() = default;
         DescriptorPool(View<Device> device, std::vector<DescriptorType> descriptorTypes = {}, uint32_t maxSetNb = 64);
@@ -90,13 +89,13 @@ namespace vzt
 
         VkDescriptorSet operator[](uint32_t i) const { return m_descriptors[i]; }
 
-        void update(const std::size_t i, const Indexed<Span<Buffer>>& bufferDescriptors,
+        void update(std::size_t i, const Indexed<BufferSpan>& bufferDescriptors,
                     const Indexed<View<Texture>>& imageDescriptors);
-        void update(const std::size_t i, const Indexed<Span<Buffer>>& bufferDescriptors);
-        void update(const std::size_t i, const Indexed<View<Texture>>& imageDescriptors);
+        void update(std::size_t i, const Indexed<BufferSpan>& bufferDescriptors);
+        void update(std::size_t i, const Indexed<View<Texture>>& imageDescriptors);
 
-        void update(const Indexed<Span<Buffer>>& bufferDescriptors, const Indexed<View<Texture>>& imageDescriptors);
-        void update(const Indexed<Span<Buffer>>& bufferDescriptors);
+        void update(const Indexed<BufferSpan>& bufferDescriptors, const Indexed<View<Texture>>& imageDescriptors);
+        void update(const Indexed<BufferSpan>& bufferDescriptors);
         void update(const Indexed<View<Texture>>& imageDescriptors);
 
         inline uint32_t         getRemaining() const;

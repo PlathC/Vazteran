@@ -78,9 +78,9 @@ namespace vzt
         return data;
     }
 
-    uint8_t* Buffer::unMap() { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
+    void Buffer::unMap() { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
 
-    void Buffer::update(const Span<const uint8_t> newData, const std::size_t offset)
+    void Buffer::update(CSpan<uint8_t> newData, const std::size_t offset)
     {
         assert(newData.size < m_size && "Update must be less than the size of the buffer.");
 

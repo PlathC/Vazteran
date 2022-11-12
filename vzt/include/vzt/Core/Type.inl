@@ -39,4 +39,30 @@ namespace vzt
     Span<Type>::Span(const std::vector<Type>& buffer) : data(buffer.data()), size(buffer.size())
     {
     }
+
+    template <class Type>
+    CSpan<Type>::CSpan(Span<Type> span) : data(span.data), size(span.size)
+    {
+    }
+
+    template <class Type>
+    CSpan<Type>::CSpan(Type* ptr, std::size_t size) : data(ptr), size(size)
+    {
+    }
+
+    template <class Type>
+    CSpan<Type>::CSpan(const Type* ptr, std::size_t size) : data(ptr), size(size)
+    {
+    }
+
+    template <class Type>
+    CSpan<Type>::CSpan(const std::vector<Type>& buffer) : data(buffer.data()), size(buffer.size())
+    {
+    }
+
+    template <class Type>
+    OffsetSpan<Type>::OffsetSpan(Type* ptr, std::size_t size, std::size_t offset)
+        : data(ptr), size(size), offset(offset)
+    {
+    }
 } // namespace vzt

@@ -1,8 +1,6 @@
 #ifndef VZT_TYPE_HPP
 #define VZT_TYPE_HPP
 
-#include <memory>
-#include <optional>
 #include <vector>
 
 namespace vzt
@@ -34,12 +32,28 @@ namespace vzt
         Span(const std::vector<Type>& buffer);
     };
 
-    template <class HandleType>
-    struct HandleSpan
+    template <class Type>
+    struct CSpan
     {
-        HandleSpan  data{};
+        const Type* data = nullptr;
+        std::size_t size = 0;
+
+        CSpan() = default;
+        CSpan(Span<Type> span);
+        CSpan(Type* ptr, std::size_t size);
+        CSpan(const Type* ptr, std::size_t size);
+        CSpan(const std::vector<Type>& buffer);
+    };
+
+    template <class Type>
+    struct OffsetSpan
+    {
+        Type*       data   = nullptr;
         std::size_t size   = 0;
         std::size_t offset = 0;
+
+        OffsetSpan() = default;
+        OffsetSpan(Type* ptr, std::size_t size, std::size_t offset);
     };
 } // namespace vzt
 
