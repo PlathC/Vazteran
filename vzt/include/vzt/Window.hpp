@@ -4,7 +4,7 @@
 #include <atomic>
 
 #include "vzt/Core/Math.hpp"
-#include "vzt/Instance.hpp"
+#include "vzt/Vulkan/Instance.hpp"
 
 struct SDL_Window;
 namespace vzt

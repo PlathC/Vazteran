@@ -2,6 +2,9 @@
 
 namespace vzt
 {
+    Extent3D::Extent3D(uint32_t width, uint32_t height, uint32_t depth) : width(width), height(height), depth(depth) {}
+    Extent3D::Extent3D(Extent2D extent) : width(extent.width), height(extent.height), depth(1) {}
+
     template <class Type>
     Vec2Base<Type>::Vec2Base(Type x, Type y) : x(x), y(y)
     {

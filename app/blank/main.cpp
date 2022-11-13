@@ -1,10 +1,11 @@
 #include <cassert>
 #include <cstdlib>
 
-#include <vzt/Command.hpp>
 #include <vzt/Core/Logger.hpp>
-#include <vzt/Surface.hpp>
-#include <vzt/Swapchain.hpp>
+#include <vzt/Vulkan/Command.hpp>
+#include <vzt/Vulkan/Surface.hpp>
+#include <vzt/Vulkan/Swapchain.hpp>
+#include <vzt/Window.hpp>
 
 int main(int /* argc */, char** /* argv */)
 {
@@ -24,12 +25,11 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        const auto& images = swapchain.getImages();
         {
             vzt::CommandBuffer commands = commandPool[submission->imageId];
 
             vzt::ImageBarrier imageBarrier{};
-            imageBarrier.image     = images[submission->imageId];
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
             imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, std::move(imageBarrier));

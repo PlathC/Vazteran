@@ -13,43 +13,47 @@ endif()
 
 set(VZT_HEADERS
     include/vzt/Core/Logger.hpp
+    include/vzt/Core/File.hpp
     include/vzt/Core/Math.hpp
     include/vzt/Core/Meta.hpp
     include/vzt/Core/Type.hpp
     include/vzt/Core/Vulkan.hpp
 
-    include/vzt/Buffer.hpp
-    include/vzt/Command.hpp
-    include/vzt/Descriptor.hpp
-    include/vzt/Device.hpp
-    include/vzt/Image.hpp
-    include/vzt/Instance.hpp
-    include/vzt/Pipeline.hpp
-    include/vzt/Program.hpp
-    include/vzt/RenderPass.hpp
-    include/vzt/Surface.hpp
-    include/vzt/Swapchain.hpp
-    include/vzt/Texture.hpp
+    include/vzt/Vulkan/Buffer.hpp
+    include/vzt/Vulkan/Command.hpp
+    include/vzt/Vulkan/Descriptor.hpp
+    include/vzt/Vulkan/Device.hpp
+    include/vzt/Vulkan/Image.hpp
+    include/vzt/Vulkan/Instance.hpp
+    include/vzt/Vulkan/Pipeline.hpp
+    include/vzt/Vulkan/Program.hpp
+    include/vzt/Vulkan/RenderPass.hpp
+    include/vzt/Vulkan/Surface.hpp
+    include/vzt/Vulkan/Swapchain.hpp
+    include/vzt/Vulkan/Texture.hpp
+
     include/vzt/Window.hpp
 )
 
 set(VZT_SOURCES
+    src/Core/File.cpp
     src/Core/Logger.cpp
     src/Core/Vulkan.cpp
 
-    src/Attachment.cpp
-    src/Buffer.cpp
-    src/Command.cpp
-    src/Descriptor.cpp
-    src/Device.cpp
-    src/Image.cpp
-    src/Instance.cpp
-    src/Pipeline.cpp
-    src/Program.cpp
-    src/RenderPass.cpp
-    src/Surface.cpp
-    src/Swapchain.cpp
-    src/Texture.cpp
+    src/Vulkan/Attachment.cpp
+    src/Vulkan/Buffer.cpp
+    src/Vulkan/Command.cpp
+    src/Vulkan/Descriptor.cpp
+    src/Vulkan/Device.cpp
+    src/Vulkan/Image.cpp
+    src/Vulkan/Instance.cpp
+    src/Vulkan/Pipeline.cpp
+    src/Vulkan/Program.cpp
+    src/Vulkan/RenderPass.cpp
+    src/Vulkan/Surface.cpp
+    src/Vulkan/Swapchain.cpp
+    src/Vulkan/Texture.cpp
+
     src/Window.cpp
 )
 

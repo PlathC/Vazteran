@@ -1,10 +1,13 @@
 #include <cassert>
 #include <cstdlib>
 
-#include <vzt/Command.hpp>
+#include <vzt/Core/File.hpp>
 #include <vzt/Core/Logger.hpp>
-#include <vzt/Surface.hpp>
-#include <vzt/Swapchain.hpp>
+#include <vzt/Vulkan/Command.hpp>
+#include <vzt/Vulkan/Pipeline.hpp>
+#include <vzt/Vulkan/Surface.hpp>
+#include <vzt/Vulkan/Swapchain.hpp>
+#include <vzt/Window.hpp>
 
 int main(int /* argc */, char** /* argv */)
 {
@@ -16,6 +19,8 @@ int main(int /* argc */, char** /* argv */)
     auto device    = instance.getDevice(vzt::DeviceBuilder{}, surface);
     auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
 
+    auto program = vzt::Program(device);
+
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     while (window.update())
@@ -24,11 +29,11 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        const auto&        images   = swapchain.getImages();
+        const auto&        image    = swapchain.getImage(submission->imageId);
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         {
             vzt::ImageBarrier imageBarrier{};
-            imageBarrier.image     = images[submission->imageId];
+            imageBarrier.image     = image;
             imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, std::move(imageBarrier));
