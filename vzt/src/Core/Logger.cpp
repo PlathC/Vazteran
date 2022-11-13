@@ -1,6 +1,7 @@
 #include "vzt/Core/Logger.hpp"
 
 #include <chrono>
+#include <ctime>
 
 #include <fmt/chrono.h>
 
@@ -23,7 +24,8 @@ namespace vzt::logger
     void log(const Level level, std::string_view str)
     {
         const std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        const std::tm     local       = *std::localtime(&currentTime);
+        std::tm           local;
+        ::localtime_s(&local, &currentTime);
 
         fmt::print("[{:%Y-%m-%d %H:%M:%S}] [{}] {}\n", local, toString(level), str);
     }

@@ -20,6 +20,8 @@ set(VZT_HEADERS
     include/vzt/Core/Vulkan.hpp
 
     include/vzt/Ui/Input.hpp
+    
+    include/vzt/Utils/Compiler.hpp
 
     include/vzt/Vulkan/Buffer.hpp
     include/vzt/Vulkan/Command.hpp
@@ -43,6 +45,8 @@ set(VZT_SOURCES
     src/Core/Vulkan.cpp
 
     src/Ui/Input.cpp
+
+    src/Utils/Compiler.cpp
 
     src/Vulkan/Attachment.cpp
     src/Vulkan/Buffer.cpp
@@ -75,3 +79,4 @@ target_include_directories(Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_INCLUDES})
 target_link_libraries(     Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_LIBRARIES})
 
 target_include_directories(Vazteran INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+add_dependency_folder(     Vazteran VztShaders  "${CMAKE_CURRENT_SOURCE_DIR}/shaders" "${CMAKE_BINARY_DIR}/bin/shaders")

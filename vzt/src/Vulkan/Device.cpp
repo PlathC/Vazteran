@@ -1,5 +1,6 @@
 #include "vzt/Vulkan/Device.hpp"
 
+#include <array>
 #include <set>
 #include <unordered_map>
 
@@ -123,6 +124,31 @@ namespace vzt
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(m_handle, &properties);
         return properties;
+    }
+
+    Format PhysicalDevice::getDepthFormat() const
+    {
+        // clang-format off
+        constexpr std::array<Format, 3> Candidates = {
+            vzt::Format::D32SFloat, 
+            vzt::Format::D32SFloatS8UInt,
+            vzt::Format::D24UNormS8UInt
+        };
+        // clang-format on
+
+        constexpr VkImageTiling        tiling   = VK_IMAGE_TILING_OPTIMAL;
+        constexpr VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        for (vzt::Format format : Candidates)
+        {
+            VkFormatProperties props;
+            vkGetPhysicalDeviceFormatProperties(m_handle, toVulkan(format), &props);
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+                return format;
+            else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+                return format;
+        }
+
+        throw std::runtime_error("Failed to find supported format!");
     }
 
     Device::Device(View<Instance> instance, PhysicalDevice device, DeviceBuilder configuration, View<Surface> surface)

@@ -6,11 +6,11 @@
 #include <vector>
 
 #include <vk_mem_alloc.h>
-#include <vulkan/vulkan_core.h>
 
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
 #include "vzt/Core/Vulkan.hpp"
+#include "vzt/Vulkan/Image.hpp"
 
 namespace vzt
 {
@@ -60,6 +60,7 @@ namespace vzt
         std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
         bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;
         VkPhysicalDeviceProperties           getProperties() const;
+        Format                               getDepthFormat() const;
 
         inline VkPhysicalDevice getHandle() const;
 

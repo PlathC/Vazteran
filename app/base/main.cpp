@@ -2,8 +2,11 @@
 #include <cstdlib>
 
 #include <vzt/Core/File.hpp>
+#include <vzt/Utils/Compiler.hpp>
+#include <vzt/Vulkan/Attachment.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Pipeline.hpp>
+#include <vzt/Vulkan/RenderPass.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
@@ -16,9 +19,48 @@ int main(int /* argc */, char** /* argv */)
     auto instance  = vzt::Instance{window};
     auto surface   = vzt::Surface{window, instance};
     auto device    = instance.getDevice(vzt::DeviceBuilder{}, surface);
+    auto hardware  = device.getHardware();
     auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
 
+    auto compiler = vzt::Compiler();
+
     auto program = vzt::Program(device);
+    program.setShader(compiler.compile("shaders/triangle.vert", vzt::ShaderStage::Vertex));
+    program.setShader(compiler.compile("shaders/triangle.frag", vzt::ShaderStage::Fragment));
+
+    auto pipeline = vzt::Pipeline(device);
+    pipeline.addAttachment();
+
+    std::vector<vzt::RenderPass> passes{};
+    passes.reserve(swapchain.getImageNb());
+    for (std::size_t i = 0; i < swapchain.getImageNb(); i++)
+    {
+        passes.emplace_back(device);
+
+        vzt::RenderPass& pass = passes.back();
+
+        // clang-format off
+        pass.addInput(vzt::AttachmentUse{
+            vzt::Format::R16G16B16A16SFloat,
+            vzt::ImageLayout::Undefined,
+            vzt::ImageLayout::ColorAttachmentOptimal,
+            vzt::ImageLayout::ColorAttachmentOptimal
+        });
+        // clang-format on
+
+        // clang-format off
+        vzt::AttachmentUse depth{
+            hardware.getDepthFormat(),
+            vzt::ImageLayout::Undefined,
+            vzt::ImageLayout::DepthStencilAttachmentOptimal,
+            vzt::ImageLayout::DepthStencilAttachmentOptimal
+        };
+        depth.clearValue = vzt::Vec4{1.f, 0.f, 0.f, 0.f};
+        pass.addInput(std::move(depth));
+        // clang-format on
+    }
+
+    pipeline.compile(passes.back());
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());

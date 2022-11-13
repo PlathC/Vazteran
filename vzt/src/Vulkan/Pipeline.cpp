@@ -5,7 +5,7 @@
 
 namespace vzt
 {
-    Pipeline::Pipeline(View<Device> device) : m_device(device) {}
+    Pipeline::Pipeline(View<Device> device, Viewport viewport) : m_device(device), m_viewport(viewport) {}
 
     Pipeline::Pipeline(Pipeline&& other) noexcept
     {
@@ -70,16 +70,22 @@ namespace vzt
         const auto multisampling = toVulkan(m_multiSample);
         const auto depthStencil  = toVulkan(m_depthStencil);
 
+        std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+        colorBlendAttachments.reserve(m_attachments.size());
+        for (std::size_t i = 0; i < m_attachments.size(); i++)
+        {
+            VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+            colorBlendAttachment.colorWriteMask = toVulkan(m_attachments[i]);
+            colorBlendAttachment.blendEnable    = VK_FALSE;
+            colorBlendAttachments.emplace_back(colorBlendAttachment);
+        }
+
         VkPipelineColorBlendStateCreateInfo colorBlending{};
-        colorBlending.sType         = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK_FALSE;
-        colorBlending.logicOp       = VK_LOGIC_OP_COPY; // Optional
-        // colorBlending.attachmentCount   = static_cast<uint32_t>(colorBlendAttachments.size());
-        // colorBlending.pAttachments      = colorBlendAttachments.data();
-        colorBlending.blendConstants[0] = 0.0f; // Optional
-        colorBlending.blendConstants[1] = 0.0f; // Optional
-        colorBlending.blendConstants[2] = 0.0f; // Optional
-        colorBlending.blendConstants[3] = 0.0f; // Optional
+        colorBlending.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colorBlending.logicOpEnable   = VK_FALSE;
+        colorBlending.logicOp         = VK_LOGIC_OP_COPY; // Optional
+        colorBlending.attachmentCount = static_cast<uint32_t>(colorBlendAttachments.size());
+        colorBlending.pAttachments    = colorBlendAttachments.data();
 
         // const auto& shaderStages = m_program.getPipelineStages();
 

@@ -136,7 +136,7 @@ namespace vzt
     class Pipeline
     {
       public:
-        Pipeline(View<Device> device);
+        Pipeline(View<Device> device, Viewport viewport = {});
 
         Pipeline(const Pipeline&)            = delete;
         Pipeline& operator=(const Pipeline&) = delete;
