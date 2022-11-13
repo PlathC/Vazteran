@@ -10,3 +10,12 @@
 [submodule "app/extern/glm"]
 	path = app/extern/glm
 	url = https://github.com/g-truc/glm.git
+[submodule "vzt/extern/glslang"]
+	path = vzt/extern/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "vzt/extern/SPIRV-Headers"]
+	path = vzt/extern/SPIRV-Headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "vzt/extern/SPIRV-Tools"]
+	path = vzt/extern/SPIRV-Tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools

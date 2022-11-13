@@ -5,10 +5,26 @@ set(SDL_TEST                    OFF CACHE BOOL "" FORCE)
 set(SDL_TESTS                   OFF CACHE BOOL "" FORCE)
 add_subdirectory(SDL)
 
+set(SPIRV_HEADERS_SKIP_EXAMPLES ON CACHE BOOL "" FORCE)
+set(SPIRV_HEADERS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
+add_subdirectory(SPIRV-Headers)
+
+set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
+set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
+add_subdirectory(SPIRV-Tools)
+
+
+set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
+add_subdirectory(glslang)
+
+
 # Prepare data for parent scope
 set(VZT_EXTERN_PUBLIC_INCLUDES
     ${VZT_EXTERN_INCLUDES}
 
+    "${CMAKE_CURRENT_SOURCE_DIR}/glslang"
     "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
 )
 
@@ -21,7 +37,9 @@ set(VZT_EXTERN_PUBLIC_LIBRARIES
 set(VZT_EXTERN_LIBRARIES
     ${VZT_EXTERN_LIBRARIES}
 
+    glslang
     SDL2::SDL2 SDL2::SDL2main
+    SPIRV 
     Vulkan::Vulkan
 )
 
