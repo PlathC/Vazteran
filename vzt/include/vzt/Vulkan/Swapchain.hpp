@@ -14,7 +14,7 @@ namespace vzt
 
     struct SwapchainBuilder
     {
-        uint32_t maxFramesInFlight = 2;
+        uint32_t maxFramesInFlight = 3;
     };
 
     struct SwapchainSubmission
@@ -42,6 +42,7 @@ namespace vzt
         Optional<SwapchainSubmission> getSubmission();
         bool                          present();
 
+        inline void        setExtent(Extent2D extent);
         inline View<Image> getImage(std::size_t i) const;
         inline uint32_t    getImageNb() const;
 

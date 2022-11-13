@@ -40,6 +40,28 @@ namespace vzt
         : m_configuration(configuration), m_device(device), m_surface(surface), m_extent(extent)
     {
         assert(m_device->getPresentQueue() && "Device must have a present queue to use the swapchain");
+
+        m_imageAvailableSemaphores.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
+        m_renderFinishedSemaphores.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
+        m_inFlightFences.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
+        m_imagesInFlight.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
+
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        for (std::size_t i = 0; i < m_configuration.maxFramesInFlight; i++)
+        {
+            vkCheck(vkCreateSemaphore(m_device->getHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]),
+                    "Failed to create synchronization objects for a frame");
+            vkCheck(vkCreateSemaphore(m_device->getHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]),
+                    "Failed to create synchronization objects for a frame");
+            vkCheck(vkCreateFence(m_device->getHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]),
+                    "Failed to create synchronization objects for a frame");
+        }
+
         create();
     }
 
@@ -85,6 +107,8 @@ namespace vzt
 
     Swapchain::~Swapchain()
     {
+        cleanup();
+
         for (std::size_t i = 0; i < m_configuration.maxFramesInFlight; i++)
         {
             vkDestroySemaphore(m_device->getHandle(), m_renderFinishedSemaphores[i], nullptr);
@@ -94,8 +118,6 @@ namespace vzt
 
         for (auto& imageInFlight : m_imagesInFlight)
             imageInFlight = VK_NULL_HANDLE;
-
-        cleanup();
     }
 
     Optional<SwapchainSubmission> Swapchain::getSubmission()
@@ -106,7 +128,13 @@ namespace vzt
             vkAcquireNextImageKHR(m_device->getHandle(), m_handle, UINT64_MAX,
                                   m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_currentImage);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            m_device->wait();
+            cleanup();
+            create();
+
             return {};
+        }
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
             logger::error("Failed to acquire swapchain image!");
 
@@ -142,6 +170,8 @@ namespace vzt
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
         {
             m_framebufferResized = false;
+            m_device->wait();
+
             return true;
         }
 
@@ -149,6 +179,7 @@ namespace vzt
             logger::error("Failed to present swap chain image!");
 
         m_currentFrame = (m_currentFrame + 1) % m_configuration.maxFramesInFlight;
+
         return false;
     }
 
@@ -163,6 +194,7 @@ namespace vzt
         m_imageNb = capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && m_imageNb > capabilities.maxImageCount)
             m_imageNb = capabilities.maxImageCount;
+        m_imageNb = std::min(m_configuration.maxFramesInFlight, m_imageNb);
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -173,6 +205,11 @@ namespace vzt
         createInfo.imageExtent      = extent;
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage       = toVulkan(ImageUsage::ColorAttachment);
+
+        if (capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+            createInfo.imageUsage |= toVulkan(ImageUsage::TransferDst);
+        else
+            logger::warn("Device does not allows transfer to swapchain image.");
 
         auto queues = m_device->getQueues();
         if (!m_device->getPresentQueue())
@@ -200,31 +237,10 @@ namespace vzt
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode    = presentMode;
         createInfo.clipped        = VK_TRUE;
-        createInfo.oldSwapchain   = m_handle;
+        createInfo.oldSwapchain   = VK_NULL_HANDLE;
 
         vkCheck(vkCreateSwapchainKHR(m_device->getHandle(), &createInfo, nullptr, &m_handle),
                 "Failed to create swapchain");
-
-        m_imageAvailableSemaphores.resize(m_configuration.maxFramesInFlight);
-        m_renderFinishedSemaphores.resize(m_configuration.maxFramesInFlight);
-        m_inFlightFences.resize(m_configuration.maxFramesInFlight);
-        m_imagesInFlight.resize(m_imageNb, VK_NULL_HANDLE);
-
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        VkFenceCreateInfo fenceInfo{};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        for (std::size_t i = 0; i < m_configuration.maxFramesInFlight; i++)
-        {
-            vkCheck(vkCreateSemaphore(m_device->getHandle(), &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i]),
-                    "Failed to create synchronization objects for a frame");
-            vkCheck(vkCreateSemaphore(m_device->getHandle(), &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i]),
-                    "Failed to create synchronization objects for a frame");
-            vkCheck(vkCreateFence(m_device->getHandle(), &fenceInfo, nullptr, &m_inFlightFences[i]),
-                    "Failed to create synchronization objects for a frame");
-        }
 
         m_images.resize(m_imageNb);
         vkGetSwapchainImagesKHR(m_device->getHandle(), m_handle, &m_imageNb, m_images.data());

@@ -4,6 +4,7 @@
 #include <atomic>
 
 #include "vzt/Core/Math.hpp"
+#include "vzt/Ui/Input.hpp"
 #include "vzt/Vulkan/Instance.hpp"
 
 struct SDL_Window;
@@ -26,6 +27,7 @@ namespace vzt
         inline uint32_t         getWith() const;
         inline uint32_t         getHeight() const;
         inline Extent2D         getExtent() const;
+        inline const Input&     getInputs() const;
 
         bool update();
 
@@ -42,9 +44,12 @@ namespace vzt
         uint32_t    m_width;
         uint32_t    m_height;
 
-        SDL_Window*     m_handle   = nullptr;
-        const Instance* m_instance = nullptr;
-        VkSurfaceKHR    m_surface  = VK_NULL_HANDLE;
+        SDL_Window*    m_handle = nullptr;
+        View<Instance> m_instance;
+        VkSurfaceKHR   m_surface = VK_NULL_HANDLE;
+
+        Input    m_inputs;
+        uint64_t m_lastTimeStep = 0;
     };
 
 } // namespace vzt

@@ -24,9 +24,10 @@ namespace vzt
     template <class Type = float>
     struct Vec2Base
     {
-        Type x;
-        Type y;
+        Type x{};
+        Type y{};
 
+        Vec2Base() = default;
         Vec2Base(Type v);
         Vec2Base(Type x, Type y);
     };
@@ -39,10 +40,11 @@ namespace vzt
     template <class Type>
     struct Vec3Base
     {
-        Type x;
-        Type y;
-        Type z;
+        Type x{};
+        Type y{};
+        Type z{};
 
+        Vec3Base() = default;
         Vec3Base(Type v);
         Vec3Base(Type x, Type y, Type z);
     };
@@ -54,11 +56,12 @@ namespace vzt
     template <class Type>
     struct Vec4Base
     {
-        Type x;
-        Type y;
-        Type z;
-        Type w;
+        Type x{};
+        Type y{};
+        Type z{};
+        Type w{};
 
+        Vec4Base() = default;
         Vec4Base(Type v);
         Vec4Base(Type x, Type y, Type z, Type w);
     };

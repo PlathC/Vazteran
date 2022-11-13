@@ -97,6 +97,19 @@ namespace vzt
         barrier(std::move(pipelineBarrier));
     }
 
+    void CommandBuffer::clear(View<Image> image, ImageLayout layout, Vec4 clearColor)
+    {
+        VkImageSubresourceRange subresource;
+        subresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresource.baseMipLevel   = 0;
+        subresource.levelCount     = 1;
+        subresource.baseArrayLayer = 0;
+        subresource.layerCount     = 1;
+
+        VkClearColorValue clearColorValue{clearColor.x, clearColor.y, clearColor.z, clearColor.w};
+        vkCmdClearColorImage(m_handle, image->getHandle(), toVulkan(layout), &clearColorValue, 1, &subresource);
+    }
+
     void CommandBuffer::copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset,
                              uint64_t dstOffset)
     {

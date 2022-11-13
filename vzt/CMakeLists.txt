@@ -19,6 +19,8 @@ set(VZT_HEADERS
     include/vzt/Core/Type.hpp
     include/vzt/Core/Vulkan.hpp
 
+    include/vzt/Ui/Input.hpp
+
     include/vzt/Vulkan/Buffer.hpp
     include/vzt/Vulkan/Command.hpp
     include/vzt/Vulkan/Descriptor.hpp
@@ -39,6 +41,8 @@ set(VZT_SOURCES
     src/Core/File.cpp
     src/Core/Logger.cpp
     src/Core/Vulkan.cpp
+
+    src/Ui/Input.cpp
 
     src/Vulkan/Attachment.cpp
     src/Vulkan/Buffer.cpp

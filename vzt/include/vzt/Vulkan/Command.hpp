@@ -32,6 +32,7 @@ namespace vzt
         void barrier(PipelineStage src, PipelineStage dst, ImageBarrier barrier);
         void barrier(PipelineStage src, PipelineStage dst, BufferBarrier barrier);
 
+        void clear(View<Image> image, ImageLayout layout, Vec4 clearColor = {});
         void copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
 
         void                   flush();
