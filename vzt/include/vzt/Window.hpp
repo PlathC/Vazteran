@@ -33,8 +33,8 @@ namespace vzt
         friend Surface;
 
       private:
-        inline SDL_Window*    getHandle() const;
-        InstanceConfiguration getConfiguration(InstanceConfiguration configuration = {});
+        inline SDL_Window* getHandle() const;
+        InstanceBuilder    getConfiguration(InstanceBuilder configuration = {}) const;
 
         static std::atomic_size_t m_instanceCount;
 

@@ -1,6 +1,7 @@
 #include "vzt/Pipeline.hpp"
 
 #include "vzt/Device.hpp"
+#include "vzt/RenderPass.hpp"
 
 namespace vzt
 {
@@ -44,8 +45,11 @@ namespace vzt
     VkPipelineMultisampleStateCreateInfo   toVulkan(const MultiSampling& config);
     VkPipelineDepthStencilStateCreateInfo  toVulkan(const DepthStencil& config);
 
-    void Pipeline::compile()
+    void Pipeline::compile(View<RenderPass> renderPass)
     {
+        if (m_compiled)
+            cleanup();
+
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
@@ -91,20 +95,33 @@ namespace vzt
         pipelineInfo.pDepthStencilState  = &depthStencil;
         pipelineInfo.pColorBlendState    = &colorBlending;
 
-        pipelineInfo.pDynamicState = nullptr; // Optional
-        pipelineInfo.layout        = m_pipelineLayout;
-        // pipelineInfo.renderPass         = m_contextSettings.renderPassTemplate->vkHandle();
+        pipelineInfo.pDynamicState      = nullptr; // Optional
+        pipelineInfo.layout             = m_pipelineLayout;
+        pipelineInfo.renderPass         = renderPass->getHandle();
         pipelineInfo.subpass            = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex  = -1;             // Optional
 
         vkCheck(vkCreateGraphicsPipelines(m_device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_handle),
                 "Failed to create graphics pipeline.");
+
+        m_compiled = true;
+    }
+
+    void Pipeline::cleanup()
+    {
+        if (m_handle != VK_NULL_HANDLE)
+            vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+
+        if (m_pipelineLayout != VK_NULL_HANDLE)
+            vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+
+        m_compiled = false;
     }
 
     std::tuple<VkViewport, VkRect2D> toVulkan(const Viewport& viewport)
     {
-        VkViewport result{};
+        VkViewport result;
         result.x        = static_cast<float>(viewport.upperLeftCorner.x);
         result.y        = static_cast<float>(viewport.upperLeftCorner.y);
         result.width    = static_cast<float>(viewport.size.width);
@@ -148,7 +165,7 @@ namespace vzt
         VkPipelineMultisampleStateCreateInfo multisampling{};
         multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisampling.sampleShadingEnable   = config.enable;
-        multisampling.rasterizationSamples  = static_cast<VkSampleCountFlagBits>(config.sampleCount);
+        multisampling.rasterizationSamples  = toVulkan(config.sampleCount);
         multisampling.minSampleShading      = 1.0f;     // Optional
         multisampling.pSampleMask           = nullptr;  // Optional
         multisampling.alphaToCoverageEnable = VK_FALSE; // Optional

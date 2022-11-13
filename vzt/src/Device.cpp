@@ -44,7 +44,7 @@ namespace vzt
 
     PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) : m_handle(handle) {}
 
-    bool PhysicalDevice::isSuitable(DeviceConfiguration configuration, View<Surface> surface) const
+    bool PhysicalDevice::isSuitable(DeviceBuilder configuration, View<Surface> surface) const
     {
         std::vector<VkQueueFamilyProperties> queueFamilies = getQueueFamiliesProperties();
 
@@ -118,8 +118,14 @@ namespace vzt
         return presentSupport;
     }
 
-    Device::Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration,
-                   View<Surface> surface)
+    VkPhysicalDeviceProperties PhysicalDevice::getProperties() const
+    {
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(m_handle, &properties);
+        return properties;
+    }
+
+    Device::Device(View<Instance> instance, PhysicalDevice device, DeviceBuilder configuration, View<Surface> surface)
         : m_instance(instance), m_device(device), m_configuration(configuration)
     {
         std::vector<VkDeviceQueueCreateInfo>    queueCreateInfos{};
@@ -166,12 +172,12 @@ namespace vzt
         createInfo.enabledExtensionCount   = static_cast<uint32_t>(configuration.extensions.size());
         createInfo.ppEnabledExtensionNames = configuration.extensions.data();
 
-        const auto& instanceConfiguration = instance->getConfiguration();
-        createInfo.enabledLayerCount      = 0;
-        if (instanceConfiguration.enableValidation)
+        createInfo.enabledLayerCount = 0;
+        if (instance->isValidationEnable())
         {
-            createInfo.enabledLayerCount   = static_cast<uint32_t>(instanceConfiguration.validationLayers.size());
-            createInfo.ppEnabledLayerNames = instanceConfiguration.validationLayers.data();
+            const std::vector<const char*>& validationLayers = instance->getValidationLayers();
+            createInfo.enabledLayerCount                     = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames                   = validationLayers.data();
         }
 
         vkCheck(vkCreateDevice(m_device.getHandle(), &createInfo, nullptr, &m_handle),

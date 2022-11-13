@@ -53,9 +53,11 @@ namespace vzt
         return VK_FALSE;
     }
 
-    Instance::Instance(const std::string& name, InstanceConfiguration configuration) : m_configuration(configuration)
+    Instance::Instance(const std::string& name, InstanceBuilder builder)
+        : m_enableValidation(std::move(builder.enableValidation)),
+          m_validationLayers(std::move(builder.validationLayers)), m_extensions(std::move(builder.extensions))
     {
-        if (configuration.enableValidation && !hasValidationLayers(configuration.validationLayers))
+        if (m_enableValidation && !hasValidationLayers(m_validationLayers))
             logger::error("Instance configuration validation failed");
 
         VkApplicationInfo appInfo{};
@@ -68,16 +70,16 @@ namespace vzt
         VkInstanceCreateInfo createInfo{};
         createInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo        = &appInfo;
-        createInfo.enabledExtensionCount   = static_cast<uint32_t>(configuration.extensions.size());
-        createInfo.ppEnabledExtensionNames = configuration.extensions.data();
+        createInfo.enabledExtensionCount   = static_cast<uint32_t>(m_extensions.size());
+        createInfo.ppEnabledExtensionNames = m_extensions.data();
 
         createInfo.enabledLayerCount = 0;
 
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreate;
-        if (configuration.enableValidation)
+        if (m_enableValidation)
         {
-            createInfo.enabledLayerCount   = static_cast<uint32_t>(configuration.validationLayers.size());
-            createInfo.ppEnabledLayerNames = configuration.validationLayers.data();
+            createInfo.enabledLayerCount   = static_cast<uint32_t>(m_validationLayers.size());
+            createInfo.ppEnabledLayerNames = m_validationLayers.data();
 
             debugMessengerCreate                 = {};
             debugMessengerCreate.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -94,7 +96,7 @@ namespace vzt
 
         vkCheck(vkCreateInstance(&createInfo, nullptr, &m_handle), "Failed to create Vulkan instance");
 
-        if (!configuration.enableValidation)
+        if (!m_enableValidation)
             return;
 
         auto vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
@@ -107,8 +109,8 @@ namespace vzt
                 "Failed to create debug messenger");
     }
 
-    Instance::Instance(Window& window, InstanceConfiguration configuration)
-        : Instance(std::string(window.getTitle()), window.getConfiguration(configuration))
+    Instance::Instance(Window& window, InstanceBuilder builder)
+        : Instance(std::string(window.getTitle()), window.getConfiguration(std::move(builder)))
     {
     }
 
@@ -116,14 +118,18 @@ namespace vzt
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_debugMessenger, other.m_debugMessenger);
-        std::swap(m_configuration, other.m_configuration);
+        std::swap(m_enableValidation, other.m_enableValidation);
+        std::swap(m_validationLayers, other.m_validationLayers);
+        std::swap(m_extensions, other.m_extensions);
     }
 
     Instance& Instance::operator=(Instance&& other) noexcept
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_debugMessenger, other.m_debugMessenger);
-        std::swap(m_configuration, other.m_configuration);
+        std::swap(m_enableValidation, other.m_enableValidation);
+        std::swap(m_validationLayers, other.m_validationLayers);
+        std::swap(m_extensions, other.m_extensions);
 
         return *this;
     }
@@ -142,7 +148,7 @@ namespace vzt
         vkDestroyInstance(m_handle, nullptr);
     }
 
-    Device Instance::getDevice(DeviceConfiguration configuration, View<Surface> surface)
+    Device Instance::getDevice(DeviceBuilder configuration, View<Surface> surface)
     {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
@@ -152,7 +158,6 @@ namespace vzt
         auto devices = std::vector<VkPhysicalDevice>(deviceCount);
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, devices.data());
 
-        View<PhysicalDevice> selectedDevice{};
         for (uint32_t i = 0; i < deviceCount; i++)
         {
             const auto device = PhysicalDevice(devices[i]);

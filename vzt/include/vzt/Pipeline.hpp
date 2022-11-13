@@ -9,29 +9,32 @@
 
 namespace vzt
 {
-    struct Viewport
+    class RenderPass;
+
+    enum class ColorComponent
     {
-        Extent2D size;
-        Vec2u    upperLeftCorner = {0, 0};
-
-        float minDepth = 0.f;
-        float maxDepth = 1.f;
-
-        struct Scissor
-        {
-            Extent2D size;
-            Vec2i    offset = {0, 0};
-        };
-        std::optional<Scissor> scissor{};
+        R    = VK_COLOR_COMPONENT_R_BIT,
+        G    = VK_COLOR_COMPONENT_G_BIT,
+        B    = VK_COLOR_COMPONENT_B_BIT,
+        A    = VK_COLOR_COMPONENT_A_BIT,
+        RGBA = R | G | B | A,
     };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(ColorComponent, VkColorComponentFlags)
+    VZT_DEFINE_BITWISE_FUNCTIONS(ColorComponent)
 
-    enum class PolygonMode
+    enum class CompareOp
     {
-        Fill  = VK_POLYGON_MODE_FILL,
-        Line  = VK_POLYGON_MODE_LINE,
-        Point = VK_POLYGON_MODE_POINT,
+        Never          = VK_COMPARE_OP_NEVER,
+        Less           = VK_COMPARE_OP_LESS,
+        Equal          = VK_COMPARE_OP_EQUAL,
+        LessOrEqual    = VK_COMPARE_OP_LESS_OR_EQUAL,
+        Greater        = VK_COMPARE_OP_GREATER,
+        NotEqual       = VK_COMPARE_OP_NOT_EQUAL,
+        GreaterOrEqual = VK_COMPARE_OP_GREATER_OR_EQUAL,
+        Always         = VK_COMPARE_OP_ALWAYS,
     };
-    VZT_DEFINE_TO_VULKAN_FUNCTION(PolygonMode, VkPolygonMode)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(CompareOp, VkCompareOp)
+    using ColorMask = ColorComponent;
 
     enum class CullMode : uint32_t
     {
@@ -49,6 +52,37 @@ namespace vzt
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(FrontFace, VkFrontFace)
 
+    enum class PolygonMode
+    {
+        Fill  = VK_POLYGON_MODE_FILL,
+        Line  = VK_POLYGON_MODE_LINE,
+        Point = VK_POLYGON_MODE_POINT,
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(PolygonMode, VkPolygonMode)
+
+    enum class VertexInputRate
+    {
+        Vertex   = VK_VERTEX_INPUT_RATE_VERTEX,
+        Instance = VK_VERTEX_INPUT_RATE_INSTANCE
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(VertexInputRate, VkVertexInputRate)
+
+    struct Viewport
+    {
+        Extent2D size;
+        Vec2u    upperLeftCorner = {0, 0};
+
+        float minDepth = 0.f;
+        float maxDepth = 1.f;
+
+        struct Scissor
+        {
+            Extent2D size;
+            Vec2i    offset = {0, 0};
+        };
+        Optional<Scissor> scissor{};
+    };
+
     struct Rasterization
     {
         bool        depthClamp    = false;
@@ -61,28 +95,44 @@ namespace vzt
 
     struct MultiSampling
     {
-        bool     enable      = false;
-        uint32_t sampleCount = 1u; // /!\ must be a power of two \in [0, 64]
+        bool        enable      = false;
+        SampleCount sampleCount = SampleCount::Sample1;
     };
-
-    enum class CompareOp
-    {
-        Never          = VK_COMPARE_OP_NEVER,
-        Less           = VK_COMPARE_OP_LESS,
-        Equal          = VK_COMPARE_OP_EQUAL,
-        LessOrEqual    = VK_COMPARE_OP_LESS_OR_EQUAL,
-        Greater        = VK_COMPARE_OP_GREATER,
-        NotEqual       = VK_COMPARE_OP_NOT_EQUAL,
-        GreaterOrEqual = VK_COMPARE_OP_GREATER_OR_EQUAL,
-        Always         = VK_COMPARE_OP_ALWAYS,
-    };
-    VZT_DEFINE_TO_VULKAN_FUNCTION(CompareOp, VkCompareOp)
 
     struct DepthStencil
     {
         bool      enable           = true;
         bool      depthWriteEnable = true;
         CompareOp compareOp        = CompareOp::LessOrEqual;
+    };
+
+    struct VertexAttribute
+    {
+        uint32_t offset;
+        uint32_t location;
+        Format   dataFormat;
+        uint32_t binding;
+    };
+
+    struct VertexBinding
+    {
+        uint32_t        binding;
+        uint32_t        stride;
+        VertexInputRate inputRate = VertexInputRate::Vertex;
+
+        template <class Type>
+        static VertexBinding Typed(uint32_t binding, VertexInputRate inputRate);
+
+        inline VertexAttribute getAttribute(uint32_t location, Format dataFormat, uint32_t offset);
+    };
+
+    struct VertexInputDescription
+    {
+        std::vector<VertexBinding>   bindings;
+        std::vector<VertexAttribute> attributes;
+
+        inline void add(VertexBinding binding);
+        inline void add(VertexAttribute binding);
     };
 
     class Pipeline
@@ -98,7 +148,13 @@ namespace vzt
 
         ~Pipeline();
 
-        void compile();
+        inline void setVertexInputDescription(VertexInputDescription vertexDescription);
+        inline void addAttachment(ColorMask mask = ColorComponent::RGBA);
+        inline void addAttachments(std::size_t nb, ColorMask mask = ColorComponent::RGBA);
+
+        inline void            setTargetSize(Extent2D targetSize);
+        inline const Extent2D& getTargetSize() const;
+        inline Extent2D&       getTargetSize();
 
         inline void            setViewport(Viewport config);
         inline const Viewport& getViewport() const;
@@ -116,15 +172,24 @@ namespace vzt
         inline const DepthStencil& getDepthStencil() const;
         inline DepthStencil&       getDepthStencil();
 
+        void compile(View<RenderPass> renderPass);
+
       private:
+        void cleanup();
+
         View<Device>     m_device;
         VkPipeline       m_handle         = VK_NULL_HANDLE;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-        Viewport      m_viewport = {{0u, 0u}};
-        Rasterization m_rasterization;
-        MultiSampling m_multiSample;
-        DepthStencil  m_depthStencil;
+        Extent2D                         m_targetSize;
+        std::vector<ColorMask>           m_attachments;
+        Optional<VertexInputDescription> m_vertexDescription = {};
+        Viewport                         m_viewport          = {{0u, 0u}};
+        Rasterization                    m_rasterization;
+        MultiSampling                    m_multiSample;
+        DepthStencil                     m_depthStencil;
+
+        bool m_compiled = false;
     };
 } // namespace vzt
 

@@ -22,12 +22,14 @@ set(VZT_HEADERS
     include/vzt/Command.hpp
     include/vzt/Descriptor.hpp
     include/vzt/Device.hpp
+    include/vzt/Image.hpp
     include/vzt/Instance.hpp
     include/vzt/Pipeline.hpp
     include/vzt/Program.hpp
     include/vzt/RenderPass.hpp
     include/vzt/Surface.hpp
     include/vzt/Swapchain.hpp
+    include/vzt/Texture.hpp
     include/vzt/Window.hpp
 )
 
@@ -40,12 +42,14 @@ set(VZT_SOURCES
     src/Command.cpp
     src/Descriptor.cpp
     src/Device.cpp
+    src/Image.cpp
     src/Instance.cpp
     src/Pipeline.cpp
     src/Program.cpp
     src/RenderPass.cpp
     src/Surface.cpp
     src/Swapchain.cpp
+    src/Texture.cpp
     src/Window.cpp
 )
 

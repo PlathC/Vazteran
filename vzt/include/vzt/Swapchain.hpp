@@ -3,7 +3,6 @@
 
 #include "vzt/Core/Math.hpp"
 #include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Device.hpp"
 
 namespace vzt
@@ -12,7 +11,7 @@ namespace vzt
     class Window;
     class Surface;
 
-    struct SwapchainConfiguration
+    struct SwapchainBuilder
     {
         uint32_t maxFramesInFlight = 2;
     };
@@ -28,13 +27,12 @@ namespace vzt
     class Swapchain
     {
       public:
-        Swapchain(View<Device> device, View<Surface> surface, Extent2D extent,
-                  SwapchainConfiguration configuration = {});
+        Swapchain(View<Device> device, View<Surface> surface, Extent2D extent, SwapchainBuilder configuration = {});
         ~Swapchain();
 
         // Empty submission if frame buffer changed
-        std::optional<SwapchainSubmission> getSubmission();
-        bool                               present();
+        Optional<SwapchainSubmission> getSubmission();
+        bool                          present();
 
         inline const std::vector<VkImage>& getImages() const;
         inline uint32_t                    getImageNb() const;
@@ -45,8 +43,8 @@ namespace vzt
 
         VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
-        VkSwapchainKHR         m_handle = VK_NULL_HANDLE;
-        SwapchainConfiguration m_configuration;
+        VkSwapchainKHR   m_handle = VK_NULL_HANDLE;
+        SwapchainBuilder m_configuration;
 
         View<Device>  m_device;
         View<Surface> m_surface;

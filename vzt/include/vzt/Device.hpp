@@ -36,7 +36,7 @@ namespace vzt
     VZT_DEFINE_TO_VULKAN_FUNCTION(QueueType, VkQueueFlagBits)
     VZT_DEFINE_BITWISE_FUNCTIONS(QueueType)
 
-    struct DeviceConfiguration
+    struct DeviceBuilder
     {
         bool      hasSwapchain  = true;
         bool      hasAnisotropy = true;
@@ -56,10 +56,11 @@ namespace vzt
       public:
         PhysicalDevice(VkPhysicalDevice handle);
 
-        bool isSuitable(DeviceConfiguration configuration, View<Surface> surface = {}) const;
-        bool hasExtensions(const std::vector<const char*>& extensions) const;
+        bool                                 isSuitable(DeviceBuilder configuration, View<Surface> surface = {}) const;
+        bool                                 hasExtensions(const std::vector<const char*>& extensions) const;
         std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
         bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;
+        VkPhysicalDeviceProperties           getProperties() const;
 
         inline VkPhysicalDevice getHandle() const;
 
@@ -71,7 +72,7 @@ namespace vzt
     class Device
     {
       public:
-        Device(View<Instance> instance, PhysicalDevice device, DeviceConfiguration configuration = {},
+        Device(View<Instance> instance, PhysicalDevice device, DeviceBuilder configuration = {},
                View<Surface> surface = {});
 
         Device(const Device&)            = delete;
@@ -96,9 +97,9 @@ namespace vzt
         View<Instance> m_instance;
         PhysicalDevice m_device;
 
-        VkDevice            m_handle    = VK_NULL_HANDLE;
-        VmaAllocator        m_allocator = VK_NULL_HANDLE;
-        DeviceConfiguration m_configuration;
+        VkDevice      m_handle    = VK_NULL_HANDLE;
+        VmaAllocator  m_allocator = VK_NULL_HANDLE;
+        DeviceBuilder m_configuration;
 
         static inline bool                      isSameQueue(const Queue& q1, const Queue& q2);
         std::set<Queue, decltype(&isSameQueue)> m_queues{&isSameQueue};

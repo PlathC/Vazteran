@@ -36,8 +36,7 @@ namespace vzt
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    Swapchain::Swapchain(View<Device> device, View<Surface> surface, Extent2D extent,
-                         SwapchainConfiguration configuration)
+    Swapchain::Swapchain(View<Device> device, View<Surface> surface, Extent2D extent, SwapchainBuilder configuration)
         : m_configuration(configuration), m_device(device), m_surface(surface), m_extent(extent)
     {
         assert(m_device->getPresentQueue() && "Device must have a present queue to use the swapchain");
@@ -59,7 +58,7 @@ namespace vzt
         cleanup();
     }
 
-    std::optional<SwapchainSubmission> Swapchain::getSubmission()
+    Optional<SwapchainSubmission> Swapchain::getSubmission()
     {
         vkWaitForFences(m_device->getHandle(), 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX);
 

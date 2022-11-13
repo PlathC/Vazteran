@@ -8,9 +8,11 @@
 namespace vzt
 {
     class Device;
+
     class Attachment
     {
       public:
+        Attachment(View<Device> device, Extent2D size, Format format, ImageUsage usage, ImageAspect aspect);
         Attachment(View<Device> device, Extent2D size, Format format, ImageUsage usage);
         Attachment(View<Device> device, VkImage image, Format format, ImageLayout layout, ImageAspect aspect);
         ~Attachment();
@@ -25,6 +27,7 @@ namespace vzt
         View<Device> m_device;
         Format       m_format;
         ImageLayout  m_layout;
+        SampleCount  m_sampleCount;
     };
 
 } // namespace vzt

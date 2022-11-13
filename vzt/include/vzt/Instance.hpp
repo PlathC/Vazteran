@@ -1,7 +1,6 @@
 #ifndef VZT_INSTANCE_HPP
 #define VZT_INSTANCE_HPP
 
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -27,16 +26,16 @@ namespace vzt
         constexpr const char* VkDebugUtils = "VK_EXT_debug_utils";
     } // namespace extension
 
-    struct InstanceConfiguration
+    struct InstanceBuilder
     {
 #ifdef NDEBUG
         bool                     enableValidation = false;
         std::vector<const char*> validationLayers;
         std::vector<const char*> extensions;
 #else
-        bool                     enableValidation = true;
-        std::vector<const char*> validationLayers = {validation::KronosValidation};
-        std::vector<const char*> extensions       = {extension::VkDebugUtils};
+        bool                     enableValidation   = true;
+        std::vector<const char*> validationLayers   = {validation::KronosValidation};
+        std::vector<const char*> extensions         = {extension::VkDebugUtils};
 #endif
     };
 
@@ -44,8 +43,8 @@ namespace vzt
     class Instance
     {
       public:
-        Instance(const std::string& name, InstanceConfiguration configuration = {});
-        Instance(Window& window, InstanceConfiguration configuration = {});
+        Instance(const std::string& name, InstanceBuilder builder = {});
+        Instance(Window& window, InstanceBuilder builder = {});
 
         Instance(const Instance&)            = delete;
         Instance& operator=(const Instance&) = delete;
@@ -55,14 +54,26 @@ namespace vzt
 
         ~Instance();
 
-        inline VkInstance                   getHandle() const;
-        inline const InstanceConfiguration& getConfiguration() const;
-        Device getDevice(DeviceConfiguration configuration = {}, View<Surface> surface = {});
+        inline VkInstance                      getHandle() const;
+        inline bool                            isValidationEnable() const;
+        inline const std::vector<const char*>& getValidationLayers() const;
+        inline const std::vector<const char*>& getExtensions() const;
+
+        Device getDevice(DeviceBuilder configuration = {}, View<Surface> surface = {});
 
       private:
         VkInstance               m_handle         = VK_NULL_HANDLE;
         VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
-        InstanceConfiguration    m_configuration;
+
+#ifdef NDEBUG
+        bool                     m_enableValidation = false;
+        std::vector<const char*> m_validationLayers;
+        std::vector<const char*> m_extensions;
+#else
+        bool                     m_enableValidation = true;
+        std::vector<const char*> m_validationLayers = {validation::KronosValidation};
+        std::vector<const char*> m_extensions       = {extension::VkDebugUtils};
+#endif
     };
 } // namespace vzt
 

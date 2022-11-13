@@ -1,10 +1,7 @@
 #ifndef VZT_DESCRIPTOR_HPP
 #define VZT_DESCRIPTOR_HPP
 
-#include <vulkan/vulkan_core.h>
-
 #include "vzt/Buffer.hpp"
-#include "vzt/Core/Type.hpp"
 #include "vzt/Core/Vulkan.hpp"
 
 namespace vzt
@@ -87,12 +84,12 @@ namespace vzt
 
         void allocate(uint32_t count, const vzt::DescriptorLayout& layout);
 
-        VkDescriptorSet operator[](uint32_t i) const { return m_descriptors[i]; }
+        inline DescriptorSet operator[](uint32_t i) const;
 
-        void update(std::size_t i, const Indexed<BufferSpan>& bufferDescriptors,
+        void update(std::size_t descriptorId, const Indexed<BufferSpan>& bufferDescriptors,
                     const Indexed<View<Texture>>& imageDescriptors);
-        void update(std::size_t i, const Indexed<BufferSpan>& bufferDescriptors);
-        void update(std::size_t i, const Indexed<View<Texture>>& imageDescriptors);
+        void update(std::size_t descriptorId, const Indexed<BufferSpan>& bufferDescriptors);
+        void update(std::size_t descriptorId, const Indexed<View<Texture>>& imageDescriptors);
 
         void update(const Indexed<BufferSpan>& bufferDescriptors, const Indexed<View<Texture>>& imageDescriptors);
         void update(const Indexed<BufferSpan>& bufferDescriptors);

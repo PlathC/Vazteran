@@ -1,6 +1,7 @@
 #ifndef VZT_TYPE_HPP
 #define VZT_TYPE_HPP
 
+#include <optional>
 #include <vector>
 
 namespace vzt
@@ -55,6 +56,9 @@ namespace vzt
         OffsetSpan() = default;
         OffsetSpan(Type* ptr, std::size_t size, std::size_t offset);
     };
+
+    template <class Type>
+    using Optional = std::optional<Type>;
 } // namespace vzt
 
 #include "vzt/Core/Type.inl"

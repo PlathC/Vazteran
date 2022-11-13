@@ -6,40 +6,11 @@
 #include "vzt/Core/Type.hpp"
 #include "vzt/Core/Vulkan.hpp"
 #include "vzt/Image.hpp"
+#include "vzt/Synchronization.hpp"
 
 namespace vzt
 {
     class Device;
-
-    enum class PipelineStage : uint32_t
-    {
-        TopOfPipe                    = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-        DrawIndirect                 = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-        VertexInput                  = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-        VertexShader                 = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-        TessellationControlShader    = VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT,
-        TessellationEvaluationShader = VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT,
-        GeometryShader               = VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT,
-        FragmentShader               = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        EarlyFragmentTests           = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-        LateFragmentTests            = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-        ColorAttachmentOutput        = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        ComputeShader                = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        Transfer                     = VK_PIPELINE_STAGE_TRANSFER_BIT,
-        BottomOfPipe                 = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-        Host                         = VK_PIPELINE_STAGE_HOST_BIT,
-        AllGraphic                   = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
-        AllCommands                  = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        TransformFeedback            = VK_PIPELINE_STAGE_TRANSFORM_FEEDBACK_BIT_EXT,
-        ConditionRendering           = VK_PIPELINE_STAGE_CONDITIONAL_RENDERING_BIT_EXT,
-        AccelerationStructureBuild   = VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
-        RaytracingShader             = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
-        TaskShaderNV                 = VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV,
-        MeshShaderNV                 = VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV,
-        None                         = VK_PIPELINE_STAGE_NONE_KHR,
-    };
-    VZT_DEFINE_BITWISE_FUNCTIONS(PipelineStage)
-    VZT_DEFINE_TO_VULKAN_FUNCTION(PipelineStage, VkPipelineStageFlags)
 
     enum class AttachmentAccess : uint32_t
     {
@@ -115,12 +86,12 @@ namespace vzt
         ImageLayout finalLayout;
         ImageLayout usedLayout;
 
-        LoadOp   loadOp         = LoadOp::Clear;
-        StoreOp  storeOp        = StoreOp::Store;
-        LoadOp   stencilLoapOp  = LoadOp::DontCare;
-        StoreOp  stencilStoreOp = StoreOp::DontCare;
-        uint32_t sampleCount    = 1ul;
-        Vec4     clearValue     = {0.f};
+        LoadOp      loadOp         = LoadOp::Clear;
+        StoreOp     storeOp        = StoreOp::Store;
+        LoadOp      stencilLoapOp  = LoadOp::DontCare;
+        StoreOp     stencilStoreOp = StoreOp::DontCare;
+        SampleCount sampleCount    = SampleCount::Sample1;
+        Vec4        clearValue     = {0.f};
     };
 
     struct SubpassDependency

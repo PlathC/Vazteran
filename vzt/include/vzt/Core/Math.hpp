@@ -11,6 +11,13 @@ namespace vzt
         uint32_t height;
     };
 
+    struct Extent3D
+    {
+        uint32_t width;
+        uint32_t height;
+        uint32_t depth = 1;
+    };
+
     template <class Type = float>
     struct Vec2Base
     {

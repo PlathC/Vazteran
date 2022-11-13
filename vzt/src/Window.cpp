@@ -2,7 +2,6 @@
 
 #include <SDL.h>
 #include <SDL_vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include "vzt/Core/Logger.hpp"
 
@@ -73,7 +72,7 @@ namespace vzt
         return !closing;
     }
 
-    InstanceConfiguration Window::getConfiguration(InstanceConfiguration configuration)
+    InstanceBuilder Window::getConfiguration(InstanceBuilder configuration) const
     {
         uint32_t count = 0;
         if (!SDL_Vulkan_GetInstanceExtensions(m_handle, &count, nullptr))
