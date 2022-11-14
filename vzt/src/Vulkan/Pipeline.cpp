@@ -110,6 +110,13 @@ namespace vzt
         const auto multisampling = toVulkan(m_multiSample);
         const auto depthStencil  = toVulkan(m_depthStencil);
 
+        if (m_attachments.empty())
+        {
+            const auto& colorAttachments = renderPass->getColorAttachments();
+            for (const auto& colorAttachment : colorAttachments)
+                m_attachments.emplace_back(ColorMask::RGBA);
+        }
+
         std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
         colorBlendAttachments.reserve(m_attachments.size());
         for (const auto& m_attachment : m_attachments)

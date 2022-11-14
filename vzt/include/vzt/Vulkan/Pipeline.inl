@@ -20,8 +20,8 @@ namespace vzt
     {
         m_vertexDescription = vertexDescription;
     }
-    inline void Pipeline::addAttachment(ColorMask mask) { m_attachments.emplace_back(mask); }
-    inline void Pipeline::addAttachments(std::size_t nb, ColorMask mask)
+    inline void Pipeline::addAttachmentColorBlend(ColorMask mask) { m_attachments.emplace_back(mask); }
+    inline void Pipeline::addAttachmentsColorBlend(std::size_t nb, ColorMask mask)
     {
         std::vector masks(nb, mask);
         m_attachments.insert(m_attachments.end(), masks.begin(), masks.end());

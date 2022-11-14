@@ -148,8 +148,8 @@ namespace vzt
         ~Pipeline();
 
         inline void setVertexInputDescription(VertexInputDescription vertexDescription);
-        inline void addAttachment(ColorMask mask = ColorComponent::RGBA);
-        inline void addAttachments(std::size_t nb, ColorMask mask = ColorComponent::RGBA);
+        inline void addAttachmentColorBlend(ColorMask mask = ColorComponent::RGBA);
+        inline void addAttachmentsColorBlend(std::size_t nb, ColorMask mask = ColorComponent::RGBA);
         inline void setProgram(const Program& program);
         inline void setDescriptorLayout(DescriptorLayout descriptorLayout);
 

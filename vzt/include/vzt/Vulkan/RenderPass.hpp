@@ -129,7 +129,10 @@ namespace vzt
         void addDependency(SubpassDependency dependency);
         void compile();
 
-        inline VkRenderPass getHandle() const;
+        inline const std::vector<AttachmentUse>& getInputAttachments() const;
+        inline const std::vector<AttachmentUse>& getColorAttachments() const;
+        inline const AttachmentUse&              getDepthAttachment() const;
+        inline VkRenderPass                      getHandle() const;
 
       private:
         View<Device> m_device{};

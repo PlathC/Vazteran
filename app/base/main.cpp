@@ -30,7 +30,6 @@ int main(int /* argc */, char** /* argv */)
 
     auto pipeline = vzt::Pipeline(device);
     pipeline.setViewport(vzt::Viewport{window.getExtent()});
-    pipeline.addAttachment(vzt::ColorComponent::RGBA);
     pipeline.setProgram(program);
 
     vzt::DescriptorLayout descriptorLayout{device};
