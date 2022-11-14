@@ -98,7 +98,7 @@ int main(int /* argc */, char** /* argv */)
             imageBarrier.newLayout = vzt::ImageLayout::TransferDstOptimal;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
 
-            commands.clear(image, vzt::ImageLayout::TransferDstOptimal, vzt::Vec4{1.f, 0.f, 0.f, 0.f});
+            commands.clear(image, vzt::ImageLayout::TransferDstOptimal, vzt::Vec4{0.96f, 0.64f, 0.64f, 1.f});
 
             imageBarrier.image     = image;
             imageBarrier.oldLayout = vzt::ImageLayout::TransferDstOptimal;
