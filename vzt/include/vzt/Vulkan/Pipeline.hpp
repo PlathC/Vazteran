@@ -2,6 +2,7 @@
 #define VZT_PIPELINE_HPP
 
 #include "vzt/Core/Math.hpp"
+#include "vzt/Vulkan/Descriptor.hpp"
 #include "vzt/Vulkan/Program.hpp"
 #include "vzt/Vulkan/Synchronization.hpp"
 
@@ -149,6 +150,8 @@ namespace vzt
         inline void setVertexInputDescription(VertexInputDescription vertexDescription);
         inline void addAttachment(ColorMask mask = ColorComponent::RGBA);
         inline void addAttachments(std::size_t nb, ColorMask mask = ColorComponent::RGBA);
+        inline void setProgram(const Program& program);
+        inline void setDescriptorLayout(DescriptorLayout descriptorLayout);
 
         inline void            setTargetSize(Extent2D targetSize);
         inline const Extent2D& getTargetSize() const;
@@ -179,8 +182,11 @@ namespace vzt
         VkPipeline       m_handle         = VK_NULL_HANDLE;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-        Extent2D                         m_targetSize;
-        std::vector<ColorMask>           m_attachments;
+        Extent2D               m_targetSize;
+        std::vector<ColorMask> m_attachments;
+        View<Program>          m_program;
+        DescriptorLayout       m_descriptorLayout;
+
         Optional<VertexInputDescription> m_vertexDescription = {};
         Viewport                         m_viewport          = {{0u, 0u}};
         Rasterization                    m_rasterization;

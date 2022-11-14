@@ -5,9 +5,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include <vulkan/vulkan_core.h>
-
 #include "vzt/Core/Type.hpp"
+#include "vzt/Core/Vulkan.hpp"
 
 namespace vzt
 {
@@ -28,25 +27,18 @@ namespace vzt
         Task                   = VK_SHADER_STAGE_TASK_BIT_NV,
         Mesh                   = VK_SHADER_STAGE_MESH_BIT_NV
     };
-
-    struct DescriptorSet
-    {
-        uint32_t binding;
-    };
-
-    struct SamplerDescriptorSet : public DescriptorSet
-    {
-    };
-
-    struct SizedDescriptorSet : public DescriptorSet
-    {
-        uint32_t size;
-    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(ShaderStage, VkShaderStageFlagBits);
 
     struct Shader
     {
         ShaderStage           stage;
         std::vector<uint32_t> compiledSource;
+
+        Shader(const Shader&)            = default;
+        Shader& operator=(const Shader&) = default;
+
+        Shader(Shader&&)            = default;
+        Shader& operator=(Shader&&) = default;
 
         struct hash
         {
@@ -69,11 +61,12 @@ namespace vzt
         ~ShaderModule();
 
         inline VkShaderModule getHandle() const;
+        inline const Shader&  getShader() const;
 
       private:
         View<Device>   m_device = {};
         VkShaderModule m_handle = VK_NULL_HANDLE;
-        Shader         shader   = {};
+        Shader         m_shader = {};
     };
 
     class Program
@@ -89,7 +82,8 @@ namespace vzt
 
         ~Program() = default;
 
-        void setShader(Shader shader);
+        inline void                             setShader(Shader shader);
+        inline const std::vector<ShaderModule>& getModules() const;
 
       private:
         using ShaderList = std::unordered_set<Shader, Shader::hash>;

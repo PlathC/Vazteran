@@ -27,6 +27,13 @@ namespace vzt
         m_attachments.insert(m_attachments.end(), masks.begin(), masks.end());
     }
 
+    inline void Pipeline::setProgram(const Program& program) { m_program = program; }
+    inline void Pipeline::setDescriptorLayout(DescriptorLayout descriptorLayout)
+    {
+        m_descriptorLayout = descriptorLayout;
+        m_descriptorLayout.compile();
+    }
+
     inline void            Pipeline::setTargetSize(Extent2D targetSize) { m_targetSize = std::move(targetSize); }
     inline const Extent2D& Pipeline::getTargetSize() const { return m_targetSize; }
     inline Extent2D&       Pipeline::getTargetSize() { return m_targetSize; }

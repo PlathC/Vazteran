@@ -5,6 +5,7 @@
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Vulkan/Attachment.hpp>
 #include <vzt/Vulkan/Command.hpp>
+#include <vzt/Vulkan/Descriptor.hpp>
 #include <vzt/Vulkan/Pipeline.hpp>
 #include <vzt/Vulkan/RenderPass.hpp>
 #include <vzt/Vulkan/Surface.hpp>
@@ -22,14 +23,27 @@ int main(int /* argc */, char** /* argv */)
     auto hardware  = device.getHardware();
     auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
 
+    auto program  = vzt::Program(device);
     auto compiler = vzt::Compiler();
-
-    auto program = vzt::Program(device);
     program.setShader(compiler.compile("shaders/triangle.vert", vzt::ShaderStage::Vertex));
     program.setShader(compiler.compile("shaders/triangle.frag", vzt::ShaderStage::Fragment));
 
     auto pipeline = vzt::Pipeline(device);
-    pipeline.addAttachment();
+    pipeline.setViewport(vzt::Viewport{window.getExtent()});
+    pipeline.addAttachment(vzt::ColorComponent::RGBA);
+    pipeline.setProgram(program);
+
+    vzt::DescriptorLayout descriptorLayout{device};
+    descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer); // Model    { mat4 mvp;    mat4  normal }
+    descriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer); // Material { vec3 albedo; float shininess; }
+    pipeline.setDescriptorLayout(std::move(descriptorLayout));
+
+    vzt::VertexInputDescription vertexDescription{};
+    vertexDescription.add(vzt::VertexBinding{0, sizeof(float) * 8});
+    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 0, 0, vzt::Format::R32G32B32SFloat, 0});
+    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 3, 1, vzt::Format::R32G32SFloat, 0});
+    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 5, 2, vzt::Format::R32G32B32SFloat, 0});
+    pipeline.setVertexInputDescription(vertexDescription);
 
     std::vector<vzt::RenderPass> passes{};
     passes.reserve(swapchain.getImageNb());
@@ -40,7 +54,7 @@ int main(int /* argc */, char** /* argv */)
         vzt::RenderPass& pass = passes.back();
 
         // clang-format off
-        pass.addInput(vzt::AttachmentUse{
+        pass.addColor(vzt::AttachmentUse{
             vzt::Format::R16G16B16A16SFloat,
             vzt::ImageLayout::Undefined,
             vzt::ImageLayout::ColorAttachmentOptimal,
@@ -56,7 +70,8 @@ int main(int /* argc */, char** /* argv */)
             vzt::ImageLayout::DepthStencilAttachmentOptimal
         };
         depth.clearValue = vzt::Vec4{1.f, 0.f, 0.f, 0.f};
-        pass.addInput(std::move(depth));
+        pass.setDepth(std::move(depth));
+        pass.compile();
         // clang-format on
     }
 

@@ -2,10 +2,8 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_GOOGLE_include_directive : require
 
-#include "vzt/compression.glsl"
-
 layout(binding = 1) uniform Material {
-    vec4 color; // + shininess
+    vec4 albedo; // + shininess
 } material;
 
 layout(binding = 2) uniform sampler2D colorMap;
@@ -14,14 +12,9 @@ layout(location = 0) in vec3 vsPosition;
 layout(location = 1) in vec2 uv;
 layout(location = 2) in vec3 normal;
 
-layout (location = 0) out vec4 outPosition;
-layout (location = 1) out vec3 outNormal;
-layout (location = 2) out vec4 outAlbedo;
-
+layout (location = 0) out vec4 outColor;
 
 void main() 
 {
-    outPosition = vec4(vsPosition, material.color.w);
-    outAlbedo = vec4(texture(colorMap, uv).rgb * material.color.rgb, 1.);
-    outNormal.xyz = normal;
+    outColor = vec4(material.albedo.rgb, 1.);
 }

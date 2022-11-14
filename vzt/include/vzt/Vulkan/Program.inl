@@ -8,4 +8,11 @@ namespace vzt
     }
 
     inline VkShaderModule ShaderModule::getHandle() const { return m_handle; }
+    inline const Shader&  ShaderModule::getShader() const { return m_shader; }
+
+    inline void Program::setShader(Shader shader)
+    {
+        m_shaderModules.emplace_back(ShaderModule(m_device, std::move(shader)));
+    }
+    inline const std::vector<ShaderModule>& Program::getModules() const { return m_shaderModules; }
 } // namespace vzt

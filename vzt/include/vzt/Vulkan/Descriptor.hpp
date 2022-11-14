@@ -28,10 +28,11 @@ namespace vzt
     class DescriptorLayout
     {
       public:
+        DescriptorLayout() = default;
         DescriptorLayout(View<Device> device);
 
-        DescriptorLayout(const DescriptorLayout& other)            = delete;
-        DescriptorLayout& operator=(const DescriptorLayout& other) = delete;
+        DescriptorLayout(const DescriptorLayout& other);
+        DescriptorLayout& operator=(const DescriptorLayout& other);
 
         DescriptorLayout(DescriptorLayout&& other) noexcept;
         DescriptorLayout& operator=(DescriptorLayout&& other) noexcept;
@@ -49,6 +50,8 @@ namespace vzt
 
         using Bindings = std::unordered_map<uint32_t /*binding*/, vzt::DescriptorType /*type */>;
         Bindings m_bindings;
+
+        bool m_compiled = false;
     };
 
     class DescriptorSet

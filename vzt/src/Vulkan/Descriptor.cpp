@@ -10,11 +10,32 @@ namespace vzt
 {
     DescriptorLayout::DescriptorLayout(View<Device> device) : m_device(device) {}
 
+    DescriptorLayout::DescriptorLayout(const DescriptorLayout& other)
+        : m_device(other.m_device), m_bindings(other.m_bindings)
+    {
+        if (other.m_handle == VK_NULL_HANDLE)
+            return;
+
+        compile();
+    }
+
+    DescriptorLayout& DescriptorLayout::operator=(const DescriptorLayout& other)
+    {
+        m_device   = other.m_device;
+        m_bindings = other.m_bindings;
+
+        if (other.m_handle != VK_NULL_HANDLE)
+            compile();
+
+        return *this;
+    }
+
     DescriptorLayout::DescriptorLayout(DescriptorLayout&& other) noexcept
     {
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
         std::swap(m_bindings, other.m_bindings);
+        std::swap(m_compiled, other.m_compiled);
     }
 
     DescriptorLayout& DescriptorLayout::operator=(DescriptorLayout&& other) noexcept
@@ -22,6 +43,7 @@ namespace vzt
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
         std::swap(m_bindings, other.m_bindings);
+        std::swap(m_compiled, other.m_compiled);
 
         return *this;
     }
@@ -32,10 +54,20 @@ namespace vzt
             vkDestroyDescriptorSetLayout(m_device->getHandle(), m_handle, nullptr);
     }
 
-    void DescriptorLayout::addBinding(uint32_t binding, DescriptorType type) { m_bindings.emplace(binding, type); }
+    void DescriptorLayout::addBinding(uint32_t binding, DescriptorType type)
+    {
+        m_bindings.emplace(binding, type);
+        m_compiled = false;
+    }
 
     void DescriptorLayout::compile()
     {
+        if (m_compiled)
+            return;
+
+        if (m_handle != VK_NULL_HANDLE)
+            vkDestroyDescriptorSetLayout(m_device->getHandle(), m_handle, nullptr);
+
         std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
         layoutBindings.reserve(m_bindings.size());
         for (const auto& [binding, type] : m_bindings)
@@ -43,7 +75,7 @@ namespace vzt
             VkDescriptorSetLayoutBinding layoutBinding{};
             layoutBinding.binding         = binding;
             layoutBinding.descriptorCount = 1;
-            layoutBinding.descriptorType  = vzt::toVulkan(type);
+            layoutBinding.descriptorType  = toVulkan(type);
             layoutBinding.stageFlags      = VK_SHADER_STAGE_ALL;
             layoutBindings.emplace_back(layoutBinding);
         }
@@ -55,6 +87,8 @@ namespace vzt
 
         vkCheck(vkCreateDescriptorSetLayout(m_device->getHandle(), &layoutInfo, nullptr, &m_handle),
                 "Failed to create descriptor set layout!");
+
+        m_compiled = true;
     }
 
     DescriptorPool::DescriptorPool(View<Device> device, std::vector<DescriptorType> descriptorTypes, uint32_t maxSetNb)
