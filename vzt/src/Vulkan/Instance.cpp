@@ -141,8 +141,7 @@ namespace vzt
 
         const auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
             vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
-        if (vkDestroyDebugUtilsMessengerEXT != nullptr && m_handle != VK_NULL_HANDLE &&
-            m_debugMessenger != VK_NULL_HANDLE)
+        if (vkDestroyDebugUtilsMessengerEXT && m_debugMessenger != VK_NULL_HANDLE)
             vkDestroyDebugUtilsMessengerEXT(m_handle, m_debugMessenger, nullptr);
 
         vkDestroyInstance(m_handle, nullptr);

@@ -14,7 +14,7 @@ namespace vzt
 
     struct SwapchainBuilder
     {
-        uint32_t maxFramesInFlight = 3;
+        uint32_t maxFramesInFlight = 2;
     };
 
     struct SwapchainSubmission

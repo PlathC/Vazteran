@@ -135,8 +135,10 @@ namespace vzt
 
             return {};
         }
-        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
             logger::error("Failed to acquire swapchain image!");
+        }
 
         // Check if a previous frame is using this image (i.e. there is its fence to wait on)
         if (m_imagesInFlight[m_currentImage] != VK_NULL_HANDLE)
@@ -171,6 +173,8 @@ namespace vzt
         {
             m_framebufferResized = false;
             m_device->wait();
+            cleanup();
+            create();
 
             return true;
         }
