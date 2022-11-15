@@ -7,14 +7,16 @@
 
 namespace vzt
 {
-    Pipeline::Pipeline(View<Device> device, Viewport viewport) : m_device(device), m_viewport(viewport) {}
+    Pipeline::Pipeline(View<Device> device, View<Program> program, Viewport viewport)
+        : m_device(device), m_program(program), m_viewport(viewport)
+    {
+    }
 
     Pipeline::Pipeline(Pipeline&& other) noexcept
     {
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
-        std::swap(m_targetSize, other.m_targetSize);
         std::swap(m_attachments, other.m_attachments);
         std::swap(m_program, other.m_program);
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
@@ -30,7 +32,6 @@ namespace vzt
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
-        std::swap(m_targetSize, other.m_targetSize);
         std::swap(m_attachments, other.m_attachments);
         std::swap(m_program, other.m_program);
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
@@ -113,7 +114,7 @@ namespace vzt
         if (m_attachments.empty())
         {
             const auto& colorAttachments = renderPass->getColorAttachments();
-            for (const auto& colorAttachment : colorAttachments)
+            for (const auto& _ : colorAttachments)
                 m_attachments.emplace_back(ColorMask::RGBA);
         }
 

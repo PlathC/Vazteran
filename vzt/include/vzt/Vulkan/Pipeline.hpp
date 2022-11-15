@@ -137,7 +137,8 @@ namespace vzt
     class Pipeline
     {
       public:
-        Pipeline(View<Device> device, Viewport viewport = {});
+        Pipeline() = default;
+        Pipeline(View<Device> device, View<Program> program, Viewport viewport);
 
         Pipeline(const Pipeline&)            = delete;
         Pipeline& operator=(const Pipeline&) = delete;
@@ -181,14 +182,13 @@ namespace vzt
         View<Device>     m_device;
         VkPipeline       m_handle         = VK_NULL_HANDLE;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+        View<Program>    m_program;
+        Viewport         m_viewport;
 
-        Extent2D               m_targetSize;
         std::vector<ColorMask> m_attachments;
-        View<Program>          m_program;
         DescriptorLayout       m_descriptorLayout;
 
         Optional<VertexInputDescription> m_vertexDescription = {};
-        Viewport                         m_viewport          = {{0u, 0u}};
         Rasterization                    m_rasterization;
         MultiSampling                    m_multiSample;
         DepthStencil                     m_depthStencil;

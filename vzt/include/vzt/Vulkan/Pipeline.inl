@@ -34,10 +34,6 @@ namespace vzt
         m_descriptorLayout.compile();
     }
 
-    inline void            Pipeline::setTargetSize(Extent2D targetSize) { m_targetSize = std::move(targetSize); }
-    inline const Extent2D& Pipeline::getTargetSize() const { return m_targetSize; }
-    inline Extent2D&       Pipeline::getTargetSize() { return m_targetSize; }
-
     inline void            Pipeline::setViewport(Viewport config) { m_viewport = std::move(config); }
     inline const Viewport& Pipeline::getViewport() const { return m_viewport; }
     inline Viewport&       Pipeline::getViewport() { return m_viewport; }

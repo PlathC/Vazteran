@@ -28,9 +28,7 @@ int main(int /* argc */, char** /* argv */)
     program.setShader(compiler.compile("shaders/triangle.vert", vzt::ShaderStage::Vertex));
     program.setShader(compiler.compile("shaders/triangle.frag", vzt::ShaderStage::Fragment));
 
-    auto pipeline = vzt::Pipeline(device);
-    pipeline.setViewport(vzt::Viewport{window.getExtent()});
-    pipeline.setProgram(program);
+    auto pipeline = vzt::Pipeline(device, program, vzt::Viewport{window.getExtent()});
 
     vzt::DescriptorLayout descriptorLayout{device};
     descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer); // Model    { mat4 mvp;    mat4  normal }
