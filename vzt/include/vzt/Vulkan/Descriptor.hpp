@@ -1,6 +1,8 @@
 #ifndef VZT_VULKAN_DESCRIPTOR_HPP
 #define VZT_VULKAN_DESCRIPTOR_HPP
 
+#include <unordered_set>
+
 #include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
 
@@ -42,13 +44,14 @@ namespace vzt
         void addBinding(uint32_t binding, DescriptorType type);
         void compile();
 
+        using Bindings = std::unordered_map<uint32_t /*binding*/, vzt::DescriptorType /*type */>;
+        inline const Bindings&       getBindings() const;
         inline VkDescriptorSetLayout getHandle() const;
 
       private:
         View<Device>          m_device{};
         VkDescriptorSetLayout m_handle = VK_NULL_HANDLE;
 
-        using Bindings = std::unordered_map<uint32_t /*binding*/, vzt::DescriptorType /*type */>;
         Bindings m_bindings;
 
         bool m_compiled = false;
@@ -75,7 +78,9 @@ namespace vzt
         const static std::vector<DescriptorType> DefaultDescriptors;
 
         DescriptorPool() = default;
-        DescriptorPool(View<Device> device, std::vector<DescriptorType> descriptorTypes = {}, uint32_t maxSetNb = 64);
+        DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes = {},
+                       uint32_t maxSetNb = 64);
+        DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb = 64);
 
         DescriptorPool(const DescriptorPool&)            = delete;
         DescriptorPool& operator=(const DescriptorPool&) = delete;
@@ -85,7 +90,7 @@ namespace vzt
 
         ~DescriptorPool();
 
-        void allocate(uint32_t count, const vzt::DescriptorLayout& layout);
+        void allocate(uint32_t count, const DescriptorLayout& layout);
 
         inline DescriptorSet operator[](uint32_t i) const;
 

@@ -27,9 +27,9 @@ set(VZT_HEADERS
     include/vzt/Vulkan/Command.hpp
     include/vzt/Vulkan/Descriptor.hpp
     include/vzt/Vulkan/Device.hpp
+    include/vzt/Vulkan/GraphicPipeline.hpp
     include/vzt/Vulkan/Image.hpp
     include/vzt/Vulkan/Instance.hpp
-    include/vzt/Vulkan/Pipeline.hpp
     include/vzt/Vulkan/Program.hpp
     include/vzt/Vulkan/RenderPass.hpp
     include/vzt/Vulkan/Surface.hpp
@@ -53,9 +53,9 @@ set(VZT_SOURCES
     src/Vulkan/Command.cpp
     src/Vulkan/Descriptor.cpp
     src/Vulkan/Device.cpp
+    src/Vulkan/GraphicPipeline.cpp
     src/Vulkan/Image.cpp
     src/Vulkan/Instance.cpp
-    src/Vulkan/Pipeline.cpp
     src/Vulkan/Program.cpp
     src/Vulkan/RenderPass.cpp
     src/Vulkan/Surface.cpp

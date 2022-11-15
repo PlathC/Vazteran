@@ -59,13 +59,18 @@ namespace vzt
         bool                                 hasExtensions(const std::vector<const char*>& extensions) const;
         std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
         bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;
-        VkPhysicalDeviceProperties           getProperties() const;
         Format                               getDepthFormat() const;
 
-        inline VkPhysicalDevice getHandle() const;
+        std::size_t getUniformAlignment(std::size_t alignment);
+        template <class Type>
+        std::size_t getUniformAlignment();
+
+        inline VkPhysicalDeviceProperties getProperties() const;
+        inline VkPhysicalDevice           getHandle() const;
 
       private:
-        VkPhysicalDevice m_handle = VK_NULL_HANDLE;
+        VkPhysicalDevice           m_handle = VK_NULL_HANDLE;
+        VkPhysicalDeviceProperties m_properties;
     };
 
     class Queue;

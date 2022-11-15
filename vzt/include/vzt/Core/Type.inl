@@ -65,4 +65,10 @@ namespace vzt
         : data(ptr), size(size), offset(offset)
     {
     }
+
+    template <class Type>
+    OffsetSpan<Type>::OffsetSpan(Type& ptr, std::size_t size, std::size_t offset)
+        : data(&ptr), size(size), offset(offset)
+    {
+    }
 } // namespace vzt

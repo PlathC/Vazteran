@@ -1,12 +1,13 @@
 #include <cassert>
 #include <cstdlib>
 
+#include <glm/mat4x4.hpp>
 #include <vzt/Core/File.hpp>
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Vulkan/Attachment.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Descriptor.hpp>
-#include <vzt/Vulkan/Pipeline.hpp>
+#include <vzt/Vulkan/GraphicPipeline.hpp>
 #include <vzt/Vulkan/RenderPass.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
@@ -28,12 +29,13 @@ int main(int /* argc */, char** /* argv */)
     program.setShader(compiler.compile("shaders/triangle.vert", vzt::ShaderStage::Vertex));
     program.setShader(compiler.compile("shaders/triangle.frag", vzt::ShaderStage::Fragment));
 
-    auto pipeline = vzt::Pipeline(device, program, vzt::Viewport{window.getExtent()});
+    auto pipeline = vzt::GraphicPipeline(device, program, vzt::Viewport{window.getExtent()});
 
     vzt::DescriptorLayout descriptorLayout{device};
     descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer); // Model    { mat4 mvp;    mat4  normal }
     descriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer); // Material { vec3 albedo; float shininess; }
-    pipeline.setDescriptorLayout(std::move(descriptorLayout));
+    descriptorLayout.compile();
+    pipeline.setDescriptorLayout(descriptorLayout);
 
     vzt::VertexInputDescription vertexDescription{};
     vertexDescription.add(vzt::VertexBinding{0, sizeof(float) * 8});
@@ -73,6 +75,22 @@ int main(int /* argc */, char** /* argv */)
     }
 
     pipeline.compile(passes.back());
+
+    vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
+    descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
+
+    const std::size_t modelsAlignment = hardware.getUniformAlignment(sizeof(glm::mat4) * 2u);
+    vzt::Buffer       modelsUbo       = vzt::Buffer(device, modelsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
+
+    const std::size_t materialsAlignment = hardware.getUniformAlignment<glm::vec4>();
+    vzt::Buffer       materialsUbo = vzt::Buffer(device, materialsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
+
+    // TODO: Writing data to uniform buffers
+
+    vzt::Indexed<vzt::BufferSpan> ubos{};
+    ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(glm::mat4) * 2u};
+    ubos[1] = vzt::BufferSpan{materialsUbo, sizeof(glm::vec4)};
+    descriptorPool.update(ubos);
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());

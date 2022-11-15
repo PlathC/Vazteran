@@ -43,7 +43,10 @@ namespace vzt
         return !formats.empty() && !presentModes.empty();
     }
 
-    PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) : m_handle(handle) {}
+    PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) : m_handle(handle)
+    {
+        vkGetPhysicalDeviceProperties(m_handle, &m_properties);
+    }
 
     bool PhysicalDevice::isSuitable(DeviceBuilder configuration, View<Surface> surface) const
     {
@@ -119,13 +122,6 @@ namespace vzt
         return presentSupport;
     }
 
-    VkPhysicalDeviceProperties PhysicalDevice::getProperties() const
-    {
-        VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(m_handle, &properties);
-        return properties;
-    }
-
     Format PhysicalDevice::getDepthFormat() const
     {
         // clang-format off
@@ -149,6 +145,14 @@ namespace vzt
         }
 
         throw std::runtime_error("Failed to find supported format!");
+    }
+
+    std::size_t PhysicalDevice::getUniformAlignment(std::size_t alignment)
+    {
+        const std::size_t minUboAlignment = m_properties.limits.minUniformBufferOffsetAlignment;
+        if (minUboAlignment > 0)
+            alignment = (alignment + minUboAlignment - 1) & ~(minUboAlignment - 1);
+        return alignment;
     }
 
     Device::Device(View<Instance> instance, PhysicalDevice device, DeviceBuilder configuration, View<Surface> surface)

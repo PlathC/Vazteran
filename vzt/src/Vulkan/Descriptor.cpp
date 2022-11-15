@@ -91,12 +91,39 @@ namespace vzt
         m_compiled = true;
     }
 
-    DescriptorPool::DescriptorPool(View<Device> device, std::vector<DescriptorType> descriptorTypes, uint32_t maxSetNb)
+    DescriptorPool::DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes,
+                                   uint32_t maxSetNb)
         : m_device(device), m_maxSetNb(maxSetNb)
     {
         std::vector<VkDescriptorPoolSize> sizes;
         sizes.reserve(descriptorTypes.size());
         for (const auto& descriptorType : descriptorTypes)
+            sizes.emplace_back(VkDescriptorPoolSize{toVulkan(descriptorType), maxSetNb});
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags                      = 0;
+        pool_info.maxSets                    = maxSetNb;
+        pool_info.poolSizeCount              = static_cast<uint32_t>(sizes.size());
+        pool_info.pPoolSizes                 = sizes.data();
+
+        vkCheck(vkCreateDescriptorPool(m_device->getHandle(), &pool_info, nullptr, &m_handle),
+                "Failed to create descriptor pool.");
+    }
+
+    DescriptorPool::DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb)
+        : m_device(device), m_maxSetNb(maxSetNb)
+    {
+        const auto& bindings = descriptorLayout.getBindings();
+
+        std::unordered_set<DescriptorType> types{};
+        types.reserve(bindings.size());
+        for (const auto& [_, descriptorType] : bindings)
+            types.emplace(descriptorType);
+
+        std::vector<VkDescriptorPoolSize> sizes{};
+        sizes.reserve(types.size());
+        for (const auto& descriptorType : types)
             sizes.emplace_back(VkDescriptorPoolSize{toVulkan(descriptorType), maxSetNb});
 
         VkDescriptorPoolCreateInfo pool_info = {};
@@ -134,7 +161,7 @@ namespace vzt
             vkDestroyDescriptorPool(m_device->getHandle(), m_handle, nullptr);
     }
 
-    void DescriptorPool::allocate(uint32_t count, const vzt::DescriptorLayout& layout)
+    void DescriptorPool::allocate(uint32_t count, const DescriptorLayout& layout)
     {
         const auto layouts = std::vector(count, layout.getHandle());
 

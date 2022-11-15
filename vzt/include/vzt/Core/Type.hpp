@@ -54,7 +54,8 @@ namespace vzt
         std::size_t offset = 0;
 
         OffsetSpan() = default;
-        OffsetSpan(Type* ptr, std::size_t size, std::size_t offset);
+        OffsetSpan(Type* ptr, std::size_t size, std::size_t offset = 0u);
+        OffsetSpan(Type& ptr, std::size_t size, std::size_t offset = 0u);
     };
 
     template <class Type>

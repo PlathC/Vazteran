@@ -7,7 +7,7 @@
 
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
-#include "vzt/Vulkan/Pipeline.hpp"
+#include "vzt/Vulkan/GraphicPipeline.hpp"
 
 namespace vzt
 {
@@ -34,6 +34,9 @@ namespace vzt
 
         void clear(View<Image> image, ImageLayout layout, Vec4 clearColor = {});
         void copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
+
+        void bind(const GraphicPipeline& graphicPipeline);
+        void bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set);
 
         void                   flush();
         inline VkCommandBuffer getHandle() const;

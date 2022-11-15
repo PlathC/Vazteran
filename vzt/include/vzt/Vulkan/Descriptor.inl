@@ -2,7 +2,9 @@
 
 namespace vzt
 {
-    inline VkDescriptorSetLayout DescriptorLayout::getHandle() const { return m_handle; }
+    inline const DescriptorLayout::Bindings& DescriptorLayout::getBindings() const { return m_bindings; }
+    inline VkDescriptorSetLayout             DescriptorLayout::getHandle() const { return m_handle; }
+    inline VkDescriptorSet                   DescriptorSet::getHandle() const { return m_handle; }
 
     inline const std::vector<DescriptorType> DescriptorPool::DefaultDescriptors = {DescriptorType::UniformBuffer};
 

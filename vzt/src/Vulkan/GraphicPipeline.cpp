@@ -1,18 +1,17 @@
-#include "vzt/Vulkan/Pipeline.hpp"
-
 #include <cassert>
 
 #include "vzt/Vulkan/Device.hpp"
+#include "vzt/Vulkan/GraphicPipeline.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
-    Pipeline::Pipeline(View<Device> device, View<Program> program, Viewport viewport)
+    GraphicPipeline::GraphicPipeline(View<Device> device, View<Program> program, Viewport viewport)
         : m_device(device), m_program(program), m_viewport(viewport)
     {
     }
 
-    Pipeline::Pipeline(Pipeline&& other) noexcept
+    GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept
     {
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
@@ -27,7 +26,7 @@ namespace vzt
         std::swap(m_depthStencil, other.m_depthStencil);
     }
 
-    Pipeline& Pipeline::operator=(Pipeline&& other) noexcept
+    GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept
     {
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
@@ -44,7 +43,7 @@ namespace vzt
         return *this;
     }
 
-    Pipeline::~Pipeline()
+    GraphicPipeline::~GraphicPipeline()
     {
         if (m_handle != VK_NULL_HANDLE)
             vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
@@ -60,7 +59,7 @@ namespace vzt
     std::vector<VkVertexInputBindingDescription>   toVulkan(std::vector<VertexBinding> bindings);
     std::vector<VkVertexInputAttributeDescription> toVulkan(std::vector<VertexAttribute> attributes);
 
-    void Pipeline::compile(View<RenderPass> renderPass)
+    void GraphicPipeline::compile(View<RenderPass> renderPass)
     {
         assert(m_program && "You must provide a program before compiling pipeline.");
 
@@ -177,7 +176,7 @@ namespace vzt
         m_compiled = true;
     }
 
-    void Pipeline::cleanup()
+    void GraphicPipeline::cleanup()
     {
         if (m_handle != VK_NULL_HANDLE)
             vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);

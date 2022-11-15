@@ -134,29 +134,25 @@ namespace vzt
         inline void add(VertexAttribute binding);
     };
 
-    class Pipeline
+    class GraphicPipeline
     {
       public:
-        Pipeline() = default;
-        Pipeline(View<Device> device, View<Program> program, Viewport viewport);
+        GraphicPipeline() = default;
+        GraphicPipeline(View<Device> device, View<Program> program, Viewport viewport);
 
-        Pipeline(const Pipeline&)            = delete;
-        Pipeline& operator=(const Pipeline&) = delete;
+        GraphicPipeline(const GraphicPipeline&)            = delete;
+        GraphicPipeline& operator=(const GraphicPipeline&) = delete;
 
-        Pipeline(Pipeline&&) noexcept;
-        Pipeline& operator=(Pipeline&&) noexcept;
+        GraphicPipeline(GraphicPipeline&&) noexcept;
+        GraphicPipeline& operator=(GraphicPipeline&&) noexcept;
 
-        ~Pipeline();
+        ~GraphicPipeline();
 
         inline void setVertexInputDescription(VertexInputDescription vertexDescription);
         inline void addAttachmentColorBlend(ColorMask mask = ColorComponent::RGBA);
         inline void addAttachmentsColorBlend(std::size_t nb, ColorMask mask = ColorComponent::RGBA);
         inline void setProgram(const Program& program);
         inline void setDescriptorLayout(DescriptorLayout descriptorLayout);
-
-        inline void            setTargetSize(Extent2D targetSize);
-        inline const Extent2D& getTargetSize() const;
-        inline Extent2D&       getTargetSize();
 
         inline void            setViewport(Viewport config);
         inline const Viewport& getViewport() const;
@@ -175,6 +171,9 @@ namespace vzt
         inline DepthStencil&       getDepthStencil();
 
         void compile(View<RenderPass> renderPass);
+
+        inline VkPipeline       getHandle() const;
+        inline VkPipelineLayout getLayout() const;
 
       private:
         void cleanup();
@@ -197,6 +196,6 @@ namespace vzt
     };
 } // namespace vzt
 
-#include "vzt/Vulkan/Pipeline.inl"
+#include "vzt/Vulkan/GraphicPipeline.inl"
 
 #endif // VZT_PIPELINE_HPP

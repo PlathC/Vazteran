@@ -3,7 +3,7 @@
 
 #include <vzt/Core/File.hpp>
 #include <vzt/Vulkan/Command.hpp>
-#include <vzt/Vulkan/Pipeline.hpp>
+#include <vzt/Vulkan/Graphic.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>

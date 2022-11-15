@@ -80,6 +80,7 @@ namespace vzt
         uint8_t* map();
         void     unMap();
 
+        inline std::size_t    size() const;
         inline MemoryLocation getLocation() const;
         inline VkBuffer       getHandle() const;
 

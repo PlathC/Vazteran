@@ -113,11 +113,23 @@ namespace vzt
     void CommandBuffer::copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset,
                              uint64_t dstOffset)
     {
-        VkBufferCopy copyRegion{};
+        VkBufferCopy copyRegion;
         copyRegion.size      = size;
         copyRegion.srcOffset = srcOffset;
         copyRegion.dstOffset = dstOffset;
         vkCmdCopyBuffer(m_handle, src.getHandle(), dst.getHandle(), 1, &copyRegion);
+    }
+
+    void CommandBuffer::bind(const GraphicPipeline& graphicPipeline)
+    {
+        vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getHandle());
+    }
+
+    void CommandBuffer::bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set)
+    {
+        const VkDescriptorSet descriptorSet = set.getHandle();
+        vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getLayout(), 0, 1,
+                                &descriptorSet, 0, nullptr);
     }
 
     void CommandBuffer::flush()
