@@ -30,6 +30,7 @@ set(VZT_HEADERS
     include/vzt/Vulkan/Command.hpp
     include/vzt/Vulkan/Descriptor.hpp
     include/vzt/Vulkan/Device.hpp
+    include/vzt/Vulkan/FrameBuffer.hpp
     include/vzt/Vulkan/GraphicPipeline.hpp
     include/vzt/Vulkan/Image.hpp
     include/vzt/Vulkan/Instance.hpp
@@ -59,6 +60,7 @@ set(VZT_SOURCES
     src/Vulkan/Command.cpp
     src/Vulkan/Descriptor.cpp
     src/Vulkan/Device.cpp
+    src/Vulkan/FrameBuffer.cpp
     src/Vulkan/GraphicPipeline.cpp
     src/Vulkan/Image.cpp
     src/Vulkan/Instance.cpp

@@ -13,6 +13,7 @@ namespace vzt
 {
     class CommandPool;
     class Device;
+    class FrameBuffer;
     class Queue;
 
     class CommandBuffer
@@ -42,6 +43,12 @@ namespace vzt
         void bindIndexBuffer(const Buffer& buffer, std::size_t index);
 
         void drawIndexed(const Buffer& indexBuffer, const Range<>& range);
+
+        void setViewport(const Extent2D& size, float minDepth = 0.f, float maxDepth = 1.f);
+        void setScissor(const Extent2D& size, Vec2i offset = {0u, 0u});
+
+        void begin(const RenderPass& pass, const FrameBuffer& frameBuffer);
+        void end();
 
         void                   flush();
         inline VkCommandBuffer getHandle() const;

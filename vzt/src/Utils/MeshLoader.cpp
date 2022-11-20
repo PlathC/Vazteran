@@ -39,6 +39,7 @@ namespace vzt
         result.vertices.reserve(attributes.vertices.size());
         result.normals.reserve(attributes.vertices.size());
         result.indices.reserve(attributes.vertices.size() * 3);
+
         std::size_t indexOffset = 0;
         for (const auto& shape : shapes)
         {
@@ -49,7 +50,7 @@ namespace vzt
             subMeshVertexIndices.reserve(shape.mesh.indices.size());
             for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++)
             {
-                const std::size_t fv = shape.mesh.num_face_vertices[f];
+                std::size_t fv = shape.mesh.num_face_vertices[f];
                 for (std::size_t vertexIndex = 0; vertexIndex < fv; vertexIndex++)
                 {
                     tinyobj::index_t index = shape.mesh.indices[tinyObjIndexOffset + vertexIndex];
@@ -57,14 +58,12 @@ namespace vzt
                     {
                         tinyObjToVazteranVertexIndices[index.vertex_index] =
                             static_cast<uint32_t>(result.vertices.size());
-
-                        Vec3 vertex;
-                        vertex.x = attributes.vertices[3 * static_cast<size_t>(index.vertex_index) + 0];
-                        vertex.y = attributes.vertices[3 * static_cast<size_t>(index.vertex_index) + 1];
-                        vertex.z = attributes.vertices[3 * static_cast<size_t>(index.vertex_index) + 2];
+                        vzt::Vec3 vertex{attributes.vertices[3 * static_cast<size_t>(index.vertex_index) + 0],
+                                         attributes.vertices[3 * static_cast<size_t>(index.vertex_index) + 1],
+                                         attributes.vertices[3 * static_cast<size_t>(index.vertex_index) + 2]};
 
                         // Check if `normal_index` is zero or positive. negative = no normal data
-                        Vec3 normal{};
+                        vzt::Vec3 normal{};
                         if (index.normal_index >= 0)
                         {
                             normal.x = attributes.normals[3 * static_cast<size_t>(index.normal_index) + 0];
@@ -88,9 +87,13 @@ namespace vzt
                 tinyObjIndexOffset += fv;
             }
 
-            SubMesh subMesh = {Range<std::size_t>{indexOffset, result.indices.size() - indexOffset}};
-            result.subMeshes.emplace_back(subMesh);
-            indexOffset = result.indices.size();
+            // Handle only one subMesh material
+
+            Range<> range{indexOffset, result.indices.size()};
+            assert(shape.mesh.indices.size() == range.size());
+
+            result.subMeshes.emplace_back(SubMesh{range});
+            indexOffset += result.indices.size();
         }
 
         return result;

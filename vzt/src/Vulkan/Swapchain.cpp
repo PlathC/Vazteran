@@ -224,15 +224,18 @@ namespace vzt
         for (const auto& queue : queues)
             queueFamilyIndices.emplace_back(queue->getId());
 
+        SharingMode sharingMode;
         if (queueFamilyIndices.size() == 1)
         {
-            createInfo.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+            sharingMode                      = SharingMode::Exclusive;
+            createInfo.imageSharingMode      = toVulkan(sharingMode);
             createInfo.queueFamilyIndexCount = 0;
             createInfo.pQueueFamilyIndices   = nullptr;
         }
         else
         {
-            createInfo.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+            sharingMode                      = SharingMode::Concurrent;
+            createInfo.imageSharingMode      = toVulkan(sharingMode);
             createInfo.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size());
             createInfo.pQueueFamilyIndices   = queueFamilyIndices.data();
         }
@@ -254,7 +257,8 @@ namespace vzt
 
         auto format = static_cast<Format>(surfaceFormat.format);
         for (VkImage image : m_images)
-            m_userImages.emplace_back(m_device, image, Extent2D{extent.width, extent.height}, format);
+            m_userImages.emplace_back(m_device, image, Extent2D{extent.width, extent.height},
+                                      ImageUsage::ColorAttachment, format, sharingMode);
     }
 
     void Swapchain::cleanup()

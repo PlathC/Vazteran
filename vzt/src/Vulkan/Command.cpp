@@ -3,6 +3,8 @@
 #include <cassert>
 
 #include "vzt/Vulkan/Device.hpp"
+#include "vzt/Vulkan/FrameBuffer.hpp"
+#include "vzt/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
@@ -127,6 +129,7 @@ namespace vzt
 
     void CommandBuffer::bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set)
     {
+        bind(graphicPipeline);
         const VkDescriptorSet descriptorSet = set.getHandle();
         vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getLayout(), 0, 1,
                                 &descriptorSet, 0, nullptr);
@@ -148,8 +151,63 @@ namespace vzt
     void CommandBuffer::drawIndexed(const Buffer& indexBuffer, const Range<>& range)
     {
         bindIndexBuffer(indexBuffer, range.start);
-        vkCmdDrawIndexed(m_handle, range.size(), 1, 0, 0, 0);
+        vkCmdDrawIndexed(m_handle, static_cast<uint32_t>(range.size()), 1, 0, 0, 0);
     }
+
+    void CommandBuffer::setViewport(const Extent2D& size, float minDepth, float maxDepth)
+    {
+        VkViewport viewport;
+        viewport.x        = 0.f;
+        viewport.y        = 0.f;
+        viewport.width    = static_cast<float>(size.width);
+        viewport.height   = static_cast<float>(size.height);
+        viewport.minDepth = minDepth;
+        viewport.maxDepth = maxDepth;
+        vkCmdSetViewport(m_handle, 0, 1, &viewport);
+    }
+
+    void CommandBuffer::setScissor(const Extent2D& size, Vec2i offset)
+    {
+        VkRect2D scissor;
+        scissor.extent = {size.width, size.height};
+        scissor.offset = VkOffset2D{offset.x, offset.y};
+        vkCmdSetScissor(m_handle, 0, 1, &scissor);
+    }
+
+    void CommandBuffer::begin(const RenderPass& pass, const FrameBuffer& frameBuffer)
+    {
+        VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+
+        renderPassInfo.renderPass        = pass.getHandle();
+        renderPassInfo.framebuffer       = frameBuffer.getHandle();
+        renderPassInfo.renderArea.offset = {0, 0};
+
+        const auto size                  = frameBuffer.getSize();
+        renderPassInfo.renderArea.extent = VkExtent2D{size.width, size.height};
+
+        const auto& colorAttachments = pass.getColorAttachments();
+        const auto& depth            = pass.getDepthAttachment();
+
+        std::vector<VkClearValue> clearColors{};
+        clearColors.reserve(colorAttachments.size() + 1);
+        for (auto& attachment : colorAttachments)
+        {
+            const VkClearValue color = {attachment.clearValue.r, attachment.clearValue.g, attachment.clearValue.b,
+                                        attachment.clearValue.a};
+            clearColors.emplace_back(color);
+        }
+
+        const VkClearValue depthClear = {depth.clearValue.r, depth.clearValue.g, depth.clearValue.b,
+                                         depth.clearValue.a};
+        clearColors.emplace_back(depthClear);
+
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+        renderPassInfo.pClearValues    = clearColors.data();
+
+        vkCmdBeginRenderPass(m_handle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
+    void CommandBuffer::end() { vkCmdEndRenderPass(m_handle); }
 
     void CommandBuffer::flush()
     {

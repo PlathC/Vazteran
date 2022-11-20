@@ -90,12 +90,12 @@ namespace vzt
 
             VkAttachmentReference& currentAttachmentRef = inputRefs[i];
             currentAttachmentRef.attachment             = static_cast<uint32_t>(attachments.size() - 1);
-            currentAttachmentRef.layout                 = vzt::toVulkan(attachment.usedLayout);
+            currentAttachmentRef.layout                 = toVulkan(attachment.usedLayout);
         }
 
         VkAttachmentReference depthRef;
         depthRef.attachment = static_cast<uint32_t>(m_colorAttachments.size());
-        depthRef.layout     = vzt::toVulkan(m_depthAttachment.usedLayout);
+        depthRef.layout     = toVulkan(m_depthAttachment.usedLayout);
 
         VkSubpassDescription subpass{};
         subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;

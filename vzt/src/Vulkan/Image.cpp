@@ -37,8 +37,9 @@ namespace vzt
     {
     }
 
-    Image::Image(View<Device> device, VkImage image, Extent3D size, Format format)
-        : m_device(device), m_handle(image), m_size(size), m_format(format)
+    Image::Image(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
+                 SharingMode sharingMode)
+        : m_device(device), m_handle(image), m_size(size), m_usage(usage), m_format(format), m_sharingMode(sharingMode)
     {
     }
 

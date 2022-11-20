@@ -17,6 +17,8 @@
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
 
+#include "vzt/Vulkan/FrameBuffer.hpp"
+
 int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Blank";
@@ -36,7 +38,12 @@ int main(int /* argc */, char** /* argv */)
     auto pipeline = vzt::GraphicPipeline(device, program, vzt::Viewport{window.getExtent()});
 
     vzt::DescriptorLayout descriptorLayout{device};
-    descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer); // Model    { mat4 mvp;    mat4  normal }
+
+    descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer); // Model {
+                                                                        //     mat4 modelViewMatrix;
+                                                                        //     mat4 projectionMatrix;
+                                                                        //     mat4 normalMatrix;
+                                                                        // }
     descriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer); // Material { vec3 albedo; float shininess; }
     descriptorLayout.compile();
     pipeline.setDescriptorLayout(descriptorLayout);
@@ -44,41 +51,53 @@ int main(int /* argc */, char** /* argv */)
     vzt::VertexInputDescription vertexDescription{};
     vertexDescription.add(vzt::VertexBinding{0, sizeof(float) * 8});
     vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 0, 0, vzt::Format::R32G32B32SFloat, 0});
-    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 3, 1, vzt::Format::R32G32SFloat, 0});
-    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 5, 2, vzt::Format::R32G32B32SFloat, 0});
+    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 3, 1, vzt::Format::R32G32B32SFloat, 0});
     pipeline.setVertexInputDescription(vertexDescription);
 
-    std::vector<vzt::RenderPass> passes{};
-    passes.reserve(swapchain.getImageNb());
+    vzt::RenderPass renderPass{device};
+
+    // clang-format off
+    renderPass.addColor(vzt::AttachmentUse{
+        vzt::Format::B8G8R8A8SRGB,
+        vzt::ImageLayout::Undefined,
+        vzt::ImageLayout::ColorAttachmentOptimal,
+        vzt::ImageLayout::ColorAttachmentOptimal
+    });
+    // clang-format on
+
+    // clang-format off
+    vzt::AttachmentUse depth{
+        hardware.getDepthFormat(),
+        vzt::ImageLayout::Undefined,
+        vzt::ImageLayout::DepthStencilAttachmentOptimal,
+        vzt::ImageLayout::DepthStencilAttachmentOptimal
+    };
+    // clang-format on
+
+    depth.clearValue = vzt::Vec4{1.f, 0.f, 0.f, 0.f};
+    renderPass.setDepth(std::move(depth));
+    renderPass.compile();
+
+    pipeline.compile(renderPass);
+
+    const vzt::Format depthFormat = hardware.getDepthFormat();
+
+    std::vector<vzt::Image>       depthStencils;
+    std::vector<vzt::FrameBuffer> frameBuffers;
+    depthStencils.reserve(swapchain.getImageNb());
+    frameBuffers.reserve(swapchain.getImageNb());
     for (std::size_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        passes.emplace_back(device);
+        depthStencils.emplace_back(device, window.getExtent(), vzt::ImageUsage::DepthStencilAttachment, depthFormat);
 
-        vzt::RenderPass& pass = passes.back();
+        const auto& image = swapchain.getImage(i);
+        frameBuffers.emplace_back(device, window.getExtent());
 
-        // clang-format off
-        pass.addColor(vzt::AttachmentUse{
-            vzt::Format::R16G16B16A16SFloat,
-            vzt::ImageLayout::Undefined,
-            vzt::ImageLayout::ColorAttachmentOptimal,
-            vzt::ImageLayout::ColorAttachmentOptimal
-        });
-        // clang-format on
-
-        // clang-format off
-        vzt::AttachmentUse depth{
-            hardware.getDepthFormat(),
-            vzt::ImageLayout::Undefined,
-            vzt::ImageLayout::DepthStencilAttachmentOptimal,
-            vzt::ImageLayout::DepthStencilAttachmentOptimal
-        };
-        depth.clearValue = vzt::Vec4{1.f, 0.f, 0.f, 0.f};
-        pass.setDepth(std::move(depth));
-        pass.compile();
-        // clang-format on
+        vzt::FrameBuffer& frameBuffer = frameBuffers.back();
+        frameBuffer.addAttachment(vzt::ImageView(device, image, vzt::ImageAspect::Color));
+        frameBuffer.addAttachment(vzt::ImageView(device, depthStencils.back(), vzt::ImageAspect::Depth));
+        frameBuffer.compile(renderPass);
     }
-
-    pipeline.compile(passes.back());
 
     vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
     descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
@@ -108,12 +127,24 @@ int main(int /* argc */, char** /* argv */)
     materialsUbo.update<vzt::Vec4>(material);
 
     vzt::Indexed<vzt::BufferSpan> ubos{};
-    ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(glm::mat4) * 2u};
+    ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(glm::mat4) * 3u};
     ubos[1] = vzt::BufferSpan{materialsUbo, sizeof(glm::vec4)};
     descriptorPool.update(ubos);
 
-    const vzt::Mesh mesh     = vzt::readObj("samples/Bunny/bunny.obj");
-    vzt::Buffer vertexBuffer = vzt::Buffer::fromData<vzt::Vec3>(device, mesh.vertices, vzt::BufferUsage::VertexBuffer);
+    const vzt::Mesh mesh = vzt::readObj("samples/Bunny/bunny.obj");
+
+    struct VertexInput
+    {
+        vzt::Vec3 inPosition;
+        vzt::Vec3 inNormal;
+    };
+
+    std::vector<VertexInput> inputs;
+    inputs.reserve(mesh.vertices.size());
+    for (std::size_t i = 0; i < mesh.vertices.size(); i++)
+        inputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
+
+    vzt::Buffer vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, inputs, vzt::BufferUsage::VertexBuffer);
     vzt::Buffer indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
@@ -144,11 +175,14 @@ int main(int /* argc */, char** /* argv */)
             imageBarrier.newLayout = vzt::ImageLayout::ColorAttachmentOptimal;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
 
-            // TODO: Bind render pass
+            commands.begin(renderPass, frameBuffers[submission->imageId]);
 
+            commands.bind(pipeline, descriptorPool[submission->imageId]);
             commands.bindVertexBuffer(vertexBuffer);
             for (const auto& subMesh : mesh.subMeshes)
                 commands.drawIndexed(indexBuffer, subMesh.indices);
+
+            commands.end();
 
             imageBarrier.image     = image;
             imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;

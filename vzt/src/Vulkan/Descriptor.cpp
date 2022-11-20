@@ -91,6 +91,8 @@ namespace vzt
         m_compiled = true;
     }
 
+    DescriptorSet::DescriptorSet(VkDescriptorSet handle) : m_handle(handle) {}
+
     DescriptorPool::DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes,
                                    uint32_t maxSetNb)
         : m_device(device), m_maxSetNb(maxSetNb)
