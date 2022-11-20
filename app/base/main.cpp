@@ -144,6 +144,8 @@ int main(int /* argc */, char** /* argv */)
             imageBarrier.newLayout = vzt::ImageLayout::ColorAttachmentOptimal;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
 
+            // TODO: Bind render pass
+
             commands.bindVertexBuffer(vertexBuffer);
             for (const auto& subMesh : mesh.subMeshes)
                 commands.drawIndexed(indexBuffer, subMesh.indices);
