@@ -3,6 +3,13 @@
 
 #include <cstdint>
 
+#include <glm/gtc/quaternion.hpp>
+#include <glm/mat3x3.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
 namespace vzt
 {
     struct Extent2D
@@ -21,54 +28,32 @@ namespace vzt
         inline Extent3D(Extent2D extent);
     };
 
-    template <class Type = float>
-    struct Vec2Base
-    {
-        Type x{};
-        Type y{};
+    using Vec2  = glm::vec2;
+    using Vec2f = Vec2;
+    using Vec2u = glm::uvec2;
+    using Vec2i = glm::ivec2;
 
-        Vec2Base() = default;
-        Vec2Base(Type v);
-        Vec2Base(Type x, Type y);
-    };
+    using Vec3  = glm::vec3;
+    using Vec3f = Vec3;
+    using Vec3u = glm::uvec3;
+    using Vec3i = glm::ivec3;
 
-    using Vec2  = Vec2Base<float>;
-    using Vec2f = Vec2Base<float>;
-    using Vec2u = Vec2Base<uint32_t>;
-    using Vec2i = Vec2Base<int32_t>;
+    using Vec4  = glm::vec4;
+    using Vec4f = Vec4;
+    using Vec4u = glm::uvec4;
+    using Vec4i = glm::ivec4;
 
-    template <class Type>
-    struct Vec3Base
-    {
-        Type x{};
-        Type y{};
-        Type z{};
+    using Mat3 = glm::mat3;
+    using Mat4 = glm::mat4;
 
-        Vec3Base() = default;
-        Vec3Base(Type v);
-        Vec3Base(Type x, Type y, Type z);
-    };
-    using Vec3  = Vec3Base<float>;
-    using Vec3f = Vec3Base<float>;
-    using Vec3u = Vec3Base<uint32_t>;
-    using Vec3i = Vec3Base<int32_t>;
+    using Quat = glm::quat;
 
-    template <class Type>
-    struct Vec4Base
-    {
-        Type x{};
-        Type y{};
-        Type z{};
-        Type w{};
+    constexpr float Pi = 3.14159265359f;
 
-        Vec4Base() = default;
-        Vec4Base(Type v);
-        Vec4Base(Type x, Type y, Type z, Type w);
-    };
-    using Vec4  = Vec4Base<float>;
-    using Vec4f = Vec4Base<float>;
-    using Vec4u = Vec4Base<uint32_t>;
-    using Vec4i = Vec4Base<int32_t>;
+    constexpr float toRadians(float degrees);
+    constexpr float toDegrees(float radians);
+
+    inline Mat4 toTransformation(const Vec3& position, const Quat& rotation);
 } // namespace vzt
 
 #include "vzt/Core/Math.inl"

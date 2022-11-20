@@ -1,6 +1,8 @@
 #ifndef VZT_TYPE_HPP
 #define VZT_TYPE_HPP
 
+#include <array>
+#include <limits>
 #include <optional>
 #include <vector>
 
@@ -29,8 +31,12 @@ namespace vzt
         std::size_t size = 0;
 
         Span() = default;
+        Span(const Type& type);
         Span(Type* ptr, std::size_t size);
         Span(const std::vector<Type>& buffer);
+
+        template <std::size_t Size>
+        Span(const std::array<Type, Size>& buffer);
     };
 
     template <class Type>
@@ -41,9 +47,13 @@ namespace vzt
 
         CSpan() = default;
         CSpan(Span<Type> span);
+        CSpan(const Type& span);
         CSpan(Type* ptr, std::size_t size);
         CSpan(const Type* ptr, std::size_t size);
         CSpan(const std::vector<Type>& buffer);
+
+        template <std::size_t Size>
+        CSpan(const std::array<Type, Size>& buffer);
     };
 
     template <class Type>
@@ -60,6 +70,17 @@ namespace vzt
 
     template <class Type>
     using Optional = std::optional<Type>;
+
+    template <class Type = std::size_t>
+    struct Range
+    {
+        static_assert(std::numeric_limits<Type>::is_integer, "Type must be an integer type");
+
+        Type start;
+        Type end;
+
+        constexpr Type size() const;
+    };
 } // namespace vzt
 
 #include "vzt/Core/Type.inl"

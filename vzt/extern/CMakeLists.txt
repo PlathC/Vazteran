@@ -1,4 +1,5 @@
 add_subdirectory(fmt)
+add_subdirectory(glm)
 
 set(SDL2_DISABLE_UNINSTALL      ON  CACHE BOOL "" FORCE)
 set(SDL_TEST                    OFF CACHE BOOL "" FORCE)
@@ -23,6 +24,7 @@ set(VZT_EXTERN_PUBLIC_INCLUDES
     ${VZT_EXTERN_INCLUDES}
 
     "${CMAKE_CURRENT_SOURCE_DIR}/glslang"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
     "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
 )
 
@@ -30,6 +32,7 @@ set(VZT_EXTERN_PUBLIC_LIBRARIES
     ${VZT_EXTERN_PUBLIC_LIBRARIES}
 
     fmt
+    glm::glm
 )
 
 set(VZT_EXTERN_LIBRARIES

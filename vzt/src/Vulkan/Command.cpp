@@ -132,6 +132,25 @@ namespace vzt
                                 &descriptorSet, 0, nullptr);
     }
 
+    void CommandBuffer::bindVertexBuffer(const Buffer& buffer)
+    {
+        VkBuffer     vertexBuffers[] = {buffer.getHandle()};
+        VkDeviceSize offsets[]       = {0};
+
+        vkCmdBindVertexBuffers(m_handle, 0, 1, vertexBuffers, offsets);
+    }
+
+    void CommandBuffer::bindIndexBuffer(const Buffer& buffer, std::size_t index)
+    {
+        vkCmdBindIndexBuffer(m_handle, buffer.getHandle(), index * sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
+    }
+
+    void CommandBuffer::drawIndexed(const Buffer& indexBuffer, const Range<>& range)
+    {
+        bindIndexBuffer(indexBuffer, range.start);
+        vkCmdDrawIndexed(m_handle, range.size(), 1, 0, 0, 0);
+    }
+
     void CommandBuffer::flush()
     {
         if (m_flushed)

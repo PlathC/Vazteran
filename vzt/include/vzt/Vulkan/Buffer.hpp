@@ -55,14 +55,11 @@ namespace vzt
     {
       public:
         template <class Type>
-        static Buffer fromData(View<Device> device, Span<Type> data, BufferUsage usage,
-                               MemoryLocation location = MemoryLocation::Device, bool mappable = false);
-        template <class Type>
-        static Buffer fromData(View<Device> device, CSpan<Type> data, BufferUsage usage,
+        static Buffer fromData(View<Device> device, CSpan<Type> data, BufferUsage usages,
                                MemoryLocation location = MemoryLocation::Device, bool mappable = false);
 
         Buffer() = default;
-        Buffer(View<Device> device, std::size_t byteNb, BufferUsage usage,
+        Buffer(View<Device> device, std::size_t byteNb, BufferUsage usages,
                MemoryLocation location = MemoryLocation::Device, bool mappable = false);
 
         Buffer(const Buffer&)            = delete;
@@ -91,7 +88,7 @@ namespace vzt
 
         std::size_t    m_size;
         MemoryLocation m_location;
-        BufferUsage    m_usage;
+        BufferUsage    m_usages;
         bool           m_mappable = false;
     };
 

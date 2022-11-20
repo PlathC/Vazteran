@@ -38,6 +38,11 @@ namespace vzt
         void bind(const GraphicPipeline& graphicPipeline);
         void bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set);
 
+        void bindVertexBuffer(const Buffer& buffer);
+        void bindIndexBuffer(const Buffer& buffer, std::size_t index);
+
+        void drawIndexed(const Buffer& indexBuffer, const Range<>& range);
+
         void                   flush();
         inline VkCommandBuffer getHandle() const;
 

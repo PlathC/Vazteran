@@ -31,6 +31,11 @@ namespace vzt
     }
 
     template <class Type>
+    Span<Type>::Span(const Type& type) : data(&type), size(1)
+    {
+    }
+
+    template <class Type>
     Span<Type>::Span(Type* ptr, std::size_t size) : data(ptr), size(size)
     {
     }
@@ -41,7 +46,18 @@ namespace vzt
     }
 
     template <class Type>
+    template <std::size_t Size>
+    Span<Type>::Span(const std::array<Type, Size>& buffer) : data(buffer.data()), size(buffer.size())
+    {
+    }
+
+    template <class Type>
     CSpan<Type>::CSpan(Span<Type> span) : data(span.data), size(span.size)
+    {
+    }
+
+    template <class Type>
+    CSpan<Type>::CSpan(const Type& type) : data(&type), size(1)
     {
     }
 
@@ -61,6 +77,12 @@ namespace vzt
     }
 
     template <class Type>
+    template <std::size_t Size>
+    CSpan<Type>::CSpan(const std::array<Type, Size>& buffer) : data(buffer.data()), size(buffer.size())
+    {
+    }
+
+    template <class Type>
     OffsetSpan<Type>::OffsetSpan(Type* ptr, std::size_t size, std::size_t offset)
         : data(ptr), size(size), offset(offset)
     {
@@ -71,4 +93,11 @@ namespace vzt
         : data(&ptr), size(size), offset(offset)
     {
     }
+
+    template <class Type>
+    constexpr Type Range<Type>::size() const
+    {
+        return end - start;
+    }
+
 } // namespace vzt

@@ -8,7 +8,7 @@
 	path = vzt/extern/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 [submodule "app/extern/glm"]
-	path = app/extern/glm
+	path = vzt/extern/glm
 	url = https://github.com/g-truc/glm.git
 [submodule "vzt/extern/glslang"]
 	path = vzt/extern/glslang
@@ -19,3 +19,6 @@
 [submodule "vzt/extern/SPIRV-Tools"]
 	path = vzt/extern/SPIRV-Tools
 	url = https://github.com/KhronosGroup/SPIRV-Tools
+[submodule "vzt/extern/tinyobjloader"]
+	path = vzt/extern/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader.git

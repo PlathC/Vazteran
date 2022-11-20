@@ -21,7 +21,6 @@ void main() {
     normal = normalize((transforms.normalMatrix * vec4(inNormal, 1.0f)).xyz);
 
     const vec4 viewSpacePosition = transforms.modelViewMatrix * vec4(inPosition, 1.0f);
-
     vsPosition  = viewSpacePosition.xyz;
     gl_Position = transforms.projectionMatrix * viewSpacePosition;
 }

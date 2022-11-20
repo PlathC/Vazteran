@@ -3,20 +3,10 @@
 namespace vzt
 {
     template <class Type>
-    Buffer Buffer::fromData(View<Device> device, Span<Type> data, BufferUsage usage, MemoryLocation location,
+    Buffer Buffer::fromData(View<Device> device, CSpan<Type> data, BufferUsage usages, MemoryLocation location,
                             bool mappable)
     {
-        Buffer buffer{device, data.size * sizeof(Type), usage, location, mappable};
-        buffer.update(data);
-
-        return buffer;
-    }
-
-    template <class Type>
-    Buffer Buffer::fromData(View<Device> device, CSpan<Type> data, BufferUsage usage, MemoryLocation location,
-                            bool mappable)
-    {
-        Buffer buffer{device, data.size * sizeof(Type), usage, location, mappable};
+        Buffer buffer{device, data.size * sizeof(Type), usages, location, mappable};
         buffer.update(data);
 
         return buffer;
@@ -25,7 +15,7 @@ namespace vzt
     template <class Type>
     void Buffer::update(CSpan<Type> newData, const std::size_t offset)
     {
-        const Span<uint8_t> translated{reinterpret_cast<const uint8_t*>(newData.data), newData.size, newData.offset};
+        const CSpan<uint8_t> translated{reinterpret_cast<const uint8_t*>(newData.data), newData.size};
         update(translated, offset);
     }
 

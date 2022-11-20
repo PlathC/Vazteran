@@ -1,9 +1,13 @@
+#include <array>
 #include <cassert>
 #include <cstdlib>
 
 #include <glm/mat4x4.hpp>
 #include <vzt/Core/File.hpp>
+#include <vzt/Data/Camera.hpp>
+#include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
+#include <vzt/Utils/MeshLoader.hpp>
 #include <vzt/Vulkan/Attachment.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Descriptor.hpp>
@@ -79,18 +83,38 @@ int main(int /* argc */, char** /* argv */)
     vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
     descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
 
-    const std::size_t modelsAlignment = hardware.getUniformAlignment(sizeof(glm::mat4) * 2u);
+    const std::size_t modelsAlignment = hardware.getUniformAlignment(sizeof(glm::mat4) * 3u);
     vzt::Buffer       modelsUbo       = vzt::Buffer(device, modelsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
 
     const std::size_t materialsAlignment = hardware.getUniformAlignment<glm::vec4>();
     vzt::Buffer       materialsUbo = vzt::Buffer(device, materialsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
 
-    // TODO: Writing data to uniform buffers
+    const vzt::Camera camera{};
+
+    const vzt::Vec3 minimum{-10.f};
+    const vzt::Vec3 maximum{10.f};
+    const vzt::Vec3 target   = (minimum + maximum) * .5f;
+    const float     bbRadius = glm::compMax(glm::abs(maximum - target));
+    const float     distance = bbRadius / std::tan(camera.fov * .5f);
+
+    const vzt::Vec3 direction = vzt::Camera::Front;
+    const vzt::Vec3 position  = target + direction * 2.f * distance;
+
+    const vzt::Mat4                view = camera.getViewMatrix(position, vzt::Quat{});
+    const std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
+    modelsUbo.update<vzt::Mat4>(matrices);
+
+    const vzt::Vec4 material{1.f, 1.f, 1.f, 16.f};
+    materialsUbo.update<vzt::Vec4>(material);
 
     vzt::Indexed<vzt::BufferSpan> ubos{};
     ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(glm::mat4) * 2u};
     ubos[1] = vzt::BufferSpan{materialsUbo, sizeof(glm::vec4)};
     descriptorPool.update(ubos);
+
+    const vzt::Mesh mesh     = vzt::readObj("samples/Bunny/bunny.obj");
+    vzt::Buffer vertexBuffer = vzt::Buffer::fromData<vzt::Vec3>(device, mesh.vertices, vzt::BufferUsage::VertexBuffer);
+    vzt::Buffer indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
@@ -117,6 +141,15 @@ int main(int /* argc */, char** /* argv */)
 
             imageBarrier.image     = image;
             imageBarrier.oldLayout = vzt::ImageLayout::TransferDstOptimal;
+            imageBarrier.newLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
+
+            commands.bindVertexBuffer(vertexBuffer);
+            for (const auto& subMesh : mesh.subMeshes)
+                commands.drawIndexed(indexBuffer, subMesh.indices);
+
+            imageBarrier.image     = image;
+            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
         }

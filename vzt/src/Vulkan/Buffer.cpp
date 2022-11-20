@@ -25,13 +25,13 @@ namespace vzt
         return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
     }
 
-    Buffer::Buffer(View<Device> device, std::size_t byteNb, BufferUsage usage, MemoryLocation location, bool mappable)
-        : m_device(device), m_size(byteNb), m_usage(usage), m_mappable(mappable)
+    Buffer::Buffer(View<Device> device, std::size_t byteNb, BufferUsage usages, MemoryLocation location, bool mappable)
+        : m_device(device), m_size(byteNb), m_usages(usages), m_mappable(mappable)
     {
         VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         bufferInfo.size               = m_size;
         bufferInfo.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.usage              = toVulkan(usage);
+        bufferInfo.usage              = toVulkan(m_usages);
         if (!mappable)
             bufferInfo.usage |= toVulkan(BufferUsage::TransferDst);
 
@@ -82,7 +82,7 @@ namespace vzt
 
     void Buffer::update(CSpan<uint8_t> newData, const std::size_t offset)
     {
-        assert(newData.size < m_size && "Update must be less than the size of the buffer.");
+        assert(newData.size <= m_size && "Update must be less or equal to the size of the buffer.");
 
         if (m_mappable)
         {

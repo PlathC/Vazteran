@@ -91,7 +91,7 @@ namespace vzt
         LoadOp      stencilLoapOp  = LoadOp::DontCare;
         StoreOp     stencilStoreOp = StoreOp::DontCare;
         SampleCount sampleCount    = SampleCount::Sample1;
-        Vec4        clearValue     = {0.f};
+        Vec4        clearValue     = vzt::Vec4{0.f};
     };
 
     struct SubpassDependency
