@@ -133,7 +133,7 @@ int main(int /* argc */, char** /* argv */)
 
     const vzt::Mesh mesh = vzt::readObj("samples/Bunny/bunny.obj");
 
-    struct VertexInput
+    struct alignas(16) VertexInput
     {
         vzt::Vec3 inPosition;
         vzt::Vec3 inNormal;
