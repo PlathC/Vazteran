@@ -7,14 +7,14 @@ namespace vzt
 {
     struct Camera
     {
-        static constexpr Vec3 Up    = Vec3(0.f, 0.f, 1.f);
-        static constexpr Vec3 Front = Vec3(0.f, 1.f, 0.f);
-        static constexpr Vec3 Right = Vec3(1.f, 0.f, 0.f);
-
         float fov          = vzt::toRadians(45.f);
-        float nearClipping = 0.1f;
-        float farClipping  = 100.f;
+        float nearClipping = 1e-4f;
+        float farClipping  = 1000.f;
         float aspectRatio  = 16.f / 9.f;
+
+        Vec3 up    = Vec3(0.f, 0.f, 1.f);
+        Vec3 front = Vec3(0.f, 1.f, 0.f);
+        Vec3 right = Vec3(1.f, 0.f, 0.f);
 
         Mat4 getProjectionMatrix() const;
         Mat4 getViewMatrix(const Mat4& transformation) const;

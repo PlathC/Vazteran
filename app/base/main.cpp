@@ -102,36 +102,41 @@ int main(int /* argc */, char** /* argv */)
     vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
     descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
 
-    const std::size_t modelsAlignment = hardware.getUniformAlignment(sizeof(glm::mat4) * 3u);
-    vzt::Buffer       modelsUbo       = vzt::Buffer(device, modelsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
+    vzt::Mesh mesh = vzt::readObj("samples/Bunny/Bunny.obj");
+    vzt::Vec3 minimum{std::numeric_limits<float>::max()};
+    vzt::Vec3 maximum{std::numeric_limits<float>::lowest()};
+    for (vzt::Vec3& vertex : mesh.vertices)
+    {
+        minimum = glm::min(minimum, vertex);
+        maximum = glm::max(maximum, vertex);
+    }
 
-    const std::size_t materialsAlignment = hardware.getUniformAlignment<glm::vec4>();
-    vzt::Buffer       materialsUbo = vzt::Buffer(device, materialsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
+    vzt::Camera camera{};
+    camera.front = vzt::Vec3(0.f, 1.f, 0.f);
+    camera.up    = vzt::Vec3(0.f, 0.f, 1.f);
+    camera.right = vzt::Vec3(1.f, 0.f, 0.f);
 
-    const vzt::Camera camera{};
-
-    const vzt::Vec3 minimum{-10.f};
-    const vzt::Vec3 maximum{10.f};
     const vzt::Vec3 target   = (minimum + maximum) * .5f;
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
     const float     distance = bbRadius / std::tan(camera.fov * .5f);
 
-    const vzt::Vec3 direction = vzt::Camera::Front;
-    const vzt::Vec3 position  = target + direction * 2.f * distance;
+    const vzt::Vec3 position = target - camera.front * 2.f * distance;
 
-    const vzt::Mat4                view = camera.getViewMatrix(position, vzt::Quat{});
+    const std::size_t modelsAlignment = hardware.getUniformAlignment(sizeof(glm::mat4) * 3u);
+    vzt::Buffer       modelsUbo       = vzt::Buffer(device, modelsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
+    const vzt::Mat4   view            = camera.getViewMatrix(position, vzt::Quat{});
     const std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
     modelsUbo.update<vzt::Mat4>(matrices);
 
-    const vzt::Vec4 material{1.f, 1.f, 1.f, 16.f};
+    const std::size_t materialsAlignment = hardware.getUniformAlignment<glm::vec4>();
+    vzt::Buffer       materialsUbo = vzt::Buffer(device, materialsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
+    const vzt::Vec4   material{1.f, 1.f, 1.f, 16.f};
     materialsUbo.update<vzt::Vec4>(material);
 
     vzt::Indexed<vzt::BufferSpan> ubos{};
     ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(glm::mat4) * 3u};
     ubos[1] = vzt::BufferSpan{materialsUbo, sizeof(glm::vec4)};
     descriptorPool.update(ubos);
-
-    const vzt::Mesh mesh = vzt::readObj("samples/Bunny/bunny.obj");
 
     struct alignas(16) VertexInput
     {
@@ -144,8 +149,8 @@ int main(int /* argc */, char** /* argv */)
     for (std::size_t i = 0; i < mesh.vertices.size(); i++)
         inputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
 
-    vzt::Buffer vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, inputs, vzt::BufferUsage::VertexBuffer);
-    vzt::Buffer indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
+    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, inputs, vzt::BufferUsage::VertexBuffer);
+    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());

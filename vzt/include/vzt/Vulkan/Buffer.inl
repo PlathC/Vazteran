@@ -15,7 +15,7 @@ namespace vzt
     template <class Type>
     void Buffer::update(CSpan<Type> newData, const std::size_t offset)
     {
-        const CSpan<uint8_t> translated{reinterpret_cast<const uint8_t*>(newData.data), newData.size};
+        const CSpan<uint8_t> translated{reinterpret_cast<const uint8_t*>(newData.data), newData.size * sizeof(Type)};
         update(translated, offset);
     }
 

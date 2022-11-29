@@ -13,9 +13,9 @@ layout(location = 1) in vec3 inNormal;
 layout(location = 0) out vec3 vsPosition;
 layout(location = 1) out vec3 normal;
 
-
-void main() {
-    normal = normalize((transforms.normalMatrix * vec4(inNormal, 1.0f)).xyz);
+void main() 
+{
+    normal = normalize((transforms.normalMatrix * vec4(inNormal, 0.0f)).xyz);
 
     const vec4 viewSpacePosition = transforms.modelViewMatrix * vec4(inPosition, 1.0f);
     vsPosition  = viewSpacePosition.xyz;

@@ -87,8 +87,6 @@ namespace vzt
                 tinyObjIndexOffset += fv;
             }
 
-            // Handle only one subMesh material
-
             Range<> range{indexOffset, result.indices.size()};
             assert(shape.mesh.indices.size() == range.size());
 
