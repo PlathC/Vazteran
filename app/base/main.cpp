@@ -38,19 +38,24 @@ int main(int /* argc */, char** /* argv */)
 
     vzt::DescriptorLayout descriptorLayout{device};
 
-    descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer); // Model {
-                                                                        //     mat4 modelViewMatrix;
-                                                                        //     mat4 projectionMatrix;
-                                                                        //     mat4 normalMatrix;
-                                                                        // }
-    descriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer); // Material { vec3 albedo; float shininess; }
+    // Model { mat4 modelView; mat4 projection; mat4 normal; }
+    descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+    // Material { vec3 albedo; float shininess; }
+    descriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
+
     descriptorLayout.compile();
     pipeline.setDescriptorLayout(descriptorLayout);
 
     vzt::VertexInputDescription vertexDescription{};
-    vertexDescription.add(vzt::VertexBinding{0, sizeof(float) * 8});
-    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 0, 0, vzt::Format::R32G32B32SFloat, 0});
-    vertexDescription.add(vzt::VertexAttribute{sizeof(float) * 3, 1, vzt::Format::R32G32B32SFloat, 0});
+
+    struct alignas(16) VertexInput
+    {
+        vzt::Vec3 inPosition;
+        vzt::Vec3 inNormal;
+    };
+    vertexDescription.add(vzt::VertexBinding{0, sizeof(VertexInput)});
+    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); //
+    vertexDescription.add(vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0});
     pipeline.setVertexInputDescription(vertexDescription);
 
     vzt::RenderPass renderPass{device};
@@ -79,6 +84,7 @@ int main(int /* argc */, char** /* argv */)
 
     pipeline.compile(renderPass);
 
+    // Render targets
     const vzt::Format depthFormat = hardware.getDepthFormat();
 
     std::vector<vzt::Image>       depthStencils;
@@ -98,6 +104,7 @@ int main(int /* argc */, char** /* argv */)
         frameBuffer.compile(renderPass);
     }
 
+    // Uniforms
     vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
     descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
 
@@ -137,12 +144,7 @@ int main(int /* argc */, char** /* argv */)
     ubos[1] = vzt::BufferSpan{materialsUbo, sizeof(glm::vec4)};
     descriptorPool.update(ubos);
 
-    struct alignas(16) VertexInput
-    {
-        vzt::Vec3 inPosition;
-        vzt::Vec3 inNormal;
-    };
-
+    // Vertex inputs
     std::vector<VertexInput> inputs;
     inputs.reserve(mesh.vertices.size());
     for (std::size_t i = 0; i < mesh.vertices.size(); i++)
@@ -151,6 +153,7 @@ int main(int /* argc */, char** /* argv */)
     const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, inputs, vzt::BufferUsage::VertexBuffer);
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
+    // Start rendering
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     while (window.update())
