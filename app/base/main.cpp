@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdlib>
 
+#include <glm/gtx/polar_coordinates.hpp>
 #include <vzt/Core/File.hpp>
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
@@ -10,13 +11,12 @@
 #include <vzt/Vulkan/Attachment.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Descriptor.hpp>
+#include <vzt/Vulkan/FrameBuffer.hpp>
 #include <vzt/Vulkan/GraphicPipeline.hpp>
 #include <vzt/Vulkan/RenderPass.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
-
-#include "vzt/Vulkan/FrameBuffer.hpp"
 
 int main(int /* argc */, char** /* argv */)
 {
@@ -128,21 +128,28 @@ int main(int /* argc */, char** /* argv */)
 
     const vzt::Vec3 position = target - camera.front * 2.f * distance;
 
-    const vzt::Mat4                view = camera.getViewMatrix(position, vzt::Quat{});
-    const std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
-    const std::size_t              modelsAlignment = hardware.getUniformAlignment(sizeof(vzt::Mat4) * matrices.size());
-    vzt::Buffer modelsUbo = vzt::Buffer(device, modelsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
-    modelsUbo.update<vzt::Mat4>(matrices);
+    vzt::Mat4                view = camera.getViewMatrix(position, vzt::Quat{});
+    std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
+    const vzt::Vec4          material{1.f, 1.f, 1.f, 16.f};
 
-    const vzt::Vec4   material{1.f, 1.f, 1.f, 16.f};
+    const std::size_t modelsAlignment    = hardware.getUniformAlignment(sizeof(vzt::Mat4) * matrices.size());
     const std::size_t materialsAlignment = hardware.getUniformAlignment<vzt::Vec4>();
-    vzt::Buffer       materialsUbo = vzt::Buffer(device, materialsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
-    materialsUbo.update<vzt::Vec4>(material);
+    const std::size_t uniformByteNb      = modelsAlignment + materialsAlignment;
 
-    vzt::Indexed<vzt::BufferSpan> ubos{};
-    ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(glm::mat4) * 3u};
-    ubos[1] = vzt::BufferSpan{materialsUbo, sizeof(glm::vec4)};
-    descriptorPool.update(ubos);
+    // Initialize buffer with default values
+    vzt::Buffer modelsUbo{device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
+
+    // Assign buffer parts to their respective image
+    for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
+    {
+        modelsUbo.update<vzt::Mat4>(matrices, i * uniformByteNb);
+        modelsUbo.update<vzt::Vec4>(material, i * uniformByteNb + modelsAlignment);
+
+        vzt::Indexed<vzt::BufferSpan> ubos{};
+        ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
+        ubos[1] = vzt::BufferSpan{modelsUbo, sizeof(vzt::Vec4), i * uniformByteNb + modelsAlignment};
+        descriptorPool.update(i, ubos);
+    }
 
     // Vertex inputs
     std::vector<VertexInput> inputs;
@@ -156,13 +163,13 @@ int main(int /* argc */, char** /* argv */)
     // Pre-record commands since they will not change during rendering
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
-    for (std::size_t i = 0; i < swapchain.getImageNb(); i++)
+    for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
         const auto&        image    = swapchain.getImage(i);
         vzt::CommandBuffer commands = commandPool[i];
-        {
-            commands.begin();
 
+        commands.begin();
+        {
             commands.beginPass(renderPass, frameBuffers[i]);
 
             commands.bind(pipeline, descriptorPool[i]);
@@ -177,12 +184,11 @@ int main(int /* argc */, char** /* argv */)
             imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
-
-            commands.end();
         }
+        commands.end();
     }
 
-    // Start rendering
+    // Actual rendering
     while (window.update())
     {
         const auto& inputs = window.getInputs();
@@ -192,6 +198,15 @@ int main(int /* argc */, char** /* argv */)
         auto submission = swapchain.getSubmission();
         if (!submission)
             continue;
+
+        constexpr float Scale = 1e-4f;
+
+        const vzt::Vec3 current = 2u * bbRadius * glm::polar(vzt::Vec3{inputs.time * Scale, inputs.time * Scale, 1.f});
+
+        view        = camera.getViewMatrix(current, glm::rotation(camera.front, glm::normalize(target - current)));
+        matrices[0] = view;
+        matrices[2] = glm::transpose(glm::inverse(view));
+        modelsUbo.update<vzt::Mat4>(matrices, submission->imageId * uniformByteNb);
 
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         graphicsQueue->submit(commands, *submission);

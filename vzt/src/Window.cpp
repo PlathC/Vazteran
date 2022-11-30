@@ -71,6 +71,7 @@ namespace vzt
         const uint64_t        now          = SDL_GetPerformanceCounter();
         m_inputs.deltaTime = static_cast<float>(static_cast<double>(now - m_lastTimeStep) / sdlFrequency);
         m_lastTimeStep     = now;
+        m_inputs.time      = SDL_GetTicks64();
 
         bool      closing = false;
         SDL_Event windowEvent;

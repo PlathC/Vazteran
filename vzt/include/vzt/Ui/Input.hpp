@@ -10,7 +10,8 @@ namespace vzt
         Extent2D windowSize;
         bool     windowResized = false;
 
-        float deltaTime;
+        uint64_t time;
+        float    deltaTime;
 
         Vec2i mousePosition;
         Vec2i deltaMousePosition;

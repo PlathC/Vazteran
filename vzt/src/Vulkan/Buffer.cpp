@@ -99,8 +99,8 @@ namespace vzt
             transferBuffer.unMap();
 
             View<Queue> queue = m_device->getQueue(QueueType::Graphics);
-            queue->oneShot([this, &transferBuffer, &newData](CommandBuffer& commands) {
-                commands.copy(transferBuffer, *this, newData.size);
+            queue->oneShot([this, &transferBuffer, &newData, &offset](CommandBuffer& commands) {
+                commands.copy(transferBuffer, *this, newData.size, 0, offset);
             });
         }
     }
