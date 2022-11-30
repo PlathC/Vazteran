@@ -307,7 +307,11 @@ namespace vzt
         pool.allocateCommandBuffers(1);
 
         CommandBuffer commands = pool[0];
+
+        commands.begin();
         function(commands);
+        commands.end();
+
         submit(commands);
     }
 
@@ -315,7 +319,6 @@ namespace vzt
     {
         assert(m_canPresent && "This queue is unable to present and is used for a swapchain submission");
 
-        commandBuffer.flush();
         const VkCommandBuffer commands = commandBuffer.getHandle();
 
         VkSubmitInfo submitInfo{};
@@ -337,7 +340,6 @@ namespace vzt
 
     void Queue::submit(CommandBuffer& commandBuffer) const
     {
-        commandBuffer.flush();
         const VkCommandBuffer commands = commandBuffer.getHandle();
 
         VkSubmitInfo submitInfo{};

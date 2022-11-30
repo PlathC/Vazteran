@@ -8,33 +8,7 @@
 
 namespace vzt
 {
-    CommandBuffer::CommandBuffer(VkCommandBuffer handle) : m_handle(handle)
-    {
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-        vkCheck(vkBeginCommandBuffer(handle, &beginInfo), "Failed to start the recording of the command buffer");
-    }
-
-    CommandBuffer::CommandBuffer(CommandBuffer&& other) noexcept
-    {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_flushed, other.m_flushed);
-    }
-
-    CommandBuffer& CommandBuffer::operator=(CommandBuffer&& other) noexcept
-    {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_flushed, other.m_flushed);
-
-        return *this;
-    }
-
-    CommandBuffer::~CommandBuffer()
-    {
-        if (m_handle)
-            flush();
-    }
+    CommandBuffer::CommandBuffer(VkCommandBuffer handle) : m_handle(handle) {}
 
     void CommandBuffer::barrier(PipelineBarrier barrier)
     {
@@ -174,7 +148,7 @@ namespace vzt
         vkCmdSetScissor(m_handle, 0, 1, &scissor);
     }
 
-    void CommandBuffer::begin(const RenderPass& pass, const FrameBuffer& frameBuffer)
+    void CommandBuffer::beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer)
     {
         VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
 
@@ -207,17 +181,17 @@ namespace vzt
         vkCmdBeginRenderPass(m_handle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    void CommandBuffer::end() { vkCmdEndRenderPass(m_handle); }
+    void CommandBuffer::endPass() { vkCmdEndRenderPass(m_handle); }
 
-    void CommandBuffer::flush()
+    void CommandBuffer::begin()
     {
-        if (m_flushed)
-            return;
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        vkCheck(vkEndCommandBuffer(m_handle), "Failed to end command buffer recording");
-
-        m_flushed = true;
+        vkCheck(vkBeginCommandBuffer(m_handle, &beginInfo), "Failed to start the recording of the command buffer");
     }
+
+    void CommandBuffer::end() { vkCheck(vkEndCommandBuffer(m_handle), "Failed to end command buffer recording"); }
 
     CommandPool::CommandPool(View<Device> device, View<Queue> queue, uint32_t bufferNb) : m_device(device)
     {

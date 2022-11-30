@@ -21,13 +21,13 @@ namespace vzt
       public:
         friend CommandPool;
 
-        CommandBuffer(const CommandBuffer&)            = delete;
-        CommandBuffer& operator=(const CommandBuffer&) = delete;
+        CommandBuffer(const CommandBuffer&)            = default;
+        CommandBuffer& operator=(const CommandBuffer&) = default;
 
-        CommandBuffer(CommandBuffer&& other) noexcept;
-        CommandBuffer& operator=(CommandBuffer&& other) noexcept;
+        CommandBuffer(CommandBuffer&& other) noexcept            = default;
+        CommandBuffer& operator=(CommandBuffer&& other) noexcept = default;
 
-        ~CommandBuffer();
+        ~CommandBuffer() = default;
 
         void barrier(PipelineBarrier barrier);
         void barrier(PipelineStage src, PipelineStage dst, ImageBarrier barrier);
@@ -47,17 +47,17 @@ namespace vzt
         void setViewport(const Extent2D& size, float minDepth = 0.f, float maxDepth = 1.f);
         void setScissor(const Extent2D& size, Vec2i offset = {0u, 0u});
 
-        void begin(const RenderPass& pass, const FrameBuffer& frameBuffer);
-        void end();
+        void beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer);
+        void endPass();
 
-        void                   flush();
+        void                   begin();
+        void                   end();
         inline VkCommandBuffer getHandle() const;
 
       private:
         CommandBuffer(VkCommandBuffer handle);
 
-        VkCommandBuffer m_handle  = nullptr;
-        bool            m_flushed = false;
+        VkCommandBuffer m_handle = nullptr;
     };
     class CommandPool
     {

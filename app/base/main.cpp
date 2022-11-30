@@ -128,15 +128,15 @@ int main(int /* argc */, char** /* argv */)
 
     const vzt::Vec3 position = target - camera.front * 2.f * distance;
 
-    const std::size_t modelsAlignment = hardware.getUniformAlignment(sizeof(glm::mat4) * 3u);
-    vzt::Buffer       modelsUbo       = vzt::Buffer(device, modelsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
-    const vzt::Mat4   view            = camera.getViewMatrix(position, vzt::Quat{});
+    const vzt::Mat4                view = camera.getViewMatrix(position, vzt::Quat{});
     const std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
+    const std::size_t              modelsAlignment = hardware.getUniformAlignment(sizeof(vzt::Mat4) * matrices.size());
+    vzt::Buffer modelsUbo = vzt::Buffer(device, modelsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
     modelsUbo.update<vzt::Mat4>(matrices);
 
-    const std::size_t materialsAlignment = hardware.getUniformAlignment<glm::vec4>();
-    vzt::Buffer       materialsUbo = vzt::Buffer(device, materialsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
     const vzt::Vec4   material{1.f, 1.f, 1.f, 16.f};
+    const std::size_t materialsAlignment = hardware.getUniformAlignment<vzt::Vec4>();
+    vzt::Buffer       materialsUbo = vzt::Buffer(device, materialsAlignment * 1u, vzt::BufferUsage::UniformBuffer);
     materialsUbo.update<vzt::Vec4>(material);
 
     vzt::Indexed<vzt::BufferSpan> ubos{};
@@ -153,9 +153,36 @@ int main(int /* argc */, char** /* argv */)
     const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, inputs, vzt::BufferUsage::VertexBuffer);
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
-    // Start rendering
+    // Pre-record commands since they will not change during rendering
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
+    for (std::size_t i = 0; i < swapchain.getImageNb(); i++)
+    {
+        const auto&        image    = swapchain.getImage(i);
+        vzt::CommandBuffer commands = commandPool[i];
+        {
+            commands.begin();
+
+            commands.beginPass(renderPass, frameBuffers[i]);
+
+            commands.bind(pipeline, descriptorPool[i]);
+            commands.bindVertexBuffer(vertexBuffer);
+            for (const auto& subMesh : mesh.subMeshes)
+                commands.drawIndexed(indexBuffer, subMesh.indices);
+
+            commands.endPass();
+
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = image;
+            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
+
+            commands.end();
+        }
+    }
+
+    // Start rendering
     while (window.update())
     {
         const auto& inputs = window.getInputs();
@@ -166,38 +193,9 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        const auto&        image    = swapchain.getImage(submission->imageId);
         vzt::CommandBuffer commands = commandPool[submission->imageId];
-        {
-            vzt::ImageBarrier imageBarrier{};
-            imageBarrier.image     = image;
-            imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
-            imageBarrier.newLayout = vzt::ImageLayout::TransferDstOptimal;
-            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
-
-            commands.clear(image, vzt::ImageLayout::TransferDstOptimal, vzt::Vec4{0.96f, 0.64f, 0.64f, 1.f});
-
-            imageBarrier.image     = image;
-            imageBarrier.oldLayout = vzt::ImageLayout::TransferDstOptimal;
-            imageBarrier.newLayout = vzt::ImageLayout::ColorAttachmentOptimal;
-            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
-
-            commands.begin(renderPass, frameBuffers[submission->imageId]);
-
-            commands.bind(pipeline, descriptorPool[submission->imageId]);
-            commands.bindVertexBuffer(vertexBuffer);
-            for (const auto& subMesh : mesh.subMeshes)
-                commands.drawIndexed(indexBuffer, subMesh.indices);
-
-            commands.end();
-
-            imageBarrier.image     = image;
-            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
-            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
-            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
-        }
-
         graphicsQueue->submit(commands, *submission);
+
         if (swapchain.present())
             device.wait();
     }
