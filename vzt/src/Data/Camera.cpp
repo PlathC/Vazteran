@@ -14,5 +14,4 @@ namespace vzt
         const Vec3 rUp    = glm::normalize(rotation * up);
         return glm::lookAt(position, position + rFront, rUp);
     }
-
 } // namespace vzt

@@ -2,7 +2,6 @@
 #include <cassert>
 #include <cstdlib>
 
-#include <glm/mat4x4.hpp>
 #include <vzt/Core/File.hpp>
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>

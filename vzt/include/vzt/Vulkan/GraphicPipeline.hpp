@@ -89,7 +89,7 @@ namespace vzt
         float       lineWidth     = 1.f;
         PolygonMode polygonMode   = PolygonMode::Fill;
         CullMode    cullMode      = CullMode::Back;
-        FrontFace   frontFace     = FrontFace::Clockwise; // Only if cull mode is not None
+        FrontFace   frontFace     = FrontFace::CounterClockwise; // Only if cull mode is not None
     };
 
     struct MultiSampling
