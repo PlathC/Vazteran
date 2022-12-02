@@ -120,8 +120,8 @@ namespace vzt
 
         using SingleTimeCommandFunction = std::function<void(CommandBuffer&)>;
         void oneShot(const SingleTimeCommandFunction& function) const;
-        void submit(CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const;
-        void submit(CommandBuffer& commandBuffer) const;
+        void submit(const CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const;
+        void submit(const CommandBuffer& commandBuffer) const;
 
         inline VkQueue   getHandle() const;
         inline QueueType getType() const;

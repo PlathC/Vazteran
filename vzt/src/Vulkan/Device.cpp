@@ -315,30 +315,29 @@ namespace vzt
         submit(commands);
     }
 
-    void Queue::submit(CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const
+    void Queue::submit(const CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const
     {
         assert(m_canPresent && "This queue is unable to present and is used for a swapchain submission");
 
         const VkCommandBuffer commands = commandBuffer.getHandle();
 
         VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        constexpr VkPipelineStageFlags waitStage =
-            VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        submitInfo.pWaitDstStageMask    = &waitStage;
-        submitInfo.waitSemaphoreCount   = 1;
-        submitInfo.pWaitSemaphores      = &submission.imageAvailable;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores    = &submission.renderComplete;
-        submitInfo.commandBufferCount   = 1;
-        submitInfo.pCommandBuffers      = &commands;
+        submitInfo.sType                         = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        constexpr VkPipelineStageFlags waitStage = toVulkan(PipelineStage::ColorAttachmentOutput);
+        submitInfo.pWaitDstStageMask             = &waitStage;
+        submitInfo.waitSemaphoreCount            = 1;
+        submitInfo.pWaitSemaphores               = &submission.imageAvailable;
+        submitInfo.signalSemaphoreCount          = 1;
+        submitInfo.pSignalSemaphores             = &submission.renderComplete;
+        submitInfo.commandBufferCount            = 1;
+        submitInfo.pCommandBuffers               = &commands;
 
         vkResetFences(m_device->getHandle(), 1, &submission.frameComplete);
         vkCheck(vkQueueSubmit(m_handle, 1, &submitInfo, submission.frameComplete),
                 "Failed to submit swapchain submission");
     }
 
-    void Queue::submit(CommandBuffer& commandBuffer) const
+    void Queue::submit(const CommandBuffer& commandBuffer) const
     {
         const VkCommandBuffer commands = commandBuffer.getHandle();
 

@@ -120,7 +120,7 @@ namespace vzt
         VertexInputRate inputRate = VertexInputRate::Vertex;
 
         template <class Type>
-        static VertexBinding Typed(uint32_t binding, VertexInputRate inputRate);
+        static VertexBinding Typed(uint32_t binding, VertexInputRate inputRate = VertexInputRate::Vertex);
 
         inline VertexAttribute getAttribute(uint32_t location, Format dataFormat, uint32_t offset);
     };
