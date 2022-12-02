@@ -51,7 +51,8 @@ namespace vzt
 
     using Quat = glm::quat;
 
-    constexpr float Pi = 3.14159265359f;
+    constexpr float Pi  = 3.14159265359f;
+    constexpr float Tau = 2.f * Pi;
 
     constexpr float toRadians(float degrees);
     constexpr float toDegrees(float radians);

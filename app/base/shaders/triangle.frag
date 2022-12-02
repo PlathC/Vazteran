@@ -13,5 +13,5 @@ layout(location = 0) out vec4 outColor;
 
 void main() 
 {
-    outColor = vec4(normal, 1.);
+    outColor = vec4(vec3(1.) * dot(normal, -normalize(vsPosition)), 1.);
 }

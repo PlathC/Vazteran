@@ -4,6 +4,7 @@
 
 #include <glm/gtx/polar_coordinates.hpp>
 #include <vzt/Core/File.hpp>
+#include <vzt/Core/Logger.hpp>
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
@@ -199,11 +200,20 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        constexpr float t        = vzt::Pi / 180.f;
+        constexpr float t        = vzt::Pi / 180.f * 2.f;
         const vzt::Quat rotation = glm::angleAxis(t, vzt::Vec3{0.f, 0.f, 1.f});
         position                 = rotation * (position - target) + target;
 
-        view        = camera.getViewMatrix(position, glm::rotation(camera.front, glm::normalize(target - position)));
+        vzt::Vec3       direction   = glm::normalize(target - position);
+        const vzt::Vec3 reference   = camera.front;
+        vzt::Quat       orientation = {1.f, 0.f, 0.f, 0.f};
+        const float     projection  = glm::dot(reference, direction);
+        if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
+            orientation = glm::rotation(reference, direction);
+        else if (projection < 0.f) // If direction and reference are opposite
+            orientation = glm::angleAxis(-vzt::Pi, vzt::Vec3{0.f, 0.f, 1.f});
+
+        view        = camera.getViewMatrix(position, orientation);
         matrices[0] = view;
         matrices[2] = glm::transpose(glm::inverse(view));
         modelsUbo.update<vzt::Mat4>(matrices, submission->imageId * uniformByteNb);
