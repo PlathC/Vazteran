@@ -126,7 +126,7 @@ int main(int /* argc */, char** /* argv */)
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
     const float     distance = bbRadius / std::tan(camera.fov * .5f);
 
-    const vzt::Vec3 position = target - camera.front * 2.f * distance;
+    vzt::Vec3 position = target - camera.front * 2.f * distance;
 
     vzt::Mat4                view = camera.getViewMatrix(position, vzt::Quat{});
     std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
@@ -199,11 +199,11 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        constexpr float Scale = 1e-4f;
+        constexpr float t        = vzt::Pi / 180.f;
+        const vzt::Quat rotation = glm::angleAxis(t, vzt::Vec3{0.f, 0.f, 1.f});
+        position                 = rotation * (position - target) + target;
 
-        const vzt::Vec3 current = 2u * bbRadius * glm::polar(vzt::Vec3{inputs.time * Scale, inputs.time * Scale, 1.f});
-
-        view        = camera.getViewMatrix(current, glm::rotation(camera.front, glm::normalize(target - current)));
+        view        = camera.getViewMatrix(position, glm::rotation(camera.front, glm::normalize(target - position)));
         matrices[0] = view;
         matrices[2] = glm::transpose(glm::inverse(view));
         modelsUbo.update<vzt::Mat4>(matrices, submission->imageId * uniformByteNb);
