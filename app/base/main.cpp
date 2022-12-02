@@ -82,24 +82,10 @@ int main(int /* argc */, char** /* argv */)
 
     pipeline.compile(renderPass);
 
-    vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
-    vzt::Vec3 minimum{std::numeric_limits<float>::max()};
-    vzt::Vec3 maximum{std::numeric_limits<float>::lowest()};
-    for (vzt::Vec3& vertex : mesh.vertices)
-    {
-        minimum = glm::min(minimum, vertex);
-        maximum = glm::max(maximum, vertex);
-    }
-
     vzt::Camera camera{};
     camera.front = vzt::Vec3(0.f, 0.f, 1.f);
     camera.up    = vzt::Vec3(0.f, 1.f, 0.f);
     camera.right = vzt::Vec3(1.f, 0.f, 0.f);
-
-    const vzt::Vec3 target   = (minimum + maximum) * .5f;
-    const float     bbRadius = glm::compMax(glm::abs(maximum - target));
-    const float     distance = bbRadius / std::tan(camera.fov * .5f);
-    vzt::Vec3       position = target - camera.front * 1.15f * distance;
 
     // Initialize buffer with default values
     const std::size_t modelsAlignment    = hardware.getUniformAlignment(sizeof(vzt::Mat4) * 3);
@@ -112,6 +98,8 @@ int main(int /* argc */, char** /* argv */)
     descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
 
     // Vertex inputs
+    vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
+
     std::vector<VertexInput> vertexInputs;
     vertexInputs.reserve(mesh.vertices.size());
     for (std::size_t i = 0; i < mesh.vertices.size(); i++)
@@ -166,7 +154,6 @@ int main(int /* argc */, char** /* argv */)
 
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        // Uniforms
         modelsUbo.update<vzt::Vec4>(vzt::Vec4{1.f}, i * uniformByteNb + modelsAlignment);
 
         vzt::Indexed<vzt::BufferSpan> ubos{};
@@ -176,6 +163,19 @@ int main(int /* argc */, char** /* argv */)
 
         createRenderObject(i);
     }
+
+    // Compute AABB to place camera in front of the model
+    vzt::Vec3 minimum{std::numeric_limits<float>::max()};
+    vzt::Vec3 maximum{std::numeric_limits<float>::lowest()};
+    for (vzt::Vec3& vertex : mesh.vertices)
+    {
+        minimum = glm::min(minimum, vertex);
+        maximum = glm::max(maximum, vertex);
+    }
+    const vzt::Vec3 target   = (minimum + maximum) * .5f;
+    const float     bbRadius = glm::compMax(glm::abs(maximum - target));
+    const float     distance = bbRadius / std::tan(camera.fov * .5f);
+    vzt::Vec3       position = target - camera.front * 1.15f * distance;
 
     // Actual rendering
     while (window.update())
