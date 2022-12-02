@@ -109,7 +109,7 @@ int main(int /* argc */, char** /* argv */)
     vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
     descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
 
-    vzt::Mesh mesh = vzt::readObj("samples/Bunny/Bunny.obj");
+    vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
     vzt::Vec3 minimum{std::numeric_limits<float>::max()};
     vzt::Vec3 maximum{std::numeric_limits<float>::lowest()};
     for (vzt::Vec3& vertex : mesh.vertices)
@@ -119,15 +119,15 @@ int main(int /* argc */, char** /* argv */)
     }
 
     vzt::Camera camera{};
-    camera.front = vzt::Vec3(0.f, 1.f, 0.f);
-    camera.up    = vzt::Vec3(0.f, 0.f, 1.f);
+    camera.front = vzt::Vec3(0.f, 0.f, 1.f);
+    camera.up    = vzt::Vec3(0.f, 1.f, 0.f);
     camera.right = vzt::Vec3(1.f, 0.f, 0.f);
 
     const vzt::Vec3 target   = (minimum + maximum) * .5f;
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
     const float     distance = bbRadius / std::tan(camera.fov * .5f);
 
-    vzt::Vec3 position = target - camera.front * 2.f * distance;
+    vzt::Vec3 position = target - camera.front * 1.15f * distance;
 
     vzt::Mat4                view = camera.getViewMatrix(position, vzt::Quat{});
     std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
@@ -153,12 +153,12 @@ int main(int /* argc */, char** /* argv */)
     }
 
     // Vertex inputs
-    std::vector<VertexInput> inputs;
-    inputs.reserve(mesh.vertices.size());
+    std::vector<VertexInput> vertexInputs;
+    vertexInputs.reserve(mesh.vertices.size());
     for (std::size_t i = 0; i < mesh.vertices.size(); i++)
-        inputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
+        vertexInputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
 
-    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, inputs, vzt::BufferUsage::VertexBuffer);
+    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
     // Pre-record commands since they will not change during rendering
@@ -200,8 +200,8 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        constexpr float t        = vzt::Pi / 180.f * 2.f;
-        const vzt::Quat rotation = glm::angleAxis(t, vzt::Vec3{0.f, 0.f, 1.f});
+        constexpr float t        = vzt::Pi / (360.f * 8.f);
+        const vzt::Quat rotation = glm::angleAxis(t, camera.up);
         position                 = rotation * (position - target) + target;
 
         vzt::Vec3       direction   = glm::normalize(target - position);
@@ -211,7 +211,7 @@ int main(int /* argc */, char** /* argv */)
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
         else if (projection < 0.f) // If direction and reference are opposite
-            orientation = glm::angleAxis(-vzt::Pi, vzt::Vec3{0.f, 0.f, 1.f});
+            orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
         view        = camera.getViewMatrix(position, orientation);
         matrices[0] = view;
