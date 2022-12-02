@@ -25,6 +25,7 @@ set(VZT_HEADERS
     
     include/vzt/Utils/Compiler.hpp
     include/vzt/Utils/MeshLoader.hpp
+    include/vzt/Utils/RenderGraph.hpp
 
     include/vzt/Vulkan/Buffer.hpp
     include/vzt/Vulkan/Command.hpp

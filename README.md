@@ -6,9 +6,10 @@ for my personal projects in computer graphics.
 Here is the roadmap :
 | Feature                                                         | Progress  |
 |-----------------------------------------------------------------|-----------|
-| Window                                                          | To do     |
+| Window                                                          | Done      |
+| Renderer architecture                                           | Done      |
+| Render graph                                                    | WIP       |
 | Ui                                                              | To do     |
-| Renderer architecture                                           | To do     |
 
 ## Build 
 
