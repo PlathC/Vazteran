@@ -189,7 +189,7 @@ int main(int /* argc */, char** /* argv */)
             continue;
 
         // Per frame update
-        constexpr float t        = vzt::Pi / (360.f * 8.f);
+        const float     t        = (1e2f * inputs.deltaTime) * vzt::Pi / 360.f;
         const vzt::Quat rotation = glm::angleAxis(t, camera.up);
         position                 = rotation * (position - target) + target;
 
