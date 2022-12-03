@@ -209,7 +209,7 @@ int main(int /* argc */, char** /* argv */)
         // Submission of pre-recorded commands
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         graphicsQueue->submit(commands, *submission);
-        if (swapchain.present())
+        if (!swapchain.present())
         {
             device.wait();
 
