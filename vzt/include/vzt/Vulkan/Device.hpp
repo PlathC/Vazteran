@@ -123,10 +123,11 @@ namespace vzt
         void submit(const CommandBuffer& commandBuffer, const SwapchainSubmission& submission) const;
         void submit(const CommandBuffer& commandBuffer) const;
 
-        inline VkQueue   getHandle() const;
-        inline QueueType getType() const;
-        inline uint32_t  getId() const;
-        inline bool      canPresent() const;
+        inline View<Device> getDevice() const;
+        inline VkQueue      getHandle() const;
+        inline QueueType    getType() const;
+        inline uint32_t     getId() const;
+        inline bool         canPresent() const;
 
       private:
         View<Device> m_device{};

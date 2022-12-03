@@ -2,8 +2,6 @@
 #include <cassert>
 #include <cstdlib>
 
-#include <glm/gtx/polar_coordinates.hpp>
-#include <vzt/Core/File.hpp>
 #include <vzt/Core/Logger.hpp>
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
@@ -21,7 +19,7 @@
 
 int main(int /* argc */, char** /* argv */)
 {
-    const std::string ApplicationName = "Vazteran Blank";
+    const std::string ApplicationName = "Vazteran Base";
 
     auto window    = vzt::Window{ApplicationName};
     auto instance  = vzt::Instance{window};
