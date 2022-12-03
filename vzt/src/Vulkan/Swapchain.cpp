@@ -176,7 +176,7 @@ namespace vzt
             cleanup();
             create();
 
-            return true;
+            return false;
         }
 
         if (result != VK_SUCCESS)
@@ -184,7 +184,7 @@ namespace vzt
 
         m_currentFrame = (m_currentFrame + 1) % m_configuration.maxFramesInFlight;
 
-        return false;
+        return true;
     }
 
     void Swapchain::create()

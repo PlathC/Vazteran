@@ -3,7 +3,7 @@
 
 #include <vzt/Core/File.hpp>
 #include <vzt/Vulkan/Command.hpp>
-#include <vzt/Vulkan/Graphic.hpp>
+#include <vzt/Vulkan/GraphicPipeline.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
@@ -35,6 +35,8 @@ int main(int /* argc */, char** /* argv */)
         const auto&        image    = swapchain.getImage(submission->imageId);
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         {
+            commands.begin();
+
             vzt::ImageBarrier imageBarrier{};
             imageBarrier.image     = image;
             imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
@@ -47,10 +49,12 @@ int main(int /* argc */, char** /* argv */)
             imageBarrier.oldLayout = vzt::ImageLayout::TransferDstOptimal;
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
+
+            commands.end();
         }
 
         graphicsQueue->submit(commands, *submission);
-        if (swapchain.present())
+        if (!swapchain.present())
             device.wait();
     }
 
