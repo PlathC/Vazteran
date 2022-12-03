@@ -57,7 +57,6 @@ set(VZT_SOURCES
     src/Utils/MeshLoader.cpp
     src/Utils/RenderGraph.cpp
 
-    src/Vulkan/Attachment.cpp
     src/Vulkan/Buffer.cpp
     src/Vulkan/Command.cpp
     src/Vulkan/Descriptor.cpp

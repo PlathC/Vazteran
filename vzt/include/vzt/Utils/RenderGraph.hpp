@@ -3,12 +3,13 @@
 
 #include <atomic>
 #include <functional>
+#include <set>
 
-#include "vzt/Vulkan/Attachment.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
 #include "vzt/Vulkan/GraphicPipeline.hpp"
+#include "vzt/Vulkan/RenderPass.hpp"
 
 namespace vzt
 {
@@ -51,21 +52,59 @@ namespace vzt
     template <class Type>
     using HandleMap = std::unordered_map<Handle, Type, Handle::hash>;
 
+    class RenderGraph;
     class Pass
     {
       public:
-        Pass(const std::string& name, View<Queue> queue);
+        void addColorInput(const Handle& attachment, std::string name = "");
+        void addColorOutput(Handle& attachment, std::string attachmentName = "");
+        void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "");
+
+        void addStorageInput(const Handle& storage, std::string storageName = "",
+                             Optional<Range<std::size_t>> range = {});
+        void addStorageOutput(const Handle& storage, std::string storageName = "",
+                              Optional<Range<std::size_t>> range = {});
+        void addStorageInputOutput(Handle& storage, std::string inName = "", std::string outName = "",
+                                   Optional<Range<std::size_t>> range = {});
+
+        void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
+        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "");
 
         bool isDependingOn(const Pass& other) const;
 
-      private:
-        std::vector<Handle> m_colorInputs;
-        std::vector<Handle> m_storageInputs;
-        Optional<Handle>    m_depthInput;
+        friend RenderGraph;
 
-        std::vector<Handle> m_colorOutputs;
-        std::vector<Handle> m_storageOutputs;
-        Optional<Handle>    m_depthOutput;
+      private:
+        Pass(std::string name, View<Queue> queue);
+
+        std::string m_name;
+        View<Queue> m_queue;
+
+        struct PassAttachment
+        {
+            Handle        handle;
+            std::string   name;
+            AttachmentUse use;
+
+            bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
+        };
+
+        struct PassStorage
+        {
+            Handle                       handle;
+            std::string                  name;
+            Optional<Range<std::size_t>> range;
+
+            bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
+        };
+
+        std::set<PassAttachment> m_colorInputs;
+        std::set<PassStorage>    m_storageInputs;
+        Optional<PassAttachment> m_depthInput;
+
+        std::set<PassAttachment> m_colorOutputs;
+        std::set<PassStorage>    m_storageOutputs;
+        Optional<PassAttachment> m_depthOutput;
     };
 
     class RenderGraph
@@ -76,7 +115,7 @@ namespace vzt
         // User configuration
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
-        Pass&  addPass(const std::string& name, View<Queue> queue);
+        Pass&  addPass(std::string name, View<Queue> queue);
 
         void setBackBuffer(const Handle handle);
         bool isBackBuffer(const Handle handle) const;
@@ -113,7 +152,7 @@ namespace vzt
         std::vector<Pass>        m_passes;
 
         std::vector<FrameBuffer> m_frameBuffers; // [#swapchainImage * #Pass]
-        std::vector<Attachment>  m_attachments;  // [#swapchainImage * #Pass]
+        std::vector<Image>       m_attachments;  // [#swapchainImage * #Pass]
 
         CommandPool      m_commandPool;
         Optional<Handle> m_backBuffer;

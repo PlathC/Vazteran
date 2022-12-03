@@ -7,7 +7,6 @@
 #include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Utils/MeshLoader.hpp>
-#include <vzt/Vulkan/Attachment.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Descriptor.hpp>
 #include <vzt/Vulkan/FrameBuffer.hpp>

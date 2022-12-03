@@ -2,16 +2,98 @@
 
 #include <numeric>
 #include <stdexcept>
+#include <string>
+
+#include "vzt/Core/Logger.hpp"
 
 namespace vzt
 {
+    Pass::Pass(std::string name, View<Queue> queue) : m_name(std::move(name)), m_queue(std::move(queue)) {}
+
+    void Pass::addColorInput(const Handle& handle, std::string name)
+    {
+        if (m_colorInputs.find(PassAttachment{handle}) != m_colorInputs.end())
+            throw std::runtime_error("Trying to add several time the same attachment.");
+
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
+
+        attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.loadOp      = LoadOp::Load;
+        attachment.use.storeOp     = StoreOp::DontCare;
+
+        m_colorInputs.insert(attachment);
+    }
+
+    void Pass::addColorOutput(Handle& handle, std::string name)
+    {
+        if (m_colorOutputs.find(PassAttachment{handle}) != m_colorOutputs.end())
+            throw std::runtime_error("Trying to add several time the same attachment.");
+
+        handle.state++;
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
+
+        attachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
+        attachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
+        attachment.use.loadOp      = LoadOp::Clear;
+        attachment.use.storeOp     = StoreOp::Store;
+
+        m_colorOutputs.insert(attachment);
+    }
+
+    void Pass::addColorInputOutput(Handle& handle, std::string inName, std::string outName)
+    {
+        if (m_colorInputs.find(PassAttachment{handle}) != m_colorInputs.end())
+            throw std::runtime_error("Trying to add several time the same attachment.");
+
+        PassAttachment inAttachment{handle, inName};
+        if (inAttachment.name.empty())
+            inAttachment.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
+
+        inAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
+        inAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
+        inAttachment.use.loadOp      = LoadOp::Load;
+        inAttachment.use.storeOp     = StoreOp::Store;
+
+        m_colorInputs.insert(inAttachment);
+
+        if (m_colorOutputs.find(PassAttachment{handle}) != m_colorOutputs.end())
+            throw std::runtime_error("Trying to add several time the same attachment.");
+
+        handle.state++;
+        PassAttachment outAttachment{handle, outName};
+        if (outAttachment.name.empty())
+            outAttachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
+
+        outAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
+        outAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
+        outAttachment.use.loadOp      = LoadOp::Load;
+        outAttachment.use.storeOp     = StoreOp::Store;
+
+        m_colorOutputs.insert(outAttachment);
+    }
+
+    void Pass::addStorageInput(const Handle& storage, std::string storageName, Optional<Range<std::size_t>> range) {}
+    void Pass::addStorageOutput(const Handle& storage, std::string storageName, Optional<Range<std::size_t>> range) {}
+    void Pass::addStorageInputOutput(Handle& storage, std::string inName, std::string outName,
+                                     Optional<Range<std::size_t>> range)
+    {
+    }
+
+    void Pass::setDepthInput(const Handle& depthStencil, std::string attachmentName) {}
+    void Pass::setDepthOutput(Handle& depthStencil, std::string attachmentName) {}
+
     bool Pass::isDependingOn(const Pass& other) const
     {
         for (const auto& input : m_colorInputs)
         {
             for (const auto& output : other.m_colorOutputs)
             {
-                if (output.id == input.id && output.state == input.state)
+                if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
                     return true;
             }
         }
@@ -20,17 +102,17 @@ namespace vzt
         {
             for (const auto& output : other.m_storageOutputs)
             {
-                if (output.id == input.id && output.state == input.state)
+                if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
                     return true;
             }
         }
 
-        // Depth attachment
         if (m_depthInput)
         {
             if (other.m_depthOutput)
             {
-                if (other.m_depthOutput->id == m_depthInput->id && other.m_depthOutput->state == m_depthInput->state)
+                if (other.m_depthOutput->handle.id == m_depthInput->handle.id &&
+                    other.m_depthOutput->handle.state == m_depthInput->handle.state)
                     return true;
             }
         }
@@ -54,7 +136,7 @@ namespace vzt
         return handle;
     }
 
-    Pass& RenderGraph::addPass(const std::string& name, View<Queue> queue)
+    Pass& RenderGraph::addPass(std::string name, View<Queue> queue)
     {
         m_passes.emplace_back(Pass{name, queue});
         return m_passes.back();
@@ -74,6 +156,13 @@ namespace vzt
     {
         sort();
         reorder();
+
+        logger::info("Render graph execution order");
+        for (std::size_t i = 0; i < m_executionOrder.size(); i++)
+        {
+            std::size_t index = m_executionOrder[i];
+            logger::info("{} - {}", index, m_passes[i].m_name);
+        }
     }
 
     Handle RenderGraph::generateAttachmentHandle() const
@@ -132,6 +221,7 @@ namespace vzt
         if (m_executionOrder.size() <= 2)
             return;
 
+        // Try to fit passes between dependers and dependees
         // Based on https://github.com/Themaister/Granite/blob/master/renderer/render_graph.cpp#L2897
 
         // Expecting that m_sortedRenderPassIndices contains the sorted list of render pass indices.
@@ -154,6 +244,7 @@ namespace vzt
             for (std::size_t i = 0; i < toProcess.size(); i++)
             {
                 std::size_t overlapFactor = 0;
+
                 // Try to find the farthest non-depending pass
                 for (auto it = m_executionOrder.rbegin(); it != m_executionOrder.rend(); ++it)
                 {
