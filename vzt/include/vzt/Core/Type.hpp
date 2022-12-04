@@ -81,6 +81,16 @@ namespace vzt
 
         constexpr Type size() const;
     };
+
+    // From https://en.cppreference.com/w/cpp/utility/variant/visit
+    template <class... Ts>
+    struct Overloaded : Ts...
+    {
+        using Ts::operator()...;
+    };
+
+    template <class... Ts>
+    Overloaded(Ts...) -> Overloaded<Ts...>;
 } // namespace vzt
 
 #include "vzt/Core/Type.inl"

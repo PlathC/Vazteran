@@ -2,14 +2,17 @@
 #define VZT_VULKAN_DESCRIPTOR_HPP
 
 #include <unordered_set>
+#include <variant>
 
 #include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
+#include "vzt/Vulkan/Image.hpp"
+#include "vzt/Vulkan/Texture.hpp"
 
 namespace vzt
 {
     class DescriptorPool;
-    class Texture;
+    class ImageView;
 
     enum class DescriptorType
     {
@@ -44,7 +47,7 @@ namespace vzt
         void addBinding(uint32_t binding, DescriptorType type);
         void compile();
 
-        using Bindings = std::unordered_map<uint32_t /*binding*/, vzt::DescriptorType /*type */>;
+        using Bindings = std::unordered_map<uint32_t /*binding*/, DescriptorType /*type */>;
         inline const Bindings&       getBindings() const;
         inline VkDescriptorSetLayout getHandle() const;
 
@@ -70,8 +73,22 @@ namespace vzt
         VkDescriptorSet m_handle = VK_NULL_HANDLE;
     };
 
-    template <class Type>
-    using Indexed = std::unordered_map<uint32_t, Type>;
+    struct DescriptorBuffer
+    {
+        DescriptorType type;
+        BufferSpan     buffer;
+    };
+
+    struct DescriptorImage
+    {
+        DescriptorType  type;
+        View<ImageView> image;
+        View<Sampler>   sampler; // Only for DescriptorType::SampledImage
+        ImageLayout     layout = ImageLayout::ShaderReadOnlyOptimal;
+    };
+
+    using DescriptorWrite   = std::variant<DescriptorBuffer, DescriptorImage>;
+    using IndexedDescriptor = std::unordered_map<uint32_t, DescriptorWrite>;
     class DescriptorPool
     {
       public:
@@ -94,14 +111,8 @@ namespace vzt
 
         inline DescriptorSet operator[](uint32_t i) const;
 
-        void update(std::size_t descriptorId, const Indexed<BufferSpan>& bufferDescriptors,
-                    const Indexed<View<Texture>>& imageDescriptors);
-        void update(std::size_t descriptorId, const Indexed<BufferSpan>& bufferDescriptors);
-        void update(std::size_t descriptorId, const Indexed<View<Texture>>& imageDescriptors);
-
-        void update(const Indexed<BufferSpan>& bufferDescriptors, const Indexed<View<Texture>>& imageDescriptors);
-        void update(const Indexed<BufferSpan>& bufferDescriptors);
-        void update(const Indexed<View<Texture>>& imageDescriptors);
+        void update(std::size_t descriptorId, const IndexedDescriptor& descriptors);
+        void update(const IndexedDescriptor& descriptors);
 
         inline uint32_t         getRemaining() const;
         inline uint32_t         getMaxSetNb() const;

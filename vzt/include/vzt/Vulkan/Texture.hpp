@@ -3,11 +3,11 @@
 
 #include "vzt/Core/Type.hpp"
 #include "vzt/Core/Vulkan.hpp"
+#include "vzt/Vulkan/Image.hpp"
 
 namespace vzt
 {
     class Device;
-    class ImageView;
 
     enum class Filter : uint32_t
     {
@@ -89,14 +89,14 @@ namespace vzt
     class Texture
     {
       public:
-        Texture(View<Device> device, View<ImageView> imageView, SamplerBuilder samplerSettings = {});
+        Texture(View<Device> device, View<Image> image, SamplerBuilder samplerSettings = {});
 
-        View<ImageView> getView() const { return m_imageView; }
-        const Sampler&  getSampler() const { return m_sampler; }
+        inline View<ImageView> getView() const;
+        inline const Sampler&  getSampler() const;
 
       private:
-        Sampler         m_sampler;
-        View<ImageView> m_imageView;
+        Sampler   m_sampler;
+        ImageView m_imageView;
     };
 
 } // namespace vzt

@@ -7,6 +7,7 @@
 
 #include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Swapchain.hpp"
+#include "vzt/Vulkan/Texture.hpp"
 
 namespace vzt
 {
@@ -254,6 +255,7 @@ namespace vzt
 
     void RenderGraph::sort()
     {
+        // Graph sorting based on its topology
         // https://en.wikipedia.org/wiki/Topological_sorting
         m_executionOrder.clear();
         m_executionOrder.reserve(m_passes.size());
@@ -363,6 +365,7 @@ namespace vzt
         m_frameBuffers.clear();
         m_images.clear();
         m_storages.clear();
+        m_textureSaves.clear();
 
         // 1. Get all use handles and find by which queue it is used
         HandleMap<QueueType> handles{};
@@ -399,7 +402,8 @@ namespace vzt
         auto       hardware    = m_swapchain->getDevice()->getHardware();
         const auto depthFormat = hardware.getDepthFormat();
 
-        std::size_t handleId = 0;
+        std::size_t imageId   = 0;
+        std::size_t storageId = 0;
         for (const auto& [handle, queues] : handles)
         {
             if (handle.type == HandleType::Attachment)
@@ -416,8 +420,8 @@ namespace vzt
                     if (!attachmentBuilder.format && attachmentBuilder.usage == ImageUsage::DepthStencilAttachment)
                         attachmentBuilder.format = depthFormat;
 
-                    m_handleToPhysical[handle] = handleId;
-                    handleId++;
+                    m_handleToPhysical[handle] = imageId;
+                    imageId++;
 
                     // clang-format off
                     ImageBuilder builder{
@@ -438,8 +442,8 @@ namespace vzt
             }
             else if (handle.type == HandleType::Storage)
             {
-                m_handleToPhysical[handle] = handleId;
-                handleId++;
+                m_handleToPhysical[handle] = storageId;
+                storageId++;
 
                 const StorageBuilder& storageBuilder = m_storageBuilders[handle];
                 for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
@@ -510,11 +514,35 @@ namespace vzt
                 auto& descriptorPool = m_descriptorPools.back();
                 descriptorPool.allocate(m_swapchain->getImageNb(), descriptorLayout);
 
+                IndexedDescriptor descriptors{};
                 for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
                 {
                     m_frameBuffers.emplace_back(device, *extent);
                     FrameBuffer& frameBuffer = m_frameBuffers.back();
 
+                    // Sampled texture
+                    for (auto& input : pass.m_colorInputs)
+                    {
+                        const std::size_t handlePhysicalId = m_handleToPhysical[input.handle];
+                        Image&            image            = m_images[handlePhysicalId * m_swapchain->getImageNb() + i];
+
+                        m_textureSaves.emplace_back(queue->getDevice(), image, SamplerBuilder{});
+                        Texture& texture = m_textureSaves.back();
+
+                        descriptors[input.binding] =
+                            DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
+                    }
+
+                    // SSBO
+                    for (auto& input : pass.m_storageInputs)
+                    {
+                        const std::size_t handlePhysicalId = m_handleToPhysical[input.handle];
+                        Buffer&           storage = m_storages[handlePhysicalId * m_swapchain->getImageNb() + i];
+                        descriptors[input.binding] =
+                            DescriptorBuffer{DescriptorType::StorageBuffer, BufferSpan{storage, storage.size(), 0}};
+                    }
+
+                    // Get attachment from framebuffer
                     for (auto& output : pass.m_colorOutputs)
                     {
                         const AttachmentBuilder& builder = m_attachmentBuilders[output.handle];

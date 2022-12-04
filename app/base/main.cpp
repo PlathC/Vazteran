@@ -154,9 +154,12 @@ int main(int /* argc */, char** /* argv */)
     {
         modelsUbo.update<vzt::Vec4>(vzt::Vec4{1.f}, i * uniformByteNb + modelsAlignment);
 
-        vzt::Indexed<vzt::BufferSpan> ubos{};
-        ubos[0] = vzt::BufferSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
-        ubos[1] = vzt::BufferSpan{modelsUbo, sizeof(vzt::Vec4), i * uniformByteNb + modelsAlignment};
+        vzt::BufferSpan modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
+        vzt::BufferSpan materialSpan{modelsUbo, sizeof(vzt::Vec4), i * uniformByteNb + modelsAlignment};
+
+        vzt::IndexedDescriptor ubos{};
+        ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, modelSpan};
+        ubos[1] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, materialSpan};
         descriptorPool.update(i, ubos);
 
         createRenderObject(i);

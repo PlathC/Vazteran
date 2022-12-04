@@ -10,6 +10,7 @@
 #include "vzt/Vulkan/FrameBuffer.hpp"
 #include "vzt/Vulkan/GraphicPipeline.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
+#include "vzt/Vulkan/Texture.hpp"
 
 namespace vzt
 {
@@ -168,6 +169,8 @@ namespace vzt
         std::vector<FrameBuffer>    m_frameBuffers;    // [passId    * #swapchainImage + swapchainImageId]
         std::vector<Image>          m_images;          // [imageId   * #swapchainImage + swapchainImageId]
         std::vector<Buffer>         m_storages;        // [storageId * #swapchainImage + swapchainImageId]
+
+        std::vector<Texture> m_textureSaves;
 
         Optional<Handle> m_backBuffer;
     };

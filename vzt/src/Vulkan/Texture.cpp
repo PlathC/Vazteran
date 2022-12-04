@@ -57,8 +57,10 @@ namespace vzt
         vkDestroySampler(m_device->getHandle(), m_handle, nullptr);
     }
 
-    Texture::Texture(View<Device> device, View<ImageView> imageView, SamplerBuilder samplerSettings)
-        : m_sampler(device, samplerSettings), m_imageView(imageView)
+    Texture::Texture(View<Device> device, View<Image> image, SamplerBuilder samplerSettings)
+        : m_sampler(device, samplerSettings),
+          m_imageView(device, image,
+                      image->getUsage() == ImageUsage::DepthStencilAttachment ? ImageAspect::Depth : ImageAspect::Color)
     {
     }
 
