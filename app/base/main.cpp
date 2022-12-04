@@ -64,6 +64,7 @@ int main(int /* argc */, char** /* argv */)
     // Material { vec3 albedo; float shininess; }
     descriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
     descriptorLayout.compile();
+
     pipeline.setDescriptorLayout(descriptorLayout);
 
     vzt::VertexInputDescription vertexDescription{};

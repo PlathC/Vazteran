@@ -14,19 +14,22 @@
 namespace vzt
 {
     enum class QueueType : uint8_t;
+    class Swapchain;
 
     struct AttachmentBuilder
     {
+        View<Device>       device;
         ImageUsage         usage;
-        Optional<Format>   format{};    // if unset, use swapchain image formats
-        Optional<Extent2D> imageSize{}; // if unset, use frame buffer size
+        Optional<Format>   format{};    // if unset, use swapchain image
+        Optional<Extent2D> imageSize{}; // if unset, use swapchain image size
         SampleCount        sampleCount = vzt::SampleCount::Sample1;
     };
 
     struct StorageBuilder
     {
-        std::size_t size;
-        BufferUsage usage;
+        View<Device> device;
+        std::size_t  size;
+        BufferUsage  usage;
     };
 
     enum class HandleType
@@ -47,6 +50,7 @@ namespace vzt
         };
 
         bool operator==(const Handle& other) const { return id == other.id; }
+        bool operator<(const Handle& other) const { return id < other.id; }
     };
 
     template <class Type>
@@ -56,14 +60,21 @@ namespace vzt
     class Pass
     {
       public:
-        void addColorInput(const Handle& attachment, std::string name = "");
+        Pass(const Pass&)            = delete;
+        Pass& operator=(const Pass&) = delete;
+
+        Pass(Pass&&) noexcept   = default;
+        Pass& operator=(Pass&&) = default;
+
+        ~Pass() = default;
+
+        void addColorInput(uint32_t binding, const Handle& attachment, std::string name = "");
         void addColorOutput(Handle& attachment, std::string attachmentName = "");
         void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "");
 
-        void addStorageInput(const Handle& storage, std::string storageName = "",
+        void addStorageInput(uint32_t binding, const Handle& storage, std::string storageName = "",
                              Optional<Range<std::size_t>> range = {});
-        void addStorageOutput(const Handle& storage, std::string storageName = "",
-                              Optional<Range<std::size_t>> range = {});
+        void addStorageOutput(Handle& storage, std::string storageName = "", Optional<Range<std::size_t>> range = {});
         void addStorageInputOutput(Handle& storage, std::string inName = "", std::string outName = "",
                                    Optional<Range<std::size_t>> range = {});
 
@@ -72,19 +83,27 @@ namespace vzt
 
         bool isDependingOn(const Pass& other) const;
 
+        inline View<Queue>             getQueue() const;
+        inline void                    setDescriptorLayout(DescriptorLayout&& layout);
+        inline const DescriptorLayout& getDescriptorLayout() const;
+        inline DescriptorLayout&       getDescriptorLayout();
+
         friend RenderGraph;
 
       private:
         Pass(std::string name, View<Queue> queue);
 
-        std::string m_name;
-        View<Queue> m_queue;
+        std::string      m_name;
+        View<Queue>      m_queue;
+        std::size_t      m_id;
+        DescriptorLayout m_descriptorLayout;
 
         struct PassAttachment
         {
             Handle        handle;
             std::string   name;
             AttachmentUse use;
+            uint32_t      binding = ~0u;
 
             bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
         };
@@ -94,8 +113,9 @@ namespace vzt
             Handle                       handle;
             std::string                  name;
             Optional<Range<std::size_t>> range;
+            uint32_t                     binding = ~0u;
 
-            bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
+            bool operator<(const PassStorage& other) const { return handle.id < other.handle.id; }
         };
 
         std::set<PassAttachment> m_colorInputs;
@@ -110,7 +130,7 @@ namespace vzt
     class RenderGraph
     {
       public:
-        RenderGraph() = default;
+        RenderGraph(View<Swapchain> swapchain);
 
         // User configuration
         Handle addAttachment(AttachmentBuilder builder);
@@ -129,37 +149,30 @@ namespace vzt
         Handle generateStorageHandle() const;
 
         void sort();
-        void reorder();
+        void create();
 
         static inline std::atomic<std::size_t> m_handleCounter = 0;
 
-        struct PhysicalAttachment
-        {
-            AttachmentBuilder settings;
-        };
-
-        struct PhysicalStorage
-        {
-            StorageBuilder settings;
-            Buffer         buffer;
-        };
+        View<Swapchain> m_swapchain;
 
         HandleMap<AttachmentBuilder> m_attachmentBuilders;
         HandleMap<StorageBuilder>    m_storageBuilders;
 
         std::hash<std::size_t>   m_hash{};
         std::vector<std::size_t> m_executionOrder;
+        HandleMap<std::size_t>   m_handleToPhysical;
         std::vector<Pass>        m_passes;
 
-        std::vector<FrameBuffer> m_frameBuffers; // [#swapchainImage * #Pass]
-        std::vector<Image>       m_attachments;  // [#swapchainImage * #Pass]
+        std::vector<RenderPass>     m_renderPasses;    // [#pass]
+        std::vector<DescriptorPool> m_descriptorPools; // [#pass]
+        std::vector<FrameBuffer>    m_frameBuffers;    // [passId    * #swapchainImage + swapchainImageId]
+        std::vector<Image>          m_images;          // [imageId   * #swapchainImage + swapchainImageId]
+        std::vector<Buffer>         m_storages;        // [storageId * #swapchainImage + swapchainImageId]
 
-        CommandPool      m_commandPool;
         Optional<Handle> m_backBuffer;
-
-        Extent2D m_swapchainSize;
     };
-
 } // namespace vzt
+
+#include "vzt/Utils/RenderGraph.inl"
 
 #endif // VZT_UTILS_RENDERGRAPH_HPP

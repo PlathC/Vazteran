@@ -28,9 +28,9 @@ namespace vzt
     enum class QueueType : uint8_t
     {
         None     = 0,
-        Transfer = VK_QUEUE_TRANSFER_BIT,
+        Graphics = VK_QUEUE_GRAPHICS_BIT,
         Compute  = VK_QUEUE_COMPUTE_BIT,
-        Graphics = VK_QUEUE_GRAPHICS_BIT
+        Transfer = VK_QUEUE_TRANSFER_BIT
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(QueueType, VkQueueFlagBits)
     VZT_DEFINE_BITWISE_FUNCTIONS(QueueType)

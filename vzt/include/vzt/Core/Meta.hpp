@@ -18,9 +18,21 @@ namespace vzt
         return static_cast<Type>(vzt::toUnderlying(l) & vzt::toUnderlying(r)); \
     }                                                                          \
                                                                                \
+    inline constexpr Type& operator&=(Type& l, const Type r)                   \
+    {                                                                          \
+        l = l & r;                                                             \
+        return l;                                                              \
+    }                                                                          \
+                                                                               \
     inline constexpr Type operator|(const Type l, const Type r)                \
     {                                                                          \
         return static_cast<Type>(vzt::toUnderlying(l) | vzt::toUnderlying(r)); \
+    }                                                                          \
+                                                                               \
+    inline constexpr Type& operator|=(Type& l, const Type r)                   \
+    {                                                                          \
+        l = l | r;                                                             \
+        return l;                                                              \
     }                                                                          \
                                                                                \
     inline constexpr Type operator~(const Type m)                              \

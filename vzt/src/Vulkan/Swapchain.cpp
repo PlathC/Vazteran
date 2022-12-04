@@ -190,7 +190,9 @@ namespace vzt
     void Swapchain::create()
     {
         const VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(m_surface->getFormats(m_device));
-        const VkPresentModeKHR   presentMode   = chooseSwapPresentMode(m_surface->getPresentModes(m_device));
+        m_format                               = static_cast<Format>(surfaceFormat.format);
+
+        const VkPresentModeKHR presentMode = chooseSwapPresentMode(m_surface->getPresentModes(m_device));
 
         const VkSurfaceCapabilitiesKHR capabilities = m_surface->getCapabilities(m_device);
         const VkExtent2D               extent       = chooseExtent(capabilities);

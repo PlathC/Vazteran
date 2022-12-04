@@ -1,21 +1,26 @@
 #include "vzt/Utils/RenderGraph.hpp"
 
+#include <bitset>
 #include <numeric>
 #include <stdexcept>
 #include <string>
 
 #include "vzt/Core/Logger.hpp"
+#include "vzt/Vulkan/Swapchain.hpp"
 
 namespace vzt
 {
-    Pass::Pass(std::string name, View<Queue> queue) : m_name(std::move(name)), m_queue(std::move(queue)) {}
-
-    void Pass::addColorInput(const Handle& handle, std::string name)
+    Pass::Pass(std::string name, View<Queue> queue)
+        : m_name(std::move(name)), m_queue(std::move(queue)), m_descriptorLayout(m_queue->getDevice())
     {
-        if (m_colorInputs.find(PassAttachment{handle}) != m_colorInputs.end())
-            throw std::runtime_error("Trying to add several time the same attachment.");
+    }
+
+    void Pass::addColorInput(uint32_t binding, const Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
 
         PassAttachment attachment{handle, name};
+        attachment.binding = binding;
         if (attachment.name.empty())
             attachment.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
 
@@ -25,12 +30,13 @@ namespace vzt
         attachment.use.storeOp     = StoreOp::DontCare;
 
         m_colorInputs.insert(attachment);
+
+        m_descriptorLayout.addBinding(binding, DescriptorType::SampledImage);
     }
 
     void Pass::addColorOutput(Handle& handle, std::string name)
     {
-        if (m_colorOutputs.find(PassAttachment{handle}) != m_colorOutputs.end())
-            throw std::runtime_error("Trying to add several time the same attachment.");
+        assert(handle.type == HandleType::Attachment);
 
         handle.state++;
         PassAttachment attachment{handle, name};
@@ -47,8 +53,7 @@ namespace vzt
 
     void Pass::addColorInputOutput(Handle& handle, std::string inName, std::string outName)
     {
-        if (m_colorInputs.find(PassAttachment{handle}) != m_colorInputs.end())
-            throw std::runtime_error("Trying to add several time the same attachment.");
+        assert(handle.type == HandleType::Attachment);
 
         PassAttachment inAttachment{handle, inName};
         if (inAttachment.name.empty())
@@ -60,9 +65,6 @@ namespace vzt
         inAttachment.use.storeOp     = StoreOp::Store;
 
         m_colorInputs.insert(inAttachment);
-
-        if (m_colorOutputs.find(PassAttachment{handle}) != m_colorOutputs.end())
-            throw std::runtime_error("Trying to add several time the same attachment.");
 
         handle.state++;
         PassAttachment outAttachment{handle, outName};
@@ -77,15 +79,86 @@ namespace vzt
         m_colorOutputs.insert(outAttachment);
     }
 
-    void Pass::addStorageInput(const Handle& storage, std::string storageName, Optional<Range<std::size_t>> range) {}
-    void Pass::addStorageOutput(const Handle& storage, std::string storageName, Optional<Range<std::size_t>> range) {}
-    void Pass::addStorageInputOutput(Handle& storage, std::string inName, std::string outName,
-                                     Optional<Range<std::size_t>> range)
+    void Pass::addStorageInput(uint32_t binding, const Handle& handle, std::string name,
+                               Optional<Range<std::size_t>> range)
     {
+        assert(handle.type == HandleType::Attachment);
+
+        PassStorage storage{handle, name, range, binding};
+        if (storage.name.empty())
+            storage.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
+
+        m_storageInputs.insert(storage);
+        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
     }
 
-    void Pass::setDepthInput(const Handle& depthStencil, std::string attachmentName) {}
-    void Pass::setDepthOutput(Handle& depthStencil, std::string attachmentName) {}
+    void Pass::addStorageOutput(Handle& handle, std::string name, Optional<Range<std::size_t>> range)
+    {
+        handle.state++;
+
+        PassStorage storage{handle, name, range};
+        if (storage.name.empty())
+            storage.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
+
+        m_storageOutputs.insert(storage);
+    }
+
+    void Pass::addStorageInputOutput(Handle& handle, std::string inName, std::string outName,
+                                     Optional<Range<std::size_t>> range)
+    {
+        handle.state++;
+
+        PassStorage inStorage{handle, inName, range};
+        if (inStorage.name.empty())
+            inStorage.name = m_name + "In" + std::to_string(m_colorInputs.size());
+
+        m_storageInputs.insert(inStorage);
+
+        PassStorage outStorage{handle, outName, range};
+        if (outStorage.name.empty())
+            outStorage.name = m_name + "Out" + std::to_string(m_colorInputs.size());
+
+        m_storageOutputs.insert(outStorage);
+    }
+
+    void Pass::setDepthInput(const Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "DepthIn";
+
+        attachment.use.initialLayout  = ImageLayout::Undefined;
+        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.loadOp         = LoadOp::Load;
+        attachment.use.storeOp        = StoreOp::DontCare;
+        attachment.use.stencilLoapOp  = LoadOp::Load;
+        attachment.use.stencilStoreOp = StoreOp::DontCare;
+
+        m_depthInput = attachment;
+    }
+
+    void Pass::setDepthOutput(Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        handle.state++;
+
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "DepthOut";
+
+        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.loadOp         = LoadOp::Clear;
+        attachment.use.storeOp        = StoreOp::Store;
+        attachment.use.stencilLoapOp  = LoadOp::Clear;
+        attachment.use.stencilStoreOp = StoreOp::Store;
+
+        m_depthOutput = attachment;
+    }
 
     bool Pass::isDependingOn(const Pass& other) const
     {
@@ -119,6 +192,8 @@ namespace vzt
 
         return false;
     }
+
+    RenderGraph::RenderGraph(View<Swapchain> swapchain) : m_swapchain(std::move(swapchain)) {}
 
     Handle RenderGraph::addAttachment(AttachmentBuilder builder)
     {
@@ -154,15 +229,20 @@ namespace vzt
 
     void RenderGraph::compile()
     {
+        m_executionOrder.clear();
+        m_handleToPhysical.clear();
+
         sort();
-        reorder();
 
         logger::info("Render graph execution order");
         for (std::size_t i = 0; i < m_executionOrder.size(); i++)
         {
-            std::size_t index = m_executionOrder[i];
-            logger::info("{} - {}", index, m_passes[i].m_name);
+            Pass& pass = m_passes[m_executionOrder[i]];
+            pass.m_id  = i;
+            logger::info("{} - {}", i, pass.m_name);
         }
+
+        create();
     }
 
     Handle RenderGraph::generateAttachmentHandle() const
@@ -214,10 +294,7 @@ namespace vzt
         {
             processNode(remainingNodes.front());
         }
-    }
 
-    void RenderGraph::reorder()
-    {
         if (m_executionOrder.size() <= 2)
             return;
 
@@ -274,8 +351,198 @@ namespace vzt
                 bestOverlapFactor = overlapFactor;
             }
 
-            m_executionOrder.push_back(toProcess[bestCandidateIdx]);
+            m_executionOrder.emplace_back(toProcess[bestCandidateIdx]);
             toProcess.erase(toProcess.begin() + bestCandidateIdx);
+        }
+    }
+
+    void RenderGraph::create()
+    {
+        m_renderPasses.clear();
+        m_descriptorPools.clear();
+        m_frameBuffers.clear();
+        m_images.clear();
+        m_storages.clear();
+
+        // 1. Get all use handles and find by which queue it is used
+        HandleMap<QueueType> handles{};
+        const auto           add = [&handles](const Pass& pass, const Handle& handle) {
+            if (handles.find(handle) == handles.end())
+                handles[handle] = QueueType::None;
+            handles[handle] |= pass.getQueue()->getType();
+        };
+
+        for (const Pass& pass : m_passes)
+        {
+            for (auto& input : pass.m_colorInputs)
+                add(pass, input.handle);
+
+            for (auto& output : pass.m_colorOutputs)
+                add(pass, output.handle);
+
+            for (auto& input : pass.m_storageInputs)
+                add(pass, input.handle);
+
+            for (auto& output : pass.m_storageOutputs)
+                add(pass, output.handle);
+
+            if (pass.m_depthInput)
+                add(pass, pass.m_depthInput->handle);
+
+            if (pass.m_depthOutput)
+                add(pass, pass.m_depthOutput->handle);
+        }
+
+        // 2. Create physical memory (Image, Buffer)
+        const auto swapchainFormat = m_swapchain->getFormat();
+
+        auto       hardware    = m_swapchain->getDevice()->getHardware();
+        const auto depthFormat = hardware.getDepthFormat();
+
+        std::size_t handleId = 0;
+        for (const auto& [handle, queues] : handles)
+        {
+            if (handle.type == HandleType::Attachment)
+            {
+                AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[handle];
+
+                // Swapchain images does not need to be created
+                if (!attachmentBuilder.format && attachmentBuilder.usage == ImageUsage::ColorAttachment)
+                {
+                    attachmentBuilder.format = swapchainFormat;
+                }
+                else
+                {
+                    if (!attachmentBuilder.format && attachmentBuilder.usage == ImageUsage::DepthStencilAttachment)
+                        attachmentBuilder.format = depthFormat;
+
+                    m_handleToPhysical[handle] = handleId;
+                    handleId++;
+
+                    // clang-format off
+                    ImageBuilder builder{
+                        attachmentBuilder.imageSize.value_or(m_swapchain->getExtent()), 
+                        attachmentBuilder.usage,
+                        *attachmentBuilder.format
+                    };
+                    // clang-format on
+
+                    builder.sampleCount = attachmentBuilder.sampleCount;
+
+                    const std::size_t queueTypeNb = std::bitset<sizeof(QueueType)>(toUnderlying(queues)).count();
+                    builder.sharingMode           = queueTypeNb > 1u ? SharingMode::Concurrent : SharingMode::Exclusive;
+
+                    for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
+                        m_images.emplace_back(Image{attachmentBuilder.device, builder});
+                }
+            }
+            else if (handle.type == HandleType::Storage)
+            {
+                m_handleToPhysical[handle] = handleId;
+                handleId++;
+
+                const StorageBuilder& storageBuilder = m_storageBuilders[handle];
+                for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
+                {
+                    m_storages.emplace_back(
+                        Buffer{storageBuilder.device, storageBuilder.size, vzt::BufferUsage::StorageBuffer});
+                }
+            }
+        }
+
+        // 3. Create render passes and their corresponding data such as the FrameBuffer
+        m_renderPasses.reserve(m_passes.size());
+        m_descriptorPools.reserve(m_passes.size());
+        for (std::size_t passId = 0; passId < m_executionOrder.size(); passId++)
+        {
+            // Traver pass in execution order to fit their id with their ressources
+            Pass&       pass  = m_passes[m_executionOrder[passId]];
+            View<Queue> queue = pass.getQueue();
+
+            // If the pass is working with a compute queue, it does not need a render pass
+            if (queue->getType() == QueueType::Graphics)
+            {
+                m_renderPasses.emplace_back(queue->getDevice());
+                auto& renderPass = m_renderPasses.back();
+
+                for (const auto& output : pass.m_colorOutputs)
+                {
+                    const AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[output.handle];
+
+                    AttachmentUse attachmentUse = output.use;
+                    attachmentUse.format        = *attachmentBuilder.format;
+                    renderPass.addColor(attachmentUse);
+                }
+
+                if (!pass.m_depthOutput)
+                    throw std::runtime_error("Graphics pass must have a depth output.");
+
+                AttachmentUse attachmentUse = pass.m_depthOutput->use;
+                attachmentUse.format        = depthFormat;
+                renderPass.setDepth(attachmentUse);
+
+                renderPass.compile();
+
+                const auto device = queue->getDevice();
+
+                // Guess render pass extent from its outputs
+                Optional<Extent2D> extent;
+                for (auto& output : pass.m_colorOutputs)
+                {
+                    const auto& builder = m_attachmentBuilders[output.handle];
+                    extent              = builder.imageSize.value_or(m_swapchain->getExtent());
+                    break;
+                }
+
+                if (!extent && pass.m_depthOutput)
+                {
+                    const auto& builder = m_attachmentBuilders[pass.m_depthOutput->handle];
+                    extent              = builder.imageSize.value_or(m_swapchain->getExtent());
+                }
+
+                assert(extent && "Can't guess render pass extent since it has no output.");
+
+                // Create render targets and descriptors for the current pass
+                auto& descriptorLayout = pass.getDescriptorLayout();
+                descriptorLayout.compile();
+
+                m_descriptorPools.emplace_back(DescriptorPool{device, descriptorLayout, m_swapchain->getImageNb()});
+                auto& descriptorPool = m_descriptorPools.back();
+                descriptorPool.allocate(m_swapchain->getImageNb(), descriptorLayout);
+
+                for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
+                {
+                    m_frameBuffers.emplace_back(device, *extent);
+                    FrameBuffer& frameBuffer = m_frameBuffers.back();
+
+                    for (auto& output : pass.m_colorOutputs)
+                    {
+                        const AttachmentBuilder& builder = m_attachmentBuilders[output.handle];
+
+                        View<Image> image;
+                        if (!builder.format)
+                        {
+                            image = m_swapchain->getImage(i);
+                        }
+                        else
+                        {
+                            const std::size_t handlePhysicalId = m_handleToPhysical[output.handle];
+                            image = m_images[handlePhysicalId * m_swapchain->getImageNb() + i];
+                        }
+
+                        frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
+                    }
+
+                    if (pass.m_depthOutput)
+                    {
+                        const std::size_t handlePhysicalId = m_handleToPhysical[pass.m_depthOutput->handle];
+                        const std::size_t physicalId       = handlePhysicalId * m_swapchain->getImageNb() + i;
+                        frameBuffer.addAttachment(ImageView{device, m_images[physicalId], ImageAspect::Depth});
+                    }
+
+                    frameBuffer.compile(renderPass);
+                }
+            }
         }
     }
 } // namespace vzt

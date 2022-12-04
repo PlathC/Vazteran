@@ -42,9 +42,12 @@ namespace vzt
         Optional<SwapchainSubmission> getSubmission();
         bool                          present();
 
-        inline void        setExtent(Extent2D extent);
-        inline View<Image> getImage(std::size_t i) const;
-        inline uint32_t    getImageNb() const;
+        inline void         setExtent(Extent2D extent);
+        inline Extent2D     getExtent() const;
+        inline View<Image>  getImage(std::size_t i) const;
+        inline uint32_t     getImageNb() const;
+        inline Format       getFormat() const;
+        inline View<Device> getDevice() const;
 
       private:
         void create();
@@ -59,6 +62,7 @@ namespace vzt
         View<Surface> m_surface;
         Extent2D      m_extent;
         bool          m_framebufferResized = false;
+        Format        m_format;
 
         uint32_t                 m_currentFrame = 0u;
         uint32_t                 m_currentImage = 0u;
