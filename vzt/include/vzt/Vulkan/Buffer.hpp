@@ -92,7 +92,8 @@ namespace vzt
         bool           m_mappable = false;
     };
 
-    using BufferSpan = OffsetSpan<Buffer>;
+    using BufferSpan  = OffsetSpan<Buffer>;
+    using BufferCSpan = OffsetCSpan<Buffer>;
 
 } // namespace vzt
 

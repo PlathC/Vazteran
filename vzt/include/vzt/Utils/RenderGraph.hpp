@@ -3,7 +3,7 @@
 
 #include <atomic>
 #include <functional>
-#include <set>
+#include <unordered_set>
 
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Command.hpp"
@@ -57,6 +57,26 @@ namespace vzt
     template <class Type>
     using HandleMap = std::unordered_map<Handle, Type, Handle::hash>;
 
+    class RecordHandler
+    {
+      public:
+        virtual ~RecordHandler()                                                           = default;
+        virtual void record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands) = 0;
+    };
+
+    using RecordCallback = std::function<void(uint32_t i, const DescriptorSet& set, CommandBuffer& commands)>;
+    class LambdaRecorder : public RecordHandler
+    {
+      public:
+        LambdaRecorder(RecordCallback callback);
+        ~LambdaRecorder() override = default;
+
+        void record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands) override;
+
+      private:
+        RecordCallback m_callback;
+    };
+
     class RenderGraph;
     class Pass
     {
@@ -82,7 +102,10 @@ namespace vzt
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
         void setDepthOutput(Handle& depthStencil, std::string attachmentName = "");
 
+        void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
+
         bool isDependingOn(const Pass& other) const;
+        void record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands) const;
 
         inline View<Queue>             getQueue() const;
         inline void                    setDescriptorLayout(DescriptorLayout&& layout);
@@ -98,6 +121,8 @@ namespace vzt
         View<Queue>      m_queue;
         std::size_t      m_id;
         DescriptorLayout m_descriptorLayout;
+
+        std::unique_ptr<RecordHandler> m_recordCallback;
 
         struct PassAttachment
         {
@@ -119,13 +144,13 @@ namespace vzt
             bool operator<(const PassStorage& other) const { return handle.id < other.handle.id; }
         };
 
-        std::set<PassAttachment> m_colorInputs;
-        std::set<PassStorage>    m_storageInputs;
-        Optional<PassAttachment> m_depthInput;
+        std::vector<PassAttachment> m_colorInputs;
+        std::vector<PassStorage>    m_storageInputs;
+        Optional<PassAttachment>    m_depthInput;
 
-        std::set<PassAttachment> m_colorOutputs;
-        std::set<PassStorage>    m_storageOutputs;
-        Optional<PassAttachment> m_depthOutput;
+        std::vector<PassAttachment> m_colorOutputs;
+        std::vector<PassStorage>    m_storageOutputs;
+        Optional<PassAttachment>    m_depthOutput;
     };
 
     class RenderGraph
@@ -143,14 +168,15 @@ namespace vzt
 
         // User information check
         void compile();
-        void record();
+
+        void record(uint32_t i, CommandBuffer& commands);
 
       private:
         Handle generateAttachmentHandle() const;
         Handle generateStorageHandle() const;
 
-        Image&  getImage(uint32_t swapchainImageId, Handle handle);
-        Buffer& getStorage(uint32_t swapchainImageId, Handle handle);
+        View<Image>  getImage(uint32_t swapchainImageId, Handle handle) const;
+        View<Buffer> getStorage(uint32_t swapchainImageId, Handle handle) const;
 
         const AttachmentBuilder& getConfiguration(Handle handle);
 
@@ -174,9 +200,21 @@ namespace vzt
           public:
             PhysicalPass(RenderGraph& graph, Pass& pass, Format depthFormat);
 
+            PhysicalPass(const PhysicalPass&)            = default;
+            PhysicalPass& operator=(const PhysicalPass&) = default;
+
+            PhysicalPass(PhysicalPass&&)            = default;
+            PhysicalPass& operator=(PhysicalPass&&) = default;
+
+            ~PhysicalPass() = default;
+
+            void record(uint32_t i, CommandBuffer& commands);
+
           private:
-            std::optional<RenderPass> m_renderPass;
-            DescriptorPool            m_pool;
+            View<RenderGraph>    m_graph;
+            View<Pass>           m_pass;
+            Optional<RenderPass> m_renderPass;
+            DescriptorPool       m_pool;
 
             std::vector<FrameBuffer> m_frameBuffers; // [swapchainImageId]
             std::vector<Texture>     m_textureSaves;

@@ -16,6 +16,8 @@ namespace vzt
         View(const Type& data);
         View(const Type* data);
 
+        const Type* get() const;
+
         const Type* operator->() const;
         const Type& operator*() const;
                     operator bool() const;
@@ -66,6 +68,19 @@ namespace vzt
         OffsetSpan() = default;
         OffsetSpan(Type* ptr, std::size_t size, std::size_t offset = 0u);
         OffsetSpan(Type& ptr, std::size_t size, std::size_t offset = 0u);
+    };
+
+    template <class Type>
+    struct OffsetCSpan
+    {
+        const Type* data   = nullptr;
+        std::size_t size   = 0;
+        std::size_t offset = 0;
+
+        OffsetCSpan() = default;
+        OffsetCSpan(OffsetSpan<Type> span, std::size_t offset = 0u);
+        OffsetCSpan(const Type* ptr, std::size_t size, std::size_t offset = 0u);
+        OffsetCSpan(const Type& ptr, std::size_t size, std::size_t offset = 0u);
     };
 
     template <class Type>

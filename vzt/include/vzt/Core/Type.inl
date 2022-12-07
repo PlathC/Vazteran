@@ -13,6 +13,12 @@ namespace vzt
     }
 
     template <class Type>
+    const Type* View<Type>::get() const
+    {
+        return m_ptr;
+    }
+
+    template <class Type>
     const Type* View<Type>::operator->() const
     {
         return m_ptr;
@@ -91,6 +97,22 @@ namespace vzt
     template <class Type>
     OffsetSpan<Type>::OffsetSpan(Type& ptr, std::size_t size, std::size_t offset)
         : data(&ptr), size(size), offset(offset)
+    {
+    }
+
+    template <class Type>
+    OffsetCSpan<Type>::OffsetCSpan(OffsetSpan<Type> span, std::size_t offset)
+        : data(span.ptr), size(span.size), offset(offset)
+    {
+    }
+    template <class Type>
+    OffsetCSpan<Type>::OffsetCSpan(const Type* ptr, std::size_t size, std::size_t offset)
+        : data(ptr), size(size), offset(offset)
+    {
+    }
+    template <class Type>
+    OffsetCSpan<Type>::OffsetCSpan(const Type& ptr, std::size_t size, std::size_t offset)
+        : data(ptr), size(size), offset(offset)
     {
     }
 

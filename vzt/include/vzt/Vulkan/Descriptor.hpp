@@ -76,7 +76,7 @@ namespace vzt
     struct DescriptorBuffer
     {
         DescriptorType type;
-        BufferSpan     buffer;
+        BufferCSpan    buffer;
     };
 
     struct DescriptorImage
