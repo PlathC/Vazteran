@@ -149,6 +149,11 @@ namespace vzt
         Handle generateAttachmentHandle() const;
         Handle generateStorageHandle() const;
 
+        Image&  getImage(uint32_t swapchainImageId, Handle handle);
+        Buffer& getStorage(uint32_t swapchainImageId, Handle handle);
+
+        const AttachmentBuilder& getConfiguration(Handle handle);
+
         void sort();
         void create();
 
@@ -164,13 +169,23 @@ namespace vzt
         HandleMap<std::size_t>   m_handleToPhysical;
         std::vector<Pass>        m_passes;
 
-        std::vector<RenderPass>     m_renderPasses;    // [#pass]
-        std::vector<DescriptorPool> m_descriptorPools; // [#pass]
-        std::vector<FrameBuffer>    m_frameBuffers;    // [passId    * #swapchainImage + swapchainImageId]
-        std::vector<Image>          m_images;          // [imageId   * #swapchainImage + swapchainImageId]
-        std::vector<Buffer>         m_storages;        // [storageId * #swapchainImage + swapchainImageId]
+        class PhysicalPass
+        {
+          public:
+            PhysicalPass(RenderGraph& graph, Pass& pass, Format depthFormat);
 
-        std::vector<Texture> m_textureSaves;
+          private:
+            std::optional<RenderPass> m_renderPass;
+            DescriptorPool            m_pool;
+
+            std::vector<FrameBuffer> m_frameBuffers; // [swapchainImageId]
+            std::vector<Texture>     m_textureSaves;
+        };
+        friend PhysicalPass;
+
+        std::vector<Image>        m_images;   // [imageId  ]
+        std::vector<Buffer>       m_storages; // [storageId]
+        std::vector<PhysicalPass> m_physicalPasses;
 
         Optional<Handle> m_backBuffer;
     };

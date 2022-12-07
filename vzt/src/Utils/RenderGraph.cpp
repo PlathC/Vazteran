@@ -253,6 +253,20 @@ namespace vzt
 
     Handle RenderGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), HandleType::Storage, 0}; }
 
+    Image& RenderGraph::getImage(uint32_t swapchainImageId, Handle handle)
+    {
+        const std::size_t handlePhysicalId = m_handleToPhysical[handle];
+        return m_images[handlePhysicalId * m_swapchain->getImageNb() + swapchainImageId];
+    }
+
+    Buffer& RenderGraph::getStorage(uint32_t swapchainImageId, Handle handle)
+    {
+        const std::size_t handlePhysicalId = m_handleToPhysical[handle];
+        return m_storages[handlePhysicalId * m_swapchain->getImageNb() + swapchainImageId];
+    }
+
+    const AttachmentBuilder& RenderGraph::getConfiguration(Handle handle) { return m_attachmentBuilders[handle]; }
+
     void RenderGraph::sort()
     {
         // Graph sorting based on its topology
@@ -360,12 +374,9 @@ namespace vzt
 
     void RenderGraph::create()
     {
-        m_renderPasses.clear();
-        m_descriptorPools.clear();
-        m_frameBuffers.clear();
+        m_physicalPasses.clear();
         m_images.clear();
         m_storages.clear();
-        m_textureSaves.clear();
 
         // 1. Get all use handles and find by which queue it is used
         HandleMap<QueueType> handles{};
@@ -399,8 +410,9 @@ namespace vzt
         // 2. Create physical memory (Image, Buffer)
         const auto swapchainFormat = m_swapchain->getFormat();
 
-        auto       hardware    = m_swapchain->getDevice()->getHardware();
-        const auto depthFormat = hardware.getDepthFormat();
+        auto           hardware         = m_swapchain->getDevice()->getHardware();
+        const auto     depthFormat      = hardware.getDepthFormat();
+        const uint32_t swapchainImageNb = m_swapchain->getImageNb();
 
         std::size_t imageId   = 0;
         std::size_t storageId = 0;
@@ -436,7 +448,7 @@ namespace vzt
                     const std::size_t queueTypeNb = std::bitset<sizeof(QueueType)>(toUnderlying(queues)).count();
                     builder.sharingMode           = queueTypeNb > 1u ? SharingMode::Concurrent : SharingMode::Exclusive;
 
-                    for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
+                    for (uint32_t i = 0; i < swapchainImageNb; i++)
                         m_images.emplace_back(Image{attachmentBuilder.device, builder});
                 }
             }
@@ -446,131 +458,124 @@ namespace vzt
                 storageId++;
 
                 const StorageBuilder& storageBuilder = m_storageBuilders[handle];
-                for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
-                {
+                for (uint32_t i = 0; i < swapchainImageNb; i++)
                     m_storages.emplace_back(
                         Buffer{storageBuilder.device, storageBuilder.size, vzt::BufferUsage::StorageBuffer});
-                }
             }
         }
 
         // 3. Create render passes and their corresponding data such as the FrameBuffer
-        m_renderPasses.reserve(m_passes.size());
-        m_descriptorPools.reserve(m_passes.size());
-        for (std::size_t passId = 0; passId < m_executionOrder.size(); passId++)
+        m_physicalPasses.reserve(m_passes.size());
+        for (const uint32_t passId : m_executionOrder)
         {
-            // Traver pass in execution order to fit their id with their ressources
-            Pass&       pass  = m_passes[m_executionOrder[passId]];
-            View<Queue> queue = pass.getQueue();
+            // Traverse pass in execution order to fit their id with their ressources
+            Pass& pass = m_passes[passId];
+            m_physicalPasses.emplace_back(*this, pass, depthFormat);
+        }
+    }
 
-            // If the pass is working with a compute queue, it does not need a render pass
-            if (queue->getType() == QueueType::Graphics)
+    RenderGraph::PhysicalPass::PhysicalPass(RenderGraph& graph, Pass& pass, Format depthFormat)
+    {
+        View<Queue>  queue  = pass.getQueue();
+        View<Device> device = queue->getDevice();
+
+        // If the pass is working with a compute queue, it does not need a render pass
+        if (queue->getType() == QueueType::Graphics)
+        {
+            m_renderPass = RenderPass(pass.getQueue()->getDevice());
+            for (const auto& output : pass.m_colorOutputs)
             {
-                m_renderPasses.emplace_back(queue->getDevice());
-                auto& renderPass = m_renderPasses.back();
+                const AttachmentBuilder& attachmentBuilder = graph.m_attachmentBuilders[output.handle];
 
-                for (const auto& output : pass.m_colorOutputs)
+                AttachmentUse attachmentUse = output.use;
+                attachmentUse.format        = *attachmentBuilder.format;
+                m_renderPass->addColor(attachmentUse);
+            }
+
+            if (!pass.m_depthOutput)
+                throw std::runtime_error("Graphics pass must have a depth output.");
+
+            AttachmentUse attachmentUse = pass.m_depthOutput->use;
+            attachmentUse.format        = depthFormat;
+            m_renderPass->setDepth(attachmentUse);
+
+            m_renderPass->compile();
+
+            // Guess render pass extent from its outputs
+            Optional<Extent2D> extent;
+            const Extent2D     swapchainExtent = graph.m_swapchain->getExtent();
+            for (auto& output : pass.m_colorOutputs)
+            {
+                const auto& builder = graph.m_attachmentBuilders[output.handle];
+                extent              = builder.imageSize.value_or(swapchainExtent);
+                break;
+            }
+
+            if (!extent && pass.m_depthOutput)
+            {
+                const auto& builder = graph.m_attachmentBuilders[pass.m_depthOutput->handle];
+                extent              = builder.imageSize.value_or(swapchainExtent);
+            }
+
+            assert(extent && "Can't guess render pass extent since it has no output.");
+
+            // Create render targets and descriptors for the current pass
+            auto& descriptorLayout = pass.getDescriptorLayout();
+            descriptorLayout.compile();
+
+            const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
+            m_pool                          = DescriptorPool{device, descriptorLayout, swapchainImageNb};
+            m_pool.allocate(swapchainImageNb, descriptorLayout);
+
+            IndexedDescriptor descriptors{};
+            for (uint32_t i = 0; i < swapchainImageNb; i++)
+            {
+                m_frameBuffers.emplace_back(device, *extent);
+                FrameBuffer& frameBuffer = m_frameBuffers.back();
+
+                // Sampled texture
+                for (auto& input : pass.m_colorInputs)
                 {
-                    const AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[output.handle];
+                    Image& image = graph.getImage(i, input.handle);
 
-                    AttachmentUse attachmentUse = output.use;
-                    attachmentUse.format        = *attachmentBuilder.format;
-                    renderPass.addColor(attachmentUse);
+                    m_textureSaves.emplace_back(queue->getDevice(), image, SamplerBuilder{});
+                    Texture& texture = m_textureSaves.back();
+
+                    descriptors[input.binding] =
+                        DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
                 }
 
-                if (!pass.m_depthOutput)
-                    throw std::runtime_error("Graphics pass must have a depth output.");
+                // SSBO
+                for (auto& input : pass.m_storageInputs)
+                {
+                    Buffer& storage = graph.getStorage(i, input.handle);
+                    descriptors[input.binding] =
+                        DescriptorBuffer{DescriptorType::StorageBuffer, BufferSpan{storage, storage.size(), 0}};
+                }
 
-                AttachmentUse attachmentUse = pass.m_depthOutput->use;
-                attachmentUse.format        = depthFormat;
-                renderPass.setDepth(attachmentUse);
-
-                renderPass.compile();
-
-                const auto device = queue->getDevice();
-
-                // Guess render pass extent from its outputs
-                Optional<Extent2D> extent;
+                // Get attachment from framebuffer
                 for (auto& output : pass.m_colorOutputs)
                 {
-                    const auto& builder = m_attachmentBuilders[output.handle];
-                    extent              = builder.imageSize.value_or(m_swapchain->getExtent());
-                    break;
+                    const AttachmentBuilder& builder = graph.getConfiguration(output.handle);
+
+                    View<Image> image;
+                    if (!builder.format)
+                        image = graph.m_swapchain->getImage(i);
+                    else
+                        image = graph.getImage(i, output.handle);
+
+                    frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
                 }
 
-                if (!extent && pass.m_depthOutput)
+                if (pass.m_depthOutput)
                 {
-                    const auto& builder = m_attachmentBuilders[pass.m_depthOutput->handle];
-                    extent              = builder.imageSize.value_or(m_swapchain->getExtent());
+                    frameBuffer.addAttachment(
+                        ImageView{device, graph.getImage(i, pass.m_depthOutput->handle), ImageAspect::Depth});
                 }
 
-                assert(extent && "Can't guess render pass extent since it has no output.");
-
-                // Create render targets and descriptors for the current pass
-                auto& descriptorLayout = pass.getDescriptorLayout();
-                descriptorLayout.compile();
-
-                m_descriptorPools.emplace_back(DescriptorPool{device, descriptorLayout, m_swapchain->getImageNb()});
-                auto& descriptorPool = m_descriptorPools.back();
-                descriptorPool.allocate(m_swapchain->getImageNb(), descriptorLayout);
-
-                IndexedDescriptor descriptors{};
-                for (std::size_t i = 0; i < m_swapchain->getImageNb(); i++)
-                {
-                    m_frameBuffers.emplace_back(device, *extent);
-                    FrameBuffer& frameBuffer = m_frameBuffers.back();
-
-                    // Sampled texture
-                    for (auto& input : pass.m_colorInputs)
-                    {
-                        const std::size_t handlePhysicalId = m_handleToPhysical[input.handle];
-                        Image&            image            = m_images[handlePhysicalId * m_swapchain->getImageNb() + i];
-
-                        m_textureSaves.emplace_back(queue->getDevice(), image, SamplerBuilder{});
-                        Texture& texture = m_textureSaves.back();
-
-                        descriptors[input.binding] =
-                            DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
-                    }
-
-                    // SSBO
-                    for (auto& input : pass.m_storageInputs)
-                    {
-                        const std::size_t handlePhysicalId = m_handleToPhysical[input.handle];
-                        Buffer&           storage = m_storages[handlePhysicalId * m_swapchain->getImageNb() + i];
-                        descriptors[input.binding] =
-                            DescriptorBuffer{DescriptorType::StorageBuffer, BufferSpan{storage, storage.size(), 0}};
-                    }
-
-                    // Get attachment from framebuffer
-                    for (auto& output : pass.m_colorOutputs)
-                    {
-                        const AttachmentBuilder& builder = m_attachmentBuilders[output.handle];
-
-                        View<Image> image;
-                        if (!builder.format)
-                        {
-                            image = m_swapchain->getImage(i);
-                        }
-                        else
-                        {
-                            const std::size_t handlePhysicalId = m_handleToPhysical[output.handle];
-                            image = m_images[handlePhysicalId * m_swapchain->getImageNb() + i];
-                        }
-
-                        frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
-                    }
-
-                    if (pass.m_depthOutput)
-                    {
-                        const std::size_t handlePhysicalId = m_handleToPhysical[pass.m_depthOutput->handle];
-                        const std::size_t physicalId       = handlePhysicalId * m_swapchain->getImageNb() + i;
-                        frameBuffer.addAttachment(ImageView{device, m_images[physicalId], ImageAspect::Depth});
-                    }
-
-                    frameBuffer.compile(renderPass);
-                }
+                frameBuffer.compile(*m_renderPass);
             }
         }
     }
+
 } // namespace vzt
