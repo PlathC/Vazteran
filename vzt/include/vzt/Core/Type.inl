@@ -102,7 +102,7 @@ namespace vzt
 
     template <class Type>
     OffsetCSpan<Type>::OffsetCSpan(OffsetSpan<Type> span, std::size_t offset)
-        : data(span.ptr), size(span.size), offset(offset)
+        : data(span.data), size(span.size), offset(offset)
     {
     }
     template <class Type>
