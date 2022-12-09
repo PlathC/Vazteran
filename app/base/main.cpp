@@ -176,7 +176,7 @@ int main(int /* argc */, char** /* argv */)
     const vzt::Vec3 target   = (minimum + maximum) * .5f;
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
     const float     distance = bbRadius / std::tan(camera.fov * .5f);
-    vzt::Vec3       position = target - camera.front * 1.15f * distance;
+    const vzt::Vec3 position = target - camera.front * 1.15f * distance;
 
     // Actual rendering
     while (window.update())
@@ -190,20 +190,24 @@ int main(int /* argc */, char** /* argv */)
             continue;
 
         // Per frame update
-        const float     t        = (1e2f * inputs.deltaTime) * vzt::Pi / 360.f;
-        const vzt::Quat rotation = glm::angleAxis(t, camera.up);
-        position                 = rotation * (position - target) + target;
+        vzt::Quat orientation = {1.f, 0.f, 0.f, 0.f};
 
-        vzt::Vec3       direction   = glm::normalize(target - position);
-        const vzt::Vec3 reference   = camera.front;
-        vzt::Quat       orientation = {1.f, 0.f, 0.f, 0.f};
-        const float     projection  = glm::dot(reference, direction);
+        float t = std::fmod(static_cast<float>(inputs.time) * 1e-3f, vzt::Tau);
+        if (inputs.mouseLeftPressed)
+            t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWith());
+
+        const vzt::Quat rotation        = glm::angleAxis(t, camera.up);
+        const vzt::Vec3 currentPosition = rotation * (position - target) + target;
+
+        vzt::Vec3       direction  = glm::normalize(target - currentPosition);
+        const vzt::Vec3 reference  = camera.front;
+        const float     projection = glm::dot(reference, direction);
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
         else if (projection < 0.f) // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
-        vzt::Mat4                view = camera.getViewMatrix(position, orientation);
+        vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
         std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
         modelsUbo.update<vzt::Mat4>(matrices, submission->imageId * uniformByteNb);
 
