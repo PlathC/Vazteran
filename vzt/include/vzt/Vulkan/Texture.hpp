@@ -91,6 +91,14 @@ namespace vzt
       public:
         Texture(View<Device> device, View<Image> image, SamplerBuilder samplerSettings = {});
 
+        Texture(const Texture&)            = delete;
+        Texture& operator=(const Texture&) = delete;
+
+        Texture(Texture&& other) noexcept;
+        Texture& operator=(Texture&& other) noexcept;
+
+        ~Texture() = default;
+
         inline View<ImageView> getView() const;
         inline const Sampler&  getSampler() const;
 

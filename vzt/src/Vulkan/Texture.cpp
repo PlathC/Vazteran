@@ -64,4 +64,17 @@ namespace vzt
     {
     }
 
+    Texture::Texture(Texture&& other) noexcept
+        : m_sampler(std::move(other.m_sampler)), m_imageView(std::move(other.m_imageView))
+    {
+    }
+
+    Texture& Texture::operator=(Texture&& other) noexcept
+    {
+        std::swap(m_sampler, other.m_sampler);
+        std::swap(m_imageView, other.m_imageView);
+
+        return *this;
+    }
+
 } // namespace vzt

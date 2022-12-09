@@ -42,6 +42,7 @@ namespace vzt
         void bindVertexBuffer(const Buffer& buffer);
         void bindIndexBuffer(const Buffer& buffer, std::size_t index);
 
+        void draw(uint32_t count, uint32_t offset = 0);
         void drawIndexed(const Buffer& indexBuffer, const Range<>& range);
 
         void setViewport(const Extent2D& size, float minDepth = 0.f, float maxDepth = 1.f);

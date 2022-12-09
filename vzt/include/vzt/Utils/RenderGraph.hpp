@@ -102,20 +102,25 @@ namespace vzt
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
         void setDepthOutput(Handle& depthStencil, std::string attachmentName = "");
 
+        template <class DerivedHandler, class... Args>
+        void setRecordFunction(Args&&... args);
         void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
 
         bool isDependingOn(const Pass& other) const;
-        void record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands) const;
+        void record(RenderGraph& graph, uint32_t i, CommandBuffer& commands) const;
 
         inline View<Queue>             getQueue() const;
         inline void                    setDescriptorLayout(DescriptorLayout&& layout);
         inline const DescriptorLayout& getDescriptorLayout() const;
         inline DescriptorLayout&       getDescriptorLayout();
+        inline DescriptorPool&         getDescriptorPool();
+        inline View<RenderPass>        getRenderPass() const;
 
         friend RenderGraph;
 
       private:
         Pass(std::string name, View<Queue> queue);
+        void compile(RenderGraph& graph, Format depthFormat);
 
         std::string      m_name;
         View<Queue>      m_queue;
@@ -151,6 +156,12 @@ namespace vzt
         std::vector<PassAttachment> m_colorOutputs;
         std::vector<PassStorage>    m_storageOutputs;
         Optional<PassAttachment>    m_depthOutput;
+
+        RenderPass     m_renderPass;
+        DescriptorPool m_pool;
+
+        std::vector<FrameBuffer> m_frameBuffers; // [swapchainImageId]
+        std::vector<Texture>     m_textureSaves;
     };
 
     class RenderGraph
@@ -171,6 +182,8 @@ namespace vzt
 
         void record(uint32_t i, CommandBuffer& commands);
 
+        friend Pass;
+
       private:
         Handle generateAttachmentHandle() const;
         Handle generateStorageHandle() const;
@@ -190,40 +203,13 @@ namespace vzt
         HandleMap<AttachmentBuilder> m_attachmentBuilders;
         HandleMap<StorageBuilder>    m_storageBuilders;
 
-        std::hash<std::size_t>   m_hash{};
-        std::vector<std::size_t> m_executionOrder;
-        HandleMap<std::size_t>   m_handleToPhysical;
-        std::vector<Pass>        m_passes;
+        std::hash<std::size_t>             m_hash{};
+        std::vector<std::size_t>           m_executionOrder;
+        HandleMap<std::size_t>             m_handleToPhysical;
+        std::vector<std::unique_ptr<Pass>> m_passes;
 
-        class PhysicalPass
-        {
-          public:
-            PhysicalPass(RenderGraph& graph, Pass& pass, Format depthFormat);
-
-            PhysicalPass(const PhysicalPass&)            = default;
-            PhysicalPass& operator=(const PhysicalPass&) = default;
-
-            PhysicalPass(PhysicalPass&&)            = default;
-            PhysicalPass& operator=(PhysicalPass&&) = default;
-
-            ~PhysicalPass() = default;
-
-            void record(uint32_t i, CommandBuffer& commands);
-
-          private:
-            View<RenderGraph>    m_graph;
-            View<Pass>           m_pass;
-            Optional<RenderPass> m_renderPass;
-            DescriptorPool       m_pool;
-
-            std::vector<FrameBuffer> m_frameBuffers; // [swapchainImageId]
-            std::vector<Texture>     m_textureSaves;
-        };
-        friend PhysicalPass;
-
-        std::vector<Image>        m_images;   // [imageId  ]
-        std::vector<Buffer>       m_storages; // [storageId]
-        std::vector<PhysicalPass> m_physicalPasses;
+        std::vector<Image>  m_images;   // [imageId  ]
+        std::vector<Buffer> m_storages; // [storageId]
 
         Optional<Handle> m_backBuffer;
     };

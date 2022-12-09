@@ -40,7 +40,7 @@ namespace vzt
 
         m_colorInputs.emplace_back(attachment);
 
-        m_descriptorLayout.addBinding(binding, DescriptorType::SampledImage);
+        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
     }
 
     void Pass::addColorOutput(Handle& handle, std::string name)
@@ -166,12 +166,14 @@ namespace vzt
         attachment.use.stencilLoapOp  = LoadOp::Clear;
         attachment.use.stencilStoreOp = StoreOp::Store;
 
+        attachment.use.clearValue = Vec4{1.f, 0.f, 0.f, 0.f};
+
         m_depthOutput = attachment;
     }
 
     void Pass::setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback)
     {
-        m_recordCallback = std::move(m_recordCallback);
+        m_recordCallback = std::move(recordCallback);
     }
 
     bool Pass::isDependingOn(const Pass& other) const
@@ -207,10 +209,145 @@ namespace vzt
         return false;
     }
 
-    void Pass::record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands) const
+    void Pass::record(RenderGraph& graph, uint32_t i, CommandBuffer& commands) const
     {
+        for (const auto& input : m_colorInputs)
+        {
+            if (input.handle.state > 0)
+            {
+                ImageBarrier barrier;
+                barrier.image     = graph.getImage(i, input.handle);
+                barrier.oldLayout = input.use.initialLayout;
+                barrier.newLayout = input.use.usedLayout;
+                barrier.src       = Access::ColorAttachmentWrite;
+                barrier.dst       = Access::ShaderRead;
+                // barrier.srcQueue
+                // barrier.dstQueue
+                commands.barrier(PipelineStage::ColorAttachmentOutput, PipelineStage::FragmentShader, barrier);
+            }
+        }
+
+        if (m_queue->getType() == QueueType::Graphics)
+            commands.beginPass(m_renderPass, m_frameBuffers[i]);
+
         if (m_recordCallback)
-            m_recordCallback->record(i, set, commands);
+            m_recordCallback->record(i, m_pool[i], commands);
+
+        if (m_queue->getType() == QueueType::Graphics)
+            commands.endPass();
+    }
+
+    void Pass::compile(RenderGraph& graph, Format depthFormat)
+    {
+        View<Device> device = m_queue->getDevice();
+
+        // If the pass is working with a compute queue, it does not need a render pass
+        if (m_queue->getType() == QueueType::Graphics)
+        {
+            m_renderPass = RenderPass(device);
+            for (const auto& output : m_colorOutputs)
+            {
+                const AttachmentBuilder& attachmentBuilder = graph.m_attachmentBuilders[output.handle];
+
+                AttachmentUse attachmentUse = output.use;
+                attachmentUse.format        = attachmentBuilder.format.value_or(graph.m_swapchain->getFormat());
+
+                if (graph.isBackBuffer(output.handle))
+                    attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
+
+                m_renderPass.addColor(attachmentUse);
+            }
+
+            if (!m_depthOutput)
+                throw std::runtime_error("Graphics pass must have a depth output.");
+
+            AttachmentUse attachmentUse = m_depthOutput->use;
+            attachmentUse.format        = depthFormat;
+            m_renderPass.setDepth(attachmentUse);
+
+            m_renderPass.compile();
+
+            // Guess render pass extent from its outputs
+            Optional<Extent2D> extent;
+            const Extent2D     swapchainExtent = graph.m_swapchain->getExtent();
+            for (const auto& output : m_colorOutputs)
+            {
+                const auto& builder = graph.m_attachmentBuilders[output.handle];
+                extent              = builder.imageSize.value_or(swapchainExtent);
+                break;
+            }
+
+            if (!extent && m_depthOutput)
+            {
+                const auto& builder = graph.m_attachmentBuilders[m_depthOutput->handle];
+                extent              = builder.imageSize.value_or(swapchainExtent);
+            }
+
+            assert(extent && "Can't guess render pass extent since it has no output.");
+
+            // Create render targets and descriptors for the current pass
+            m_descriptorLayout.compile();
+
+            const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
+            m_pool                          = DescriptorPool{device, m_descriptorLayout, swapchainImageNb};
+            m_pool.allocate(swapchainImageNb, m_descriptorLayout);
+
+            m_textureSaves.reserve(m_colorInputs.size() * swapchainImageNb);
+            for (uint32_t i = 0; i < swapchainImageNb; i++)
+            {
+                m_frameBuffers.emplace_back(device, *extent);
+                FrameBuffer& frameBuffer = m_frameBuffers.back();
+
+                IndexedDescriptor descriptors{};
+                descriptors.reserve(m_colorInputs.size() + m_storageInputs.size());
+
+                // Sampled texture
+                for (auto& input : m_colorInputs)
+                {
+                    View<Image> image = graph.getImage(i, input.handle);
+
+                    m_textureSaves.emplace_back(device, image, SamplerBuilder{});
+                    Texture& texture = m_textureSaves.back();
+
+                    descriptors[input.binding] =
+                        DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
+                }
+
+                // SSBO
+                for (auto& input : m_storageInputs)
+                {
+                    View<Buffer> storage = graph.getStorage(i, input.handle);
+                    descriptors[input.binding] =
+                        DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};
+                }
+
+                if (!descriptors.empty())
+                    m_pool.update(i, descriptors);
+
+                // Get attachment from framebuffer
+                for (auto& output : m_colorOutputs)
+                {
+                    const AttachmentBuilder& builder = graph.getConfiguration(output.handle);
+
+                    View<Image> image;
+                    if (!builder.format)
+                        image = graph.m_swapchain->getImage(i);
+                    else
+                        image = graph.getImage(i, output.handle);
+
+                    frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
+                }
+
+                if (m_depthOutput)
+                {
+                    frameBuffer.addAttachment(
+                        ImageView{device, graph.getImage(i, m_depthOutput->handle), ImageAspect::Depth});
+                }
+
+                frameBuffer.compile(m_renderPass);
+            }
+        }
+        else if (m_queue->getType() == QueueType::Compute) {}
     }
 
     RenderGraph::RenderGraph(View<Swapchain> swapchain) : m_swapchain(std::move(swapchain)) {}
@@ -233,8 +370,8 @@ namespace vzt
 
     Pass& RenderGraph::addPass(std::string name, View<Queue> queue)
     {
-        m_passes.emplace_back(Pass{name, queue});
-        return m_passes.back();
+        m_passes.emplace_back(new Pass(name, queue));
+        return *m_passes.back();
     }
 
     void RenderGraph::setBackBuffer(const Handle handle) { m_backBuffer = handle; }
@@ -254,12 +391,19 @@ namespace vzt
 
         sort();
         create();
+
+        // Create render passes and their corresponding data such as the FrameBuffer
+        // Traverse pass in execution order to fit their id with their ressources
+        const auto hardware    = m_swapchain->getDevice()->getHardware();
+        const auto depthFormat = hardware.getDepthFormat();
+        for (const std::size_t passId : m_executionOrder)
+            m_passes[passId]->compile(*this, depthFormat);
     }
 
     void RenderGraph::record(uint32_t i, CommandBuffer& commands)
     {
         for (std::size_t passId : m_executionOrder)
-            m_physicalPasses[passId].record(i, commands);
+            m_passes[passId]->record(*this, i, commands);
     }
 
     Handle RenderGraph::generateAttachmentHandle() const
@@ -312,8 +456,7 @@ namespace vzt
                 if (j == idx)
                     continue;
 
-                const auto& renderPass = m_passes[j];
-                if (currentRenderPass.isDependingOn(renderPass))
+                if (currentRenderPass->isDependingOn(*m_passes[j]))
                     processNode(j);
             }
 
@@ -323,9 +466,7 @@ namespace vzt
         };
 
         while (!remainingNodes.empty())
-        {
             processNode(remainingNodes.front());
-        }
 
         if (m_executionOrder.size() <= 2)
             return;
@@ -357,7 +498,7 @@ namespace vzt
                 // Try to find the farthest non-depending pass
                 for (auto it = m_executionOrder.rbegin(); it != m_executionOrder.rend(); ++it)
                 {
-                    if (m_passes[toProcess[i]].isDependingOn(m_passes[*it]))
+                    if (m_passes[toProcess[i]]->isDependingOn(*m_passes[*it]))
                         break;
 
                     overlapFactor++;
@@ -369,7 +510,7 @@ namespace vzt
                 bool possibleCandidate = true;
                 for (std::size_t j = 0; j < i; j++)
                 {
-                    if (m_passes[toProcess[i]].isDependingOn(m_passes[toProcess[j]]))
+                    if (m_passes[toProcess[i]]->isDependingOn(*m_passes[toProcess[j]]))
                     {
                         possibleCandidate = false;
                         break;
@@ -390,7 +531,6 @@ namespace vzt
 
     void RenderGraph::create()
     {
-        m_physicalPasses.clear();
         m_images.clear();
         m_storages.clear();
 
@@ -414,7 +554,7 @@ namespace vzt
 
         for (const std::size_t passId : m_executionOrder)
         {
-            Pass& pass = m_passes[passId];
+            Pass& pass = *m_passes[passId];
             for (auto& input : pass.m_colorInputs)
                 addAttachment(pass, input);
 
@@ -435,8 +575,6 @@ namespace vzt
         }
 
         // 2. Create physical memory (Image, Buffer)
-        const auto swapchainFormat = m_swapchain->getFormat();
-
         auto           hardware         = m_swapchain->getDevice()->getHardware();
         const auto     depthFormat      = hardware.getDepthFormat();
         const uint32_t swapchainImageNb = m_swapchain->getImageNb();
@@ -486,147 +624,6 @@ namespace vzt
                         Buffer{storageBuilder.device, storageBuilder.size, vzt::BufferUsage::StorageBuffer});
             }
         }
-
-        // 3. Create render passes and their corresponding data such as the FrameBuffer
-        m_physicalPasses.reserve(m_passes.size());
-        for (const std::size_t passId : m_executionOrder)
-        {
-            // Traverse pass in execution order to fit their id with their ressources
-            m_physicalPasses.emplace_back(RenderGraph::PhysicalPass(*this, m_passes[passId], depthFormat));
-        }
-    }
-
-    RenderGraph::PhysicalPass::PhysicalPass(RenderGraph& graph, Pass& pass, Format depthFormat)
-        : m_graph(graph), m_pass(pass)
-    {
-        View<Queue>  queue  = pass.getQueue();
-        View<Device> device = queue->getDevice();
-
-        // If the pass is working with a compute queue, it does not need a render pass
-        if (queue->getType() == QueueType::Graphics)
-        {
-            m_renderPass = RenderPass(pass.getQueue()->getDevice());
-            for (const auto& output : pass.m_colorOutputs)
-            {
-                const AttachmentBuilder& attachmentBuilder = graph.m_attachmentBuilders[output.handle];
-
-                AttachmentUse attachmentUse = output.use;
-                attachmentUse.format        = attachmentBuilder.format.value_or(graph.m_swapchain->getFormat());
-                m_renderPass->addColor(attachmentUse);
-            }
-
-            if (!pass.m_depthOutput)
-                throw std::runtime_error("Graphics pass must have a depth output.");
-
-            AttachmentUse attachmentUse = pass.m_depthOutput->use;
-            attachmentUse.format        = depthFormat;
-            m_renderPass->setDepth(attachmentUse);
-
-            m_renderPass->compile();
-
-            // Guess render pass extent from its outputs
-            Optional<Extent2D> extent;
-            const Extent2D     swapchainExtent = graph.m_swapchain->getExtent();
-            for (auto& output : pass.m_colorOutputs)
-            {
-                const auto& builder = graph.m_attachmentBuilders[output.handle];
-                extent              = builder.imageSize.value_or(swapchainExtent);
-                break;
-            }
-
-            if (!extent && pass.m_depthOutput)
-            {
-                const auto& builder = graph.m_attachmentBuilders[pass.m_depthOutput->handle];
-                extent              = builder.imageSize.value_or(swapchainExtent);
-            }
-
-            assert(extent && "Can't guess render pass extent since it has no output.");
-
-            // Create render targets and descriptors for the current pass
-            auto& descriptorLayout = pass.getDescriptorLayout();
-            descriptorLayout.compile();
-
-            const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
-            m_pool                          = DescriptorPool{device, descriptorLayout, swapchainImageNb};
-            m_pool.allocate(swapchainImageNb, descriptorLayout);
-
-            IndexedDescriptor descriptors{};
-            for (uint32_t i = 0; i < swapchainImageNb; i++)
-            {
-                m_frameBuffers.emplace_back(device, *extent);
-                FrameBuffer& frameBuffer = m_frameBuffers.back();
-
-                // Sampled texture
-                for (auto& input : pass.m_colorInputs)
-                {
-                    View<Image> image = graph.getImage(i, input.handle);
-
-                    m_textureSaves.emplace_back(queue->getDevice(), image, SamplerBuilder{});
-                    Texture& texture = m_textureSaves.back();
-
-                    descriptors[input.binding] =
-                        DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
-                }
-
-                // SSBO
-                for (auto& input : pass.m_storageInputs)
-                {
-                    View<Buffer> storage = graph.getStorage(i, input.handle);
-                    descriptors[input.binding] =
-                        DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size(), 0}};
-                }
-
-                // Get attachment from framebuffer
-                for (auto& output : pass.m_colorOutputs)
-                {
-                    const AttachmentBuilder& builder = graph.getConfiguration(output.handle);
-
-                    View<Image> image;
-                    if (!builder.format)
-                        image = graph.m_swapchain->getImage(i);
-                    else
-                        image = graph.getImage(i, output.handle);
-
-                    frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
-                }
-
-                if (pass.m_depthOutput)
-                {
-                    frameBuffer.addAttachment(
-                        ImageView{device, graph.getImage(i, pass.m_depthOutput->handle), ImageAspect::Depth});
-                }
-
-                frameBuffer.compile(*m_renderPass);
-            }
-        }
-        else if (queue->getType() == QueueType::Compute) {}
-    }
-
-    void RenderGraph::PhysicalPass::record(uint32_t i, CommandBuffer& commands)
-    {
-        if (m_renderPass)
-            commands.beginPass(*m_renderPass, m_frameBuffers[i]);
-
-        for (const auto& input : m_pass->m_colorInputs)
-        {
-            if (input.handle.state > 0)
-            {
-                ImageBarrier barrier;
-                barrier.image     = m_graph->getImage(i, input.handle);
-                barrier.oldLayout = input.use.initialLayout;
-                barrier.newLayout = input.use.usedLayout;
-                barrier.src       = Access::ColorAttachmentWrite;
-                barrier.dst       = Access::ShaderRead;
-                // barrier.srcQueue
-                // barrier.dstQueue
-                commands.barrier(PipelineStage::ColorAttachmentOutput, PipelineStage::FragmentShader, barrier);
-            }
-        }
-
-        m_pass->record(i, m_pool[i], commands);
-
-        if (m_renderPass)
-            commands.endPass();
     }
 
 } // namespace vzt

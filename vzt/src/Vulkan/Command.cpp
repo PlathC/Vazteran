@@ -122,6 +122,8 @@ namespace vzt
         vkCmdBindIndexBuffer(m_handle, buffer.getHandle(), index * sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
     }
 
+    void CommandBuffer::draw(uint32_t count, uint32_t offset) { vkCmdDraw(m_handle, count, 1, offset, 0); }
+
     void CommandBuffer::drawIndexed(const Buffer& indexBuffer, const Range<>& range)
     {
         bindIndexBuffer(indexBuffer, range.start);

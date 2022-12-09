@@ -113,6 +113,7 @@ namespace vzt
     class RenderPass
     {
       public:
+        RenderPass() = default;
         RenderPass(View<Device> device);
 
         RenderPass(const RenderPass&)            = delete;
