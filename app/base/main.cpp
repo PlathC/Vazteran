@@ -80,11 +80,6 @@ int main(int /* argc */, char** /* argv */)
 
     pipeline.compile(renderPass);
 
-    vzt::Camera camera{};
-    camera.front = vzt::Vec3(0.f, 0.f, 1.f);
-    camera.up    = vzt::Vec3(0.f, 1.f, 0.f);
-    camera.right = vzt::Vec3(1.f, 0.f, 0.f);
-
     // Initialize buffer with default values
     const std::size_t modelsAlignment    = hardware.getUniformAlignment(sizeof(vzt::Mat4) * 3);
     const std::size_t materialsAlignment = hardware.getUniformAlignment<vzt::Vec4>();
@@ -173,6 +168,12 @@ int main(int /* argc */, char** /* argv */)
         minimum = glm::min(minimum, vertex);
         maximum = glm::max(maximum, vertex);
     }
+
+    vzt::Camera camera{};
+    camera.front = vzt::Vec3(0.f, 0.f, 1.f);
+    camera.up    = vzt::Vec3(0.f, 1.f, 0.f);
+    camera.right = vzt::Vec3(1.f, 0.f, 0.f);
+
     const vzt::Vec3 target   = (minimum + maximum) * .5f;
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
     const float     distance = bbRadius / std::tan(camera.fov * .5f);
