@@ -171,6 +171,7 @@ namespace vzt
         inline DepthStencil&       getDepthStencil();
 
         void compile(View<RenderPass> renderPass);
+        void resize(Viewport viewport);
 
         inline VkPipeline       getHandle() const;
         inline VkPipelineLayout getLayout() const;
@@ -192,7 +193,8 @@ namespace vzt
         MultiSampling                    m_multiSample;
         DepthStencil                     m_depthStencil;
 
-        bool m_compiled = false;
+        View<RenderPass> m_cachedRenderPass;
+        bool             m_compiled = false;
     };
 } // namespace vzt
 

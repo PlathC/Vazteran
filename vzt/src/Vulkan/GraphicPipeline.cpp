@@ -1,7 +1,8 @@
+#include "vzt/Vulkan/GraphicPipeline.hpp"
+
 #include <cassert>
 
 #include "vzt/Vulkan/Device.hpp"
-#include "vzt/Vulkan/GraphicPipeline.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 
 namespace vzt
@@ -65,6 +66,8 @@ namespace vzt
 
         if (m_compiled)
             cleanup();
+
+        m_cachedRenderPass = renderPass;
 
         VkDescriptorSetLayout descriptorSetLayout = m_descriptorLayout.getHandle();
 
@@ -174,6 +177,14 @@ namespace vzt
                 "Failed to create graphics pipeline.");
 
         m_compiled = true;
+    }
+
+    void GraphicPipeline::resize(Viewport viewport)
+    {
+        assert(m_cachedRenderPass && "Resize must be used after compilation.");
+
+        m_viewport = std::move(viewport);
+        compile(m_cachedRenderPass);
     }
 
     void GraphicPipeline::cleanup()

@@ -121,6 +121,9 @@ namespace vzt
       private:
         Pass(std::string name, View<Queue> queue);
         void compile(RenderGraph& graph, Format depthFormat);
+        void resize(RenderGraph& graph);
+
+        void createRenderObjects(RenderGraph& graph);
 
         std::string      m_name;
         View<Queue>      m_queue;
@@ -182,6 +185,8 @@ namespace vzt
 
         void record(uint32_t i, CommandBuffer& commands);
 
+        void resize(const Extent2D& extent);
+
         friend Pass;
 
       private:
@@ -194,7 +199,7 @@ namespace vzt
         const AttachmentBuilder& getConfiguration(Handle handle);
 
         void sort();
-        void create();
+        void createRenderTarget();
 
         static inline std::atomic<std::size_t> m_handleCounter = 0;
 
@@ -206,6 +211,7 @@ namespace vzt
         std::hash<std::size_t>             m_hash{};
         std::vector<std::size_t>           m_executionOrder;
         HandleMap<std::size_t>             m_handleToPhysical;
+        HandleMap<QueueType>               handleQueues{};
         std::vector<std::unique_ptr<Pass>> m_passes;
 
         std::vector<Image>  m_images;   // [imageId  ]

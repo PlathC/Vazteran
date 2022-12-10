@@ -223,10 +223,7 @@ int main(int /* argc */, char** /* argv */)
             extent             = window.getExtent();
             camera.aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
-            pipeline = vzt::GraphicPipeline(device, program, vzt::Viewport{extent});
-            pipeline.setDescriptorLayout(descriptorLayout);
-            pipeline.setVertexInputDescription(vertexDescription);
-            pipeline.compile(renderPass);
+            pipeline.resize(vzt::Viewport{extent});
 
             depthStencils.clear();
             frameBuffers.clear();

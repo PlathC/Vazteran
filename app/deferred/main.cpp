@@ -198,14 +198,17 @@ int main(int /* argc */, char** /* argv */)
             vzt::Extent2D extent = window.getExtent();
             camera.aspectRatio   = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
-            geometryPipeline = vzt::GraphicPipeline(device, geometryProgram, vzt::Viewport{window.getExtent()});
-            geometryPipeline.setDescriptorLayout(geometryLayout);
-            geometryPipeline.setVertexInputDescription(vertexDescription);
-            geometryPipeline.compile(*geometry.getRenderPass());
+            geometryPipeline.resize(vzt::Viewport{extent});
+            shadingPipeline.resize(vzt::Viewport{extent});
+            graph.resize(extent);
 
-            shadingPipeline = vzt::GraphicPipeline(device, shadingProgram, vzt::Viewport{window.getExtent()});
-            shadingPipeline.setDescriptorLayout(shadingLayout);
-            shadingPipeline.compile(*shading.getRenderPass());
+            for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
+            {
+                vzt::CommandBuffer commands = commandPool[i];
+                commands.begin();
+                graph.record(i, commands);
+                commands.end();
+            }
         }
     }
 }
