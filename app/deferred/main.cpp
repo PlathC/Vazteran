@@ -12,6 +12,8 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Deferred";
 
+    auto compiler = vzt::Compiler();
+
     auto window       = vzt::Window{ApplicationName};
     auto instance     = vzt::Instance{window};
     auto surface      = vzt::Surface{window, instance};
@@ -21,8 +23,6 @@ int main(int /* argc */, char** /* argv */)
     auto swapchain    = vzt::Swapchain{device, surface, window.getExtent()};
 
     vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
-
-    auto compiler = vzt::Compiler();
 
     auto graph = vzt::RenderGraph{swapchain};
 
@@ -192,6 +192,7 @@ int main(int /* argc */, char** /* argv */)
         graphicsQueue->submit(commands, *submission);
         if (!swapchain.present())
         {
+            // Wait all commands execution
             device.wait();
 
             // Apply screen size update

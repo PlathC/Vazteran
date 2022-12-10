@@ -217,6 +217,7 @@ int main(int /* argc */, char** /* argv */)
         graphicsQueue->submit(commands, *submission);
         if (!swapchain.present())
         {
+            // Wait all commands execution
             device.wait();
 
             // Apply screen size update
