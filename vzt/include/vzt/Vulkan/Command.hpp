@@ -12,6 +12,7 @@
 namespace vzt
 {
     class CommandPool;
+    class ComputePipeline;
     class Device;
     class FrameBuffer;
     class Queue;
@@ -38,12 +39,17 @@ namespace vzt
 
         void bind(const GraphicPipeline& graphicPipeline);
         void bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set);
+        void bind(const ComputePipeline& computePipeline);
+        void bind(const ComputePipeline& computePipeline, const DescriptorSet& set);
 
         void bindVertexBuffer(const Buffer& buffer);
         void bindIndexBuffer(const Buffer& buffer, std::size_t index);
 
-        void draw(uint32_t count, uint32_t offset = 0);
-        void drawIndexed(const Buffer& indexBuffer, const Range<>& range);
+        void dispatch(uint32_t x, uint32_t y = 1, uint32_t z = 1);
+        void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t vertexOffset = 0,
+                  uint32_t instanceOffset = 0);
+        void drawIndexed(const Buffer& indexBuffer, const Range<>& range, uint32_t instanceCount = 1,
+                         int32_t vertexOffset = 0, uint32_t instanceOffset = 0);
 
         void setViewport(const Extent2D& size, float minDepth = 0.f, float maxDepth = 1.f);
         void setScissor(const Extent2D& size, Vec2i offset = {0u, 0u});

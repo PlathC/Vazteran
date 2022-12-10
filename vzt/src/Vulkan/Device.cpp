@@ -170,11 +170,11 @@ namespace vzt
 
             QueueType selected = QueueType::None;
             if (any(queueTypes & QueueType::Graphics) && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-                selected = QueueType::Graphics;
-            else if (any(queueTypes & QueueType::Compute) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
-                selected = QueueType::Compute;
-            else if (any(queueTypes & QueueType::Transfer) && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT))
-                selected = QueueType::Transfer;
+                selected |= QueueType::Graphics;
+            if (any(queueTypes & QueueType::Compute) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
+                selected |= QueueType::Compute;
+            if (any(queueTypes & QueueType::Transfer) && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT))
+                selected |= QueueType::Transfer;
 
             if (!any(selected))
                 continue;
@@ -277,7 +277,7 @@ namespace vzt
 
         for (const auto& queue : m_queues)
         {
-            if (queue.getType() == type)
+            if (any(queue.getType() & type))
                 return queue;
         }
 

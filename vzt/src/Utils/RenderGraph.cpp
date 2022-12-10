@@ -19,8 +19,8 @@ namespace vzt
             m_callback(i, set, commands);
     }
 
-    Pass::Pass(std::string name, View<Queue> queue)
-        : m_name(std::move(name)), m_queue(std::move(queue)), m_descriptorLayout(m_queue->getDevice())
+    Pass::Pass(std::string name, View<Queue> queue, PassType type)
+        : m_name(std::move(name)), m_queue(std::move(queue)), m_type(type), m_descriptorLayout(m_queue->getDevice())
     {
     }
 
@@ -91,17 +91,18 @@ namespace vzt
     void Pass::addStorageInput(uint32_t binding, const Handle& handle, std::string name,
                                Optional<Range<std::size_t>> range)
     {
-        assert(handle.type == HandleType::Attachment);
+        assert(handle.type == HandleType::Storage);
 
         PassStorage storage{handle, name, range, binding};
         if (storage.name.empty())
             storage.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 
+        storage.binding = binding;
         m_storageInputs.emplace_back(storage);
         m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
     }
 
-    void Pass::addStorageOutput(Handle& handle, std::string name, Optional<Range<std::size_t>> range)
+    void Pass::addStorageOutput(uint32_t binding, Handle& handle, std::string name, Optional<Range<std::size_t>> range)
     {
         handle.state++;
 
@@ -109,10 +110,12 @@ namespace vzt
         if (storage.name.empty())
             storage.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
 
+        storage.binding = binding;
         m_storageOutputs.emplace_back(storage);
+        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
     }
 
-    void Pass::addStorageInputOutput(Handle& handle, std::string inName, std::string outName,
+    void Pass::addStorageInputOutput(uint32_t binding, Handle& handle, std::string inName, std::string outName,
                                      Optional<Range<std::size_t>> range)
     {
         handle.state++;
@@ -121,13 +124,17 @@ namespace vzt
         if (inStorage.name.empty())
             inStorage.name = m_name + "In" + std::to_string(m_colorInputs.size());
 
+        inStorage.binding = binding;
         m_storageInputs.emplace_back(inStorage);
 
         PassStorage outStorage{handle, outName, range};
         if (outStorage.name.empty())
             outStorage.name = m_name + "Out" + std::to_string(m_colorInputs.size());
 
+        outStorage.binding = binding;
         m_storageOutputs.emplace_back(outStorage);
+
+        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
     }
 
     void Pass::setDepthInput(const Handle& handle, std::string name)
@@ -209,31 +216,51 @@ namespace vzt
         return false;
     }
 
-    void Pass::record(RenderGraph& graph, uint32_t i, CommandBuffer& commands) const
+    void Pass::record(const RenderGraph& graph, uint32_t i, CommandBuffer& commands) const
     {
         for (const auto& input : m_colorInputs)
         {
-            if (input.handle.state > 0)
-            {
-                ImageBarrier barrier;
-                barrier.image     = graph.getImage(i, input.handle);
-                barrier.oldLayout = input.use.initialLayout;
-                barrier.newLayout = input.use.usedLayout;
-                barrier.src       = Access::ColorAttachmentWrite;
-                barrier.dst       = Access::ShaderRead;
-                // barrier.srcQueue
-                // barrier.dstQueue
-                commands.barrier(PipelineStage::ColorAttachmentOutput, PipelineStage::FragmentShader, barrier);
-            }
+            if (input.handle.state == 0)
+                continue;
+
+            ImageBarrier barrier;
+            barrier.image     = graph.getImage(i, input.handle);
+            barrier.oldLayout = input.use.initialLayout;
+            barrier.newLayout = input.use.usedLayout;
+            barrier.src       = Access::ColorAttachmentWrite;
+            barrier.dst       = Access::ShaderRead;
+
+            // TODO: Handle many queues
+            // barrier.srcQueue
+            // barrier.dstQueue
+
+            commands.barrier(PipelineStage::ColorAttachmentOutput, PipelineStage::FragmentShader, barrier);
         }
 
-        if (m_queue->getType() == QueueType::Graphics)
+        for (const auto& input : m_storageInputs)
+        {
+            if (input.handle.state == 0)
+                continue;
+
+            BufferBarrier barrier;
+            barrier.buffer = graph.getStorage(i, input.handle);
+            barrier.src    = Access::ShaderWrite;
+            barrier.dst    = Access::ShaderRead;
+
+            // TODO: Handle many queues
+            // barrier.srcQueue
+            // barrier.dstQueue
+
+            commands.barrier(PipelineStage::ComputeShader, PipelineStage::VertexShader, barrier);
+        }
+
+        if (m_type == PassType::Graphics)
             commands.beginPass(m_renderPass, m_frameBuffers[i]);
 
         if (m_recordCallback)
             m_recordCallback->record(i, m_pool[i], commands);
 
-        if (m_queue->getType() == QueueType::Graphics)
+        if (m_type == PassType::Graphics)
             commands.endPass();
     }
 
@@ -242,7 +269,7 @@ namespace vzt
         View<Device> device = m_queue->getDevice();
 
         // If the pass is working with a compute queue, it does not need a render pass
-        if (m_queue->getType() == QueueType::Graphics)
+        if (m_type == PassType::Graphics)
         {
             m_renderPass = RenderPass(device);
             for (const auto& output : m_colorOutputs)
@@ -267,16 +294,25 @@ namespace vzt
 
             m_renderPass.compile();
 
-            // Create render targets and descriptors for the current pass
-            m_descriptorLayout.compile();
-
-            const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
-            m_pool                          = DescriptorPool{device, m_descriptorLayout, swapchainImageNb};
-            m_pool.allocate(swapchainImageNb, m_descriptorLayout);
-
             createRenderObjects(graph);
         }
-        else if (m_queue->getType() == QueueType::Compute) {}
+
+        // Create descriptors for the current pass
+        m_descriptorLayout.compile();
+
+        const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
+        m_pool                          = DescriptorPool{device, m_descriptorLayout, swapchainImageNb};
+        m_pool.allocate(swapchainImageNb, m_descriptorLayout);
+
+        createDescriptors(graph);
+    }
+
+    void Pass::resize(RenderGraph& graph)
+    {
+        if (m_type == PassType::Graphics)
+            createRenderObjects(graph);
+
+        createDescriptors(graph);
     }
 
     void Pass::createRenderObjects(RenderGraph& graph)
@@ -311,32 +347,6 @@ namespace vzt
             m_frameBuffers.emplace_back(device, *extent);
             FrameBuffer& frameBuffer = m_frameBuffers.back();
 
-            IndexedDescriptor descriptors{};
-            descriptors.reserve(m_colorInputs.size() + m_storageInputs.size());
-
-            // Sampled texture
-            for (auto& input : m_colorInputs)
-            {
-                View<Image> image = graph.getImage(i, input.handle);
-
-                m_textureSaves.emplace_back(device, image, SamplerBuilder{});
-                Texture& texture = m_textureSaves.back();
-
-                descriptors[input.binding] =
-                    DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
-            }
-
-            // SSBO
-            for (auto& input : m_storageInputs)
-            {
-                View<Buffer> storage = graph.getStorage(i, input.handle);
-                descriptors[input.binding] =
-                    DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};
-            }
-
-            if (!descriptors.empty())
-                m_pool.update(i, descriptors);
-
             // Get attachment from framebuffer
             for (auto& output : m_colorOutputs)
             {
@@ -361,6 +371,48 @@ namespace vzt
         }
     }
 
+    void Pass::createDescriptors(RenderGraph& graph)
+    {
+        const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
+        View<Device>   device           = m_queue->getDevice();
+
+        for (uint32_t i = 0; i < swapchainImageNb; i++)
+        {
+            IndexedDescriptor descriptors{};
+            descriptors.reserve(m_colorInputs.size() + m_storageInputs.size());
+
+            // Sampled texture
+            for (auto& input : m_colorInputs)
+            {
+                View<Image> image = graph.getImage(i, input.handle);
+
+                m_textureSaves.emplace_back(device, image, SamplerBuilder{});
+                Texture& texture = m_textureSaves.back();
+
+                descriptors[input.binding] =
+                    DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
+            }
+
+            // SSBO
+            for (auto& input : m_storageInputs)
+            {
+                View<Buffer> storage = graph.getStorage(i, input.handle);
+                descriptors[input.binding] =
+                    DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};
+            }
+
+            for (auto& output : m_storageOutputs)
+            {
+                View<Buffer> storage = graph.getStorage(i, output.handle);
+                descriptors[output.binding] =
+                    DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};
+            }
+
+            if (!descriptors.empty())
+                m_pool.update(i, descriptors);
+        }
+    }
+
     RenderGraph::RenderGraph(View<Swapchain> swapchain) : m_swapchain(std::move(swapchain)) {}
 
     Handle RenderGraph::addAttachment(AttachmentBuilder builder)
@@ -379,9 +431,9 @@ namespace vzt
         return handle;
     }
 
-    Pass& RenderGraph::addPass(std::string name, View<Queue> queue)
+    Pass& RenderGraph::addPass(std::string name, View<Queue> queue, PassType type)
     {
-        m_passes.emplace_back(new Pass(name, queue));
+        m_passes.emplace_back(new Pass(name, queue, type));
         return *m_passes.back();
     }
 
@@ -462,7 +514,7 @@ namespace vzt
         createRenderTarget();
 
         for (const std::size_t passId : m_executionOrder)
-            m_passes[passId]->createRenderObjects(*this);
+            m_passes[passId]->resize(*this);
     }
 
     Handle RenderGraph::generateAttachmentHandle() const

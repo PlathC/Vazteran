@@ -2,6 +2,7 @@
 
 #include <cassert>
 
+#include "vzt/Vulkan/ComputePipeline.hpp"
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
@@ -52,6 +53,8 @@ namespace vzt
                 baseBarrier.dstQueue ? baseBarrier.dstQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
 
             bufferBarrier.buffer = baseBarrier.buffer->getHandle();
+            bufferBarrier.size   = baseBarrier.buffer->size();
+            bufferBarrier.offset = 0;
 
             bufferBarriers.emplace_back(std::move(bufferBarrier));
         }
@@ -109,6 +112,18 @@ namespace vzt
                                 &descriptorSet, 0, nullptr);
     }
 
+    void CommandBuffer::bind(const ComputePipeline& computePipeline)
+    {
+        vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.getHandle());
+    }
+    void CommandBuffer::bind(const ComputePipeline& computePipeline, const DescriptorSet& set)
+    {
+        bind(computePipeline);
+        const VkDescriptorSet descriptorSet = set.getHandle();
+        vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.getLayout(), 0, 1,
+                                &descriptorSet, 0, nullptr);
+    }
+
     void CommandBuffer::bindVertexBuffer(const Buffer& buffer)
     {
         VkBuffer     vertexBuffers[] = {buffer.getHandle()};
@@ -122,12 +137,19 @@ namespace vzt
         vkCmdBindIndexBuffer(m_handle, buffer.getHandle(), index * sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
     }
 
-    void CommandBuffer::draw(uint32_t count, uint32_t offset) { vkCmdDraw(m_handle, count, 1, offset, 0); }
+    void CommandBuffer::dispatch(uint32_t x, uint32_t y, uint32_t z) { vkCmdDispatch(m_handle, x, y, z); }
 
-    void CommandBuffer::drawIndexed(const Buffer& indexBuffer, const Range<>& range)
+    void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset,
+                             uint32_t instanceOffset)
+    {
+        vkCmdDraw(m_handle, vertexCount, instanceCount, vertexOffset, instanceOffset);
+    }
+
+    void CommandBuffer::drawIndexed(const Buffer& indexBuffer, const Range<>& range, uint32_t instanceCount,
+                                    int32_t vertexOffset, uint32_t instanceOffset)
     {
         bindIndexBuffer(indexBuffer, range.start);
-        vkCmdDrawIndexed(m_handle, static_cast<uint32_t>(range.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(m_handle, static_cast<uint32_t>(range.size()), instanceCount, 0, vertexOffset, instanceOffset);
     }
 
     void CommandBuffer::setViewport(const Extent2D& size, float minDepth, float maxDepth)

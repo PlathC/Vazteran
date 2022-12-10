@@ -1,38 +1,63 @@
+#include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Utils/MeshLoader.hpp>
 #include <vzt/Utils/RenderGraph.hpp>
+#include <vzt/Vulkan/ComputePipeline.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
 
-#include "vzt/Data/Camera.hpp"
-
 int main(int /* argc */, char** /* argv */)
 {
-    const std::string ApplicationName = "Vazteran Deferred";
+    const std::string ApplicationName = "Vazteran Deferred + Instancing + Compute";
+
+    constexpr std::size_t InstanceCount = 64;
 
     auto compiler = vzt::Compiler();
 
-    auto window       = vzt::Window{ApplicationName};
-    auto instance     = vzt::Instance{window};
-    auto surface      = vzt::Surface{window, instance};
-    auto device       = instance.getDevice(vzt::DeviceBuilder{}, surface);
-    auto graphicQueue = device.getQueue(vzt::QueueType::Graphics);
-    auto hardware     = device.getHardware();
-    auto swapchain    = vzt::Swapchain{device, surface, window.getExtent()};
+    auto window    = vzt::Window{ApplicationName};
+    auto instance  = vzt::Instance{window};
+    auto surface   = vzt::Surface{window, instance};
+    auto device    = instance.getDevice(vzt::DeviceBuilder{}, surface);
+    auto queue     = device.getQueue(vzt::QueueType::Graphics);
+    auto hardware  = device.getHardware();
+    auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
 
     vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
 
     auto graph = vzt::RenderGraph{swapchain};
 
+    auto instanceData = graph.addStorage(
+        vzt::StorageBuilder{device, sizeof(vzt::Vec4f) * InstanceCount, vzt::BufferUsage::StorageBuffer});
+
+    auto& instanceGeneration       = graph.addPass("InstanceGeneration", queue, vzt::PassType::Compute);
+    auto& instanceGenerationLayout = instanceGeneration.getDescriptorLayout();
+    instanceGenerationLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+    instanceGeneration.addStorageOutput(1, instanceData);
+
+    auto computeProgram = vzt::Program(device);
+    computeProgram.setShader(compiler.compile("shaders/instance_generation.comp", vzt::ShaderStage::Compute));
+
+    auto computePipeline = vzt::ComputePipeline(device, computeProgram);
+    computePipeline.setProgram(computeProgram);
+    computePipeline.setDescriptorLayout(instanceGenerationLayout);
+    computePipeline.compile();
+
+    instanceGeneration.setRecordFunction<vzt::LambdaRecorder>(
+        [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+            commands.bind(computePipeline, set);
+            commands.dispatch(static_cast<uint32_t>(std::ceil(InstanceCount / static_cast<float>(InstanceCount))));
+        });
+
     auto position = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment, vzt::Format::R32G32B32A32SFloat});
     auto normal   = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8SNorm});
     auto depth    = graph.addAttachment({device, vzt::ImageUsage::DepthStencilAttachment});
 
-    auto& geometry       = graph.addPass("Geometry", graphicQueue);
+    auto& geometry       = graph.addPass("Geometry", queue);
     auto& geometryLayout = geometry.getDescriptorLayout();
     geometryLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+    geometry.addStorageInput(1, instanceData);
     geometry.addColorOutput(position);
     geometry.addColorOutput(normal);
     geometry.setDepthOutput(depth);
@@ -58,26 +83,27 @@ int main(int /* argc */, char** /* argv */)
     const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
+    // Per vertex input
     vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
-    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); //
-    vertexDescription.add(vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0});
+    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); // Position
+    vertexDescription.add(
+        vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0}); // Normal
     geometryPipeline.setVertexInputDescription(vertexDescription);
 
     auto& geometryRazterization    = geometryPipeline.getRasterization();
     geometryRazterization.cullMode = vzt::CullMode::None;
 
     geometry.setRecordFunction<vzt::LambdaRecorder>(
-        [&geometryPipeline, &vertexBuffer, &indexBuffer, &mesh](uint32_t i, const vzt::DescriptorSet& set,
-                                                                vzt::CommandBuffer& commands) {
+        [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
             commands.bind(geometryPipeline, set);
             commands.bindVertexBuffer(vertexBuffer);
             for (const auto& subMesh : mesh.subMeshes)
-                commands.drawIndexed(indexBuffer, subMesh.indices);
+                commands.drawIndexed(indexBuffer, subMesh.indices, InstanceCount);
         });
 
     auto  composed      = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment});
     auto  composedDepth = graph.addAttachment({device, vzt::ImageUsage::DepthStencilAttachment});
-    auto& shading       = graph.addPass("Shading", graphicQueue);
+    auto& shading       = graph.addPass("Shading", queue);
 
     auto& shadingLayout = shading.getDescriptorLayout();
     shading.addColorInput(0, position);
@@ -114,18 +140,26 @@ int main(int /* argc */, char** /* argv */)
     const std::size_t uniformByteNb      = modelsAlignment + materialsAlignment;
     vzt::Buffer       modelsUbo{device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
 
+    const std::size_t generationAlignment = hardware.getUniformAlignment(sizeof(uint32_t));
+    vzt::Buffer generationUbo{device, generationAlignment * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
+
     // Assign buffer parts to their respective image
-    vzt::DescriptorPool& geometryDescriptorPool = geometry.getDescriptorPool();
+    vzt::DescriptorPool& instanceGenerationDescriptorPool = instanceGeneration.getDescriptorPool();
+    vzt::DescriptorPool& geometryDescriptorPool           = geometry.getDescriptorPool();
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        modelsUbo.update<vzt::Vec4>(vzt::Vec4{1.f}, i * uniformByteNb + modelsAlignment);
-
-        vzt::BufferSpan modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
-
+        generationUbo.update<uint32_t>(InstanceCount, i * generationAlignment);
+        vzt::BufferSpan        generationSpan{generationUbo, sizeof(uint32_t), i * generationAlignment};
         vzt::IndexedDescriptor ubos{};
+        ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, generationSpan};
+        instanceGenerationDescriptorPool.update(i, ubos);
+
+        modelsUbo.update<vzt::Vec4>(vzt::Vec4{1.f}, i * uniformByteNb + modelsAlignment);
+        vzt::BufferSpan modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
+        ubos.clear();
         ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, modelSpan};
         geometryDescriptorPool.update(i, ubos);
 

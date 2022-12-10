@@ -1,5 +1,5 @@
-#ifndef VZT_PIPELINE_HPP
-#define VZT_PIPELINE_HPP
+#ifndef VZT_GRAPHIC_PIPELINE_HPP
+#define VZT_GRAPHIC_PIPELINE_HPP
 
 #include "vzt/Core/Math.hpp"
 #include "vzt/Vulkan/Descriptor.hpp"
@@ -200,4 +200,4 @@ namespace vzt
 
 #include "vzt/Vulkan/GraphicPipeline.inl"
 
-#endif // VZT_PIPELINE_HPP
+#endif // VZT_GRAPHIC_PIPELINE_HPP

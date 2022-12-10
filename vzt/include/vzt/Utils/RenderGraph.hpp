@@ -7,6 +7,7 @@
 
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Command.hpp"
+#include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
 #include "vzt/Vulkan/GraphicPipeline.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
@@ -77,6 +78,12 @@ namespace vzt
         RecordCallback m_callback;
     };
 
+    enum class PassType : uint8_t
+    {
+        Graphics = toUnderlying(QueueType::Graphics),
+        Compute  = toUnderlying(QueueType::Compute)
+    };
+
     class RenderGraph;
     class Pass
     {
@@ -95,8 +102,9 @@ namespace vzt
 
         void addStorageInput(uint32_t binding, const Handle& storage, std::string storageName = "",
                              Optional<Range<std::size_t>> range = {});
-        void addStorageOutput(Handle& storage, std::string storageName = "", Optional<Range<std::size_t>> range = {});
-        void addStorageInputOutput(Handle& storage, std::string inName = "", std::string outName = "",
+        void addStorageOutput(uint32_t binding, Handle& storage, std::string storageName = "",
+                              Optional<Range<std::size_t>> range = {});
+        void addStorageInputOutput(uint32_t binding, Handle& storage, std::string inName = "", std::string outName = "",
                                    Optional<Range<std::size_t>> range = {});
 
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
@@ -107,7 +115,7 @@ namespace vzt
         void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
 
         bool isDependingOn(const Pass& other) const;
-        void record(RenderGraph& graph, uint32_t i, CommandBuffer& commands) const;
+        void record(const RenderGraph& graph, uint32_t i, CommandBuffer& commands) const;
 
         inline View<Queue>             getQueue() const;
         inline void                    setDescriptorLayout(DescriptorLayout&& layout);
@@ -119,15 +127,16 @@ namespace vzt
         friend RenderGraph;
 
       private:
-        Pass(std::string name, View<Queue> queue);
+        Pass(std::string name, View<Queue> queue, PassType type);
         void compile(RenderGraph& graph, Format depthFormat);
         void resize(RenderGraph& graph);
 
         void createRenderObjects(RenderGraph& graph);
+        void createDescriptors(RenderGraph& graph);
 
         std::string      m_name;
         View<Queue>      m_queue;
-        std::size_t      m_id;
+        PassType         m_type;
         DescriptorLayout m_descriptorLayout;
 
         std::unique_ptr<RecordHandler> m_recordCallback;
@@ -175,7 +184,7 @@ namespace vzt
         // User configuration
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
-        Pass&  addPass(std::string name, View<Queue> queue);
+        Pass&  addPass(std::string name, View<Queue> queue, PassType type = PassType::Graphics);
 
         void setBackBuffer(const Handle handle);
         bool isBackBuffer(const Handle handle) const;
