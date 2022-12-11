@@ -7,7 +7,7 @@
 
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
-#include "vzt/Vulkan/GraphicPipeline.hpp"
+#include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"
 
 namespace vzt
 {

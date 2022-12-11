@@ -1,4 +1,4 @@
-#include "vzt/Vulkan/ComputePipeline.hpp"
+#include "vzt/Vulkan/Pipeline/ComputePipeline.hpp"
 
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/Program.hpp"

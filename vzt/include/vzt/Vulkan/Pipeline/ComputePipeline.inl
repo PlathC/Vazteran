@@ -1,4 +1,4 @@
-#include "vzt/Vulkan/ComputePipeline.hpp"
+#include "vzt/Vulkan/Pipeline/ComputePipeline.hpp"
 
 namespace vzt
 {

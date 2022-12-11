@@ -3,7 +3,7 @@
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Utils/MeshLoader.hpp>
 #include <vzt/Utils/RenderGraph.hpp>
-#include <vzt/Vulkan/ComputePipeline.hpp>
+#include <vzt/Vulkan/Pipeline/ComputePipeline.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>

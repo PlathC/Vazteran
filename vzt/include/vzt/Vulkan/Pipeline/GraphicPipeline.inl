@@ -1,4 +1,4 @@
-#include "vzt/Vulkan/GraphicPipeline.hpp"
+#include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"
 
 namespace vzt
 {

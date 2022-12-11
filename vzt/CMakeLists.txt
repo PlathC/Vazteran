@@ -29,18 +29,20 @@ set(VZT_HEADERS
 
     include/vzt/Vulkan/Buffer.hpp
     include/vzt/Vulkan/Command.hpp
-    include/vzt/Vulkan/ComputePipeline.hpp
     include/vzt/Vulkan/Descriptor.hpp
     include/vzt/Vulkan/Device.hpp
     include/vzt/Vulkan/FrameBuffer.hpp
-    include/vzt/Vulkan/GraphicPipeline.hpp
     include/vzt/Vulkan/Image.hpp
     include/vzt/Vulkan/Instance.hpp
+    include/vzt/Vulkan/Pipeline.hpp
     include/vzt/Vulkan/Program.hpp
     include/vzt/Vulkan/RenderPass.hpp
     include/vzt/Vulkan/Surface.hpp
     include/vzt/Vulkan/Swapchain.hpp
     include/vzt/Vulkan/Texture.hpp
+
+    include/vzt/Vulkan/Pipeline/ComputePipeline.hpp
+    include/vzt/Vulkan/Pipeline/GraphicPipeline.hpp
 
     include/vzt/Window.hpp
 )
@@ -60,11 +62,9 @@ set(VZT_SOURCES
 
     src/Vulkan/Buffer.cpp
     src/Vulkan/Command.cpp
-    src/Vulkan/ComputePipeline.cpp
     src/Vulkan/Descriptor.cpp
     src/Vulkan/Device.cpp
     src/Vulkan/FrameBuffer.cpp
-    src/Vulkan/GraphicPipeline.cpp
     src/Vulkan/Image.cpp
     src/Vulkan/Instance.cpp
     src/Vulkan/Program.cpp
@@ -72,6 +72,9 @@ set(VZT_SOURCES
     src/Vulkan/Surface.cpp
     src/Vulkan/Swapchain.cpp
     src/Vulkan/Texture.cpp
+
+    src/Vulkan/Pipeline/ComputePipeline.cpp
+    src/Vulkan/Pipeline/GraphicPipeline.cpp
 
     src/Window.cpp
 )

@@ -9,7 +9,7 @@
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
-#include "vzt/Vulkan/GraphicPipeline.hpp"
+#include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 

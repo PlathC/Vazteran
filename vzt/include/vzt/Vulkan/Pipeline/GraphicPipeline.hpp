@@ -198,6 +198,6 @@ namespace vzt
     };
 } // namespace vzt
 
-#include "vzt/Vulkan/GraphicPipeline.inl"
+#include "vzt/Vulkan/Pipeline/GraphicPipeline.inl"
 
 #endif // VZT_GRAPHIC_PIPELINE_HPP

@@ -44,6 +44,6 @@ namespace vzt
     };
 } // namespace vzt
 
-#include "vzt/Vulkan/ComputePipeline.inl"
+#include "vzt/Vulkan/Pipeline/ComputePipeline.inl"
 
 #endif // VZT_COMPUTE_PIPELINE_HPP
