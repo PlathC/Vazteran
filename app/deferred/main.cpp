@@ -83,7 +83,6 @@ int main(int /* argc */, char** /* argv */)
     const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
-    // Per vertex input
     vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
     vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); // Position
     vertexDescription.add(
