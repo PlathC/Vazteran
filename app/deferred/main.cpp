@@ -37,7 +37,7 @@ int main(int /* argc */, char** /* argv */)
     instanceGeneration.addStorageOutput(1, instanceData);
 
     auto computeProgram = vzt::Program(device);
-    computeProgram.setShader(compiler.compile("shaders/instance_generation.comp", vzt::ShaderStage::Compute));
+    computeProgram.setShader(compiler.compile("shaders/deferred/instance_generation.comp", vzt::ShaderStage::Compute));
 
     auto computePipeline = vzt::ComputePipeline(device, computeProgram);
     computePipeline.setProgram(computeProgram);
@@ -63,8 +63,8 @@ int main(int /* argc */, char** /* argv */)
     geometry.setDepthOutput(depth);
 
     auto geometryProgram = vzt::Program(device);
-    geometryProgram.setShader(compiler.compile("shaders/triangle.vert", vzt::ShaderStage::Vertex));
-    geometryProgram.setShader(compiler.compile("shaders/triangle.frag", vzt::ShaderStage::Fragment));
+    geometryProgram.setShader(compiler.compile("shaders/deferred/triangle.vert", vzt::ShaderStage::Vertex));
+    geometryProgram.setShader(compiler.compile("shaders/deferred/triangle.frag", vzt::ShaderStage::Fragment));
 
     auto geometryPipeline = vzt::GraphicPipeline(device, geometryProgram, vzt::Viewport{window.getExtent()});
     geometryPipeline.setDescriptorLayout(geometryLayout);
@@ -111,8 +111,9 @@ int main(int /* argc */, char** /* argv */)
     shading.setDepthOutput(composedDepth);
 
     auto shadingProgram = vzt::Program(device);
-    shadingProgram.setShader(compiler.compile("shaders/full_screen.vert", vzt::ShaderStage::Vertex));
-    shadingProgram.setShader(compiler.compile("shaders/deferred_blinn_phong.frag", vzt::ShaderStage::Fragment));
+    shadingProgram.setShader(compiler.compile("shaders/deferred/full_screen.vert", vzt::ShaderStage::Vertex));
+    shadingProgram.setShader(
+        compiler.compile("shaders/deferred/deferred_blinn_phong.frag", vzt::ShaderStage::Fragment));
 
     auto shadingPipeline = vzt::GraphicPipeline(device, shadingProgram, vzt::Viewport{window.getExtent()});
     shadingPipeline.setDescriptorLayout(shadingLayout);

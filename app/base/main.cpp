@@ -29,8 +29,8 @@ int main(int /* argc */, char** /* argv */)
 
     auto program  = vzt::Program(device);
     auto compiler = vzt::Compiler();
-    program.setShader(compiler.compile("shaders/triangle.vert", vzt::ShaderStage::Vertex));
-    program.setShader(compiler.compile("shaders/triangle.frag", vzt::ShaderStage::Fragment));
+    program.setShader(compiler.compile("shaders/base/triangle.vert", vzt::ShaderStage::Vertex));
+    program.setShader(compiler.compile("shaders/base/triangle.frag", vzt::ShaderStage::Fragment));
 
     vzt::RenderPass renderPass{device};
 
