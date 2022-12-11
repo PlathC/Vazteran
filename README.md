@@ -7,9 +7,18 @@ Here is the roadmap :
 | Feature                                                         | Progress  |
 |-----------------------------------------------------------------|-----------|
 | Window                                                          | Done      |
-| Renderer architecture                                           | Done      |
-| Render graph                                                    | WIP       |
+| Base Vulkan wrapper                                             | Done      |
+| Render graph                                                    | Done      |
+| Instancing                                                      | Done      |
+| Compute shader                                                  | Done      |
+| Raytracing extension                                            | To do     |
 | Ui                                                              | To do     |
+
+## Current state
+
+The render graph allows to easily define various passes as presented in the `app/deferred` sample.
+
+![Flying dragons](img/Deferred.png)
 
 ## Build 
 
@@ -28,9 +37,6 @@ cmake ..
 cmake --build . --target Vazteran --config Release
 ```
 
-## Current state
-
-Currently doing a fresh restart in order to fix several architectural and implementation problems.
 
 ## Samples 
 
