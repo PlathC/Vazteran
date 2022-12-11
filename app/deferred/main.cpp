@@ -12,7 +12,7 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Deferred + Instancing + Compute";
 
-    constexpr std::size_t InstanceCount = 64;
+    constexpr std::size_t InstanceCount = 32;
 
     auto compiler = vzt::Compiler();
 
@@ -140,7 +140,7 @@ int main(int /* argc */, char** /* argv */)
     const std::size_t uniformByteNb      = modelsAlignment + materialsAlignment;
     vzt::Buffer       modelsUbo{device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
 
-    const std::size_t generationAlignment = hardware.getUniformAlignment(sizeof(uint32_t));
+    const std::size_t generationAlignment = hardware.getUniformAlignment(sizeof(vzt::Vec2u));
     vzt::Buffer generationUbo{device, generationAlignment * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
 
     // Assign buffer parts to their respective image
@@ -151,7 +151,7 @@ int main(int /* argc */, char** /* argv */)
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        generationUbo.update<uint32_t>(InstanceCount, i * generationAlignment);
+        generationUbo.update<vzt::Vec2u>(vzt::Vec2u{InstanceCount, 0u}, i * generationAlignment);
         vzt::BufferSpan        generationSpan{generationUbo, sizeof(uint32_t), i * generationAlignment};
         vzt::IndexedDescriptor ubos{};
         ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, generationSpan};
@@ -220,6 +220,9 @@ int main(int /* argc */, char** /* argv */)
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
         std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
         modelsUbo.update<vzt::Mat4>(matrices, submission->imageId * uniformByteNb);
+
+        generationUbo.update<vzt::Vec2u>(vzt::Vec2u{InstanceCount, inputs.time},
+                                         submission->imageId * generationAlignment);
 
         // Submission of pre-recorded commands
         vzt::CommandBuffer commands = commandPool[submission->imageId];
