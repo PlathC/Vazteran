@@ -1,10 +1,10 @@
 #version 450
-
-layout (local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
+#extension GL_KHR_vulkan_glsl: enable
 
 layout(set = 0, binding = 0) uniform UniformBuffer
 {
     uint uInstanceCount;
+    uint uTime;
 } uniforms;
 
 layout(set = 0, binding = 1) buffer OutputBuffer
@@ -12,14 +12,16 @@ layout(set = 0, binding = 1) buffer OutputBuffer
     vec4 values[];
 } instances;
 
+layout (local_size_x = 256) in;
+
 void main(void)
 {
-    if(gl_LocalInvocationIndex >= uniforms.uInstanceCount)
+    const int id = int(gl_LocalInvocationIndex);
+    if(id >= uniforms.uInstanceCount )
         return;
 
-    const int id    = int(gl_LocalInvocationIndex);
     const int range = int(sqrt(float(uniforms.uInstanceCount)));
     const int x     = id % range - range / 2;
     const int z     = id / range - range / 2;
-    instances.values[gl_LocalInvocationIndex] = vec4(x, 0., z, 1.) * 2;
+    instances.values[id] = vec4(x, sin(uniforms.uTime * 1e-3 + id) * 5e-1, z, 1.) * 1.75;
 }
