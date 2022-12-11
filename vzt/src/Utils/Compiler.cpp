@@ -292,19 +292,19 @@ namespace vzt
         const EShLanguage shaderStage = toBackend(stage);
         glslang::TShader  shader{shaderStage};
 
-        std::string       code    = vzt::readFile(path);
+        std::string       code    = readFile(path);
         const char* const rawCode = code.data();
         shader.setStrings(&rawCode, 1);
 
         // TODO: Make this dynamic based on renderer
         glslang::EShClient              clientType     = glslang::EShClientVulkan;
-        glslang::EShTargetClientVersion clientVersion  = glslang::EShTargetClientVersion::EShTargetVulkan_1_3;
+        glslang::EShTargetClientVersion clientVersion  = glslang::EShTargetClientVersion::EShTargetVulkan_1_0;
         constexpr int                   DefaultVersion = 110;
 
         shader.setEntryPoint("main");
         shader.setEnvInput(toBackend(language), toBackend(stage), clientType, DefaultVersion);
         shader.setEnvClient(clientType, clientVersion);
-        shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_6);
+        shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_0);
 
         constexpr EProfile DefaultProfile = EProfile::ECompatibilityProfile;
 
