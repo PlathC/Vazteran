@@ -12,7 +12,7 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Deferred + Instancing + Compute";
 
-    constexpr std::size_t InstanceCount = 32;
+    constexpr uint32_t InstanceCount = 32;
 
     auto compiler = vzt::Compiler();
 
@@ -70,7 +70,7 @@ int main(int /* argc */, char** /* argv */)
     geometryPipeline.setDescriptorLayout(geometryLayout);
 
     vzt::VertexInputDescription vertexDescription{};
-    struct alignas(16) VertexInput
+    struct VertexInput
     {
         vzt::Vec3 inPosition;
         vzt::Vec3 inNormal;

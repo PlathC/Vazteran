@@ -68,7 +68,7 @@ int main(int /* argc */, char** /* argv */)
     pipeline.setDescriptorLayout(descriptorLayout);
 
     vzt::VertexInputDescription vertexDescription{};
-    struct alignas(16) VertexInput
+    struct VertexInput
     {
         vzt::Vec3 inPosition;
         vzt::Vec3 inNormal;
