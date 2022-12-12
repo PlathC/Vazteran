@@ -41,6 +41,8 @@ set(VZT_HEADERS
     include/vzt/Vulkan/Swapchain.hpp
     include/vzt/Vulkan/Texture.hpp
 
+    include/vzt/Vulkan/Raytracing/AccelerationStructure.hpp
+    
     include/vzt/Vulkan/Pipeline/ComputePipeline.hpp
     include/vzt/Vulkan/Pipeline/GraphicPipeline.hpp
 
@@ -72,6 +74,8 @@ set(VZT_SOURCES
     src/Vulkan/Surface.cpp
     src/Vulkan/Swapchain.cpp
     src/Vulkan/Texture.cpp
+
+    src/Vulkan/Raytracing/AccelerationStructure.cpp
 
     src/Vulkan/Pipeline/ComputePipeline.cpp
     src/Vulkan/Pipeline/GraphicPipeline.cpp
