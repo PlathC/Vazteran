@@ -18,12 +18,19 @@ namespace vzt
     class Instance;
     class Surface;
 
-    namespace extension
+    namespace dext
     {
-        constexpr const char* VkKHRSwapchain             = "VK_KHR_swapchain";
-        constexpr const char* VkKHRGetMemoryRequirements = "VK_KHR_get_memory_requirements2";
-        constexpr const char* VkKHRDedicatedAllocation   = "VK_KHR_dedicated_allocation";
-    } // namespace extension
+        constexpr const char* Swapchain              = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+        constexpr const char* GetMemoryRequirements2 = VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME;
+        constexpr const char* DedicatedAllocation    = VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME;
+        constexpr const char* AccelerationStructure  = VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME;
+        constexpr const char* RaytracingPipeline     = VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME;
+        constexpr const char* BufferDeviceAddress    = VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
+        constexpr const char* DeferredHostOperations = VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME;
+        constexpr const char* DescriptorIndexing     = VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
+        constexpr const char* Spirv14                = VK_KHR_SPIRV_1_4_EXTENSION_NAME;
+        constexpr const char* ShaderFloatControls    = VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME;
+    } // namespace dext
 
     enum class QueueType : uint8_t
     {
@@ -43,9 +50,9 @@ namespace vzt
 
         // clang-format off
         std::vector<const char*> extensions = {    
-            extension::VkKHRSwapchain,             
-            extension::VkKHRGetMemoryRequirements, 
-            extension::VkKHRDedicatedAllocation
+            dext::Swapchain,             
+            dext::GetMemoryRequirements2, 
+            dext::DedicatedAllocation
         };
         // clang-format on
     };

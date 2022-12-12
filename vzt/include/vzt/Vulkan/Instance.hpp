@@ -14,17 +14,17 @@ namespace vzt
     class Device;
     class Window;
 
-    namespace validation
+    namespace val
     {
         constexpr const char* KronosValidation      = "VK_LAYER_KHRONOS_validation";
         constexpr const char* KronosSynchronization = "VK_LAYER_KHRONOS_synchronization2";
         constexpr const char* RenderDocCapture      = "VK_LAYER_RENDERDOC_Capture";
-    } // namespace validation
+    } // namespace val
 
-    namespace extension
+    namespace iext
     {
-        constexpr const char* VkDebugUtils = "VK_EXT_debug_utils";
-    } // namespace extension
+        constexpr const char* DebugUtils = "VK_EXT_debug_utils";
+    } // namespace iext
 
     struct InstanceBuilder
     {
@@ -34,8 +34,8 @@ namespace vzt
         std::vector<const char*> extensions;
 #else
         bool                     enableValidation   = true;
-        std::vector<const char*> validationLayers   = {validation::KronosValidation};
-        std::vector<const char*> extensions         = {extension::VkDebugUtils};
+        std::vector<const char*> validationLayers   = {val::KronosValidation};
+        std::vector<const char*> extensions         = {iext::DebugUtils};
 #endif
     };
 
@@ -71,8 +71,8 @@ namespace vzt
         std::vector<const char*> m_extensions;
 #else
         bool                     m_enableValidation = true;
-        std::vector<const char*> m_validationLayers = {validation::KronosValidation};
-        std::vector<const char*> m_extensions       = {extension::VkDebugUtils};
+        std::vector<const char*> m_validationLayers;
+        std::vector<const char*> m_extensions;
 #endif
     };
 } // namespace vzt
