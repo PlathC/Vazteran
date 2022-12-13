@@ -5,6 +5,7 @@
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
 #include "vzt/Vulkan/Pipeline/ComputePipeline.hpp"
+#include "vzt/Vulkan/Raytracing/AccelerationStructure.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 
 namespace vzt
@@ -206,6 +207,50 @@ namespace vzt
     }
 
     void CommandBuffer::endPass() { vkCmdEndRenderPass(m_handle); }
+
+    void CommandBuffer::buildAs(BottomGeometryAsBuilder& builder)
+    {
+        VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
+        accelerationBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+        accelerationBuildGeometryInfo.type  = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        accelerationBuildGeometryInfo.flags = toVulkan(builder.flags);
+        accelerationBuildGeometryInfo.mode  = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+
+        std::vector<VkAccelerationStructureGeometryKHR> vkGeometries;
+        vkGeometries.reserve(builder.geometries.size);
+        uint32_t maxPrimitiveCount = 0;
+        for (std::size_t i = 0; i < builder.geometries.size; i++)
+        {
+            const auto& geometry = builder.geometries.data[i];
+            std::visit(Overloaded{[&maxPrimitiveCount](const AsTriangles& trianglesAs) {
+                                      maxPrimitiveCount +=
+                                          static_cast<uint32_t>(trianglesAs.indexBuffer.size / sizeof(uint32_t));
+                                  },
+                                  [&maxPrimitiveCount](const AsAabbs& aabbsAs) {
+                                      maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.size / aabbsAs.stride);
+                                  }},
+                       geometry.geometry);
+
+            auto vkGeometry = toVulkan(geometry);
+            vkGeometries.emplace_back(std::move(vkGeometry));
+        }
+
+        accelerationBuildGeometryInfo.dstAccelerationStructure  = builder.as->getHandle();
+        accelerationBuildGeometryInfo.geometryCount             = static_cast<uint32_t>(vkGeometries.size());
+        accelerationBuildGeometryInfo.pGeometries               = vkGeometries.data();
+        accelerationBuildGeometryInfo.scratchData.deviceAddress = builder.scratchBuffer->getDeviceAddress();
+
+        VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
+        accelerationStructureBuildRangeInfo.primitiveCount  = maxPrimitiveCount;
+        accelerationStructureBuildRangeInfo.primitiveOffset = 0;
+        accelerationStructureBuildRangeInfo.firstVertex     = 0;
+        accelerationStructureBuildRangeInfo.transformOffset = 0;
+
+        std::vector accelerationBuildStructureRangeInfos = {&accelerationStructureBuildRangeInfo};
+
+        vkCmdBuildAccelerationStructuresKHR(m_handle, 1, &accelerationBuildGeometryInfo,
+                                            accelerationBuildStructureRangeInfos.data());
+    }
 
     void CommandBuffer::begin()
     {

@@ -11,6 +11,7 @@
 
 namespace vzt
 {
+    struct BottomGeometryAsBuilder;
     class CommandPool;
     class ComputePipeline;
     class Device;
@@ -59,6 +60,8 @@ namespace vzt
 
         void beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer);
         void endPass();
+
+        void buildAs(BottomGeometryAsBuilder& builder);
 
         inline VkCommandBuffer getHandle() const;
 

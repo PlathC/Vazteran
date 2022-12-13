@@ -29,7 +29,7 @@ namespace vzt
     VZT_DEFINE_TO_VULKAN_FUNCTION(GeometryFlag, VkGeometryFlagsKHR)
     VZT_DEFINE_BITWISE_FUNCTIONS(GeometryFlag)
 
-    enum class BuildAccelerationStructure
+    enum class BuildAccelerationStructureFlag
     {
         AllowUpdate     = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR,
         AllowCompaction = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR,
@@ -37,10 +37,10 @@ namespace vzt
         PreferFastBuild = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR,
         LowMemory       = VK_BUILD_ACCELERATION_STRUCTURE_LOW_MEMORY_BIT_KHR,
     };
-    VZT_DEFINE_TO_VULKAN_FUNCTION(BuildAccelerationStructure, VkBuildAccelerationStructureFlagsKHR)
-    VZT_DEFINE_BITWISE_FUNCTIONS(BuildAccelerationStructure)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(BuildAccelerationStructureFlag, VkBuildAccelerationStructureFlagsKHR)
+    VZT_DEFINE_BITWISE_FUNCTIONS(BuildAccelerationStructureFlag)
 
-    struct TrianglesAs
+    struct AsTriangles
     {
         Format      vertexFormat;
         BufferCSpan vertexBuffer;
@@ -52,39 +52,64 @@ namespace vzt
     };
 
     using AabbPositions = VkAabbPositionsKHR;
-    struct AabbsAs
+    struct AsAabbs
     {
         BufferCSpan aabbs; // Must contain AabbPositions
         std::size_t stride = 0;
     };
 
-    using GeometryAs = std::variant<TrianglesAs, AabbsAs>;
+    using AsGeometry = std::variant<AsTriangles, AsAabbs>;
 
     struct GeometryAsBuilder
     {
-        GeometryAs   geometry;
+        AsGeometry   geometry;
         GeometryFlag flags = GeometryFlag::Opaque;
     };
+    VkAccelerationStructureGeometryKHR toVulkan(const GeometryAsBuilder& geometryAs);
 
-    class GeometryAccelerationStructure
+    class BottomGeometryAs;
+    struct BottomGeometryAsBuilder
+    {
+        BuildAccelerationStructureFlag flags;
+        View<BottomGeometryAs>         as;
+        View<Buffer>                   scratchBuffer;
+        CSpan<GeometryAsBuilder>       geometries;
+    };
+
+    uint64_t getAccelerationStructureSize(BuildAccelerationStructureFlag        flags,
+                                          const std::vector<GeometryAsBuilder>& geometries);
+
+    class BottomGeometryAs
     {
       public:
-        GeometryAccelerationStructure(View<Device> device, GeometryAsBuilder builder);
+        BottomGeometryAs(View<Device> device, std::vector<GeometryAsBuilder> geometries,
+                         BuildAccelerationStructureFlag flags = BuildAccelerationStructureFlag::PreferFastBuild);
+        BottomGeometryAs(View<Device> device, GeometryAsBuilder geometry,
+                         BuildAccelerationStructureFlag flags = BuildAccelerationStructureFlag::PreferFastBuild);
 
-        GeometryAccelerationStructure(const GeometryAccelerationStructure&)            = delete;
-        GeometryAccelerationStructure& operator=(const GeometryAccelerationStructure&) = delete;
+        BottomGeometryAs(const BottomGeometryAs&)            = delete;
+        BottomGeometryAs& operator=(const BottomGeometryAs&) = delete;
 
-        GeometryAccelerationStructure(GeometryAccelerationStructure&&) noexcept;
-        GeometryAccelerationStructure& operator=(GeometryAccelerationStructure&&) noexcept;
+        BottomGeometryAs(BottomGeometryAs&&) noexcept;
+        BottomGeometryAs& operator=(BottomGeometryAs&&) noexcept;
 
-        ~GeometryAccelerationStructure();
+        ~BottomGeometryAs();
+
+        inline uint64_t                   getSize() const;
+        inline View<Buffer>               getBuffer() const;
+        inline VkAccelerationStructureKHR getHandle() const;
 
       private:
-        VkAccelerationStructureKHR m_handle;
-        View<Device>               m_device;
-        GeometryAsBuilder          m_builder;
+        VkAccelerationStructureKHR     m_handle = VK_NULL_HANDLE;
+        View<Device>                   m_device;
+        std::vector<GeometryAsBuilder> m_geometries;
+        Buffer                         m_buffer;
+        uint64_t                       m_deviceAddress;
+        uint64_t                       m_size;
     };
 
 } // namespace vzt
+
+#include "vzt/Vulkan/Raytracing/AccelerationStructure.inl"
 
 #endif // VZT_VULKAN_RAYTRACING_ACCELERATIONSTRUCTURE_HPP
