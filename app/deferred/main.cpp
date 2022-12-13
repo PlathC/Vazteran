@@ -8,6 +8,20 @@
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
 
+template <class Type>
+void updateUniformBuffer(vzt::CommandBuffer& commands, vzt::Buffer& buffer, std::size_t offset, Type* ptr,
+                         std::size_t size = 1)
+{
+    assert(buffer.isMappable());
+
+    uint8_t* data = buffer.map();
+    std::memcpy(data + offset, ptr, size * sizeof(Type));
+    buffer.unMap();
+
+    vzt::BufferBarrier barrier{buffer, vzt::Access::TransferWrite, vzt::Access::UniformRead};
+    commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
+}
+
 int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Deferred + Instancing + Compute";
@@ -135,13 +149,13 @@ int main(int /* argc */, char** /* argv */)
     shadingPipeline.compile(shading.getRenderPass());
 
     // Initialize buffer with default values
-    const std::size_t modelsAlignment    = hardware.getUniformAlignment(sizeof(vzt::Mat4) * 3);
-    const std::size_t materialsAlignment = hardware.getUniformAlignment<vzt::Vec4>();
-    const std::size_t uniformByteNb      = modelsAlignment + materialsAlignment;
-    vzt::Buffer       modelsUbo{device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
+    const std::size_t modelsAlignment = hardware.getUniformAlignment(sizeof(vzt::Mat4) * 3);
+    vzt::Buffer       modelsUbo{device, modelsAlignment * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
+                          vzt::MemoryLocation::Device, true};
 
     const std::size_t generationAlignment = hardware.getUniformAlignment(sizeof(vzt::Vec2u));
-    vzt::Buffer generationUbo{device, generationAlignment * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
+    vzt::Buffer generationUbo{device, generationAlignment * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
+                              vzt::MemoryLocation::Device, true};
 
     // Assign buffer parts to their respective image
     vzt::DescriptorPool& instanceGenerationDescriptorPool = instanceGeneration.getDescriptorPool();
@@ -151,22 +165,15 @@ int main(int /* argc */, char** /* argv */)
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        generationUbo.update<vzt::Vec2u>(vzt::Vec2u{InstanceCount, 0u}, i * generationAlignment);
-        vzt::BufferSpan        generationSpan{generationUbo, sizeof(uint32_t), i * generationAlignment};
+        vzt::BufferSpan        generationSpan{generationUbo, sizeof(vzt::Vec2u), i * generationAlignment};
         vzt::IndexedDescriptor ubos{};
         ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, generationSpan};
         instanceGenerationDescriptorPool.update(i, ubos);
 
-        modelsUbo.update<vzt::Vec4>(vzt::Vec4{1.f}, i * uniformByteNb + modelsAlignment);
-        vzt::BufferSpan modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
+        vzt::BufferSpan modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * modelsAlignment};
         ubos.clear();
         ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, modelSpan};
         geometryDescriptorPool.update(i, ubos);
-
-        vzt::CommandBuffer commands = commandPool[i];
-        commands.begin();
-        graph.record(i, commands);
-        commands.end();
     }
 
     // Compute AABB to place camera in front of the model
@@ -219,13 +226,20 @@ int main(int /* argc */, char** /* argv */)
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
         std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
-        modelsUbo.update<vzt::Mat4>(matrices, submission->imageId * uniformByteNb);
 
-        generationUbo.update<vzt::Vec2u>(vzt::Vec2u{InstanceCount, inputs.time},
-                                         submission->imageId * generationAlignment);
-
-        // Submission of pre-recorded commands
         vzt::CommandBuffer commands = commandPool[submission->imageId];
+        commands.begin();
+
+        const vzt::Vec2u generationInput{InstanceCount, inputs.time};
+        std::size_t      offset = submission->imageId * generationAlignment;
+        updateUniformBuffer(commands, generationUbo, offset, &generationInput);
+
+        offset = submission->imageId * modelsAlignment;
+        updateUniformBuffer(commands, modelsUbo, offset, matrices.data(), matrices.size());
+
+        graph.record(submission->imageId, commands);
+        commands.end();
+
         graphicsQueue->submit(commands, *submission);
         if (!swapchain.present())
         {
@@ -239,14 +253,6 @@ int main(int /* argc */, char** /* argv */)
             geometryPipeline.resize(vzt::Viewport{extent});
             shadingPipeline.resize(vzt::Viewport{extent});
             graph.resize(extent);
-
-            for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
-            {
-                vzt::CommandBuffer commands = commandPool[i];
-                commands.begin();
-                graph.record(i, commands);
-                commands.end();
-            }
         }
     }
 }

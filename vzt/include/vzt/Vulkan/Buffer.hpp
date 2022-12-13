@@ -12,6 +12,7 @@
 namespace vzt
 {
     class Device;
+    class Queue;
 
     enum class BufferUsage : uint32_t
     {
@@ -55,7 +56,9 @@ namespace vzt
     {
       public:
         template <class Type>
-        static Buffer fromData(View<Device> device, CSpan<Type> data, BufferUsage usages,
+        static Buffer fromData(View<Device> device, OffsetCSpan<Type> data, BufferUsage usages,
+                               MemoryLocation location = MemoryLocation::Device, bool mappable = false);
+        static Buffer fromData(View<Device> device, OffsetCSpan<uint8_t> data, BufferUsage usages,
                                MemoryLocation location = MemoryLocation::Device, bool mappable = false);
 
         Buffer() = default;
@@ -70,13 +73,13 @@ namespace vzt
 
         ~Buffer();
 
-        template <class Type>
-        void update(CSpan<Type> newData, const std::size_t offset = 0);
-        void update(CSpan<uint8_t> newData, const std::size_t offset = 0);
-
         uint8_t* map();
         void     unMap();
 
+        // Requires dext::BufferDeviceAddress
+        uint64_t getDeviceAddress() const;
+
+        inline bool           isMappable() const;
         inline std::size_t    size() const;
         inline MemoryLocation getLocation() const;
         inline VkBuffer       getHandle() const;

@@ -30,6 +30,9 @@ namespace vzt
 
         ~CommandBuffer() = default;
 
+        void begin();
+        void end();
+
         void barrier(PipelineBarrier barrier);
         void barrier(PipelineStage src, PipelineStage dst, ImageBarrier barrier);
         void barrier(PipelineStage src, PipelineStage dst, BufferBarrier barrier);
@@ -57,14 +60,13 @@ namespace vzt
         void beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer);
         void endPass();
 
-        void                   begin();
-        void                   end();
         inline VkCommandBuffer getHandle() const;
 
       private:
-        CommandBuffer(VkCommandBuffer handle);
+        CommandBuffer(View<Device> m_device, VkCommandBuffer handle);
 
-        VkCommandBuffer m_handle = nullptr;
+        View<Device>    m_device = nullptr;
+        VkCommandBuffer m_handle = VK_NULL_HANDLE;
     };
     class CommandPool
     {

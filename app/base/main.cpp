@@ -84,7 +84,8 @@ int main(int /* argc */, char** /* argv */)
     const std::size_t modelsAlignment    = hardware.getUniformAlignment(sizeof(vzt::Mat4) * 3);
     const std::size_t materialsAlignment = hardware.getUniformAlignment<vzt::Vec4>();
     const std::size_t uniformByteNb      = modelsAlignment + materialsAlignment;
-    vzt::Buffer       modelsUbo{device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer};
+    vzt::Buffer       modelsUbo{device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
+                          vzt::MemoryLocation::Device, true};
 
     // Assign buffer parts to their respective image
     vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
@@ -122,33 +123,10 @@ int main(int /* argc */, char** /* argv */)
         frameBuffer.addAttachment(vzt::ImageView(device, image, vzt::ImageAspect::Color));
         frameBuffer.addAttachment(vzt::ImageView(device, depthStencils.back(), vzt::ImageAspect::Depth));
         frameBuffer.compile(renderPass);
-
-        // Pre-record commands since they will not change during rendering
-        vzt::CommandBuffer commands = commandPool[i];
-        commands.begin();
-        {
-            commands.beginPass(renderPass, frameBuffers[i]);
-
-            commands.bind(pipeline, descriptorPool[i]);
-            commands.bindVertexBuffer(vertexBuffer);
-            for (const auto& subMesh : mesh.subMeshes)
-                commands.drawIndexed(indexBuffer, subMesh.indices);
-
-            commands.endPass();
-
-            vzt::ImageBarrier imageBarrier{};
-            imageBarrier.image     = image;
-            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
-            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
-            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
-        }
-        commands.end();
     };
 
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        modelsUbo.update<vzt::Vec4>(vzt::Vec4{1.f}, i * uniformByteNb + modelsAlignment);
-
         vzt::BufferSpan modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
         vzt::BufferSpan materialSpan{modelsUbo, sizeof(vzt::Vec4), i * uniformByteNb + modelsAlignment};
 
@@ -210,10 +188,35 @@ int main(int /* argc */, char** /* argv */)
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
         std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
-        modelsUbo.update<vzt::Mat4>(matrices, submission->imageId * uniformByteNb);
 
-        // Submission of pre-recorded commands
         vzt::CommandBuffer commands = commandPool[submission->imageId];
+        commands.begin();
+        {
+            uint8_t* uboData = modelsUbo.map();
+            std::memcpy(uboData + submission->imageId * uniformByteNb, matrices.data(),
+                        matrices.size() * sizeof(vzt::Mat4));
+            modelsUbo.unMap();
+
+            commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader,
+                             vzt::BufferBarrier{modelsUbo, vzt::Access::TransferWrite, vzt::Access::UniformRead});
+
+            commands.beginPass(renderPass, frameBuffers[submission->imageId]);
+
+            commands.bind(pipeline, descriptorPool[submission->imageId]);
+            commands.bindVertexBuffer(vertexBuffer);
+            for (const auto& subMesh : mesh.subMeshes)
+                commands.drawIndexed(indexBuffer, subMesh.indices);
+
+            commands.endPass();
+
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
+            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
+        }
+        commands.end();
+
         graphicsQueue->submit(commands, *submission);
         if (!swapchain.present())
         {

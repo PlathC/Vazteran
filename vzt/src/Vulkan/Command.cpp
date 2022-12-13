@@ -9,7 +9,7 @@
 
 namespace vzt
 {
-    CommandBuffer::CommandBuffer(VkCommandBuffer handle) : m_handle(handle) {}
+    CommandBuffer::CommandBuffer(View<Device> device, VkCommandBuffer handle) : m_device(device), m_handle(handle) {}
 
     void CommandBuffer::barrier(PipelineBarrier barrier)
     {
@@ -282,6 +282,6 @@ namespace vzt
     CommandBuffer CommandPool::operator[](uint32_t bufferNumber)
     {
         assert(bufferNumber < m_commandBuffers.size() && "bufferNumber should be < than m_commandBuffers.size()");
-        return CommandBuffer(m_commandBuffers[bufferNumber]);
+        return CommandBuffer(m_device, m_commandBuffers[bufferNumber]);
     }
 } // namespace vzt

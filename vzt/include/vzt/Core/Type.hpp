@@ -27,12 +27,16 @@ namespace vzt
     };
 
     template <class Type>
+    struct OffsetSpan;
+
+    template <class Type>
     struct Span
     {
         Type*       data = nullptr;
         std::size_t size = 0;
 
         Span() = default;
+        Span(OffsetSpan<Type> span);
         Span(const Type& type);
         Span(Type* ptr, std::size_t size);
         Span(const std::vector<Type>& buffer);
@@ -42,6 +46,9 @@ namespace vzt
     };
 
     template <class Type>
+    struct OffsetCSpan;
+
+    template <class Type>
     struct CSpan
     {
         const Type* data = nullptr;
@@ -49,6 +56,8 @@ namespace vzt
 
         CSpan() = default;
         CSpan(Span<Type> span);
+        CSpan(OffsetSpan<Type> span);
+        CSpan(OffsetCSpan<Type> span);
         CSpan(const Type& span);
         CSpan(Type* ptr, std::size_t size);
         CSpan(const Type* ptr, std::size_t size);
@@ -63,11 +72,17 @@ namespace vzt
     {
         Type*       data   = nullptr;
         std::size_t size   = 0;
-        std::size_t offset = 0;
+        std::size_t offset = 0; // In bytes
 
         OffsetSpan() = default;
+        OffsetSpan(Span<Type> span);
+        OffsetSpan(CSpan<Type> span);
         OffsetSpan(Type* ptr, std::size_t size, std::size_t offset = 0u);
         OffsetSpan(Type& ptr, std::size_t size, std::size_t offset = 0u);
+        OffsetSpan(std::vector<Type>& buffer, std::size_t offset = 0u);
+
+        template <std::size_t Size>
+        OffsetSpan(std::array<Type, Size>& buffer, std::size_t offset = 0u);
     };
 
     template <class Type>
@@ -75,12 +90,17 @@ namespace vzt
     {
         const Type* data   = nullptr;
         std::size_t size   = 0;
-        std::size_t offset = 0;
+        std::size_t offset = 0; // In bytes
 
         OffsetCSpan() = default;
         OffsetCSpan(OffsetSpan<Type> span, std::size_t offset = 0u);
         OffsetCSpan(const Type* ptr, std::size_t size, std::size_t offset = 0u);
         OffsetCSpan(const Type& ptr, std::size_t size, std::size_t offset = 0u);
+
+        OffsetCSpan(const std::vector<Type>& buffer, std::size_t offset = 0u);
+
+        template <std::size_t Size>
+        OffsetCSpan(const std::array<Type, Size>& buffer, std::size_t offset = 0u);
     };
 
     template <class Type>

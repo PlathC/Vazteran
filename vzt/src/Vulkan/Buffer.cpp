@@ -1,7 +1,5 @@
 #include "vzt/Vulkan/Buffer.hpp"
 
-#include <cassert>
-
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Device.hpp"
 
@@ -23,6 +21,34 @@ namespace vzt
             return VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
 
         return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+    }
+
+    Buffer Buffer::fromData(View<Device> device, OffsetCSpan<uint8_t> data, BufferUsage usages, MemoryLocation location,
+                            bool mappable)
+    {
+        Buffer buffer{device, data.size, usages, location, mappable};
+
+        if (mappable)
+        {
+            uint8_t* bufferData = buffer.map();
+            std::memcpy(bufferData, data.data + data.offset, data.size);
+            buffer.unMap();
+        }
+        else
+        {
+            auto transferBuffer = fromData(device, data, BufferUsage::TransferSrc, MemoryLocation::Host, true);
+
+            uint8_t* tempStagingData = transferBuffer.map();
+            std::memcpy(tempStagingData, data.data, data.size);
+            transferBuffer.unMap();
+
+            View<Queue> queue = device->getQueues().front();
+            queue->oneShot([&transferBuffer, &buffer, &data](CommandBuffer& commands) {
+                commands.copy(transferBuffer, buffer, data.size, data.offset);
+            });
+        }
+
+        return buffer;
     }
 
     Buffer::Buffer(View<Device> device, std::size_t byteNb, BufferUsage usages, MemoryLocation location, bool mappable)
@@ -80,29 +106,11 @@ namespace vzt
 
     void Buffer::unMap() { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
 
-    void Buffer::update(CSpan<uint8_t> newData, const std::size_t offset)
+    uint64_t Buffer::getDeviceAddress() const
     {
-        assert(newData.size <= m_size && "Update must be less or equal to the size of the buffer.");
-
-        if (m_mappable)
-        {
-            uint8_t* data = map();
-            std::memcpy(data + offset, newData.data, newData.size);
-            unMap();
-        }
-        else
-        {
-            auto transferBuffer = fromData(m_device, newData, BufferUsage::TransferSrc, MemoryLocation::Host, true);
-
-            uint8_t* tempStagingData = transferBuffer.map();
-            std::memcpy(tempStagingData, newData.data, newData.size);
-            transferBuffer.unMap();
-
-            View<Queue> queue = m_device->getQueue(QueueType::Graphics);
-            queue->oneShot([this, &transferBuffer, &newData, &offset](CommandBuffer& commands) {
-                commands.copy(transferBuffer, *this, newData.size, 0, offset);
-            });
-        }
+        VkBufferDeviceAddressInfoKHR info{};
+        info.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+        info.buffer = m_handle;
+        return vkGetBufferDeviceAddress(m_device->getHandle(), &info);
     }
-
 } // namespace vzt

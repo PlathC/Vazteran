@@ -37,6 +37,11 @@ namespace vzt
     }
 
     template <class Type>
+    Span<Type>::Span(OffsetSpan<Type> span) : data(span.data), size(span.size)
+    {
+    }
+
+    template <class Type>
     Span<Type>::Span(const Type& type) : data(&type), size(1)
     {
     }
@@ -59,6 +64,16 @@ namespace vzt
 
     template <class Type>
     CSpan<Type>::CSpan(Span<Type> span) : data(span.data), size(span.size)
+    {
+    }
+
+    template <class Type>
+    CSpan<Type>::CSpan(OffsetSpan<Type> span) : data(span.data), size(span.size)
+    {
+    }
+
+    template <class Type>
+    CSpan<Type>::CSpan(OffsetCSpan<Type> span) : data(span.data), size(span.size)
     {
     }
 
@@ -89,6 +104,16 @@ namespace vzt
     }
 
     template <class Type>
+    OffsetSpan<Type>::OffsetSpan(Span<Type> span) : data(span.data), size(span.size)
+    {
+    }
+
+    template <class Type>
+    OffsetSpan<Type>::OffsetSpan(CSpan<Type> span) : data(span.data), size(span.size)
+    {
+    }
+
+    template <class Type>
     OffsetSpan<Type>::OffsetSpan(Type* ptr, std::size_t size, std::size_t offset)
         : data(ptr), size(size), offset(offset)
     {
@@ -101,10 +126,24 @@ namespace vzt
     }
 
     template <class Type>
+    OffsetSpan<Type>::OffsetSpan(std::vector<Type>& buffer, std::size_t offset)
+        : data(buffer.data()), size(buffer.size()), offset(offset)
+    {
+    }
+
+    template <class Type>
+    template <std::size_t Size>
+    OffsetSpan<Type>::OffsetSpan(std::array<Type, Size>& buffer, std::size_t offset)
+        : data(buffer.data()), size(buffer.size()), offset(offset)
+    {
+    }
+
+    template <class Type>
     OffsetCSpan<Type>::OffsetCSpan(OffsetSpan<Type> span, std::size_t offset)
         : data(span.data), size(span.size), offset(offset)
     {
     }
+
     template <class Type>
     OffsetCSpan<Type>::OffsetCSpan(const Type* ptr, std::size_t size, std::size_t offset)
         : data(ptr), size(size), offset(offset)
@@ -113,6 +152,19 @@ namespace vzt
     template <class Type>
     OffsetCSpan<Type>::OffsetCSpan(const Type& ptr, std::size_t size, std::size_t offset)
         : data(ptr), size(size), offset(offset)
+    {
+    }
+
+    template <class Type>
+    OffsetCSpan<Type>::OffsetCSpan(const std::vector<Type>& buffer, std::size_t offset)
+        : data(buffer.data()), size(buffer.size()), offset(offset)
+    {
+    }
+
+    template <class Type>
+    template <std::size_t Size>
+    OffsetCSpan<Type>::OffsetCSpan(const std::array<Type, Size>& buffer, std::size_t offset)
+        : data(buffer.data()), size(buffer.size()), offset(offset)
     {
     }
 
