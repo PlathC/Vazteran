@@ -104,12 +104,6 @@ namespace vzt
         if (!m_enableValidation)
             return;
 
-        auto vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
-            vkGetInstanceProcAddr(m_handle, "vkCreateDebugUtilsMessengerEXT"));
-
-        if (!vkCreateDebugUtilsMessengerEXT)
-            logger::error("Failed to create debug messenger");
-
         vkCheck(vkCreateDebugUtilsMessengerEXT(m_handle, &debugMessengerCreate, nullptr, &m_debugMessenger),
                 "Failed to create debug messenger");
     }
