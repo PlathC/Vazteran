@@ -1,9 +1,13 @@
-#ifndef VZT_CORE_VULKAN_HPP
-#define VZT_CORE_VULKAN_HPP
+#ifndef VZT_VULKAN_CORE_HPP
+#define VZT_VULKAN_CORE_HPP
 
-#include <unordered_map>
+#include <string_view>
 
-#include <vulkan/vulkan_core.h>
+#define VMA_STATIC_VULKAN_FUNCTIONS 0
+#define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#define VK_NO_PROTOTYPES
+#include <vk_mem_alloc.h>
+#include <volk.h>
 
 #define VZT_DEFINE_TO_VULKAN_FUNCTION(BaseType, VulkanType) \
     inline constexpr VulkanType toVulkan(const BaseType l)  \
@@ -18,4 +22,4 @@ namespace vzt
     uint32_t getAPIVersion();
 } // namespace vzt
 
-#endif // VZT_CORE_VULKAN_HPP
+#endif // VZT_VULKAN_CORE_HPP

@@ -1,10 +1,6 @@
 #ifndef VZT_VULKAN_FRAMEBUFFER_HPP
 #define VZT_VULKAN_FRAMEBUFFER_HPP
 
-#include <vulkan/vulkan_core.h>
-
-#include "vzt/Core/Math.hpp"
-#include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Image.hpp"
 
 namespace vzt

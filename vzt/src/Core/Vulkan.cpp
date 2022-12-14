@@ -1,8 +1,5 @@
-#include "vzt/Core/Vulkan.hpp"
-
-#include <vulkan/vulkan_core.h>
-
 #include "vzt/Core/Logger.hpp"
+#include "vzt/Vulkan/Core.hpp"
 
 namespace vzt
 {

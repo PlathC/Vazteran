@@ -1,7 +1,8 @@
 #include "vzt/Vulkan/Instance.hpp"
 
+#include <stdexcept>
+
 #include "vzt/Core/Logger.hpp"
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Window.hpp"
 
 namespace vzt
@@ -57,6 +58,9 @@ namespace vzt
         : m_enableValidation(std::move(builder.enableValidation)),
           m_validationLayers(std::move(builder.validationLayers)), m_extensions(std::move(builder.extensions))
     {
+        if (volkInitialize() != VK_SUCCESS)
+            throw std::runtime_error("Failed to find Vulkan.");
+
         if (m_enableValidation && !hasValidationLayers(m_validationLayers))
             logger::error("Instance configuration validation failed");
 
@@ -95,6 +99,7 @@ namespace vzt
         }
 
         vkCheck(vkCreateInstance(&createInfo, nullptr, &m_handle), "Failed to create Vulkan instance");
+        volkLoadInstance(m_handle);
 
         if (!m_enableValidation)
             return;
@@ -139,9 +144,7 @@ namespace vzt
         if (m_handle == VK_NULL_HANDLE)
             return;
 
-        const auto vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
-            vkGetInstanceProcAddr(m_handle, "vkDestroyDebugUtilsMessengerEXT"));
-        if (vkDestroyDebugUtilsMessengerEXT && m_debugMessenger != VK_NULL_HANDLE)
+        if (m_debugMessenger != VK_NULL_HANDLE)
             vkDestroyDebugUtilsMessengerEXT(m_handle, m_debugMessenger, nullptr);
 
         vkDestroyInstance(m_handle, nullptr);
@@ -161,11 +164,11 @@ namespace vzt
         {
             const auto device = PhysicalDevice(devices[i]);
             if (device.isSuitable(configuration, surface))
-                return Device(this, device, configuration, surface);
+                return {this, device, configuration, surface};
         }
 
         logger::error("Can't find suitable device, defaulting.");
-        return Device(this, PhysicalDevice(devices[0]), configuration, surface);
+        return {this, PhysicalDevice(devices[0]), configuration, surface};
     }
 
 } // namespace vzt

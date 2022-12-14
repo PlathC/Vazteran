@@ -3,13 +3,9 @@ project(Vazteran)
 
 set(VAZTERAN_VERSION 0.1)
 
-add_subdirectory(extern)
-
 find_package(Vulkan REQUIRED FATAL_ERROR)
 
-if( NOT TARGET Vulkan::Vulkan)
-    message("Can't find fulkan")
-endif()
+add_subdirectory(extern)
 
 set(VZT_HEADERS
     include/vzt/Core/Logger.hpp
@@ -17,7 +13,6 @@ set(VZT_HEADERS
     include/vzt/Core/Math.hpp
     include/vzt/Core/Meta.hpp
     include/vzt/Core/Type.hpp
-    include/vzt/Core/Vulkan.hpp
 
     include/vzt/Data/Camera.hpp
 
@@ -29,6 +24,7 @@ set(VZT_HEADERS
 
     include/vzt/Vulkan/Buffer.hpp
     include/vzt/Vulkan/Command.hpp
+    include/vzt/Vulkan/Core.hpp
     include/vzt/Vulkan/Descriptor.hpp
     include/vzt/Vulkan/Device.hpp
     include/vzt/Vulkan/FrameBuffer.hpp
@@ -92,7 +88,6 @@ target_include_directories(Vazteran PRIVATE ${VZT_EXTERN_INCLUDES} include/)
 target_link_libraries(     Vazteran PRIVATE ${VZT_EXTERN_LIBRARIES})
 target_compile_features(   Vazteran PRIVATE cxx_std_17)
 
-target_link_libraries(     Vazteran PUBLIC  Vulkan::Vulkan)
 target_include_directories(Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_INCLUDES})
 target_link_libraries(     Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_LIBRARIES})
 

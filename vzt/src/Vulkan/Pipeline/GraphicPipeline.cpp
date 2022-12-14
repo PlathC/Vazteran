@@ -47,10 +47,16 @@ namespace vzt
     GraphicPipeline::~GraphicPipeline()
     {
         if (m_handle != VK_NULL_HANDLE)
-            vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        }
 
         if (m_pipelineLayout != VK_NULL_HANDLE)
-            vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        }
     }
 
     std::tuple<VkViewport, VkRect2D>               toVulkan(const Viewport& viewport);
@@ -76,7 +82,8 @@ namespace vzt
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts    = &descriptorSetLayout;
 
-        vkCheck(vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
                 "failed to create pipeline layout!");
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -173,7 +180,8 @@ namespace vzt
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipelineInfo.basePipelineIndex  = -1;             // Optional
 
-        vkCheck(vkCreateGraphicsPipelines(m_device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_handle),
+        vkCheck(table.vkCreateGraphicsPipelines(m_device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                                &m_handle),
                 "Failed to create graphics pipeline.");
 
         m_compiled = true;
@@ -190,10 +198,16 @@ namespace vzt
     void GraphicPipeline::cleanup()
     {
         if (m_handle != VK_NULL_HANDLE)
-            vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        }
 
         if (m_pipelineLayout != VK_NULL_HANDLE)
-            vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        }
 
         m_compiled = false;
     }

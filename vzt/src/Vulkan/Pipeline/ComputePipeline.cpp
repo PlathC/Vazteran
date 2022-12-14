@@ -39,7 +39,8 @@ namespace vzt
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts    = &descriptorSetLayout;
 
-        vkCheck(vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
                 "failed to create pipeline layout!");
 
         VkComputePipelineCreateInfo pipelineInfo{};
@@ -61,8 +62,9 @@ namespace vzt
 
         pipelineInfo.stage = createInfo;
 
-        vkCheck(vkCreateComputePipelines(m_device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_handle),
-                "Failed to create compute pipeline.");
+        vkCheck(
+            table.vkCreateComputePipelines(m_device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_handle),
+            "Failed to create compute pipeline.");
 
         m_compiled = true;
     }
@@ -70,10 +72,16 @@ namespace vzt
     void ComputePipeline::cleanup()
     {
         if (m_handle != VK_NULL_HANDLE)
-            vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        }
 
         if (m_pipelineLayout != VK_NULL_HANDLE)
-            vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        }
 
         m_compiled = false;
     }

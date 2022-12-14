@@ -19,13 +19,21 @@ set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
 add_subdirectory(glslang)
 
+if (WIN32)
+   set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+endif()
+add_subdirectory(volk)
+
+
 # Prepare data for parent scope
 set(VZT_EXTERN_PUBLIC_INCLUDES
     ${VZT_EXTERN_INCLUDES}
 
     "${CMAKE_CURRENT_SOURCE_DIR}/glslang"
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
+    "${CMAKE_CURRENT_SOURCE_DIR}/volk"
     "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
+    ${Vulkan_INCLUDE_DIRS}
 )
 
 set(VZT_EXTERN_PUBLIC_LIBRARIES
@@ -33,6 +41,8 @@ set(VZT_EXTERN_PUBLIC_LIBRARIES
 
     fmt
     glm::glm
+    volk
+    Vulkan::Vulkan
 )
 
 set(VZT_EXTERN_LIBRARIES
@@ -41,7 +51,6 @@ set(VZT_EXTERN_LIBRARIES
     glslang
     SDL2::SDL2 SDL2::SDL2main
     SPIRV 
-    Vulkan::Vulkan
 )
 
 set(VZT_EXTERN_SOURCES

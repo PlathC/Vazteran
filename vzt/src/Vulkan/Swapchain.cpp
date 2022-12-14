@@ -1,13 +1,8 @@
 #include "vzt/Vulkan/Swapchain.hpp"
 
-#include <cassert>
-
-#include <vulkan/vulkan_core.h>
-
 #include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/Image.hpp"
-#include "vzt/Vulkan/Instance.hpp"
 #include "vzt/Vulkan/Surface.hpp"
 
 namespace vzt

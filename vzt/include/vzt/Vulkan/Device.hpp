@@ -5,12 +5,9 @@
 #include <set>
 #include <vector>
 
-#include <vk_mem_alloc.h>
-
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
-#include "vzt/Vulkan/Image.hpp"
+#include "vzt/Vulkan/Format.hpp"
 
 namespace vzt
 {
@@ -101,13 +98,15 @@ namespace vzt
         View<Queue>              getQueue(QueueType type) const;
         View<Queue>              getPresentQueue() const;
 
-        inline VkDevice       getHandle() const;
-        inline VmaAllocator   getAllocator() const;
-        inline PhysicalDevice getHardware() const;
+        inline VkDevice               getHandle() const;
+        inline const VolkDeviceTable& getFunctionTable() const;
+        inline VmaAllocator           getAllocator() const;
+        inline PhysicalDevice         getHardware() const;
 
       private:
-        View<Instance> m_instance;
-        PhysicalDevice m_device;
+        View<Instance>  m_instance;
+        PhysicalDevice  m_device;
+        VolkDeviceTable m_table;
 
         VkDevice      m_handle    = VK_NULL_HANDLE;
         VmaAllocator  m_allocator = VK_NULL_HANDLE;

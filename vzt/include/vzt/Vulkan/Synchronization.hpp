@@ -1,7 +1,6 @@
 #ifndef VZT_VULKAN_SYNCHRONIZATION_HPP
 #define VZT_VULKAN_SYNCHRONIZATION_HPP
 
-#include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Image.hpp"
 
 namespace vzt

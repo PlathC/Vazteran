@@ -75,9 +75,11 @@ namespace vzt
 
         VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo{};
         accelerationStructureBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-        vkGetAccelerationStructureBuildSizesKHR(m_device->getHandle(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-                                                &accelerationStructureBuildGeometryInfo, &maxPrimitiveCount,
-                                                &accelerationStructureBuildSizesInfo);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkGetAccelerationStructureBuildSizesKHR(
+            m_device->getHandle(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+            &accelerationStructureBuildGeometryInfo, &maxPrimitiveCount, &accelerationStructureBuildSizesInfo);
 
         m_size = accelerationStructureBuildSizesInfo.accelerationStructureSize;
         m_buffer =
@@ -93,16 +95,18 @@ namespace vzt
         accelerationStructureCreate_info.buffer = m_buffer.getHandle();
         accelerationStructureCreate_info.size   = m_size;
         accelerationStructureCreate_info.type   = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-        vkCheck(vkCreateAccelerationStructureKHR(m_device->getHandle(), &accelerationStructureCreate_info, nullptr,
-                                                 &m_handle),
+
+        vkCheck(table.vkCreateAccelerationStructureKHR(m_device->getHandle(), &accelerationStructureCreate_info,
+                                                       nullptr, &m_handle),
                 "Failed to create acceleration structure.");
 
         // AS device address
         VkAccelerationStructureDeviceAddressInfoKHR accelerationDeviceAddressInfo{};
         accelerationDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
         accelerationDeviceAddressInfo.accelerationStructure = m_handle;
+
         m_deviceAddress =
-            vkGetAccelerationStructureDeviceAddressKHR(m_device->getHandle(), &accelerationDeviceAddressInfo);
+            table.vkGetAccelerationStructureDeviceAddressKHR(m_device->getHandle(), &accelerationDeviceAddressInfo);
 
         VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
         accelerationBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -161,6 +165,9 @@ namespace vzt
     BottomGeometryAs::~BottomGeometryAs()
     {
         if (m_handle != VK_NULL_HANDLE)
-            vkDestroyAccelerationStructureKHR(m_device->getHandle(), m_handle, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyAccelerationStructureKHR(m_device->getHandle(), m_handle, nullptr);
+        }
     }
 } // namespace vzt

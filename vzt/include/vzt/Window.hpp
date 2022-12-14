@@ -3,7 +3,6 @@
 
 #include <atomic>
 
-#include "vzt/Core/Math.hpp"
 #include "vzt/Ui/Input.hpp"
 #include "vzt/Vulkan/Instance.hpp"
 
@@ -13,7 +12,7 @@ namespace vzt
     class Window
     {
       public:
-        Window(std::string title, const uint32_t width = 1280, const uint32_t height = 720);
+        Window(std::string title, uint32_t width = 1280, uint32_t height = 720);
 
         Window(const Window&)            = delete;
         Window& operator=(const Window&) = delete;
@@ -44,9 +43,7 @@ namespace vzt
         uint32_t    m_width;
         uint32_t    m_height;
 
-        SDL_Window*    m_handle = nullptr;
-        View<Instance> m_instance;
-        VkSurfaceKHR   m_surface = VK_NULL_HANDLE;
+        SDL_Window* m_handle = nullptr;
 
         Input    m_inputs;
         uint64_t m_lastTimeStep = 0;

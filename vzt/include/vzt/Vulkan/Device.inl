@@ -10,6 +10,7 @@ namespace vzt
     inline VkPhysicalDeviceProperties PhysicalDevice::getProperties() const { return m_properties; }
     inline VkPhysicalDevice           PhysicalDevice::getHandle() const { return m_handle; }
     inline VkDevice                   Device::getHandle() const { return m_handle; }
+    inline const VolkDeviceTable&     Device::getFunctionTable() const { return m_table; }
     inline VmaAllocator               Device::getAllocator() const { return m_allocator; }
     inline PhysicalDevice             Device::getHardware() const { return m_device; }
     inline bool         Device::isSameQueue(const Queue& q1, const Queue& q2) { return q1.getType() < q2.getType(); }

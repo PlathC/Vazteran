@@ -1,12 +1,9 @@
 #ifndef VZT_VULKAN_IMAGE_HPP
 #define VZT_VULKAN_IMAGE_HPP
 
-#include <vk_mem_alloc.h>
-
 #include "vzt/Core/Math.hpp"
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Format.hpp"
 
 namespace vzt

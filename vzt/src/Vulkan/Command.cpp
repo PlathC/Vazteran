@@ -60,9 +60,10 @@ namespace vzt
             bufferBarriers.emplace_back(std::move(bufferBarrier));
         }
 
-        vkCmdPipelineBarrier(m_handle, toVulkan(barrier.src), toVulkan(barrier.dst), toVulkan(barrier.dependency), 0,
-                             nullptr, static_cast<uint32_t>(bufferBarriers.size()), bufferBarriers.data(),
-                             static_cast<uint32_t>(imageBarriers.size()), imageBarriers.data());
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdPipelineBarrier(m_handle, toVulkan(barrier.src), toVulkan(barrier.dst), toVulkan(barrier.dependency),
+                                   0, nullptr, static_cast<uint32_t>(bufferBarriers.size()), bufferBarriers.data(),
+                                   static_cast<uint32_t>(imageBarriers.size()), imageBarriers.data());
     }
 
     void CommandBuffer::barrier(PipelineStage src, PipelineStage dst, ImageBarrier imageBarrier)
@@ -86,8 +87,9 @@ namespace vzt
         subresource.baseArrayLayer = 0;
         subresource.layerCount     = 1;
 
-        VkClearColorValue clearColorValue{clearColor.x, clearColor.y, clearColor.z, clearColor.w};
-        vkCmdClearColorImage(m_handle, image->getHandle(), toVulkan(layout), &clearColorValue, 1, &subresource);
+        VkClearColorValue      clearColorValue{clearColor.x, clearColor.y, clearColor.z, clearColor.w};
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdClearColorImage(m_handle, image->getHandle(), toVulkan(layout), &clearColorValue, 1, &subresource);
     }
 
     void CommandBuffer::copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset,
@@ -97,32 +99,41 @@ namespace vzt
         copyRegion.size      = size;
         copyRegion.srcOffset = srcOffset;
         copyRegion.dstOffset = dstOffset;
-        vkCmdCopyBuffer(m_handle, src.getHandle(), dst.getHandle(), 1, &copyRegion);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdCopyBuffer(m_handle, src.getHandle(), dst.getHandle(), 1, &copyRegion);
     }
 
     void CommandBuffer::bind(const GraphicPipeline& graphicPipeline)
     {
-        vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getHandle());
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getHandle());
     }
 
     void CommandBuffer::bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set)
     {
         bind(graphicPipeline);
         const VkDescriptorSet descriptorSet = set.getHandle();
-        vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getLayout(), 0, 1,
-                                &descriptorSet, 0, nullptr);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getLayout(), 0, 1,
+                                      &descriptorSet, 0, nullptr);
     }
 
     void CommandBuffer::bind(const ComputePipeline& computePipeline)
     {
-        vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.getHandle());
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.getHandle());
     }
+
     void CommandBuffer::bind(const ComputePipeline& computePipeline, const DescriptorSet& set)
     {
         bind(computePipeline);
         const VkDescriptorSet descriptorSet = set.getHandle();
-        vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.getLayout(), 0, 1,
-                                &descriptorSet, 0, nullptr);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.getLayout(), 0, 1,
+                                      &descriptorSet, 0, nullptr);
     }
 
     void CommandBuffer::bindVertexBuffer(const Buffer& buffer)
@@ -130,27 +141,37 @@ namespace vzt
         VkBuffer     vertexBuffers[] = {buffer.getHandle()};
         VkDeviceSize offsets[]       = {0};
 
-        vkCmdBindVertexBuffers(m_handle, 0, 1, vertexBuffers, offsets);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBindVertexBuffers(m_handle, 0, 1, vertexBuffers, offsets);
     }
 
     void CommandBuffer::bindIndexBuffer(const Buffer& buffer, std::size_t index)
     {
-        vkCmdBindIndexBuffer(m_handle, buffer.getHandle(), index * sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBindIndexBuffer(m_handle, buffer.getHandle(), index * sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
     }
 
-    void CommandBuffer::dispatch(uint32_t x, uint32_t y, uint32_t z) { vkCmdDispatch(m_handle, x, y, z); }
+    void CommandBuffer::dispatch(uint32_t x, uint32_t y, uint32_t z)
+    {
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdDispatch(m_handle, x, y, z);
+    }
 
     void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t vertexOffset,
                              uint32_t instanceOffset)
     {
-        vkCmdDraw(m_handle, vertexCount, instanceCount, vertexOffset, instanceOffset);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdDraw(m_handle, vertexCount, instanceCount, vertexOffset, instanceOffset);
     }
 
     void CommandBuffer::drawIndexed(const Buffer& indexBuffer, const Range<>& range, uint32_t instanceCount,
                                     int32_t vertexOffset, uint32_t instanceOffset)
     {
         bindIndexBuffer(indexBuffer, range.start);
-        vkCmdDrawIndexed(m_handle, static_cast<uint32_t>(range.size()), instanceCount, 0, vertexOffset, instanceOffset);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdDrawIndexed(m_handle, static_cast<uint32_t>(range.size()), instanceCount, 0, vertexOffset,
+                               instanceOffset);
     }
 
     void CommandBuffer::setViewport(const Extent2D& size, float minDepth, float maxDepth)
@@ -162,7 +183,9 @@ namespace vzt
         viewport.height   = static_cast<float>(size.height);
         viewport.minDepth = minDepth;
         viewport.maxDepth = maxDepth;
-        vkCmdSetViewport(m_handle, 0, 1, &viewport);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdSetViewport(m_handle, 0, 1, &viewport);
     }
 
     void CommandBuffer::setScissor(const Extent2D& size, Vec2i offset)
@@ -170,7 +193,9 @@ namespace vzt
         VkRect2D scissor;
         scissor.extent = {size.width, size.height};
         scissor.offset = VkOffset2D{offset.x, offset.y};
-        vkCmdSetScissor(m_handle, 0, 1, &scissor);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdSetScissor(m_handle, 0, 1, &scissor);
     }
 
     void CommandBuffer::beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer)
@@ -203,10 +228,15 @@ namespace vzt
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
         renderPassInfo.pClearValues    = clearColors.data();
 
-        vkCmdBeginRenderPass(m_handle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBeginRenderPass(m_handle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    void CommandBuffer::endPass() { vkCmdEndRenderPass(m_handle); }
+    void CommandBuffer::endPass()
+    {
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdEndRenderPass(m_handle);
+    }
 
     void CommandBuffer::buildAs(BottomGeometryAsBuilder& builder)
     {
@@ -248,8 +278,9 @@ namespace vzt
 
         std::vector accelerationBuildStructureRangeInfos = {&accelerationStructureBuildRangeInfo};
 
-        vkCmdBuildAccelerationStructuresKHR(m_handle, 1, &accelerationBuildGeometryInfo,
-                                            accelerationBuildStructureRangeInfos.data());
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBuildAccelerationStructuresKHR(m_handle, 1, &accelerationBuildGeometryInfo,
+                                                  accelerationBuildStructureRangeInfos.data());
     }
 
     void CommandBuffer::begin()
@@ -257,10 +288,16 @@ namespace vzt
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        vkCheck(vkBeginCommandBuffer(m_handle, &beginInfo), "Failed to start the recording of the command buffer");
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkBeginCommandBuffer(m_handle, &beginInfo),
+                "Failed to start the recording of the command buffer");
     }
 
-    void CommandBuffer::end() { vkCheck(vkEndCommandBuffer(m_handle), "Failed to end command buffer recording"); }
+    void CommandBuffer::end()
+    {
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkEndCommandBuffer(m_handle), "Failed to end command buffer recording");
+    }
 
     CommandPool::CommandPool(View<Device> device, View<Queue> queue, uint32_t bufferNb) : m_device(device)
     {
@@ -268,7 +305,9 @@ namespace vzt
         commandPoolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         commandPoolInfo.queueFamilyIndex = queue->getId();
         commandPoolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        vkCheck(vkCreateCommandPool(m_device->getHandle(), &commandPoolInfo, nullptr, &m_handle),
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkCreateCommandPool(m_device->getHandle(), &commandPoolInfo, nullptr, &m_handle),
                 "Failed to create command pool.");
 
         allocateCommandBuffers(bufferNb);
@@ -299,8 +338,10 @@ namespace vzt
         m_device->wait();
 
         const uint32_t commandBufferNb = static_cast<uint32_t>(m_commandBuffers.size());
-        vkFreeCommandBuffers(m_device->getHandle(), m_handle, commandBufferNb, m_commandBuffers.data());
-        vkDestroyCommandPool(m_device->getHandle(), m_handle, nullptr);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkFreeCommandBuffers(m_device->getHandle(), m_handle, commandBufferNb, m_commandBuffers.data());
+        table.vkDestroyCommandPool(m_device->getHandle(), m_handle, nullptr);
     }
 
     void CommandPool::allocateCommandBuffers(const uint32_t count)
@@ -308,7 +349,9 @@ namespace vzt
         if (!m_commandBuffers.empty())
         {
             const uint32_t commandBufferNb = static_cast<uint32_t>(m_commandBuffers.size());
-            vkFreeCommandBuffers(m_device->getHandle(), m_handle, commandBufferNb, m_commandBuffers.data());
+
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkFreeCommandBuffers(m_device->getHandle(), m_handle, commandBufferNb, m_commandBuffers.data());
             m_commandBuffers.clear();
         }
 
@@ -320,7 +363,8 @@ namespace vzt
         commandBufferAllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         commandBufferAllocInfo.commandBufferCount = count;
 
-        vkCheck(vkAllocateCommandBuffers(m_device->getHandle(), &commandBufferAllocInfo, m_commandBuffers.data()),
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkAllocateCommandBuffers(m_device->getHandle(), &commandBufferAllocInfo, m_commandBuffers.data()),
                 "Failed to allocate command buffers");
     }
 

@@ -1,8 +1,6 @@
 #ifndef VZT_VULKAN_TEXTURE_HPP
 #define VZT_VULKAN_TEXTURE_HPP
 
-#include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Image.hpp"
 
 namespace vzt

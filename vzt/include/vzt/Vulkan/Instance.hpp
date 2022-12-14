@@ -1,12 +1,6 @@
 #ifndef VZT_VULKAN_INSTANCE_HPP
 #define VZT_VULKAN_INSTANCE_HPP
 
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include <vulkan/vulkan_core.h>
-
 #include "vzt/Vulkan/Device.hpp"
 
 namespace vzt

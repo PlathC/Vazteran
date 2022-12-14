@@ -31,8 +31,6 @@ namespace vzt
         std::swap(m_width, other.m_width);
         std::swap(m_height, other.m_height);
         std::swap(m_handle, other.m_handle);
-        std::swap(m_instance, other.m_instance);
-        std::swap(m_surface, other.m_surface);
         std::swap(m_inputs, other.m_inputs);
     }
 
@@ -42,8 +40,6 @@ namespace vzt
         std::swap(m_width, other.m_width);
         std::swap(m_height, other.m_height);
         std::swap(m_handle, other.m_handle);
-        std::swap(m_instance, other.m_instance);
-        std::swap(m_surface, other.m_surface);
         std::swap(m_inputs, other.m_inputs);
 
         return *this;

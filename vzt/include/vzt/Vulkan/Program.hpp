@@ -1,12 +1,11 @@
 #ifndef VZT_VULKAN_PROGRAM_HPP
 #define VZT_VULKAN_PROGRAM_HPP
 
-#include <cstdint>
 #include <unordered_set>
 #include <vector>
 
 #include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
+#include "vzt/Vulkan/Core.hpp"
 
 namespace vzt
 {

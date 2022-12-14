@@ -1,13 +1,10 @@
 #include "vzt/Vulkan/Device.hpp"
 
-#include <array>
-#include <set>
 #include <unordered_map>
 
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Instance.hpp"
 #include "vzt/Vulkan/Surface.hpp"
@@ -134,7 +131,7 @@ namespace vzt
 
         constexpr VkImageTiling        tiling   = VK_IMAGE_TILING_OPTIMAL;
         constexpr VkFormatFeatureFlags features = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        for (vzt::Format format : Candidates)
+        for (Format format : Candidates)
         {
             VkFormatProperties props;
             vkGetPhysicalDeviceFormatProperties(m_handle, toVulkan(format), &props);
@@ -212,22 +209,27 @@ namespace vzt
 
         vkCheck(vkCreateDevice(m_device.getHandle(), &createInfo, nullptr, &m_handle),
                 "Failed to create logical device.");
+        volkLoadDeviceTable(&m_table, m_handle);
 
         queueTypes = configuration.queueTypes;
-
-        uint32_t presentQueueId = ~0;
         for (auto [type, id] : queueIds)
             m_queues.emplace(this, type, id, m_device.canQueueFamilyPresent(id, surface));
 
         VmaAllocatorCreateInfo allocatorInfo = {};
-        allocatorInfo                        = {};
-
-        allocatorInfo.physicalDevice   = m_device.getHandle();
-        allocatorInfo.device           = m_handle;
-        allocatorInfo.instance         = instance->getHandle();
-        allocatorInfo.vulkanApiVersion = getAPIVersion();
+        allocatorInfo.physicalDevice         = m_device.getHandle();
+        allocatorInfo.device                 = m_handle;
+        allocatorInfo.instance               = instance->getHandle();
+        allocatorInfo.vulkanApiVersion       = getAPIVersion();
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+
+        // To use VMA_DYNAMIC_VULKAN_FUNCTIONS in new versions of VMA you now have to pass
+        // VmaVulkanFunctions::vkGetInstanceProcAddr and vkGetDeviceProcAddr as
+        // VmaAllocatorCreateInfo::pVulkanFunctions. Other members can be null.
+        VmaVulkanFunctions vmaVulkanFunctions{};
+        vmaVulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+        vmaVulkanFunctions.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
+        allocatorInfo.pVulkanFunctions           = &vmaVulkanFunctions;
 
         vkCheck(vmaCreateAllocator(&allocatorInfo, &m_allocator), "Failed to create allocator.");
     }
@@ -235,16 +237,22 @@ namespace vzt
     Device::Device(Device&& other) noexcept : m_device(std::move(other.m_device))
     {
         std::swap(m_instance, other.m_instance);
+        std::swap(m_table, other.m_table);
         std::swap(m_handle, other.m_handle);
         std::swap(m_allocator, other.m_allocator);
+        std::swap(m_configuration, other.m_configuration);
+        std::swap(m_queues, other.m_queues);
     }
 
     Device& Device::operator=(Device&& other) noexcept
     {
         std::swap(m_instance, other.m_instance);
         std::swap(m_device, other.m_device);
+        std::swap(m_table, other.m_table);
         std::swap(m_handle, other.m_handle);
         std::swap(m_allocator, other.m_allocator);
+        std::swap(m_configuration, other.m_configuration);
+        std::swap(m_queues, other.m_queues);
 
         return *this;
     }
@@ -257,10 +265,10 @@ namespace vzt
         wait();
 
         vmaDestroyAllocator(m_allocator);
-        vkDestroyDevice(m_handle, nullptr);
+        m_table.vkDestroyDevice(m_handle, nullptr);
     }
 
-    void Device::wait() const { vkDeviceWaitIdle(m_handle); }
+    void Device::wait() const { m_table.vkDeviceWaitIdle(m_handle); }
 
     std::vector<View<Queue>> Device::getQueues() const
     {
@@ -299,7 +307,8 @@ namespace vzt
     Queue::Queue(View<Device> device, QueueType type, uint32_t id, bool canPresent)
         : m_device(device), m_type(type), m_id(id), m_canPresent(canPresent)
     {
-        vkGetDeviceQueue(device->getHandle(), id, 0, &m_handle);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkGetDeviceQueue(device->getHandle(), id, 0, &m_handle);
     }
 
     void Queue::oneShot(const SingleTimeCommandFunction& function) const
@@ -333,8 +342,9 @@ namespace vzt
         submitInfo.commandBufferCount            = 1;
         submitInfo.pCommandBuffers               = &commands;
 
-        vkResetFences(m_device->getHandle(), 1, &submission.frameComplete);
-        vkCheck(vkQueueSubmit(m_handle, 1, &submitInfo, submission.frameComplete),
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkResetFences(m_device->getHandle(), 1, &submission.frameComplete);
+        vkCheck(table.vkQueueSubmit(m_handle, 1, &submitInfo, submission.frameComplete),
                 "Failed to submit swapchain submission");
     }
 
@@ -347,8 +357,8 @@ namespace vzt
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers    = &commands;
 
-        vkQueueSubmit(m_handle, 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(m_handle);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkQueueSubmit(m_handle, 1, &submitInfo, VK_NULL_HANDLE);
+        table.vkQueueWaitIdle(m_handle);
     }
-
 } // namespace vzt

@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#include <vulkan/vulkan_core.h>
-
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"

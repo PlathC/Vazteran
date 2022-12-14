@@ -1,12 +1,9 @@
 #ifndef VZT_VULKAN_SURFACE_HPP
 #define VZT_VULKAN_SURFACE_HPP
 
-#include <vector>
-
-#include <vulkan/vulkan_core.h>
-
 #include "vzt/Core/Math.hpp"
 #include "vzt/Core/Type.hpp"
+#include "vzt/Vulkan/Core.hpp"
 
 namespace vzt
 {

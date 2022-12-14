@@ -111,6 +111,8 @@ namespace vzt
         VkBufferDeviceAddressInfoKHR info{};
         info.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         info.buffer = m_handle;
-        return vkGetBufferDeviceAddress(m_device->getHandle(), &info);
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        return table.vkGetBufferDeviceAddress(m_device->getHandle(), &info);
     }
 } // namespace vzt

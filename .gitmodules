@@ -22,3 +22,6 @@
 [submodule "vzt/extern/tinyobjloader"]
 	path = vzt/extern/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "vzt/extern/volk"]
+	path = vzt/extern/volk
+	url = https://github.com/zeux/volk.git

@@ -1,10 +1,10 @@
 #ifndef VZT_VULKAN_DESCRIPTOR_HPP
 #define VZT_VULKAN_DESCRIPTOR_HPP
 
+#include <unordered_map>
 #include <unordered_set>
 #include <variant>
 
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Image.hpp"
 #include "vzt/Vulkan/Texture.hpp"

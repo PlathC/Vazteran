@@ -1,7 +1,7 @@
 #ifndef VZT_VULKAN_FORMAT_HPP
 #define VZT_VULKAN_FORMAT_HPP
 
-#include "vzt/Core/Vulkan.hpp"
+#include "vzt/Vulkan/Core.hpp"
 
 namespace vzt
 {

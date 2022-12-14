@@ -1,13 +1,9 @@
 #ifndef VZT_VULKAN_BUFFER_HPP
 #define VZT_VULKAN_BUFFER_HPP
 
-#include <functional>
-
-#include <vk_mem_alloc.h>
-
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
+#include "vzt/Vulkan/Core.hpp"
 
 namespace vzt
 {

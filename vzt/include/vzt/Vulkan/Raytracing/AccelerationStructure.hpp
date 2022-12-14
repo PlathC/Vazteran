@@ -3,9 +3,6 @@
 
 #include <variant>
 
-#include "vzt/Core/Meta.hpp"
-#include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Format.hpp"
 

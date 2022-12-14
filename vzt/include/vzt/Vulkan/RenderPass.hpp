@@ -1,10 +1,6 @@
 #ifndef VZT_RENDERPASS_HPP
 #define VZT_RENDERPASS_HPP
 
-#include "vzt/Core/Math.hpp"
-#include "vzt/Core/Meta.hpp"
-#include "vzt/Core/Type.hpp"
-#include "vzt/Core/Vulkan.hpp"
 #include "vzt/Vulkan/Image.hpp"
 #include "vzt/Vulkan/Synchronization.hpp"
 

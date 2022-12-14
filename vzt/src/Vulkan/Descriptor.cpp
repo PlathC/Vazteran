@@ -3,7 +3,6 @@
 #include <cassert>
 
 #include "vzt/Vulkan/Device.hpp"
-#include "vzt/Vulkan/Image.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
 namespace vzt
@@ -51,7 +50,10 @@ namespace vzt
     DescriptorLayout::~DescriptorLayout()
     {
         if (m_handle != VK_NULL_HANDLE)
-            vkDestroyDescriptorSetLayout(m_device->getHandle(), m_handle, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyDescriptorSetLayout(m_device->getHandle(), m_handle, nullptr);
+        }
     }
 
     void DescriptorLayout::addBinding(uint32_t binding, DescriptorType type)
@@ -66,7 +68,10 @@ namespace vzt
             return;
 
         if (m_handle != VK_NULL_HANDLE)
-            vkDestroyDescriptorSetLayout(m_device->getHandle(), m_handle, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyDescriptorSetLayout(m_device->getHandle(), m_handle, nullptr);
+        }
 
         std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
         layoutBindings.reserve(m_bindings.size());
@@ -85,7 +90,8 @@ namespace vzt
         layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
         layoutInfo.pBindings    = layoutBindings.data();
 
-        vkCheck(vkCreateDescriptorSetLayout(m_device->getHandle(), &layoutInfo, nullptr, &m_handle),
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkCreateDescriptorSetLayout(m_device->getHandle(), &layoutInfo, nullptr, &m_handle),
                 "Failed to create descriptor set layout!");
 
         m_compiled = true;
@@ -109,7 +115,8 @@ namespace vzt
         pool_info.poolSizeCount              = static_cast<uint32_t>(sizes.size());
         pool_info.pPoolSizes                 = sizes.data();
 
-        vkCheck(vkCreateDescriptorPool(m_device->getHandle(), &pool_info, nullptr, &m_handle),
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkCreateDescriptorPool(m_device->getHandle(), &pool_info, nullptr, &m_handle),
                 "Failed to create descriptor pool.");
     }
 
@@ -135,7 +142,8 @@ namespace vzt
         pool_info.poolSizeCount              = static_cast<uint32_t>(sizes.size());
         pool_info.pPoolSizes                 = sizes.data();
 
-        vkCheck(vkCreateDescriptorPool(m_device->getHandle(), &pool_info, nullptr, &m_handle),
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        vkCheck(table.vkCreateDescriptorPool(m_device->getHandle(), &pool_info, nullptr, &m_handle),
                 "Failed to create descriptor pool.");
     }
 
@@ -160,7 +168,10 @@ namespace vzt
     DescriptorPool::~DescriptorPool()
     {
         if (m_handle != VK_NULL_HANDLE)
-            vkDestroyDescriptorPool(m_device->getHandle(), m_handle, nullptr);
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyDescriptorPool(m_device->getHandle(), m_handle, nullptr);
+        }
     }
 
     void DescriptorPool::allocate(uint32_t count, const DescriptorLayout& layout)
@@ -174,7 +185,8 @@ namespace vzt
         descriptorSetAllocInfo.pSetLayouts        = layouts.data();
 
         std::vector<VkDescriptorSet> descriptorSets{count};
-        vkCheck(vkAllocateDescriptorSets(m_device->getHandle(), &descriptorSetAllocInfo, descriptorSets.data()),
+        const VolkDeviceTable&       table = m_device->getFunctionTable();
+        vkCheck(table.vkAllocateDescriptorSets(m_device->getHandle(), &descriptorSetAllocInfo, descriptorSets.data()),
                 "Failed to allocate descriptor sets.");
 
         m_descriptors.insert(m_descriptors.end(), descriptorSets.begin(), descriptorSets.end());
@@ -230,8 +242,9 @@ namespace vzt
                        descriptor);
         }
 
-        vkUpdateDescriptorSets(m_device->getHandle(), static_cast<uint32_t>(descriptorWrites.size()),
-                               descriptorWrites.data(), 0, nullptr);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkUpdateDescriptorSets(m_device->getHandle(), static_cast<uint32_t>(descriptorWrites.size()),
+                                     descriptorWrites.data(), 0, nullptr);
     }
 
     void DescriptorPool::update(const IndexedDescriptor& descriptors)
