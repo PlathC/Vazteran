@@ -138,7 +138,7 @@ namespace vzt
     {
       public:
         GraphicPipeline() = default;
-        GraphicPipeline(View<Device> device, View<Program> program, Viewport viewport);
+        GraphicPipeline(View<Device> device);
 
         GraphicPipeline(const GraphicPipeline&)            = delete;
         GraphicPipeline& operator=(const GraphicPipeline&) = delete;

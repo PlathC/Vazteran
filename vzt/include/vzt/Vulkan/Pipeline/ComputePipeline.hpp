@@ -13,7 +13,7 @@ namespace vzt
     {
       public:
         ComputePipeline() = default;
-        ComputePipeline(View<Device> device, View<Program> program);
+        ComputePipeline(View<Device> device);
 
         ComputePipeline(const ComputePipeline&)            = delete;
         ComputePipeline& operator=(const ComputePipeline&) = delete;

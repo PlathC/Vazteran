@@ -7,10 +7,7 @@
 
 namespace vzt
 {
-    GraphicPipeline::GraphicPipeline(View<Device> device, View<Program> program, Viewport viewport)
-        : m_device(device), m_program(program), m_viewport(viewport)
-    {
-    }
+    GraphicPipeline::GraphicPipeline(View<Device> device) : m_device(device) {}
 
     GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept
     {

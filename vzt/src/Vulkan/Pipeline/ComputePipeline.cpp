@@ -5,9 +5,7 @@
 
 namespace vzt
 {
-    ComputePipeline::ComputePipeline(View<Device> device, View<Program> program) : m_device(device), m_program(program)
-    {
-    }
+    ComputePipeline::ComputePipeline(View<Device> device) : m_device(device) {}
 
     ComputePipeline::ComputePipeline(ComputePipeline&& other) noexcept
         : m_device(std::move(other.m_device)), m_handle(std::move(other.m_handle)),
