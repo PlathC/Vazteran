@@ -238,28 +238,33 @@ namespace vzt
         table.vkCmdEndRenderPass(m_handle);
     }
 
-    void CommandBuffer::buildAs(BottomGeometryAsBuilder& builder)
+    void CommandBuffer::buildAs(AccelerationStructureBuilder& builder)
     {
         VkAccelerationStructureBuildGeometryInfoKHR accelerationBuildGeometryInfo{};
         accelerationBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-        accelerationBuildGeometryInfo.type  = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        accelerationBuildGeometryInfo.type  = toVulkan(builder.as->getType());
         accelerationBuildGeometryInfo.flags = toVulkan(builder.flags);
         accelerationBuildGeometryInfo.mode  = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 
         std::vector<VkAccelerationStructureGeometryKHR> vkGeometries;
-        vkGeometries.reserve(builder.geometries.size);
+
+        const std::vector<GeometryAsBuilder>& geometries = builder.as->getGeometries();
+        vkGeometries.reserve(geometries.size());
         uint32_t maxPrimitiveCount = 0;
-        for (std::size_t i = 0; i < builder.geometries.size; i++)
+        for (std::size_t i = 0; i < geometries.size(); i++)
         {
-            const auto& geometry = builder.geometries.data[i];
-            std::visit(Overloaded{[&maxPrimitiveCount](const AsTriangles& trianglesAs) {
-                                      maxPrimitiveCount +=
-                                          static_cast<uint32_t>(trianglesAs.indexBuffer.size / sizeof(uint32_t));
-                                  },
-                                  [&maxPrimitiveCount](const AsAabbs& aabbsAs) {
-                                      maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.size / aabbsAs.stride);
-                                  }},
-                       geometry.geometry);
+            const auto& geometry = geometries[i];
+            std::visit(
+                Overloaded{
+                    [&maxPrimitiveCount](const AsTriangles& trianglesAs) {
+                        maxPrimitiveCount += static_cast<uint32_t>(trianglesAs.indexBuffer.size / sizeof(uint32_t));
+                    },
+                    [&maxPrimitiveCount](const AsAabbs& aabbsAs) {
+                        maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.size / aabbsAs.stride);
+                    },
+                    [&maxPrimitiveCount](const AsInstance& instancesAs) { maxPrimitiveCount += instancesAs.count; },
+                },
+                geometry.geometry);
 
             auto vkGeometry = toVulkan(geometry);
             vkGeometries.emplace_back(std::move(vkGeometry));

@@ -211,7 +211,7 @@ namespace vzt
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos    = queueCreateInfos.data();
         createInfo.pEnabledFeatures     = nullptr;
-        createInfo.pNext                = &configuration.getDeviceFeatures().getPhysicalFeatures();
+        createInfo.pNext                = &configuration.getDeviceFeatures().getAllFeatures();
 
         const auto& extensions             = configuration.getExtensions();
         createInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());

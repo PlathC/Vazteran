@@ -61,14 +61,16 @@ namespace vzt
         static DeviceFeatures standard();
         static DeviceFeatures rt();
 
-        inline void                                     add(GenericDeviceFeature feature);
+        void                                            add(GenericDeviceFeature feature);
         inline const std::vector<GenericDeviceFeature>& getFeatures() const;
         inline const VkPhysicalDeviceFeatures2&         getPhysicalFeatures() const;
         inline VkPhysicalDeviceFeatures2&               getPhysicalFeatures();
+        const VkPhysicalDeviceFeatures2&                getAllFeatures() const;
 
       private:
-        VkPhysicalDeviceFeatures2         m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
-        std::vector<GenericDeviceFeature> m_features;
+        // Mutable to allow dynamic chain creation
+        mutable VkPhysicalDeviceFeatures2         m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+        mutable std::vector<GenericDeviceFeature> m_features;
     };
 
     enum class QueueType : uint8_t

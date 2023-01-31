@@ -77,8 +77,8 @@ namespace vzt
         OffsetSpan() = default;
         OffsetSpan(Span<Type> span);
         OffsetSpan(CSpan<Type> span);
-        OffsetSpan(Type* ptr, std::size_t size, std::size_t offset = 0u);
-        OffsetSpan(Type& ptr, std::size_t size, std::size_t offset = 0u);
+        OffsetSpan(Type* ptr, std::size_t size = 1, std::size_t offset = 0u);
+        OffsetSpan(Type& ptr, std::size_t size = 1, std::size_t offset = 0u);
         OffsetSpan(std::vector<Type>& buffer, std::size_t offset = 0u);
 
         template <std::size_t Size>
@@ -94,8 +94,8 @@ namespace vzt
 
         OffsetCSpan() = default;
         OffsetCSpan(OffsetSpan<Type> span, std::size_t offset = 0u);
-        OffsetCSpan(const Type* ptr, std::size_t size, std::size_t offset = 0u);
-        OffsetCSpan(const Type& ptr, std::size_t size, std::size_t offset = 0u);
+        OffsetCSpan(const Type* ptr, std::size_t size = 1, std::size_t offset = 0u);
+        OffsetCSpan(const Type& ptr, std::size_t size = 1, std::size_t offset = 0u);
 
         OffsetCSpan(const std::vector<Type>& buffer, std::size_t offset = 0u);
 

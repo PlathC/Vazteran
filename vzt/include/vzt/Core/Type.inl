@@ -151,7 +151,7 @@ namespace vzt
     }
     template <class Type>
     OffsetCSpan<Type>::OffsetCSpan(const Type& ptr, std::size_t size, std::size_t offset)
-        : data(ptr), size(size), offset(offset)
+        : data(&ptr), size(size), offset(offset)
     {
     }
 

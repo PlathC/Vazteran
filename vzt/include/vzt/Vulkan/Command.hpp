@@ -9,7 +9,7 @@
 
 namespace vzt
 {
-    struct BottomGeometryAsBuilder;
+    struct AccelerationStructureBuilder;
     class CommandPool;
     class ComputePipeline;
     class Device;
@@ -59,7 +59,7 @@ namespace vzt
         void beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer);
         void endPass();
 
-        void buildAs(BottomGeometryAsBuilder& builder);
+        void buildAs(AccelerationStructureBuilder& builder);
 
         inline VkCommandBuffer getHandle() const;
 

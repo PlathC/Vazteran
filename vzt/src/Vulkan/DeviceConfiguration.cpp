@@ -30,19 +30,43 @@ namespace vzt
 
         VkPhysicalDeviceVulkan12Features features12{};
         features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-        features12.bufferDeviceAddress = true;
+        features12.bufferDeviceAddress = VK_TRUE;
         features.add(features12);
+
+        VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
+        rayQueryFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+        rayQueryFeatures.rayQuery = VK_TRUE;
+        features.add(rayQueryFeatures);
+
+        VkPhysicalDeviceRayTracingPipelineFeaturesKHR raytracingPipelineFeatures{};
+        raytracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+        raytracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
+        features.add(raytracingPipelineFeatures);
+
+        VkPhysicalDeviceAccelerationStructureFeaturesKHR asFeatures{};
+        asFeatures.sType                 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+        asFeatures.accelerationStructure = VK_TRUE;
+        features.add(asFeatures);
 
         return features;
     }
 
-    inline void DeviceFeatures::add(GenericDeviceFeature feature)
+    void DeviceFeatures::add(GenericDeviceFeature feature) { m_features.emplace_back(std::move(feature)); }
+    const VkPhysicalDeviceFeatures2& DeviceFeatures::getAllFeatures() const
     {
-        m_features.emplace_back(std::move(feature));
-        if (m_features.size() == 1)
-            m_physicalFeatures.pNext = &m_features.back();
-        else
-            m_features[m_features.size() - 1].pNext = &m_features.back();
+        if (m_features.empty())
+            return m_physicalFeatures;
+
+        m_physicalFeatures.pNext          = &m_features[0];
+        GenericDeviceFeature* lastFeature = &m_features[0];
+        for (std::size_t i = 1; i < m_features.size(); i++)
+        {
+            GenericDeviceFeature* next = &m_features[i];
+            lastFeature->pNext         = next;
+            lastFeature                = next;
+        }
+
+        return m_physicalFeatures;
     }
 
     DeviceBuilder DeviceBuilder::standard()
