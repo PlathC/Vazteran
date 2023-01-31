@@ -67,7 +67,7 @@ namespace vzt
         inline VkPhysicalDeviceFeatures2&               getPhysicalFeatures();
 
       private:
-        VkPhysicalDeviceFeatures2         m_physicalFeatures{};
+        VkPhysicalDeviceFeatures2         m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
         std::vector<GenericDeviceFeature> m_features;
     };
 
