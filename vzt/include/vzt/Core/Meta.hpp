@@ -43,6 +43,11 @@ namespace vzt
     inline constexpr bool any(const Type m)                                    \
     {                                                                          \
         return vzt::toUnderlying(m) != 0;                                      \
+    }                                                                          \
+                                                                               \
+    inline constexpr Type remove(const Type a, const Type b)                   \
+    {                                                                          \
+        return a & (~b);                                                       \
     }
 
 #endif // VZT_META_HPP

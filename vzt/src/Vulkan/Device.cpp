@@ -50,18 +50,20 @@ namespace vzt
         std::vector<VkQueueFamilyProperties> queueFamilies = getQueueFamiliesProperties();
 
         VkBool32 presentSupport = false;
+
+        QueueType requestedTypes = configuration.getQueueTypes();
         for (uint32_t i = 0; i < queueFamilies.size(); i++)
         {
             const auto& queueFamily = queueFamilies[i];
 
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                configuration.queueTypes = configuration.queueTypes & ~(QueueType::Graphics);
+                requestedTypes = remove(requestedTypes, QueueType::Graphics);
 
             if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-                configuration.queueTypes = configuration.queueTypes & ~(QueueType::Compute);
+                requestedTypes = remove(requestedTypes, QueueType::Compute);
 
             if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
-                configuration.queueTypes = configuration.queueTypes & ~(QueueType::Transfer);
+                requestedTypes = remove(requestedTypes, QueueType::Transfer);
 
             if (!surface || presentSupport)
                 continue;
@@ -69,16 +71,16 @@ namespace vzt
             vkGetPhysicalDeviceSurfaceSupportKHR(m_handle, i, surface->getHandle(), &presentSupport);
         }
 
-        bool isSuitable = !any(configuration.queueTypes) && hasExtensions(configuration.extensions);
+        bool isSuitable = !any(requestedTypes) && hasExtensions(configuration.getExtensions());
         if (surface)
             isSuitable &= hasSwapchain(m_handle, surface->getHandle());
 
-        if (configuration.hasAnisotropy)
-        {
-            VkPhysicalDeviceFeatures supportedFeatures;
-            vkGetPhysicalDeviceFeatures(m_handle, &supportedFeatures);
-            isSuitable &= static_cast<bool>(supportedFeatures.samplerAnisotropy);
-        }
+        const auto& requestedDeviceFeatures   = configuration.getDeviceFeatures();
+        const auto  requestedPhysicalFeatures = requestedDeviceFeatures.getPhysicalFeatures();
+
+        VkPhysicalDeviceFeatures supportedFeatures;
+        vkGetPhysicalDeviceFeatures(m_handle, &supportedFeatures);
+        isSuitable &= GenericDeviceFeature::match(requestedPhysicalFeatures, GenericDeviceFeature(supportedFeatures));
 
         return isSuitable;
     }
@@ -159,7 +161,7 @@ namespace vzt
         std::unordered_map<QueueType, uint32_t> queueIds{};
 
         const auto      queuesFamilies = m_device.getQueueFamiliesProperties();
-        QueueType       queueTypes     = configuration.queueTypes;
+        QueueType       queueTypes     = configuration.getQueueTypes();
         constexpr float queuePriority  = 1.0f;
         for (uint32_t i = 0; any(queueTypes) && i < queuesFamilies.size(); i++)
         {
@@ -204,16 +206,16 @@ namespace vzt
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceFeatures supportedFeatures;
-        vkGetPhysicalDeviceFeatures(m_device.getHandle(), &supportedFeatures);
-
         VkDeviceCreateInfo createInfo{};
-        createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.queueCreateInfoCount    = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos       = queueCreateInfos.data();
-        createInfo.pEnabledFeatures        = &supportedFeatures;
-        createInfo.enabledExtensionCount   = static_cast<uint32_t>(configuration.extensions.size());
-        createInfo.ppEnabledExtensionNames = configuration.extensions.data();
+        createInfo.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+        createInfo.pQueueCreateInfos    = queueCreateInfos.data();
+        createInfo.pEnabledFeatures     = nullptr;
+        createInfo.pNext                = &configuration.getDeviceFeatures().getPhysicalFeatures();
+
+        const auto& extensions             = configuration.getExtensions();
+        createInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
+        createInfo.ppEnabledExtensionNames = extensions.data();
 
         createInfo.enabledLayerCount = 0;
         if (instance->isValidationEnable())
@@ -227,7 +229,7 @@ namespace vzt
                 "Failed to create logical device.");
         volkLoadDeviceTable(&m_table, m_handle);
 
-        queueTypes = configuration.queueTypes;
+        queueTypes = configuration.getQueueTypes();
         for (auto [type, id] : queueIds)
             m_queues.emplace(this, type, id, m_device.canQueueFamilyPresent(id, surface));
 
@@ -298,7 +300,7 @@ namespace vzt
 
     View<Queue> Device::getQueue(QueueType type) const
     {
-        assert(any(m_configuration.queueTypes & type) &&
+        assert(any(m_configuration.getQueueTypes() & type) &&
                "This device has not been configured with the requested queue.");
 
         for (const auto& queue : m_queues)

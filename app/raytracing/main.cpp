@@ -18,15 +18,7 @@ int main(int argc, char** argv)
     auto instance = vzt::Instance{window};
     auto surface  = vzt::Surface{window, instance};
 
-    vzt::DeviceBuilder deviceBuilder{};
-    deviceBuilder.extensions.emplace_back(vzt::dext::AccelerationStructure);
-    deviceBuilder.extensions.emplace_back(vzt::dext::RaytracingPipeline);
-    deviceBuilder.extensions.emplace_back(vzt::dext::BufferDeviceAddress);
-    deviceBuilder.extensions.emplace_back(vzt::dext::DeferredHostOperations);
-    deviceBuilder.extensions.emplace_back(vzt::dext::DescriptorIndexing);
-    deviceBuilder.extensions.emplace_back(vzt::dext::Spirv14);
-    deviceBuilder.extensions.emplace_back(vzt::dext::ShaderFloatControls);
-    auto device    = instance.getDevice(deviceBuilder, surface);
+    auto device    = instance.getDevice(vzt::DeviceBuilder::rt(), surface);
     auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
 
     vzt::Mesh                mesh = vzt::readObj("samples/Dragon/dragon.obj");

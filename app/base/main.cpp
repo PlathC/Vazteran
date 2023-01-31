@@ -23,7 +23,7 @@ int main(int /* argc */, char** /* argv */)
     auto window    = vzt::Window{ApplicationName};
     auto instance  = vzt::Instance{window};
     auto surface   = vzt::Surface{window, instance};
-    auto device    = instance.getDevice(vzt::DeviceBuilder{}, surface);
+    auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
     auto hardware  = device.getHardware();
     auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
 
