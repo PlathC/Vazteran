@@ -163,15 +163,31 @@ namespace vzt
         constexpr float queuePriority  = 1.0f;
         for (uint32_t i = 0; any(queueTypes) && i < queuesFamilies.size(); i++)
         {
-            const auto& queueFamily = queuesFamilies[i];
+            auto queueFamily = queuesFamilies[i];
 
             QueueType selected = QueueType::None;
-            if (any(queueTypes & QueueType::Graphics) && (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT))
-                selected |= QueueType::Graphics;
-            if (any(queueTypes & QueueType::Compute) && (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT))
-                selected |= QueueType::Compute;
-            if (any(queueTypes & QueueType::Transfer) && (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT))
-                selected |= QueueType::Transfer;
+            while (queueFamily.queueFlags)
+            {
+                if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                {
+                    selected |= QueueType::Graphics;
+                    queueFamily.queueFlags &= ~VK_QUEUE_GRAPHICS_BIT;
+                }
+                else if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
+                {
+                    selected |= QueueType::Compute;
+                    queueFamily.queueFlags &= ~VK_QUEUE_COMPUTE_BIT;
+                }
+                else if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
+                {
+                    selected |= QueueType::Transfer;
+                    queueFamily.queueFlags &= ~VK_QUEUE_TRANSFER_BIT;
+                }
+                else // Unsupported queue family
+                {
+                    break;
+                }
+            }
 
             if (!any(selected))
                 continue;
@@ -222,6 +238,7 @@ namespace vzt
         allocatorInfo.vulkanApiVersion       = getAPIVersion();
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
         // To use VMA_DYNAMIC_VULKAN_FUNCTIONS in new versions of VMA you now have to pass
         // VmaVulkanFunctions::vkGetInstanceProcAddr and vkGetDeviceProcAddr as
