@@ -4,11 +4,11 @@
 #include "vzt/Core/Math.hpp"
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Format.hpp"
+#include "vzt/Vulkan/Image.hpp"
 
 namespace vzt
 {
     class Device;
-    class Image;
     class Instance;
     class Window;
     class Surface;
