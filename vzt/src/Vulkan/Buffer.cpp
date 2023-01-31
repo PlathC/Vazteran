@@ -42,7 +42,8 @@ namespace vzt
             std::memcpy(tempStagingData, data.data, data.size);
             transferBuffer.unMap();
 
-            View<Queue> queue = device->getQueues().front();
+            const View<Queue> queue = device->getQueues().front();
+            assert(vzt::any(queue->getType() & QueueType::Transfer) && "The selected queue must be able to transfert");
             queue->oneShot([&transferBuffer, &buffer, &data](CommandBuffer& commands) {
                 commands.copy(transferBuffer, buffer, data.size, data.offset);
             });
