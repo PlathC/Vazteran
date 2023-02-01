@@ -390,7 +390,7 @@ namespace vzt
                 Texture& texture = m_textureSaves.back();
 
                 descriptors[input.binding] =
-                    DescriptorImage{DescriptorType::SampledImage, texture.getView(), texture.getSampler()};
+                    DescriptorImage{DescriptorType::CombinedSampler, texture.getView(), texture.getSampler()};
             }
 
             // SSBO

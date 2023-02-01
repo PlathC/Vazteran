@@ -1,4 +1,4 @@
-#include "vzt/Vulkan/Raytracing/AccelerationStructure.hpp"
+#include "vzt/Vulkan/AccelerationStructure.hpp"
 
 namespace vzt
 {

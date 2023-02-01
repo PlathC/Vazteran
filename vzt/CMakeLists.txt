@@ -22,6 +22,7 @@ set(VZT_HEADERS
     include/vzt/Utils/MeshLoader.hpp
     include/vzt/Utils/RenderGraph.hpp
 
+    include/vzt/Vulkan/AccelerationStructure.hpp
     include/vzt/Vulkan/Buffer.hpp
     include/vzt/Vulkan/Command.hpp
     include/vzt/Vulkan/Core.hpp
@@ -41,8 +42,6 @@ set(VZT_HEADERS
     include/vzt/Vulkan/Pipeline/ComputePipeline.hpp
     include/vzt/Vulkan/Pipeline/GraphicPipeline.hpp
     include/vzt/Vulkan/Pipeline/RaytracingPipeline.hpp
-
-    include/vzt/Vulkan/Raytracing/AccelerationStructure.hpp
     
     include/vzt/Window.hpp
 )
@@ -60,6 +59,7 @@ set(VZT_SOURCES
     src/Utils/MeshLoader.cpp
     src/Utils/RenderGraph.cpp
 
+    src/Vulkan/AccelerationStructure.cpp
     src/Vulkan/Buffer.cpp
     src/Vulkan/Command.cpp
     src/Vulkan/Descriptor.cpp
@@ -73,8 +73,6 @@ set(VZT_SOURCES
     src/Vulkan/Surface.cpp
     src/Vulkan/Swapchain.cpp
     src/Vulkan/Texture.cpp
-
-    src/Vulkan/Raytracing/AccelerationStructure.cpp
 
     src/Vulkan/Pipeline/ComputePipeline.cpp
     src/Vulkan/Pipeline/GraphicPipeline.cpp

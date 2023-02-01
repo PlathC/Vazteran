@@ -2,8 +2,8 @@
 
 #include <cassert>
 
+#include "vzt/Vulkan/AccelerationStructure.hpp"
 #include "vzt/Vulkan/Device.hpp"
-#include "vzt/Vulkan/Raytracing/AccelerationStructure.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
 namespace vzt

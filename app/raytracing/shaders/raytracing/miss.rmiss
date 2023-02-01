@@ -11,7 +11,8 @@ layout(shaderRecordEXT, std430) buffer SBT {
 
 void main()
 {
-  // Update the hit value to the hit record SBT data associated with this 
-  // miss record
-  hitValue = vec3(r, g, b);
+    // Reference: https://github.com/SaschaWillems/Vulkan/blob/master/examples
+    // Update the hit value to the hit record SBT data associated with this 
+    // miss record
+    hitValue = vec3(r, g, b);
 }

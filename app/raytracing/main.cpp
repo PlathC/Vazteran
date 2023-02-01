@@ -1,10 +1,10 @@
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Utils/MeshLoader.hpp>
+#include <vzt/Vulkan/AccelerationStructure.hpp>
 #include <vzt/Vulkan/Buffer.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Pipeline/RaytracingPipeline.hpp>
-#include <vzt/Vulkan/Raytracing/AccelerationStructure.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>

@@ -2,10 +2,10 @@
 
 #include <cassert>
 
+#include "vzt/Vulkan/AccelerationStructure.hpp"
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
 #include "vzt/Vulkan/Pipeline/ComputePipeline.hpp"
-#include "vzt/Vulkan/Raytracing/AccelerationStructure.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 
 namespace vzt

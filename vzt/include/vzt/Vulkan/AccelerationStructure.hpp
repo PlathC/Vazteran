@@ -144,6 +144,6 @@ namespace vzt
 
 } // namespace vzt
 
-#include "vzt/Vulkan/Raytracing/AccelerationStructure.inl"
+#include "vzt/Vulkan/AccelerationStructure.inl"
 
 #endif // VZT_VULKAN_RAYTRACING_ACCELERATIONSTRUCTURE_HPP
