@@ -11,8 +11,9 @@ Here is the roadmap :
 | Render graph                                                    | Done      |
 | Instancing                                                      | Done      |
 | Compute shader                                                  | Done      |
-| Raytracing extension                                            | To do     |
+| Raytracing extension                                            | Done      |
 | Ui                                                              | To do     |
+| Real test with larger application                               | To do     |
 
 ## Current state
 
