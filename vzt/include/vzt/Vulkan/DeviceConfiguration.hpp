@@ -13,16 +13,17 @@ namespace vzt
     {
         using Extension = const char*;
 
-        constexpr const char* Swapchain              = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-        constexpr const char* GetMemoryRequirements2 = VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME;
-        constexpr const char* DedicatedAllocation    = VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME;
-        constexpr const char* AccelerationStructure  = VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME;
-        constexpr const char* RaytracingPipeline     = VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME;
-        constexpr const char* BufferDeviceAddress    = VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
-        constexpr const char* DeferredHostOperations = VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME;
-        constexpr const char* DescriptorIndexing     = VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
-        constexpr const char* Spirv14                = VK_KHR_SPIRV_1_4_EXTENSION_NAME;
-        constexpr const char* ShaderFloatControls    = VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME;
+        constexpr Extension Swapchain               = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+        constexpr Extension GetMemoryRequirements2  = VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME;
+        constexpr Extension DedicatedAllocation     = VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME;
+        constexpr Extension AccelerationStructure   = VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME;
+        constexpr Extension RaytracingPipeline      = VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME;
+        constexpr Extension BufferDeviceAddress     = VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
+        constexpr Extension DeferredHostOperations  = VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME;
+        constexpr Extension DescriptorIndexing      = VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
+        constexpr Extension Spirv14                 = VK_KHR_SPIRV_1_4_EXTENSION_NAME;
+        constexpr Extension ShaderFloatControls     = VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME;
+        constexpr Extension GraphicsPipelineLibrary = VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME;
     } // namespace dext
 
     // Based on https://github.com/charles-lunarg/vk-bootstrap/blob/master/src/VkBootstrap.h#L161

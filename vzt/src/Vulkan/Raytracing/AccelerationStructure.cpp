@@ -61,7 +61,7 @@ namespace vzt
             std::visit(Overloaded{
                            [this](const AsTriangles& trianglesAs) {
                                m_maxPrimitiveCount +=
-                                   static_cast<uint32_t>(trianglesAs.indexBuffer.size / sizeof(uint32_t));
+                                   static_cast<uint32_t>(trianglesAs.indexBuffer.data->size() / (3 * sizeof(uint32_t)));
                            },
                            [this](const AsAabbs& aabbsAs) {
                                m_maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.size / aabbsAs.stride);
@@ -115,7 +115,7 @@ namespace vzt
 
     AccelerationStructure::AccelerationStructure(View<Device> device, GeometryAsBuilder geometry,
                                                  AccelerationStructureType type)
-        : AccelerationStructure(device, std::vector{std::move(geometry)}, type)
+        : AccelerationStructure(device, std::vector{geometry}, type)
     {
     }
 

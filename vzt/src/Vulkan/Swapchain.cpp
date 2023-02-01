@@ -252,10 +252,10 @@ namespace vzt
         m_userImages.clear();
         m_userImages.reserve(m_imageNb);
 
-        auto format = static_cast<Format>(surfaceFormat.format);
+        m_format = static_cast<Format>(surfaceFormat.format);
         for (VkImage image : m_images)
             m_userImages.emplace_back(m_device, image, Extent2D{extent.width, extent.height},
-                                      ImageUsage::ColorAttachment, format, sharingMode);
+                                      ImageUsage::ColorAttachment, m_format, sharingMode);
     }
 
     void Swapchain::cleanup()

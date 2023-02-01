@@ -1,7 +1,6 @@
 #ifndef VZT_VULKAN_PROGRAM_HPP
 #define VZT_VULKAN_PROGRAM_HPP
 
-#include <unordered_set>
 #include <vector>
 
 #include "vzt/Core/Type.hpp"
@@ -27,6 +26,14 @@ namespace vzt
         Mesh                   = VK_SHADER_STAGE_MESH_BIT_NV
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(ShaderStage, VkShaderStageFlagBits);
+
+    enum class ShaderGroupType : uint8_t
+    {
+        General            = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR,
+        TrianglesHitGroup  = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR,
+        ProceduralHitGroup = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR,
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(ShaderGroupType, VkRayTracingShaderGroupTypeKHR);
 
     struct Shader
     {
@@ -85,11 +92,40 @@ namespace vzt
         inline const std::vector<ShaderModule>& getModules() const;
 
       private:
-        using ShaderList = std::unordered_set<Shader, Shader::hash>;
-
         View<Device>              m_device        = {};
         std::vector<ShaderModule> m_shaderModules = {};
     };
+
+    struct ShaderGroupShader
+    {
+        ShaderGroupType hitGroupType;
+        ShaderModule    shaderModule;
+    };
+
+    class ShaderGroup
+    {
+      public:
+        ShaderGroup(View<Device> device);
+
+        ShaderGroup(const ShaderGroup&)            = delete;
+        ShaderGroup& operator=(const ShaderGroup&) = delete;
+
+        ShaderGroup(ShaderGroup&& other) noexcept;
+        ShaderGroup& operator=(ShaderGroup&& other) noexcept;
+
+        ~ShaderGroup() = default;
+
+        void addShader(Shader shader, ShaderGroupType hitGroupType = ShaderGroupType::General);
+
+        inline CSpan<ShaderGroupShader> getShaders() const;
+        inline std::size_t              size() const;
+
+      private:
+        View<Device> m_device;
+
+        std::vector<ShaderGroupShader> m_shaders;
+    };
+
 } // namespace vzt
 
 #include "vzt/Vulkan/Program.inl"

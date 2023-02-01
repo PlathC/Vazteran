@@ -128,7 +128,7 @@ namespace vzt
         inline View<Buffer>                          getBuffer() const;
         inline const std::vector<GeometryAsBuilder>& getGeometries() const;
         inline uint64_t                              getDeviceAddress() const;
-        inline VkAccelerationStructureKHR            getHandle() const;
+        inline const VkAccelerationStructureKHR&     getHandle() const;
 
       private:
         VkAccelerationStructureKHR     m_handle = VK_NULL_HANDLE;

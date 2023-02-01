@@ -13,15 +13,19 @@ namespace vzt
         VkImageCreateInfo imageInfo{};
         imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType     = toVulkan(m_type);
+        imageInfo.format        = toVulkan(m_format);
         imageInfo.extent        = {m_size.width, m_size.height, m_size.depth};
         imageInfo.mipLevels     = m_mipLevels;
         imageInfo.arrayLayers   = 1;
-        imageInfo.format        = toVulkan(m_format);
-        imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = toVulkan(m_layout);
-        imageInfo.usage         = toVulkan(m_usage | vzt::ImageUsage::Sampled);
         imageInfo.samples       = toVulkan(m_sampleCount);
+        imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.usage         = toVulkan(m_usage | vzt::ImageUsage::Sampled);
         imageInfo.sharingMode   = toVulkan(m_sharingMode);
+        imageInfo.initialLayout = toVulkan(m_layout);
+
+        const auto         hardware = m_device->getHardware();
+        VkFormatProperties properties;
+        vkGetPhysicalDeviceFormatProperties(hardware.getHandle(), toVulkan(format), &properties);
 
         VmaAllocationCreateInfo imageAllocCreateInfo = {};
         imageAllocCreateInfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;

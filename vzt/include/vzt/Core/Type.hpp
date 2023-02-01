@@ -43,6 +43,13 @@ namespace vzt
 
         template <std::size_t Size>
         Span(const std::array<Type, Size>& buffer);
+
+        Type*       begin();
+        Type*       end();
+        const Type* begin() const;
+        const Type* end() const;
+        const Type* cbegin() const;
+        const Type* cend() const;
     };
 
     template <class Type>
@@ -65,6 +72,11 @@ namespace vzt
 
         template <std::size_t Size>
         CSpan(const std::array<Type, Size>& buffer);
+
+        const Type* begin() const;
+        const Type* end() const;
+        const Type* cbegin() const;
+        const Type* cend() const;
     };
 
     template <class Type>
@@ -83,6 +95,13 @@ namespace vzt
 
         template <std::size_t Size>
         OffsetSpan(std::array<Type, Size>& buffer, std::size_t offset = 0u);
+
+        Type*       begin();
+        Type*       end();
+        const Type* begin() const;
+        const Type* end() const;
+        const Type* cbegin() const;
+        const Type* cend() const;
     };
 
     template <class Type>
@@ -101,6 +120,19 @@ namespace vzt
 
         template <std::size_t Size>
         OffsetCSpan(const std::array<Type, Size>& buffer, std::size_t offset = 0u);
+
+        const Type* begin() const;
+        const Type* end() const;
+        const Type* cbegin() const;
+        const Type* cend() const;
+    };
+
+    template <class Type>
+    struct StridedSpan
+    {
+        Type        data;
+        std::size_t size;
+        std::size_t stride;
     };
 
     template <class Type>

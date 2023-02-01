@@ -92,6 +92,67 @@ namespace vzt
         table.vkCmdClearColorImage(m_handle, image->getHandle(), toVulkan(layout), &clearColorValue, 1, &subresource);
     }
 
+    void CommandBuffer::blit(View<Image> src, ImageLayout srcLayout, ImageAspect srcAspect, Vec2u srcStart,
+                             Vec2u srcEnd, View<Image> dst, ImageLayout dstLayout, ImageAspect dstAspect,
+                             Vec2u dstStart, Vec2u dstEnd, Filter filter)
+    {
+        VkBlitImageInfo2 blitInfo{};
+        blitInfo.sType          = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
+        blitInfo.srcImage       = src->getHandle();
+        blitInfo.srcImageLayout = toVulkan(srcLayout);
+        blitInfo.dstImage       = dst->getHandle();
+        blitInfo.dstImageLayout = toVulkan(dstLayout);
+        blitInfo.filter         = toVulkan(filter);
+
+        // The Vulkan spec states: If srcImage is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of
+        // pRegions, srcOffsets[0].z must be 0 and srcOffsets[1].z must be 1
+        VkImageBlit2 blit{};
+        blit.sType                         = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+        blit.srcOffsets[0].x               = srcStart.x;
+        blit.srcOffsets[0].y               = srcStart.y;
+        blit.srcOffsets[0].z               = 0;
+        blit.srcOffsets[1].x               = srcEnd.x;
+        blit.srcOffsets[1].y               = srcEnd.y;
+        blit.srcOffsets[1].z               = 1;
+        blit.srcSubresource.aspectMask     = toVulkan(srcAspect);
+        blit.srcSubresource.mipLevel       = 0;
+        blit.srcSubresource.baseArrayLayer = 0;
+        blit.srcSubresource.layerCount     = 1;
+
+        blit.dstOffsets[0].x               = dstStart.x;
+        blit.dstOffsets[0].y               = dstStart.y;
+        blit.dstOffsets[0].z               = 0;
+        blit.dstOffsets[1].x               = dstEnd.x;
+        blit.dstOffsets[1].y               = dstEnd.y;
+        blit.dstOffsets[1].z               = 1;
+        blit.dstSubresource.aspectMask     = toVulkan(dstAspect);
+        blit.dstSubresource.mipLevel       = 0;
+        blit.dstSubresource.baseArrayLayer = 0;
+        blit.dstSubresource.layerCount     = 1;
+
+        blitInfo.pRegions    = &blit;
+        blitInfo.regionCount = 1;
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBlitImage2(m_handle, &blitInfo);
+    }
+
+    void CommandBuffer::blit(View<Image> src, ImageLayout srcLayout, ImageAspect srcAspect, View<Image> dst,
+                             ImageLayout dstLayout, ImageAspect dstAspect, Filter filter)
+    {
+        const Extent3D srcExtent = src->getSize();
+        blit(src, srcLayout, srcAspect, Vec2u{0}, Vec2u{srcExtent.width, srcExtent.height}, //
+             dst, dstLayout, dstAspect, Vec2u{0}, Vec2u{srcExtent.width, srcExtent.height}, filter);
+    }
+
+    void CommandBuffer::blit(View<Image> src, ImageLayout srcLayout, View<Image> dst, ImageLayout dstLayout,
+                             Filter filter)
+    {
+        const Extent3D srcExtent = src->getSize();
+        blit(src, srcLayout, ImageAspect::Color, Vec2u{0}, Vec2u{srcExtent.width, srcExtent.height}, //
+             dst, dstLayout, ImageAspect::Color, Vec2u{0}, Vec2u{srcExtent.width, srcExtent.height}, filter);
+    }
+
     void CommandBuffer::copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset,
                              uint64_t dstOffset)
     {
@@ -136,6 +197,22 @@ namespace vzt
                                       &descriptorSet, 0, nullptr);
     }
 
+    void CommandBuffer::bind(const RaytracingPipeline& raytracingPipeline)
+    {
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracingPipeline.getHandle());
+    }
+
+    void CommandBuffer::bind(const RaytracingPipeline& raytracingPipeline, const DescriptorSet& set)
+    {
+        bind(raytracingPipeline);
+
+        const VkDescriptorSet  descriptorSet = set.getHandle();
+        const VolkDeviceTable& table         = m_device->getFunctionTable();
+        table.vkCmdBindDescriptorSets(m_handle, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, raytracingPipeline.getLayout(),
+                                      0, 1, &descriptorSet, 0, nullptr);
+    }
+
     void CommandBuffer::bindVertexBuffer(const Buffer& buffer)
     {
         VkBuffer     vertexBuffers[] = {buffer.getHandle()};
@@ -172,6 +249,34 @@ namespace vzt
         const VolkDeviceTable& table = m_device->getFunctionTable();
         table.vkCmdDrawIndexed(m_handle, static_cast<uint32_t>(range.size()), instanceCount, 0, vertexOffset,
                                instanceOffset);
+    }
+
+    void CommandBuffer::traceRays(StridedSpan<uint64_t> raygen, StridedSpan<uint64_t> miss, StridedSpan<uint64_t> hit,
+                                  StridedSpan<uint64_t> callable, uint32_t width, uint32_t height, uint32_t depth)
+    {
+        VkStridedDeviceAddressRegionKHR raygenShaderSbtEntry{};
+        raygenShaderSbtEntry.deviceAddress = raygen.data;
+        raygenShaderSbtEntry.stride        = raygen.stride;
+        raygenShaderSbtEntry.size          = raygen.size;
+
+        VkStridedDeviceAddressRegionKHR missShaderSbtEntry{};
+        missShaderSbtEntry.deviceAddress = miss.data;
+        missShaderSbtEntry.stride        = miss.stride;
+        missShaderSbtEntry.size          = miss.size;
+
+        VkStridedDeviceAddressRegionKHR hitShaderSbtEntry{};
+        hitShaderSbtEntry.deviceAddress = hit.data;
+        hitShaderSbtEntry.stride        = hit.stride;
+        hitShaderSbtEntry.size          = hit.size;
+
+        VkStridedDeviceAddressRegionKHR callableShaderSbtEntry{};
+        callableShaderSbtEntry.deviceAddress = callable.data;
+        callableShaderSbtEntry.stride        = callable.stride;
+        callableShaderSbtEntry.size          = callable.size;
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdTraceRaysKHR(m_handle, &raygenShaderSbtEntry, &missShaderSbtEntry, &hitShaderSbtEntry,
+                                &callableShaderSbtEntry, width, height, depth);
     }
 
     void CommandBuffer::setViewport(const Extent2D& size, float minDepth, float maxDepth)
@@ -257,7 +362,8 @@ namespace vzt
             std::visit(
                 Overloaded{
                     [&maxPrimitiveCount](const AsTriangles& trianglesAs) {
-                        maxPrimitiveCount += static_cast<uint32_t>(trianglesAs.indexBuffer.size / sizeof(uint32_t));
+                        maxPrimitiveCount +=
+                            static_cast<uint32_t>(trianglesAs.indexBuffer.data->size() / (3 * sizeof(uint32_t)));
                     },
                     [&maxPrimitiveCount](const AsAabbs& aabbsAs) {
                         maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.size / aabbsAs.stride);

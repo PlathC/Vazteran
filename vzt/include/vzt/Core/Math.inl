@@ -13,4 +13,12 @@ namespace vzt
     {
         return glm::translate(glm::toMat4(rotation), position);
     }
+
+    // Reference:
+    // https://github.com/SaschaWillems/Vulkan/blob/857f028686c41ee909ec812907cc966af962e339/base/VulkanTools.cpp#L399
+    inline std::size_t align(std::size_t size, std::size_t alignment)
+    {
+        return (size + alignment - 1) & ~(alignment - 1);
+    }
+
 } // namespace vzt

@@ -15,4 +15,8 @@ namespace vzt
         m_shaderModules.emplace_back(ShaderModule(m_device, std::move(shader)));
     }
     inline const std::vector<ShaderModule>& Program::getModules() const { return m_shaderModules; }
+
+    inline CSpan<ShaderGroupShader> ShaderGroup::getShaders() const { return m_shaders; }
+    inline std::size_t              ShaderGroup::size() const { return m_shaders.size(); }
+
 } // namespace vzt

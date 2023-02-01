@@ -19,6 +19,11 @@ namespace vzt
         VkPhysicalDeviceFeatures2& vkFeatures2 = features.getPhysicalFeatures();
         vkFeatures2.features.samplerAnisotropy = true;
 
+        VkPhysicalDeviceVulkan12Features features12{};
+        features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+        features12.bufferDeviceAddress = VK_TRUE;
+        features.add(features12);
+
         return features;
     }
 

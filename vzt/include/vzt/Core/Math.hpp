@@ -58,6 +58,8 @@ namespace vzt
     constexpr float toDegrees(float radians);
 
     inline Mat4 toTransformation(const Vec3& position, const Quat& rotation);
+
+    inline std::size_t align(std::size_t size, std::size_t alignment);
 } // namespace vzt
 
 #include "vzt/Core/Math.inl"

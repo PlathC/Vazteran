@@ -63,6 +63,37 @@ namespace vzt
     }
 
     template <class Type>
+    Type* Span<Type>::begin()
+    {
+        return data;
+    }
+    template <class Type>
+    Type* Span<Type>::end()
+    {
+        return data + size;
+    }
+    template <class Type>
+    const Type* Span<Type>::begin() const
+    {
+        return data;
+    }
+    template <class Type>
+    const Type* Span<Type>::end() const
+    {
+        return data + size;
+    }
+    template <class Type>
+    const Type* Span<Type>::cbegin() const
+    {
+        return data;
+    }
+    template <class Type>
+    const Type* Span<Type>::cend() const
+    {
+        return data + size;
+    }
+
+    template <class Type>
     CSpan<Type>::CSpan(Span<Type> span) : data(span.data), size(span.size)
     {
     }
@@ -104,6 +135,30 @@ namespace vzt
     }
 
     template <class Type>
+    const Type* CSpan<Type>::begin() const
+    {
+        return data;
+    }
+
+    template <class Type>
+    const Type* CSpan<Type>::end() const
+    {
+        return data + size;
+    }
+
+    template <class Type>
+    const Type* CSpan<Type>::cbegin() const
+    {
+        return data;
+    }
+
+    template <class Type>
+    const Type* CSpan<Type>::cend() const
+    {
+        return data + size;
+    }
+
+    template <class Type>
     OffsetSpan<Type>::OffsetSpan(Span<Type> span) : data(span.data), size(span.size)
     {
     }
@@ -139,6 +194,42 @@ namespace vzt
     }
 
     template <class Type>
+    Type* OffsetSpan<Type>::begin()
+    {
+        return data;
+    }
+
+    template <class Type>
+    Type* OffsetSpan<Type>::end()
+    {
+        return data + size;
+    }
+
+    template <class Type>
+    const Type* OffsetSpan<Type>::begin() const
+    {
+        return data;
+    }
+
+    template <class Type>
+    const Type* OffsetSpan<Type>::end() const
+    {
+        return data + size;
+    }
+
+    template <class Type>
+    const Type* OffsetSpan<Type>::cbegin() const
+    {
+        return data;
+    }
+
+    template <class Type>
+    const Type* OffsetSpan<Type>::cend() const
+    {
+        return data + size;
+    }
+
+    template <class Type>
     OffsetCSpan<Type>::OffsetCSpan(OffsetSpan<Type> span, std::size_t offset)
         : data(span.data), size(span.size), offset(offset)
     {
@@ -166,6 +257,30 @@ namespace vzt
     OffsetCSpan<Type>::OffsetCSpan(const std::array<Type, Size>& buffer, std::size_t offset)
         : data(buffer.data()), size(buffer.size()), offset(offset)
     {
+    }
+
+    template <class Type>
+    const Type* OffsetCSpan<Type>::begin() const
+    {
+        return data;
+    }
+
+    template <class Type>
+    const Type* OffsetCSpan<Type>::end() const
+    {
+        return data + size;
+    }
+
+    template <class Type>
+    const Type* OffsetCSpan<Type>::cbegin() const
+    {
+        return data;
+    }
+
+    template <class Type>
+    const Type* OffsetCSpan<Type>::cend() const
+    {
+        return data + size;
     }
 
     template <class Type>

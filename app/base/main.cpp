@@ -56,7 +56,9 @@ int main(int /* argc */, char** /* argv */)
     renderPass.setDepth(std::move(depth));
     renderPass.compile();
 
-    auto pipeline = vzt::GraphicPipeline(device, program, vzt::Viewport{window.getExtent()});
+    auto pipeline = vzt::GraphicPipeline(device);
+    pipeline.setProgram(program);
+    pipeline.setViewport(vzt::Viewport{window.getExtent()});
 
     vzt::DescriptorLayout descriptorLayout{device};
     // Model { mat4 modelView; mat4 projection; mat4 normal; }
@@ -113,11 +115,9 @@ int main(int /* argc */, char** /* argv */)
     auto       graphicsQueue      = device.getQueue(vzt::QueueType::Graphics);
     auto       commandPool        = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     const auto createRenderObject = [&](uint32_t i) {
-        // Render targets
-        depthStencils.emplace_back(device, window.getExtent(), vzt::ImageUsage::DepthStencilAttachment, depthFormat);
-
         const auto& image = swapchain.getImage(i);
         frameBuffers.emplace_back(device, extent);
+        depthStencils.emplace_back(device, extent, vzt::ImageUsage::DepthStencilAttachment, depthFormat);
 
         vzt::FrameBuffer& frameBuffer = frameBuffers.back();
         frameBuffer.addAttachment(vzt::ImageView(device, image, vzt::ImageAspect::Color));

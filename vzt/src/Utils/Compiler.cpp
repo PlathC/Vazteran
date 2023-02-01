@@ -298,13 +298,13 @@ namespace vzt
 
         // TODO: Make this dynamic based on renderer
         glslang::EShClient              clientType     = glslang::EShClientVulkan;
-        glslang::EShTargetClientVersion clientVersion  = glslang::EShTargetClientVersion::EShTargetVulkan_1_0;
-        constexpr int                   DefaultVersion = 110;
+        glslang::EShTargetClientVersion clientVersion  = glslang::EShTargetClientVersion::EShTargetVulkan_1_2;
+        constexpr int                   DefaultVersion = 140;
 
         shader.setEntryPoint("main");
         shader.setEnvInput(toBackend(language), toBackend(stage), clientType, DefaultVersion);
         shader.setEnvClient(clientType, clientVersion);
-        shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_0);
+        shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_4);
 
         constexpr EProfile DefaultProfile = EProfile::ECompatibilityProfile;
 

@@ -3,6 +3,7 @@
 #include <cassert>
 
 #include "vzt/Vulkan/Device.hpp"
+#include "vzt/Vulkan/Raytracing/AccelerationStructure.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
 namespace vzt
@@ -196,16 +197,18 @@ namespace vzt
     {
         assert(descriptorId < m_descriptors.size() && "i must be less than Size()");
 
-        std::vector<VkWriteDescriptorSet>   descriptorWrites{};
-        std::vector<VkDescriptorBufferInfo> descriptorBufferInfo{};
-        std::vector<VkDescriptorImageInfo>  descriptorImageInfo;
+        std::vector<VkWriteDescriptorSet>                         descriptorWrites{};
+        std::vector<VkDescriptorBufferInfo>                       descriptorBufferInfo{};
+        std::vector<VkDescriptorImageInfo>                        descriptorImageInfo{};
+        std::vector<VkWriteDescriptorSetAccelerationStructureKHR> descriptorAsInfo{};
 
         descriptorBufferInfo.reserve(descriptors.size());
         descriptorImageInfo.reserve(descriptors.size());
+        descriptorAsInfo.reserve(descriptors.size());
         for (const auto& [i, descriptor] : descriptors)
         {
             std::visit(Overloaded{[&](const DescriptorBuffer& buffer) {
-                                      VkDescriptorBufferInfo info;
+                                      VkDescriptorBufferInfo info{};
                                       info.buffer = buffer.buffer.data->getHandle();
                                       info.offset = buffer.buffer.offset;
                                       info.range  = buffer.buffer.size;
@@ -222,10 +225,12 @@ namespace vzt
                                       descriptorWrites.emplace_back(descriptorWrite);
                                   },
                                   [&](const DescriptorImage& image) {
-                                      VkDescriptorImageInfo info;
+                                      VkDescriptorImageInfo info{};
                                       info.imageLayout = toVulkan(image.layout);
                                       info.imageView   = image.image->getHandle();
-                                      info.sampler     = image.sampler->getHandle();
+
+                                      if (image.sampler)
+                                          info.sampler = image.sampler->getHandle();
 
                                       descriptorImageInfo.emplace_back(info);
 
@@ -234,9 +239,27 @@ namespace vzt
                                       descriptorWrite.dstSet          = m_descriptors[descriptorId];
                                       descriptorWrite.dstBinding      = i;
                                       descriptorWrite.dstArrayElement = 0;
-                                      descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                                      descriptorWrite.descriptorType  = toVulkan(image.type);
                                       descriptorWrite.descriptorCount = 1;
                                       descriptorWrite.pImageInfo      = &descriptorImageInfo.back();
+                                      descriptorWrites.emplace_back(descriptorWrite);
+                                  },
+                                  [&](const DescriptorAccelerationStructure& accelerationStructure) {
+                                      VkWriteDescriptorSetAccelerationStructureKHR info{};
+                                      info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+                                      info.accelerationStructureCount = 1;
+                                      info.pAccelerationStructures =
+                                          &accelerationStructure.accelerationStructure->getHandle();
+                                      descriptorAsInfo.emplace_back(info);
+
+                                      VkWriteDescriptorSet descriptorWrite{};
+                                      descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                                      descriptorWrite.dstSet          = m_descriptors[descriptorId];
+                                      descriptorWrite.dstBinding      = i;
+                                      descriptorWrite.dstArrayElement = 0;
+                                      descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+                                      descriptorWrite.descriptorCount = 1;
+                                      descriptorWrite.pNext           = &descriptorAsInfo.back();
                                       descriptorWrites.emplace_back(descriptorWrite);
                                   }},
                        descriptor);

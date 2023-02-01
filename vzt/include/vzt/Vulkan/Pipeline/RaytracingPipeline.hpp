@@ -7,13 +7,6 @@
 
 namespace vzt
 {
-    enum class ShaderGroupType : uint8_t
-    {
-        General            = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR,
-        TrianglesHitGroup  = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR,
-        ProceduralHitGroup = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR,
-    };
-    VZT_DEFINE_TO_VULKAN_FUNCTION(ShaderGroupType, VkRayTracingShaderGroupTypeKHR);
 
     class RaytracingPipeline
     {
@@ -28,10 +21,15 @@ namespace vzt
 
         ~RaytracingPipeline();
 
-        void        addShader(Shader shader, ShaderGroupType hitGroupType = ShaderGroupType::General);
         inline void setDescriptorLayout(DescriptorLayout descriptorLayout);
+        inline void setShaderGroup(const ShaderGroup& shaderGroup);
 
-        void compile();
+        void                    compile();
+        inline VkPipeline       getHandle() const;
+        inline VkPipelineLayout getLayout() const;
+        inline CSpan<uint8_t>   getShaderHandleStorage() const;
+        inline uint32_t         getShaderHandleSize() const;
+        inline uint32_t         getShaderHandleSizeAligned() const;
 
       private:
         void cleanup();
@@ -40,10 +38,12 @@ namespace vzt
         VkPipeline       m_handle         = VK_NULL_HANDLE;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-        DescriptorLayout m_descriptorLayout;
+        DescriptorLayout  m_descriptorLayout;
+        View<ShaderGroup> m_shaderGroup;
 
-        std::vector<ShaderModule>                         m_shaderModules;
-        std::vector<VkRayTracingShaderGroupCreateInfoKHR> m_shaderGroups;
+        uint32_t             m_handleSize;
+        uint32_t             m_handleSizeAligned;
+        std::vector<uint8_t> m_shaderHandleStorage;
 
         bool m_compiled = false;
     };

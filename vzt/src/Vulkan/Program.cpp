@@ -54,4 +54,28 @@ namespace vzt
 
         return *this;
     }
+
+    ShaderGroup::ShaderGroup(View<Device> device) : m_device(device) {}
+
+    ShaderGroup::ShaderGroup(ShaderGroup&& other) noexcept
+    {
+        std::swap(m_device, other.m_device);
+        std::swap(m_shaders, other.m_shaders);
+    }
+
+    ShaderGroup& ShaderGroup::operator=(ShaderGroup&& other) noexcept
+    {
+        std::swap(m_device, other.m_device);
+        std::swap(m_shaders, other.m_shaders);
+
+        return *this;
+    }
+
+    void ShaderGroup::addShader(Shader shader, ShaderGroupType hitGroupType)
+    {
+        m_shaders.emplace_back(ShaderGroupShader{
+            hitGroupType,
+            ShaderModule(m_device, std::move(shader)),
+        });
+    }
 } // namespace vzt

@@ -13,20 +13,23 @@ namespace vzt
 {
     class DescriptorPool;
     class ImageView;
+    class AccelerationStructure;
 
     enum class DescriptorType
     {
-        Sampler              = VK_DESCRIPTOR_TYPE_SAMPLER,
-        CombinedSampler      = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        SampledImage         = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-        StorageImage         = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        UniformTexelBuffer   = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
-        StorageTexelBuffer   = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
-        UniformBuffer        = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        StorageBuffer        = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-        UniformBufferDynamic = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
-        StorageBufferDynamic = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
-        InputAttachment      = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+        Sampler               = VK_DESCRIPTOR_TYPE_SAMPLER,
+        CombinedSampler       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        SampledImage          = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+        StorageImage          = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        UniformTexelBuffer    = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,
+        StorageTexelBuffer    = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,
+        UniformBuffer         = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        StorageBuffer         = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        UniformBufferDynamic  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,
+        StorageBufferDynamic  = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,
+        InputAttachment       = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+        InlineUniformBlock    = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK,
+        AccelerationStructure = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(DescriptorType, VkDescriptorType)
 
@@ -87,7 +90,13 @@ namespace vzt
         ImageLayout     layout = ImageLayout::ShaderReadOnlyOptimal;
     };
 
-    using DescriptorWrite   = std::variant<DescriptorBuffer, DescriptorImage>;
+    struct DescriptorAccelerationStructure
+    {
+        DescriptorType              type;
+        View<AccelerationStructure> accelerationStructure;
+    };
+
+    using DescriptorWrite   = std::variant<DescriptorBuffer, DescriptorImage, DescriptorAccelerationStructure>;
     using IndexedDescriptor = std::unordered_map<uint32_t, DescriptorWrite>;
     class DescriptorPool
     {
