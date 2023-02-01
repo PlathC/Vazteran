@@ -1,6 +1,6 @@
 # Vazteran
 
-Vulkan based rendering engine for learning purposes. Its main goal is to offer a base interface
+Vulkan based library for learning purposes. Its main goal is to offer a base interface
 for my personal projects in computer graphics. 
 
 Here is the roadmap :
