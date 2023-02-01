@@ -1,29 +1,41 @@
-add_subdirectory(fmt)
-add_subdirectory(glm)
+if(NOT TARGET fmt)
+    add_subdirectory(fmt)
+endif() 
 
-set(SDL2_DISABLE_UNINSTALL      ON  CACHE BOOL "" FORCE)
-set(SDL_TEST                    OFF CACHE BOOL "" FORCE)
-set(SDL_TESTS                   OFF CACHE BOOL "" FORCE)
-add_subdirectory(SDL)
-
-set(SPIRV_HEADERS_SKIP_EXAMPLES ON CACHE BOOL "" FORCE)
-set(SPIRV_HEADERS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
-add_subdirectory(SPIRV-Headers)
-
-set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
-set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
-add_subdirectory(SPIRV-Tools)
-
-set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
-set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
-add_subdirectory(glslang)
-
-if (WIN32)
-   set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+if(NOT TARGET glm::glm)
+    add_subdirectory(glm)
 endif()
-add_subdirectory(volk)
 
+if(NOT TARGET SDL2::SDL2)
+    set(SDL2_DISABLE_UNINSTALL      ON  CACHE BOOL "" FORCE)
+    set(SDL_TEST                    OFF CACHE BOOL "" FORCE)
+    set(SDL_TESTS                   OFF CACHE BOOL "" FORCE)
+    add_subdirectory(SDL)
+endif() 
+
+if(NOT TARGET SPIRV)
+    set(SPIRV_HEADERS_SKIP_EXAMPLES ON CACHE BOOL "" FORCE)
+    set(SPIRV_HEADERS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
+    add_subdirectory(SPIRV-Headers)
+
+    set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
+    set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
+    add_subdirectory(SPIRV-Tools)
+endif() 
+
+if(NOT TARGET glslang)
+    set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
+    add_subdirectory(glslang)
+endif() 
+
+if(NOT TARGET volk)
+    if (WIN32)
+       set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+    endif()
+    add_subdirectory(volk)
+endif()
 
 # Prepare data for parent scope
 set(VZT_EXTERN_PUBLIC_INCLUDES
