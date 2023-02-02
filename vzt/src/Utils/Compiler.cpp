@@ -33,16 +33,20 @@ namespace vzt
                 m_includedSave.emplace_back(completePath);
                 source = vzt::readFile(completePath);
             }
+            else
+            {
+                logger::error("Can't find {}!", completePath.string());
+            }
 
             const std::size_t hash = hashPath(completePath);
 
-            DataKeeper keeper{requested.string(), source, m_resultsSave.size()};
+            DataKeeper keeper{source.empty() ? "" : requested.string(), source, m_resultsSave.size()};
 
-            m_resultsSave.emplace_back(
-                IncludeResult{keeper.sourceName, keeper.sourceContent.c_str(), keeper.sourceContent.size(), nullptr});
+            m_resultsSave.emplace_back(std::make_unique<IncludeResult>( //
+                keeper.sourceName, keeper.sourceContent.c_str(), keeper.sourceContent.size(), nullptr));
             m_included[hash] = std::move(keeper);
 
-            return &m_resultsSave.back();
+            return m_resultsSave.back().get();
         }
 
         IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
@@ -60,11 +64,11 @@ namespace vzt
             const std::size_t hash = hashPath(completePath);
             DataKeeper        keeper{requested.string(), source, m_resultsSave.size()};
 
-            m_resultsSave.emplace_back(
-                IncludeResult{keeper.sourceName, keeper.sourceContent.c_str(), keeper.sourceContent.size(), nullptr});
+            m_resultsSave.emplace_back(std::make_unique<IncludeResult>( //
+                keeper.sourceName, keeper.sourceContent.c_str(), keeper.sourceContent.size(), nullptr));
             m_included[hash] = std::move(keeper);
 
-            return &m_resultsSave.back();
+            return m_resultsSave.back().get();
         }
 
         // Handles shaderc_include_result_release_fn callbacks.
@@ -84,7 +88,7 @@ namespace vzt
 
         Path                                        m_root;
         std::unordered_map<std::size_t, DataKeeper> m_included;
-        std::vector<IncludeResult>                  m_resultsSave;
+        std::vector<std::unique_ptr<IncludeResult>> m_resultsSave;
         std::vector<Path>                           m_includedSave;
     };
 
