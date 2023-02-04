@@ -128,7 +128,7 @@ namespace vzt
             }
             case SDL_KEYUP: {
                 Key key = toKey(windowEvent.key.keysym.scancode);
-                m_inputs.setClicked(key);
+                m_inputs.setReleased(key);
                 break;
             }
             }
