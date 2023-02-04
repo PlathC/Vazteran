@@ -110,6 +110,8 @@ namespace vzt
     class AccelerationStructure
     {
       public:
+        AccelerationStructure() = default;
+
         AccelerationStructure(View<Device> device, std::vector<GeometryAsBuilder> geometries,
                               AccelerationStructureType type);
         AccelerationStructure(View<Device> device, GeometryAsBuilder geometry, AccelerationStructureType type);
@@ -135,11 +137,11 @@ namespace vzt
         View<Device>                   m_device;
         std::vector<GeometryAsBuilder> m_geometries;
         AccelerationStructureType      m_type;
-        uint32_t                       m_maxPrimitiveCount;
+        uint32_t                       m_maxPrimitiveCount{};
         Buffer                         m_buffer;
-        uint64_t                       m_deviceAddress;
-        uint64_t                       m_size;
-        uint64_t                       m_scratchBufferSize;
+        uint64_t                       m_deviceAddress{};
+        uint64_t                       m_size{};
+        uint64_t                       m_scratchBufferSize{};
     };
 
 } // namespace vzt

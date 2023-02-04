@@ -124,9 +124,12 @@ namespace vzt
         std::swap(m_handle, other.m_handle);
         std::swap(m_device, other.m_device);
         std::swap(m_geometries, other.m_geometries);
+        std::swap(m_type, other.m_type);
+        std::swap(m_maxPrimitiveCount, other.m_maxPrimitiveCount);
         std::swap(m_buffer, other.m_buffer);
         std::swap(m_deviceAddress, other.m_deviceAddress);
         std::swap(m_size, other.m_size);
+        std::swap(m_scratchBufferSize, other.m_scratchBufferSize);
     }
 
     AccelerationStructure& AccelerationStructure::operator=(AccelerationStructure&& other) noexcept
@@ -134,9 +137,12 @@ namespace vzt
         std::swap(m_handle, other.m_handle);
         std::swap(m_device, other.m_device);
         std::swap(m_geometries, other.m_geometries);
+        std::swap(m_type, other.m_type);
+        std::swap(m_maxPrimitiveCount, other.m_maxPrimitiveCount);
         std::swap(m_buffer, other.m_buffer);
         std::swap(m_deviceAddress, other.m_deviceAddress);
         std::swap(m_size, other.m_size);
+        std::swap(m_scratchBufferSize, other.m_scratchBufferSize);
 
         return *this;
     }
