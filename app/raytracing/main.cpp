@@ -1,6 +1,6 @@
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Utils/Compiler.hpp>
-#include <vzt/Utils/MeshLoader.hpp>
+#include <vzt/Utils/IOMesh.hpp>
 #include <vzt/Vulkan/AccelerationStructure.hpp>
 #include <vzt/Vulkan/Buffer.hpp>
 #include <vzt/Vulkan/Command.hpp>
@@ -138,8 +138,8 @@ int main(int argc, char** argv)
         true,
     };
 
-    std::vector<vzt::Image>     storageImages;
-    std::vector<vzt::ImageView> storageImageView;
+    std::vector<vzt::DeviceImage> storageImages;
+    std::vector<vzt::ImageView>   storageImageView;
     storageImages.reserve(swapchain.getImageNb());
     storageImageView.reserve(swapchain.getImageNb());
 

@@ -5,8 +5,8 @@
 
 namespace vzt
 {
-    Image::Image(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels,
-                 ImageLayout layout, SampleCount sampleCount, ImageType type, SharingMode sharingMode)
+    DeviceImage::DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels,
+                             ImageLayout layout, SampleCount sampleCount, ImageType type, SharingMode sharingMode)
         : m_device(device), m_size(size), m_usage(usage), m_format(format), m_mipLevels(mipLevels), m_layout(layout),
           m_sampleCount(sampleCount), m_type(type), m_sharingMode(sharingMode)
     {
@@ -35,19 +35,19 @@ namespace vzt
                 "Can't allocate image.");
     }
 
-    Image::Image(View<Device> device, ImageBuilder builder)
-        : Image(device, builder.size, builder.usage, builder.format, builder.mipLevels, builder.layout,
-                builder.sampleCount, builder.type, builder.sharingMode)
+    DeviceImage::DeviceImage(View<Device> device, ImageBuilder builder)
+        : DeviceImage(device, builder.size, builder.usage, builder.format, builder.mipLevels, builder.layout,
+                      builder.sampleCount, builder.type, builder.sharingMode)
     {
     }
 
-    Image::Image(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
-                 SharingMode sharingMode)
+    DeviceImage::DeviceImage(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
+                             SharingMode sharingMode)
         : m_device(device), m_handle(image), m_size(size), m_usage(usage), m_format(format), m_sharingMode(sharingMode)
     {
     }
 
-    Image::Image(Image&& other) noexcept
+    DeviceImage::DeviceImage(DeviceImage&& other) noexcept
         : m_device(other.m_device), m_handle(std::exchange(other.m_handle, VK_NULL_HANDLE)),
           m_allocation(std::exchange(other.m_allocation, VK_NULL_HANDLE)), m_size(std::move(other.m_size)),
           m_usage(std::move(other.m_usage)), m_format(std::move(other.m_format)),
@@ -57,7 +57,7 @@ namespace vzt
     {
     }
 
-    Image& Image::operator=(Image&& other) noexcept
+    DeviceImage& DeviceImage::operator=(DeviceImage&& other) noexcept
     {
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
@@ -74,7 +74,7 @@ namespace vzt
         return *this;
     }
 
-    Image::~Image()
+    DeviceImage::~DeviceImage()
     {
         // If the object did not created the handle (i.e. for swapchain images)
         if (m_allocation == VK_NULL_HANDLE)
@@ -83,8 +83,8 @@ namespace vzt
         vmaDestroyImage(m_device->getAllocator(), m_handle, m_allocation);
     }
 
-    ImageView::ImageView(View<Device> device, View<Image> image, ImageViewType type, ImageAspect aspect, Format format,
-                         uint32_t baseMipLevel, uint32_t levelCount)
+    ImageView::ImageView(View<Device> device, View<DeviceImage> image, ImageViewType type, ImageAspect aspect,
+                         Format format, uint32_t baseMipLevel, uint32_t levelCount)
         : m_device(device), m_image(image), m_aspect(aspect), m_format(format)
     {
         VkImageViewCreateInfo viewInfo{};
@@ -115,12 +115,12 @@ namespace vzt
         return ImageViewType::T2D;
     }
 
-    ImageView::ImageView(View<Device> device, View<Image> image, ImageAspect aspect, ImageViewType type)
+    ImageView::ImageView(View<Device> device, View<DeviceImage> image, ImageAspect aspect, ImageViewType type)
         : ImageView(device, image, type, aspect, image->getFormat(), 0, image->getMipLevels())
     {
     }
 
-    ImageView::ImageView(View<Device> device, View<Image> image, ImageAspect aspect)
+    ImageView::ImageView(View<Device> device, View<DeviceImage> image, ImageAspect aspect)
         : ImageView(device, image, toImageViewType(image->getImageType()), aspect, image->getFormat(), 0,
                     image->getMipLevels())
     {

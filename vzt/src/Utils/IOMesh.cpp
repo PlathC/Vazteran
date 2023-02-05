@@ -1,4 +1,4 @@
-#include "vzt/Utils/MeshLoader.hpp"
+#include "vzt/Utils/IOMesh.hpp"
 
 #include <unordered_map>
 

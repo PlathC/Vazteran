@@ -37,13 +37,13 @@ namespace vzt
         void barrier(PipelineStage src, PipelineStage dst, ImageBarrier barrier);
         void barrier(PipelineStage src, PipelineStage dst, BufferBarrier barrier);
 
-        void clear(View<Image> image, ImageLayout layout, Vec4 clearColor = {});
-        void blit(View<Image> src, ImageLayout srcLayout, ImageAspect srcAspect, Vec2u srcStart, Vec2u srcEnd,
-                  View<Image> dst, ImageLayout dstLayout, ImageAspect dstAspect, Vec2u dstStart, Vec2u dstEnd,
+        void clear(View<DeviceImage> image, ImageLayout layout, Vec4 clearColor = {});
+        void blit(View<DeviceImage> src, ImageLayout srcLayout, ImageAspect srcAspect, Vec2u srcStart, Vec2u srcEnd,
+                  View<DeviceImage> dst, ImageLayout dstLayout, ImageAspect dstAspect, Vec2u dstStart, Vec2u dstEnd,
                   Filter filter = Filter::Linear);
-        void blit(View<Image> src, ImageLayout srcLayout, ImageAspect srcAspect, View<Image> dst, ImageLayout dstLayout,
-                  ImageAspect dstAspect, Filter filter = Filter::Linear);
-        void blit(View<Image> src, ImageLayout srcLayout, View<Image> dst, ImageLayout dstLayout,
+        void blit(View<DeviceImage> src, ImageLayout srcLayout, ImageAspect srcAspect, View<DeviceImage> dst,
+                  ImageLayout dstLayout, ImageAspect dstAspect, Filter filter = Filter::Linear);
+        void blit(View<DeviceImage> src, ImageLayout srcLayout, View<DeviceImage> dst, ImageLayout dstLayout,
                   Filter filter = Filter::Linear);
         void copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
 

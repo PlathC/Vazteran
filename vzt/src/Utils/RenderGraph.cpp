@@ -352,7 +352,7 @@ namespace vzt
             {
                 const AttachmentBuilder& builder = graph.getConfiguration(output.handle);
 
-                View<Image> image;
+                View<DeviceImage> image;
                 if (!builder.format)
                     image = graph.m_swapchain->getImage(i);
                 else
@@ -384,7 +384,7 @@ namespace vzt
             // Sampled texture
             for (auto& input : m_colorInputs)
             {
-                View<Image> image = graph.getImage(i, input.handle);
+                View<DeviceImage> image = graph.getImage(i, input.handle);
 
                 m_textureSaves.emplace_back(device, image, SamplerBuilder{});
                 Texture& texture = m_textureSaves.back();
@@ -524,7 +524,7 @@ namespace vzt
 
     Handle RenderGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), HandleType::Storage, 0}; }
 
-    View<Image> RenderGraph::getImage(uint32_t swapchainImageId, Handle handle) const
+    View<DeviceImage> RenderGraph::getImage(uint32_t swapchainImageId, Handle handle) const
     {
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
         return m_images[handlePhysicalId * m_swapchain->getImageNb() + swapchainImageId];
@@ -682,7 +682,7 @@ namespace vzt
                     builder.sharingMode           = queueTypeNb > 1u ? SharingMode::Concurrent : SharingMode::Exclusive;
 
                     for (uint32_t i = 0; i < swapchainImageNb; i++)
-                        m_images.emplace_back(Image{attachmentBuilder.device, builder});
+                        m_images.emplace_back(DeviceImage{attachmentBuilder.device, builder});
                 }
             }
             else if (handle.type == HandleType::Storage)

@@ -120,23 +120,23 @@ namespace vzt
         SharingMode sharingMode = SharingMode::Concurrent;
     };
 
-    class Image
+    class DeviceImage
     {
       public:
-        Image(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels = 1,
-              ImageLayout layout = ImageLayout::Undefined, SampleCount sampleCount = SampleCount::Sample1,
-              ImageType type = ImageType::T2D, SharingMode sharingMode = SharingMode::Exclusive);
-        Image(View<Device> device, ImageBuilder builder);
-        Image(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
-              SharingMode sharingMode = SharingMode::Exclusive);
+        DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels = 1,
+                    ImageLayout layout = ImageLayout::Undefined, SampleCount sampleCount = SampleCount::Sample1,
+                    ImageType type = ImageType::T2D, SharingMode sharingMode = SharingMode::Exclusive);
+        DeviceImage(View<Device> device, ImageBuilder builder);
+        DeviceImage(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
+                    SharingMode sharingMode = SharingMode::Exclusive);
 
-        Image(const Image&)            = delete;
-        Image& operator=(const Image&) = delete;
+        DeviceImage(const DeviceImage&)            = delete;
+        DeviceImage& operator=(const DeviceImage&) = delete;
 
-        Image(Image&&) noexcept;
-        Image& operator=(Image&&) noexcept;
+        DeviceImage(DeviceImage&& other) noexcept;
+        DeviceImage& operator=(DeviceImage&& other) noexcept;
 
-        ~Image();
+        ~DeviceImage();
 
         inline Extent3D    getSize() const;
         inline ImageUsage  getUsage() const;
@@ -178,10 +178,10 @@ namespace vzt
     class ImageView
     {
       public:
-        ImageView(View<Device> device, View<Image> image, ImageViewType type, ImageAspect aspect, Format format,
+        ImageView(View<Device> device, View<DeviceImage> image, ImageViewType type, ImageAspect aspect, Format format,
                   uint32_t baseMipLevel, uint32_t levelCount);
-        ImageView(View<Device> device, View<Image> image, ImageAspect aspect, ImageViewType type);
-        ImageView(View<Device> device, View<Image> image, ImageAspect aspect);
+        ImageView(View<Device> device, View<DeviceImage> image, ImageAspect aspect, ImageViewType type);
+        ImageView(View<Device> device, View<DeviceImage> image, ImageAspect aspect);
 
         ImageView(const ImageView&)            = delete;
         ImageView& operator=(const ImageView&) = delete;
@@ -191,15 +191,15 @@ namespace vzt
 
         ~ImageView();
 
-        inline ImageAspect getAspect() const;
-        inline Format      getFormat() const;
-        inline View<Image> getImage() const;
-        inline VkImageView getHandle() const;
+        inline ImageAspect       getAspect() const;
+        inline Format            getFormat() const;
+        inline View<DeviceImage> getImage() const;
+        inline VkImageView       getHandle() const;
 
       private:
-        View<Device> m_device;
-        View<Image>  m_image;
-        VkImageView  m_handle = VK_NULL_HANDLE;
+        View<Device>      m_device;
+        View<DeviceImage> m_image;
+        VkImageView       m_handle = VK_NULL_HANDLE;
 
         ImageAspect m_aspect;
         Format      m_format;

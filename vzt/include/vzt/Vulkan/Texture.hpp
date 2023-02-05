@@ -87,7 +87,7 @@ namespace vzt
     class Texture
     {
       public:
-        Texture(View<Device> device, View<Image> image, SamplerBuilder samplerSettings = {});
+        Texture(View<Device> device, View<DeviceImage> image, SamplerBuilder samplerSettings = {});
 
         Texture(const Texture&)            = delete;
         Texture& operator=(const Texture&) = delete;

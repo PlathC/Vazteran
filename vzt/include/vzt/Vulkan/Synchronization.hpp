@@ -91,13 +91,13 @@ namespace vzt
 
     struct ImageBarrier
     {
-        View<Image> image;
-        ImageLayout oldLayout;
-        ImageLayout newLayout;
-        View<Queue> srcQueue = {};
-        View<Queue> dstQueue = {};
-        Access      src      = Access::None;
-        Access      dst      = Access::None;
+        View<DeviceImage> image;
+        ImageLayout       oldLayout;
+        ImageLayout       newLayout;
+        View<Queue>       srcQueue = {};
+        View<Queue>       dstQueue = {};
+        Access            src      = Access::None;
+        Access            dst      = Access::None;
     };
 
     struct PipelineBarrier

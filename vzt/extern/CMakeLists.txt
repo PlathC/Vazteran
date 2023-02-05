@@ -37,6 +37,11 @@ if(NOT TARGET volk)
     add_subdirectory(volk)
 endif()
 
+if(NOT TARGET tinyexr)
+    set(TINYEXR_BUILD_SAMPLE OFF)
+    add_subdirectory(tinyexr)
+endif()
+
 # Prepare data for parent scope
 set(VZT_EXTERN_PUBLIC_INCLUDES
     ${VZT_EXTERN_INCLUDES}
@@ -45,6 +50,7 @@ set(VZT_EXTERN_PUBLIC_INCLUDES
     "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
     "${CMAKE_CURRENT_SOURCE_DIR}/volk"
     "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr"
     ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -63,6 +69,7 @@ set(VZT_EXTERN_LIBRARIES
     glslang
     SDL2::SDL2 SDL2::SDL2main
     SPIRV 
+    tinyexr
 )
 
 set(VZT_EXTERN_SOURCES

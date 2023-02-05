@@ -19,7 +19,8 @@ set(VZT_HEADERS
     include/vzt/Ui/Input.hpp
     
     include/vzt/Utils/Compiler.hpp
-    include/vzt/Utils/MeshLoader.hpp
+    include/vzt/Utils/IOMesh.hpp
+    include/vzt/Utils/IOHDR.hpp
     include/vzt/Utils/RenderGraph.hpp
 
     include/vzt/Vulkan/AccelerationStructure.hpp
@@ -56,7 +57,8 @@ set(VZT_SOURCES
     src/Ui/Input.cpp
 
     src/Utils/Compiler.cpp
-    src/Utils/MeshLoader.cpp
+    src/Utils/IOHDR.cpp
+    src/Utils/IOMesh.cpp
     src/Utils/RenderGraph.cpp
 
     src/Vulkan/AccelerationStructure.cpp

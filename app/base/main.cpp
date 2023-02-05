@@ -6,7 +6,7 @@
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
-#include <vzt/Utils/MeshLoader.hpp>
+#include <vzt/Utils/IOMesh.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Descriptor.hpp>
 #include <vzt/Vulkan/FrameBuffer.hpp>
@@ -105,7 +105,7 @@ int main(int /* argc */, char** /* argv */)
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
     vzt::Extent2D                 extent = window.getExtent();
-    std::vector<vzt::Image>       depthStencils;
+    std::vector<vzt::DeviceImage> depthStencils;
     std::vector<vzt::FrameBuffer> frameBuffers;
     depthStencils.reserve(swapchain.getImageNb());
     frameBuffers.reserve(swapchain.getImageNb());

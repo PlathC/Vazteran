@@ -78,7 +78,7 @@ namespace vzt
         barrier(std::move(pipelineBarrier));
     }
 
-    void CommandBuffer::clear(View<Image> image, ImageLayout layout, Vec4 clearColor)
+    void CommandBuffer::clear(View<DeviceImage> image, ImageLayout layout, Vec4 clearColor)
     {
         VkImageSubresourceRange subresource;
         subresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -92,8 +92,8 @@ namespace vzt
         table.vkCmdClearColorImage(m_handle, image->getHandle(), toVulkan(layout), &clearColorValue, 1, &subresource);
     }
 
-    void CommandBuffer::blit(View<Image> src, ImageLayout srcLayout, ImageAspect srcAspect, Vec2u srcStart,
-                             Vec2u srcEnd, View<Image> dst, ImageLayout dstLayout, ImageAspect dstAspect,
+    void CommandBuffer::blit(View<DeviceImage> src, ImageLayout srcLayout, ImageAspect srcAspect, Vec2u srcStart,
+                             Vec2u srcEnd, View<DeviceImage> dst, ImageLayout dstLayout, ImageAspect dstAspect,
                              Vec2u dstStart, Vec2u dstEnd, Filter filter)
     {
         VkBlitImageInfo2 blitInfo{};
@@ -137,7 +137,7 @@ namespace vzt
         table.vkCmdBlitImage2(m_handle, &blitInfo);
     }
 
-    void CommandBuffer::blit(View<Image> src, ImageLayout srcLayout, ImageAspect srcAspect, View<Image> dst,
+    void CommandBuffer::blit(View<DeviceImage> src, ImageLayout srcLayout, ImageAspect srcAspect, View<DeviceImage> dst,
                              ImageLayout dstLayout, ImageAspect dstAspect, Filter filter)
     {
         const Extent3D srcExtent = src->getSize();
@@ -145,7 +145,7 @@ namespace vzt
              dst, dstLayout, dstAspect, Vec2u{0}, Vec2u{srcExtent.width, srcExtent.height}, filter);
     }
 
-    void CommandBuffer::blit(View<Image> src, ImageLayout srcLayout, View<Image> dst, ImageLayout dstLayout,
+    void CommandBuffer::blit(View<DeviceImage> src, ImageLayout srcLayout, View<DeviceImage> dst, ImageLayout dstLayout,
                              Filter filter)
     {
         const Extent3D srcExtent = src->getSize();

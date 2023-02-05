@@ -43,12 +43,12 @@ namespace vzt
         Optional<SwapchainSubmission> getSubmission();
         bool                          present();
 
-        inline void         setExtent(Extent2D extent);
-        inline Extent2D     getExtent() const;
-        inline View<Image>  getImage(std::size_t i) const;
-        inline uint32_t     getImageNb() const;
-        inline Format       getFormat() const;
-        inline View<Device> getDevice() const;
+        inline void              setExtent(Extent2D extent);
+        inline Extent2D          getExtent() const;
+        inline View<DeviceImage> getImage(std::size_t i) const;
+        inline uint32_t          getImageNb() const;
+        inline Format            getFormat() const;
+        inline View<Device>      getDevice() const;
 
       private:
         void create();
@@ -69,7 +69,7 @@ namespace vzt
         uint32_t                 m_currentImage = 0u;
         uint32_t                 m_imageNb      = 0u;
         std::vector<VkImage>     m_images{};
-        std::vector<Image>       m_userImages{};
+        std::vector<DeviceImage> m_userImages{};
         std::vector<VkSemaphore> m_imageAvailableSemaphores;
         std::vector<VkSemaphore> m_renderFinishedSemaphores;
         std::vector<VkFence>     m_inFlightFences;

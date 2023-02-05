@@ -135,9 +135,9 @@ namespace vzt
         vkGetPhysicalDeviceProperties2(m_device->getHardware().getHandle(), &deviceProperties2);
 
         m_handleSize              = rayTracingPipelineProperties.shaderGroupHandleSize;
-        m_handleSizeAligned       = align( //
+        m_handleSizeAligned       = static_cast<uint32_t>(align( //
             rayTracingPipelineProperties.shaderGroupHandleSize,
-            rayTracingPipelineProperties.shaderGroupHandleAlignment);
+            rayTracingPipelineProperties.shaderGroupHandleAlignment));
         const uint32_t groupCount = static_cast<uint32_t>(m_shaderGroup->size());
         const uint32_t sbtSize    = groupCount * m_handleSizeAligned;
 

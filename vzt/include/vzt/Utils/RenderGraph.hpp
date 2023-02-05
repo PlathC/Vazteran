@@ -202,8 +202,8 @@ namespace vzt
         Handle generateAttachmentHandle() const;
         Handle generateStorageHandle() const;
 
-        View<Image>  getImage(uint32_t swapchainImageId, Handle handle) const;
-        View<Buffer> getStorage(uint32_t swapchainImageId, Handle handle) const;
+        View<DeviceImage> getImage(uint32_t swapchainImageId, Handle handle) const;
+        View<Buffer>      getStorage(uint32_t swapchainImageId, Handle handle) const;
 
         const AttachmentBuilder& getConfiguration(Handle handle);
 
@@ -223,8 +223,8 @@ namespace vzt
         HandleMap<QueueType>               handleQueues{};
         std::vector<std::unique_ptr<Pass>> m_passes;
 
-        std::vector<Image>  m_images;   // [imageId  ]
-        std::vector<Buffer> m_storages; // [storageId]
+        std::vector<DeviceImage> m_images;   // [imageId  ]
+        std::vector<Buffer>      m_storages; // [storageId]
 
         Optional<Handle> m_backBuffer;
     };

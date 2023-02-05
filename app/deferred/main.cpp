@@ -1,7 +1,7 @@
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
-#include <vzt/Utils/MeshLoader.hpp>
+#include <vzt/Utils/IOMesh.hpp>
 #include <vzt/Utils/RenderGraph.hpp>
 #include <vzt/Vulkan/Pipeline/ComputePipeline.hpp>
 #include <vzt/Vulkan/Surface.hpp>
