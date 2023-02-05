@@ -7,7 +7,6 @@
 
 namespace vzt
 {
-
     class RaytracingPipeline
     {
       public:

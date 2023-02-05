@@ -46,6 +46,8 @@ namespace vzt
         void blit(View<DeviceImage> src, ImageLayout srcLayout, View<DeviceImage> dst, ImageLayout dstLayout,
                   Filter filter = Filter::Linear);
         void copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
+        void copy(const Buffer& src, const DeviceImage& dst, uint32_t width, uint32_t height,
+                  ImageAspect aspect = ImageAspect::Color);
 
         void bind(const GraphicPipeline& graphicPipeline);
         void bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set);

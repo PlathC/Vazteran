@@ -1,10 +1,34 @@
 #include "vzt/Vulkan/Image.hpp"
 
 #include "vzt/Core/Logger.hpp"
+#include "vzt/Vulkan/Buffer.hpp"
+#include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Device.hpp"
+#include "vzt/Vulkan/Image.hpp"
 
 namespace vzt
 {
+    DeviceImage DeviceImage::fromData(View<Device> device, ImageUsage usage, Format format, uint32_t width,
+                                      uint32_t height, const CSpan<uint8_t> data)
+    {
+        DeviceImage deviceImage{device, Extent2D{width, height}, usage | vzt::ImageUsage::TransferDst, format, true};
+        auto        staging = Buffer::fromData(device, OffsetCSpan<uint8_t>(data.data, data.size),
+                                               vzt::BufferUsage::TransferSrc, vzt::MemoryLocation::Device);
+
+        const auto graphicsQueue = device->getQueue(vzt::QueueType::Graphics);
+        graphicsQueue->oneShot([&](vzt::CommandBuffer& commands) {
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = deviceImage;
+            imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
+            imageBarrier.newLayout = vzt::ImageLayout::TransferDstOptimal;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
+
+            commands.copy(staging, deviceImage, width, height);
+        });
+
+        return deviceImage;
+    }
+
     DeviceImage::DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels,
                              ImageLayout layout, SampleCount sampleCount, ImageType type, SharingMode sharingMode)
         : m_device(device), m_size(size), m_usage(usage), m_format(format), m_mipLevels(mipLevels), m_layout(layout),
@@ -23,15 +47,10 @@ namespace vzt
         imageInfo.sharingMode   = toVulkan(m_sharingMode);
         imageInfo.initialLayout = toVulkan(m_layout);
 
-        const auto         hardware = m_device->getHardware();
-        VkFormatProperties properties;
-        vkGetPhysicalDeviceFormatProperties(hardware.getHandle(), toVulkan(format), &properties);
+        VmaAllocationCreateInfo allocInfo = {};
+        allocInfo.usage                   = VMA_MEMORY_USAGE_AUTO;
 
-        VmaAllocationCreateInfo imageAllocCreateInfo = {};
-        imageAllocCreateInfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
-
-        vkCheck(vmaCreateImage(m_device->getAllocator(), &imageInfo, &imageAllocCreateInfo, &m_handle, &m_allocation,
-                               nullptr),
+        vkCheck(vmaCreateImage(m_device->getAllocator(), &imageInfo, &allocInfo, &m_handle, &m_allocation, nullptr),
                 "Can't allocate image.");
     }
 

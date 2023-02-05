@@ -165,6 +165,21 @@ namespace vzt
         table.vkCmdCopyBuffer(m_handle, src.getHandle(), dst.getHandle(), 1, &copyRegion);
     }
 
+    void CommandBuffer::copy(const Buffer& src, const DeviceImage& dst, uint32_t width, uint32_t height,
+                             ImageAspect aspect)
+    {
+        VkBufferImageCopy region           = {};
+        region.imageSubresource.aspectMask = vzt::toVulkan(aspect);
+        region.imageSubresource.layerCount = 1;
+        region.imageExtent.width           = width;
+        region.imageExtent.height          = height;
+        region.imageExtent.depth           = 1;
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdCopyBufferToImage(m_handle, src.getHandle(), dst.getHandle(),
+                                     vzt::toVulkan(ImageLayout::TransferDstOptimal), 1, &region);
+    }
+
     void CommandBuffer::bind(const GraphicPipeline& graphicPipeline)
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();
