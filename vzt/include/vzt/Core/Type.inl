@@ -37,11 +37,6 @@ namespace vzt
     }
 
     template <class Type>
-    Span<Type>::Span(OffsetSpan<Type> span) : data(span.data), size(span.size)
-    {
-    }
-
-    template <class Type>
     Span<Type>::Span(const Type& type) : data(&type), size(1)
     {
     }
@@ -52,14 +47,27 @@ namespace vzt
     }
 
     template <class Type>
-    Span<Type>::Span(const std::vector<Type>& buffer) : data(buffer.data()), size(buffer.size())
+    Span<Type>::Span(std::vector<Type>& buffer, std::size_t offset)
+        : data(buffer.data() + offset), size(buffer.size() - offset)
     {
     }
 
     template <class Type>
     template <std::size_t Size>
-    Span<Type>::Span(const std::array<Type, Size>& buffer) : data(buffer.data()), size(buffer.size())
+    Span<Type>::Span(std::array<Type, Size>& buffer, std::size_t offset)
+        : data(buffer.data() + offset), size(buffer.size() - offset)
     {
+    }
+
+    template <class Type>
+    Type& Span<Type>::operator[](std::size_t i)
+    {
+        return *(data + i);
+    }
+    template <class Type>
+    const Type& Span<Type>::operator[](std::size_t i) const
+    {
+        return *(data + i);
     }
 
     template <class Type>
@@ -82,29 +90,9 @@ namespace vzt
     {
         return data + size;
     }
-    template <class Type>
-    const Type* Span<Type>::cbegin() const
-    {
-        return data;
-    }
-    template <class Type>
-    const Type* Span<Type>::cend() const
-    {
-        return data + size;
-    }
 
     template <class Type>
-    CSpan<Type>::CSpan(Span<Type> span) : data(span.data), size(span.size)
-    {
-    }
-
-    template <class Type>
-    CSpan<Type>::CSpan(OffsetSpan<Type> span) : data(span.data), size(span.size)
-    {
-    }
-
-    template <class Type>
-    CSpan<Type>::CSpan(OffsetCSpan<Type> span) : data(span.data), size(span.size)
+    CSpan<Type>::CSpan(Span<Type> span, std::size_t offset) : data(span.data + offset), size(span.size - offset)
     {
     }
 
@@ -124,7 +112,8 @@ namespace vzt
     }
 
     template <class Type>
-    CSpan<Type>::CSpan(const std::vector<Type>& buffer) : data(buffer.data()), size(buffer.size())
+    CSpan<Type>::CSpan(const std::vector<Type>& buffer, std::size_t offset)
+        : data(buffer.data() + offset), size(buffer.size() - offset)
     {
     }
 
@@ -135,6 +124,12 @@ namespace vzt
     }
 
     template <class Type>
+    const Type& CSpan<Type>::operator[](std::size_t i) const
+    {
+        return *(data + i);
+    }
+
+    template <class Type>
     const Type* CSpan<Type>::begin() const
     {
         return data;
@@ -142,143 +137,6 @@ namespace vzt
 
     template <class Type>
     const Type* CSpan<Type>::end() const
-    {
-        return data + size;
-    }
-
-    template <class Type>
-    const Type* CSpan<Type>::cbegin() const
-    {
-        return data;
-    }
-
-    template <class Type>
-    const Type* CSpan<Type>::cend() const
-    {
-        return data + size;
-    }
-
-    template <class Type>
-    OffsetSpan<Type>::OffsetSpan(Span<Type> span) : data(span.data), size(span.size)
-    {
-    }
-
-    template <class Type>
-    OffsetSpan<Type>::OffsetSpan(CSpan<Type> span) : data(span.data), size(span.size)
-    {
-    }
-
-    template <class Type>
-    OffsetSpan<Type>::OffsetSpan(Type* ptr, std::size_t size, std::size_t offset)
-        : data(ptr), size(size), offset(offset)
-    {
-    }
-
-    template <class Type>
-    OffsetSpan<Type>::OffsetSpan(Type& ptr, std::size_t size, std::size_t offset)
-        : data(&ptr), size(size), offset(offset)
-    {
-    }
-
-    template <class Type>
-    OffsetSpan<Type>::OffsetSpan(std::vector<Type>& buffer, std::size_t offset)
-        : data(buffer.data()), size(buffer.size()), offset(offset)
-    {
-    }
-
-    template <class Type>
-    template <std::size_t Size>
-    OffsetSpan<Type>::OffsetSpan(std::array<Type, Size>& buffer, std::size_t offset)
-        : data(buffer.data()), size(buffer.size()), offset(offset)
-    {
-    }
-
-    template <class Type>
-    Type* OffsetSpan<Type>::begin()
-    {
-        return data;
-    }
-
-    template <class Type>
-    Type* OffsetSpan<Type>::end()
-    {
-        return data + size;
-    }
-
-    template <class Type>
-    const Type* OffsetSpan<Type>::begin() const
-    {
-        return data;
-    }
-
-    template <class Type>
-    const Type* OffsetSpan<Type>::end() const
-    {
-        return data + size;
-    }
-
-    template <class Type>
-    const Type* OffsetSpan<Type>::cbegin() const
-    {
-        return data;
-    }
-
-    template <class Type>
-    const Type* OffsetSpan<Type>::cend() const
-    {
-        return data + size;
-    }
-
-    template <class Type>
-    OffsetCSpan<Type>::OffsetCSpan(OffsetSpan<Type> span, std::size_t offset)
-        : data(span.data), size(span.size), offset(offset)
-    {
-    }
-
-    template <class Type>
-    OffsetCSpan<Type>::OffsetCSpan(const Type* ptr, std::size_t size, std::size_t offset)
-        : data(ptr), size(size), offset(offset)
-    {
-    }
-    template <class Type>
-    OffsetCSpan<Type>::OffsetCSpan(const Type& ptr, std::size_t size, std::size_t offset)
-        : data(&ptr), size(size), offset(offset)
-    {
-    }
-
-    template <class Type>
-    OffsetCSpan<Type>::OffsetCSpan(const std::vector<Type>& buffer, std::size_t offset)
-        : data(buffer.data()), size(buffer.size()), offset(offset)
-    {
-    }
-
-    template <class Type>
-    template <std::size_t Size>
-    OffsetCSpan<Type>::OffsetCSpan(const std::array<Type, Size>& buffer, std::size_t offset)
-        : data(buffer.data()), size(buffer.size()), offset(offset)
-    {
-    }
-
-    template <class Type>
-    const Type* OffsetCSpan<Type>::begin() const
-    {
-        return data;
-    }
-
-    template <class Type>
-    const Type* OffsetCSpan<Type>::end() const
-    {
-        return data + size;
-    }
-
-    template <class Type>
-    const Type* OffsetCSpan<Type>::cbegin() const
-    {
-        return data;
-    }
-
-    template <class Type>
-    const Type* OffsetCSpan<Type>::cend() const
     {
         return data + size;
     }

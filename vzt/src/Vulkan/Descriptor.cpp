@@ -209,9 +209,9 @@ namespace vzt
         {
             std::visit(Overloaded{[&](const DescriptorBuffer& buffer) {
                                       VkDescriptorBufferInfo info{};
-                                      info.buffer = buffer.buffer.data->getHandle();
+                                      info.buffer = buffer.buffer.buffer->getHandle();
                                       info.offset = buffer.buffer.offset;
-                                      info.range  = buffer.buffer.size;
+                                      info.range  = buffer.buffer.buffer->size() - buffer.buffer.offset;
                                       descriptorBufferInfo.emplace_back(info);
 
                                       VkWriteDescriptorSet descriptorWrite{};

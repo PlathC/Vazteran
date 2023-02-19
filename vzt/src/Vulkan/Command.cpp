@@ -12,7 +12,7 @@ namespace vzt
 {
     CommandBuffer::CommandBuffer(View<Device> device, VkCommandBuffer handle) : m_device(device), m_handle(handle) {}
 
-    void CommandBuffer::barrier(PipelineBarrier barrier)
+    void CommandBuffer::barrier(const PipelineBarrier& barrier)
     {
         std::vector<VkImageMemoryBarrier> imageBarriers{};
         imageBarriers.reserve(barrier.imageBarriers.size());
@@ -32,8 +32,8 @@ namespace vzt
 
             // TODO: Rewrite based on image properties
             imageBarrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-            imageBarrier.subresourceRange.baseMipLevel   = 0;
-            imageBarrier.subresourceRange.levelCount     = 1;
+            imageBarrier.subresourceRange.baseMipLevel   = baseBarrier.baseLevel;
+            imageBarrier.subresourceRange.levelCount     = baseBarrier.levelCount;
             imageBarrier.subresourceRange.baseArrayLayer = 0;
             imageBarrier.subresourceRange.layerCount     = 1;
 
@@ -69,13 +69,13 @@ namespace vzt
     void CommandBuffer::barrier(PipelineStage src, PipelineStage dst, ImageBarrier imageBarrier)
     {
         PipelineBarrier pipelineBarrier{src, dst, std::vector{std::move(imageBarrier)}};
-        barrier(std::move(pipelineBarrier));
+        barrier(pipelineBarrier);
     }
 
     void CommandBuffer::barrier(PipelineStage src, PipelineStage dst, BufferBarrier bufferBarrier)
     {
         PipelineBarrier pipelineBarrier{src, dst, {}, std::vector{std::move(bufferBarrier)}};
-        barrier(std::move(pipelineBarrier));
+        barrier(pipelineBarrier);
     }
 
     void CommandBuffer::clear(View<DeviceImage> image, ImageLayout layout, Vec4 clearColor)
@@ -92,6 +92,48 @@ namespace vzt
         table.vkCmdClearColorImage(m_handle, image->getHandle(), toVulkan(layout), &clearColorValue, 1, &subresource);
     }
 
+    void CommandBuffer::blit(View<DeviceImage> src, ImageLayout srcLayout, View<DeviceImage> dst, ImageLayout dstLayout,
+                             Filter filter, const Blit& blit)
+    {
+        VkBlitImageInfo2 blitInfo{};
+        blitInfo.sType          = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2;
+        blitInfo.srcImage       = src->getHandle();
+        blitInfo.srcImageLayout = toVulkan(srcLayout);
+        blitInfo.dstImage       = dst->getHandle();
+        blitInfo.dstImageLayout = toVulkan(dstLayout);
+        blitInfo.filter         = toVulkan(filter);
+
+        VkImageBlit2 blit2{};
+        blit2.sType                         = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
+        blit2.srcOffsets[0].x               = blit.srcOffsets[0].width;
+        blit2.srcOffsets[0].y               = blit.srcOffsets[0].height;
+        blit2.srcOffsets[0].z               = blit.srcOffsets[0].depth;
+        blit2.srcOffsets[1].x               = blit.srcOffsets[1].width;
+        blit2.srcOffsets[1].y               = blit.srcOffsets[1].height;
+        blit2.srcOffsets[1].z               = blit.srcOffsets[1].depth;
+        blit2.srcSubresource.aspectMask     = toVulkan(blit.srcAspect);
+        blit2.srcSubresource.mipLevel       = blit.srcMipLevel;
+        blit2.srcSubresource.baseArrayLayer = 0;
+        blit2.srcSubresource.layerCount     = 1;
+
+        blit2.dstOffsets[0].x               = blit.dstOffsets[0].width;
+        blit2.dstOffsets[0].y               = blit.dstOffsets[0].height;
+        blit2.dstOffsets[0].z               = blit.dstOffsets[0].depth;
+        blit2.dstOffsets[1].x               = blit.dstOffsets[1].width;
+        blit2.dstOffsets[1].y               = blit.dstOffsets[1].height;
+        blit2.dstOffsets[1].z               = blit.dstOffsets[1].depth;
+        blit2.dstSubresource.aspectMask     = toVulkan(blit.dstAspect);
+        blit2.dstSubresource.mipLevel       = blit.dstMipLevel;
+        blit2.dstSubresource.baseArrayLayer = 0;
+        blit2.dstSubresource.layerCount     = 1;
+
+        blitInfo.pRegions    = &blit2;
+        blitInfo.regionCount = 1;
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdBlitImage2(m_handle, &blitInfo);
+    }
+
     void CommandBuffer::blit(View<DeviceImage> src, ImageLayout srcLayout, ImageAspect srcAspect, Vec2u srcStart,
                              Vec2u srcEnd, View<DeviceImage> dst, ImageLayout dstLayout, ImageAspect dstAspect,
                              Vec2u dstStart, Vec2u dstEnd, Filter filter)
@@ -104,8 +146,8 @@ namespace vzt
         blitInfo.dstImageLayout = toVulkan(dstLayout);
         blitInfo.filter         = toVulkan(filter);
 
-        // The Vulkan spec states: If srcImage is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each element of
-        // pRegions, srcOffsets[0].z must be 0 and srcOffsets[1].z must be 1
+        // The Vulkan spec states: If srcImage is of type VK_IMAGE_TYPE_1D or VK_IMAGE_TYPE_2D, then for each
+        // element of pRegions, srcOffsets[0].z must be 0 and srcOffsets[1].z must be 1
         VkImageBlit2 blit{};
         blit.sType                         = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
         blit.srcOffsets[0].x               = srcStart.x;
@@ -378,10 +420,10 @@ namespace vzt
                 Overloaded{
                     [&maxPrimitiveCount](const AsTriangles& trianglesAs) {
                         maxPrimitiveCount +=
-                            static_cast<uint32_t>(trianglesAs.indexBuffer.data->size() / (3 * sizeof(uint32_t)));
+                            static_cast<uint32_t>(trianglesAs.indexBuffer.buffer->size() / (3 * sizeof(uint32_t)));
                     },
                     [&maxPrimitiveCount](const AsAabbs& aabbsAs) {
-                        maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.size / aabbsAs.stride);
+                        maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.buffer->size() / aabbsAs.stride);
                     },
                     [&maxPrimitiveCount](const AsInstance& instancesAs) { maxPrimitiveCount += instancesAs.count; },
                 },

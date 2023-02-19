@@ -18,14 +18,14 @@ namespace vzt
                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
                            vkGeometry.geometry.triangles.vertexFormat = toVulkan(trianglesAs.vertexFormat);
 
-                           const auto&    vertexBuffer = *trianglesAs.vertexBuffer.data;
+                           const Buffer&  vertexBuffer = *trianglesAs.vertexBuffer.buffer;
                            const uint32_t maxVertex =
-                               static_cast<uint32_t>(trianglesAs.vertexBuffer.data->size() / trianglesAs.vertexStride);
+                               static_cast<uint32_t>(vertexBuffer.size() / trianglesAs.vertexStride);
                            vkGeometry.geometry.triangles.vertexData.deviceAddress = vertexBuffer.getDeviceAddress();
                            vkGeometry.geometry.triangles.maxVertex                = maxVertex;
                            vkGeometry.geometry.triangles.vertexStride             = trianglesAs.vertexStride;
 
-                           const auto& indexBuffer                                   = *trianglesAs.indexBuffer.data;
+                           const auto& indexBuffer                                   = *trianglesAs.indexBuffer.buffer;
                            vkGeometry.geometry.triangles.indexType                   = VK_INDEX_TYPE_UINT32;
                            vkGeometry.geometry.triangles.indexData.deviceAddress     = indexBuffer.getDeviceAddress();
                            vkGeometry.geometry.triangles.transformData.deviceAddress = 0;
@@ -41,7 +41,7 @@ namespace vzt
                            vkGeometry.geometryType = toVulkan(GeometryType::AABBs);
                            vkGeometry.geometry.aabbs.sType =
                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-                           vkGeometry.geometry.aabbs.data.deviceAddress = aabbsAs.aabbs.data->getDeviceAddress();
+                           vkGeometry.geometry.aabbs.data.deviceAddress = aabbsAs.aabbs.buffer->getDeviceAddress();
                            vkGeometry.geometry.aabbs.stride             = aabbsAs.stride;
                        }},
             geometryAs.geometry);
@@ -60,11 +60,12 @@ namespace vzt
         {
             std::visit(Overloaded{
                            [this](const AsTriangles& trianglesAs) {
-                               m_maxPrimitiveCount +=
-                                   static_cast<uint32_t>(trianglesAs.indexBuffer.data->size() / (3 * sizeof(uint32_t)));
+                               m_maxPrimitiveCount += static_cast<uint32_t>(trianglesAs.indexBuffer.buffer->size() /
+                                                                            (3 * sizeof(uint32_t)));
                            },
                            [this](const AsAabbs& aabbsAs) {
-                               m_maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.size / aabbsAs.stride);
+                               m_maxPrimitiveCount +=
+                                   static_cast<uint32_t>(aabbsAs.aabbs.buffer->size() / aabbsAs.stride);
                            },
                            [this](const AsInstance& instancesAs) { m_maxPrimitiveCount += instancesAs.count; },
                        },

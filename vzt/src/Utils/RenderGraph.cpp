@@ -405,7 +405,7 @@ namespace vzt
             {
                 View<Buffer> storage = graph.getStorage(i, output.handle);
                 descriptors[output.binding] =
-                    DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};
+                    DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage, storage->size()}};
             }
 
             if (!descriptors.empty())

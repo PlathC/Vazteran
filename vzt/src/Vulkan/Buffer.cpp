@@ -23,7 +23,7 @@ namespace vzt
         return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
     }
 
-    Buffer Buffer::fromData(View<Device> device, OffsetCSpan<uint8_t> data, BufferUsage usages, MemoryLocation location,
+    Buffer Buffer::fromData(View<Device> device, CSpan<uint8_t> data, BufferUsage usages, MemoryLocation location,
                             bool mappable)
     {
         Buffer buffer{device, data.size, usages, location, mappable};
@@ -31,7 +31,7 @@ namespace vzt
         if (mappable)
         {
             uint8_t* bufferData = buffer.map();
-            std::memcpy(bufferData, data.data + data.offset, data.size);
+            std::memcpy(bufferData, data.data, data.size);
             buffer.unMap();
         }
         else
@@ -45,7 +45,7 @@ namespace vzt
             const View<Queue> queue = device->getQueues().front();
             assert(vzt::any(queue->getType() & QueueType::Transfer) && "The selected queue must be able to transfert");
             queue->oneShot([&transferBuffer, &buffer, &data](CommandBuffer& commands) {
-                commands.copy(transferBuffer, buffer, data.size, data.offset);
+                commands.copy(transferBuffer, buffer, data.size);
             });
         }
 

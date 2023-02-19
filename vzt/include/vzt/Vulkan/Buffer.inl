@@ -3,11 +3,10 @@
 namespace vzt
 {
     template <class Type>
-    Buffer Buffer::fromData(View<Device> device, OffsetCSpan<Type> data, BufferUsage usages, MemoryLocation location,
+    Buffer Buffer::fromData(View<Device> device, CSpan<Type> data, BufferUsage usages, MemoryLocation location,
                             bool mappable)
     {
-        const OffsetCSpan<uint8_t> translated = {reinterpret_cast<const uint8_t*>(data.data), data.size * sizeof(Type),
-                                                 data.offset};
+        const CSpan<uint8_t> translated = {reinterpret_cast<const uint8_t*>(data.data), data.size * sizeof(Type)};
         return fromData(device, translated, usages, location, mappable);
     }
 

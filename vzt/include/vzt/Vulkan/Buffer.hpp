@@ -52,9 +52,9 @@ namespace vzt
     {
       public:
         template <class Type>
-        static Buffer fromData(View<Device> device, OffsetCSpan<Type> data, BufferUsage usages,
+        static Buffer fromData(View<Device> device, CSpan<Type> data, BufferUsage usages,
                                MemoryLocation location = MemoryLocation::Device, bool mappable = false);
-        static Buffer fromData(View<Device> device, OffsetCSpan<uint8_t> data, BufferUsage usages,
+        static Buffer fromData(View<Device> device, CSpan<uint8_t> data, BufferUsage usages,
                                MemoryLocation location = MemoryLocation::Device, bool mappable = false);
 
         Buffer() = default;
@@ -91,8 +91,40 @@ namespace vzt
         bool           m_mappable = false;
     };
 
-    using BufferSpan  = OffsetSpan<Buffer>;
-    using BufferCSpan = OffsetCSpan<Buffer>;
+    struct BufferSpan
+    {
+        BufferSpan() = default;
+        BufferSpan(Buffer& buffer) : buffer(&buffer), size(buffer.size()), offset(0) {}
+        BufferSpan(Buffer* buffer) : buffer(buffer), size(buffer->size()), offset(0) {}
+        BufferSpan(Buffer& buffer, std::size_t size, std::size_t offset = 0)
+            : buffer(&buffer), size(size), offset(offset)
+        {
+        }
+        BufferSpan(Buffer* buffer, std::size_t size, std::size_t offset = 0)
+            : buffer(buffer), size(size), offset(offset)
+        {
+        }
+
+        Buffer*     buffer = nullptr;
+        std::size_t size   = 0;
+        std::size_t offset = 0;
+    };
+    struct BufferCSpan
+    {
+        BufferCSpan() = default;
+        BufferCSpan(View<Buffer> bufferView, std::size_t size, std::size_t offset = 0)
+            : buffer(bufferView.get()), size(size), offset(offset)
+        {
+        }
+        BufferCSpan(BufferSpan span) : buffer(span.buffer), size(span.size), offset(span.offset) {}
+
+        const Buffer* buffer = nullptr;
+        std::size_t   size   = 0;
+        std::size_t   offset = 0;
+    };
+
+    // using BufferSpan  = OffsetSpan<Buffer>;
+    // using BufferCSpan = OffsetCSpan<Buffer>;
 
 } // namespace vzt
 

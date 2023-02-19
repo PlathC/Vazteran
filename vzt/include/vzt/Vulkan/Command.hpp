@@ -17,6 +17,17 @@ namespace vzt
     class FrameBuffer;
     class Queue;
 
+    struct Blit
+    {
+        Extent3D    srcOffsets[2];
+        ImageAspect srcAspect;
+        uint32_t    srcMipLevel;
+
+        Extent3D    dstOffsets[2];
+        ImageAspect dstAspect;
+        uint32_t    dstMipLevel;
+    };
+
     class CommandBuffer
     {
       public:
@@ -33,7 +44,7 @@ namespace vzt
         void begin();
         void end();
 
-        void barrier(PipelineBarrier barrier);
+        void barrier(const PipelineBarrier& barrier);
         void barrier(PipelineStage src, PipelineStage dst, ImageBarrier barrier);
         void barrier(PipelineStage src, PipelineStage dst, BufferBarrier barrier);
 
@@ -45,6 +56,8 @@ namespace vzt
                   ImageLayout dstLayout, ImageAspect dstAspect, Filter filter = Filter::Linear);
         void blit(View<DeviceImage> src, ImageLayout srcLayout, View<DeviceImage> dst, ImageLayout dstLayout,
                   Filter filter = Filter::Linear);
+        void blit(View<DeviceImage> src, ImageLayout srcLayout, View<DeviceImage> dst, ImageLayout dstLayout,
+                  Filter filter, const Blit& blit);
         void copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
         void copy(const Buffer& src, const DeviceImage& dst, uint32_t width, uint32_t height,
                   ImageAspect aspect = ImageAspect::Color);

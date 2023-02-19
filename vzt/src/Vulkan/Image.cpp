@@ -9,11 +9,22 @@
 namespace vzt
 {
     DeviceImage DeviceImage::fromData(View<Device> device, ImageUsage usage, Format format, uint32_t width,
-                                      uint32_t height, const CSpan<uint8_t> data)
+                                      uint32_t height, const CSpan<uint8_t> data, uint32_t mipLevels,
+                                      ImageLayout layout, SampleCount sampleCount, ImageType type,
+                                      SharingMode sharingMode)
     {
-        DeviceImage deviceImage{device, Extent2D{width, height}, usage | vzt::ImageUsage::TransferDst, format, true};
-        auto        staging = Buffer::fromData(device, OffsetCSpan<uint8_t>(data.data, data.size),
-                                               vzt::BufferUsage::TransferSrc, vzt::MemoryLocation::Device);
+        DeviceImage deviceImage{
+            device,
+            Extent2D{width, height},
+            usage | vzt::ImageUsage::TransferDst,
+            format,
+            mipLevels,
+            layout,
+            sampleCount,
+            type,
+            sharingMode,
+        };
+        auto staging = Buffer::fromData(device, data, vzt::BufferUsage::TransferSrc, vzt::MemoryLocation::Device);
 
         const auto graphicsQueue = device->getQueue(vzt::QueueType::Graphics);
         graphicsQueue->oneShot([&](vzt::CommandBuffer& commands) {
