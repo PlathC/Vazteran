@@ -135,6 +135,8 @@ namespace vzt
                                     SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
                                     SharingMode sharingMode = SharingMode::Exclusive);
 
+        DeviceImage() = default;
+
         DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels = 1,
                     ImageLayout layout = ImageLayout::Undefined, SampleCount sampleCount = SampleCount::Sample1,
                     ImageType type = ImageType::T2D, SharingMode sharingMode = SharingMode::Exclusive);
@@ -190,6 +192,8 @@ namespace vzt
     class ImageView
     {
       public:
+        ImageView() = default;
+
         ImageView(View<Device> device, View<DeviceImage> image, ImageViewType type, ImageAspect aspect, Format format,
                   uint32_t baseMipLevel, uint32_t levelCount);
         ImageView(View<Device> device, View<DeviceImage> image, ImageAspect aspect, ImageViewType type);

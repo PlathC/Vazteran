@@ -27,6 +27,7 @@ namespace vzt
         uint32_t height;
         uint32_t depth = 1;
 
+        inline Extent3D() = default;
         inline Extent3D(uint32_t width, uint32_t height, uint32_t depth = 1);
         inline Extent3D(Extent2D extent);
     };
