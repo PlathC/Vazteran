@@ -30,9 +30,10 @@ namespace vzt
         graphicsQueue->oneShot([&](vzt::CommandBuffer& commands) {
             vzt::ImageBarrier imageBarrier{};
             imageBarrier.image     = deviceImage;
+            imageBarrier.dst       = Access::TransferWrite;
             imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
             imageBarrier.newLayout = vzt::ImageLayout::TransferDstOptimal;
-            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
+            commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::Transfer, imageBarrier);
 
             commands.copy(staging, deviceImage, width, height);
         });
