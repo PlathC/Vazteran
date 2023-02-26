@@ -20,14 +20,15 @@ namespace vzt
         for (const auto& baseBarrier : barrier.imageBarriers)
         {
             VkImageMemoryBarrier imageBarrier{};
-            imageBarrier.sType     = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            imageBarrier.oldLayout = toVulkan(baseBarrier.oldLayout);
-            imageBarrier.newLayout = toVulkan(baseBarrier.newLayout);
+            imageBarrier.sType         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarrier.srcAccessMask = toVulkan(baseBarrier.src);
+            imageBarrier.dstAccessMask = toVulkan(baseBarrier.dst);
+            imageBarrier.oldLayout     = toVulkan(baseBarrier.oldLayout);
+            imageBarrier.newLayout     = toVulkan(baseBarrier.newLayout);
             imageBarrier.srcQueueFamilyIndex =
                 baseBarrier.srcQueue ? baseBarrier.srcQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.dstQueueFamilyIndex =
                 baseBarrier.dstQueue ? baseBarrier.dstQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
-
             imageBarrier.image = baseBarrier.image->getHandle();
 
             // TODO: Rewrite based on image properties
