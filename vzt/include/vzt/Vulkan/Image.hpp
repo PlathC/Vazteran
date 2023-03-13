@@ -82,6 +82,13 @@ namespace vzt
     VZT_DEFINE_TO_VULKAN_FUNCTION(ImageUsage, VkImageUsageFlags)
     VZT_DEFINE_BITWISE_FUNCTIONS(ImageUsage)
 
+    enum class ImageTiling
+    {
+        Optimal = VK_IMAGE_TILING_OPTIMAL,
+        Linear  = VK_IMAGE_TILING_LINEAR,
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(ImageTiling, VkImageTiling)
+
     enum class ImageType
     {
         T1D = VK_IMAGE_TYPE_1D,
@@ -118,7 +125,9 @@ namespace vzt
         ImageLayout layout      = ImageLayout::Undefined;
         SampleCount sampleCount = SampleCount::Sample1;
         ImageType   type        = ImageType::T2D;
-        SharingMode sharingMode = SharingMode::Concurrent;
+        SharingMode sharingMode = SharingMode::Exclusive;
+        ImageTiling tiling      = ImageTiling::Optimal;
+        bool        mappable    = false;
     };
 
     class DeviceImage
@@ -128,21 +137,25 @@ namespace vzt
         static DeviceImage fromData(View<Device> device, ImageUsage usage, Format format, const Image<ValueType>& image,
                                     uint32_t mipLevels = 1, ImageLayout layout = ImageLayout::Undefined,
                                     SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
-                                    SharingMode sharingMode = SharingMode::Exclusive);
+                                    SharingMode sharingMode = SharingMode::Exclusive,
+                                    ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
         static DeviceImage fromData(View<Device> device, ImageUsage usage, Format format, uint32_t width,
                                     uint32_t height, const CSpan<uint8_t> data, uint32_t mipLevels = 1,
                                     ImageLayout layout      = ImageLayout::Undefined,
                                     SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
-                                    SharingMode sharingMode = SharingMode::Exclusive);
+                                    SharingMode sharingMode = SharingMode::Exclusive,
+                                    ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
 
         DeviceImage() = default;
 
         DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels = 1,
                     ImageLayout layout = ImageLayout::Undefined, SampleCount sampleCount = SampleCount::Sample1,
-                    ImageType type = ImageType::T2D, SharingMode sharingMode = SharingMode::Exclusive);
+                    ImageType type = ImageType::T2D, SharingMode sharingMode = SharingMode::Exclusive,
+                    ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
         DeviceImage(View<Device> device, ImageBuilder builder);
         DeviceImage(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
-                    SharingMode sharingMode = SharingMode::Exclusive);
+                    SharingMode sharingMode = SharingMode::Exclusive, ImageTiling tiling = ImageTiling::Optimal,
+                    bool mappable = false);
 
         DeviceImage(const DeviceImage&)            = delete;
         DeviceImage& operator=(const DeviceImage&) = delete;
@@ -152,15 +165,24 @@ namespace vzt
 
         ~DeviceImage();
 
-        inline Extent3D    getSize() const;
-        inline ImageUsage  getUsage() const;
-        inline Format      getFormat() const;
-        inline uint32_t    getMipLevels() const;
-        inline ImageLayout getLayout() const;
-        inline SampleCount getSampleCount() const;
-        inline ImageType   getImageType() const;
-        inline SharingMode getSharingMode() const;
-        inline VkImage     getHandle() const;
+        template <class Type>
+        Type* map();
+        template <class Type>
+        const Type*    map() const;
+        uint8_t*       map();
+        const uint8_t* map() const;
+        void           unmap() const;
+
+        inline Extent3D      getSize() const;
+        inline ImageUsage    getUsage() const;
+        inline Format        getFormat() const;
+        inline uint32_t      getMipLevels() const;
+        inline ImageLayout   getLayout() const;
+        inline SampleCount   getSampleCount() const;
+        inline ImageType     getImageType() const;
+        inline SharingMode   getSharingMode() const;
+        inline VmaAllocation getAllocation() const;
+        inline VkImage       getHandle() const;
 
       private:
         View<Device>  m_device     = {};
@@ -175,6 +197,8 @@ namespace vzt
         SampleCount m_sampleCount;
         ImageType   m_type = ImageType::T2D;
         SharingMode m_sharingMode;
+        ImageTiling m_tiling;
+        bool        m_mappable;
     };
 
     enum class ImageViewType

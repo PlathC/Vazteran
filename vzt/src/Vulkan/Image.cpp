@@ -11,7 +11,7 @@ namespace vzt
     DeviceImage DeviceImage::fromData(View<Device> device, ImageUsage usage, Format format, uint32_t width,
                                       uint32_t height, const CSpan<uint8_t> data, uint32_t mipLevels,
                                       ImageLayout layout, SampleCount sampleCount, ImageType type,
-                                      SharingMode sharingMode)
+                                      SharingMode sharingMode, ImageTiling tiling, bool mappable)
     {
         DeviceImage deviceImage{
             device,
@@ -23,6 +23,7 @@ namespace vzt
             sampleCount,
             type,
             sharingMode,
+            tiling,
         };
         auto staging = Buffer::fromData(device, data, vzt::BufferUsage::TransferSrc, vzt::MemoryLocation::Device);
 
@@ -42,9 +43,10 @@ namespace vzt
     }
 
     DeviceImage::DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels,
-                             ImageLayout layout, SampleCount sampleCount, ImageType type, SharingMode sharingMode)
+                             ImageLayout layout, SampleCount sampleCount, ImageType type, SharingMode sharingMode,
+                             ImageTiling tiling, bool mappable)
         : m_device(device), m_size(size), m_usage(usage), m_format(format), m_mipLevels(mipLevels), m_layout(layout),
-          m_sampleCount(sampleCount), m_type(type), m_sharingMode(sharingMode)
+          m_sampleCount(sampleCount), m_type(type), m_sharingMode(sharingMode), m_tiling(tiling), m_mappable(mappable)
     {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -54,13 +56,15 @@ namespace vzt
         imageInfo.mipLevels     = m_mipLevels;
         imageInfo.arrayLayers   = 1;
         imageInfo.samples       = toVulkan(m_sampleCount);
-        imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.tiling        = toVulkan(m_tiling);
         imageInfo.usage         = toVulkan(m_usage | vzt::ImageUsage::Sampled);
         imageInfo.sharingMode   = toVulkan(m_sharingMode);
         imageInfo.initialLayout = toVulkan(m_layout);
 
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage                   = VMA_MEMORY_USAGE_AUTO;
+        if (m_mappable)
+            allocInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
 
         vkCheck(vmaCreateImage(m_device->getAllocator(), &imageInfo, &allocInfo, &m_handle, &m_allocation, nullptr),
                 "Can't allocate image.");
@@ -68,13 +72,14 @@ namespace vzt
 
     DeviceImage::DeviceImage(View<Device> device, ImageBuilder builder)
         : DeviceImage(device, builder.size, builder.usage, builder.format, builder.mipLevels, builder.layout,
-                      builder.sampleCount, builder.type, builder.sharingMode)
+                      builder.sampleCount, builder.type, builder.sharingMode, builder.tiling, builder.mappable)
     {
     }
 
     DeviceImage::DeviceImage(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
-                             SharingMode sharingMode)
-        : m_device(device), m_handle(image), m_size(size), m_usage(usage), m_format(format), m_sharingMode(sharingMode)
+                             SharingMode sharingMode, ImageTiling tiling, bool mappable)
+        : m_device(device), m_handle(image), m_size(size), m_usage(usage), m_format(format), m_sharingMode(sharingMode),
+          m_tiling(tiling), m_mappable(mappable)
     {
     }
 
@@ -84,7 +89,8 @@ namespace vzt
           m_usage(std::move(other.m_usage)), m_format(std::move(other.m_format)),
           m_mipLevels(std::move(other.m_mipLevels)), m_layout(std::move(other.m_layout)),
           m_sampleCount(std::move(other.m_sampleCount)), m_type(std::move(other.m_type)),
-          m_sharingMode(std::move(other.m_sharingMode))
+          m_sharingMode(std::move(other.m_sharingMode)), m_tiling(std::move(other.m_tiling)),
+          m_mappable(other.m_mappable)
     {
     }
 
@@ -101,6 +107,8 @@ namespace vzt
         std::swap(m_sampleCount, other.m_sampleCount);
         std::swap(m_type, other.m_type);
         std::swap(m_sharingMode, other.m_sharingMode);
+        std::swap(m_tiling, other.m_tiling);
+        std::swap(m_mappable, other.m_mappable);
 
         return *this;
     }
@@ -113,6 +121,28 @@ namespace vzt
 
         vmaDestroyImage(m_device->getAllocator(), m_handle, m_allocation);
     }
+
+    uint8_t* DeviceImage::map()
+    {
+        assert(m_mappable && "Device image has not been tagged as mappable at creation!");
+
+        uint8_t* mappedData;
+        vmaMapMemory(m_device->getAllocator(), m_allocation, reinterpret_cast<void**>(&mappedData));
+
+        return mappedData;
+    }
+
+    const uint8_t* DeviceImage::map() const
+    {
+        assert(m_mappable && "Device image has not been tagged as mappable at creation!");
+
+        uint8_t* mappedData;
+        vmaMapMemory(m_device->getAllocator(), m_allocation, reinterpret_cast<void**>(&mappedData));
+
+        return mappedData;
+    }
+
+    void DeviceImage::unmap() const { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
 
     ImageView::ImageView(View<Device> device, View<DeviceImage> image, ImageViewType type, ImageAspect aspect,
                          Format format, uint32_t baseMipLevel, uint32_t levelCount)
@@ -182,5 +212,4 @@ namespace vzt
 
         vkDestroyImageView(m_device->getHandle(), m_handle, nullptr);
     }
-
 } // namespace vzt

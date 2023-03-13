@@ -212,6 +212,11 @@ namespace vzt
         else
             logger::warn("Device does not allows transfer to swapchain image.");
 
+        if (capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+            createInfo.imageUsage |= toVulkan(ImageUsage::TransferSrc);
+        else
+            logger::warn("Device does not allows transfer from swapchain image.");
+
         auto queues = m_device->getQueues();
         if (!m_device->getPresentQueue())
             logger::error("Picked device does not have presentation capabilities.");
