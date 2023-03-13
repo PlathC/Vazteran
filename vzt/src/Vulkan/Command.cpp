@@ -196,8 +196,7 @@ namespace vzt
              dst, dstLayout, ImageAspect::Color, Vec2u{0}, Vec2u{srcExtent.width, srcExtent.height}, filter);
     }
 
-    void CommandBuffer::copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset,
-                             uint64_t dstOffset)
+    void CommandBuffer::copy(View<Buffer> src, View<Buffer> dst, uint64_t size, uint64_t srcOffset, uint64_t dstOffset)
     {
         VkBufferCopy copyRegion;
         copyRegion.size      = size;
@@ -205,10 +204,10 @@ namespace vzt
         copyRegion.dstOffset = dstOffset;
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        table.vkCmdCopyBuffer(m_handle, src.getHandle(), dst.getHandle(), 1, &copyRegion);
+        table.vkCmdCopyBuffer(m_handle, src->getHandle(), dst->getHandle(), 1, &copyRegion);
     }
 
-    void CommandBuffer::copy(const Buffer& src, const DeviceImage& dst, uint32_t width, uint32_t height,
+    void CommandBuffer::copy(View<Buffer> src, View<DeviceImage> dst, uint32_t width, uint32_t height,
                              ImageAspect aspect)
     {
         VkBufferImageCopy region           = {};
@@ -219,8 +218,25 @@ namespace vzt
         region.imageExtent.depth           = 1;
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        table.vkCmdCopyBufferToImage(m_handle, src.getHandle(), dst.getHandle(),
+        table.vkCmdCopyBufferToImage(m_handle, src->getHandle(), dst->getHandle(),
                                      vzt::toVulkan(ImageLayout::TransferDstOptimal), 1, &region);
+    }
+
+    void CommandBuffer::copy(View<DeviceImage> src, View<DeviceImage> dst, uint32_t width, uint32_t height,
+                             ImageAspect aspect)
+    {
+        VkImageCopy imageCopyRegion{};
+        imageCopyRegion.srcSubresource.aspectMask = toVulkan(aspect);
+        imageCopyRegion.srcSubresource.layerCount = 1;
+        imageCopyRegion.dstSubresource.aspectMask = toVulkan(aspect);
+        imageCopyRegion.dstSubresource.layerCount = 1;
+        imageCopyRegion.extent.width              = width;
+        imageCopyRegion.extent.height             = height;
+        imageCopyRegion.extent.depth              = 1;
+
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdCopyImage(m_handle, src->getHandle(), vzt::toVulkan(ImageLayout::TransferSrcOptimal),
+                             dst->getHandle(), vzt::toVulkan(ImageLayout::TransferDstOptimal), 1, &imageCopyRegion);
     }
 
     void CommandBuffer::bind(const GraphicPipeline& graphicPipeline)

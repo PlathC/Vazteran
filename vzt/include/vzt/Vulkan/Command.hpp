@@ -58,8 +58,10 @@ namespace vzt
                   Filter filter = Filter::Linear);
         void blit(View<DeviceImage> src, ImageLayout srcLayout, View<DeviceImage> dst, ImageLayout dstLayout,
                   Filter filter, const Blit& blit);
-        void copy(const Buffer& src, const Buffer& dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
-        void copy(const Buffer& src, const DeviceImage& dst, uint32_t width, uint32_t height,
+        void copy(View<Buffer> src, View<Buffer> dst, uint64_t size, uint64_t srcOffset = 0, uint64_t dstOffset = 0);
+        void copy(View<Buffer> src, View<DeviceImage> dst, uint32_t width, uint32_t height,
+                  ImageAspect aspect = ImageAspect::Color);
+        void copy(View<DeviceImage> src, View<DeviceImage> dst, uint32_t width, uint32_t height,
                   ImageAspect aspect = ImageAspect::Color);
 
         void bind(const GraphicPipeline& graphicPipeline);
