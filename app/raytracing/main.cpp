@@ -45,10 +45,10 @@ int main(int argc, char** argv)
 
     vzt::GeometryAsBuilder bottomAsBuilder{vzt::AsTriangles{
         vzt::Format::R32G32B32SFloat,
-        vertexBuffer,
+        vzt::BufferCSpan(vertexBuffer, vertexBuffer.size()),
         sizeof(VertexInput),
         vertexInputs.size(),
-        indexBuffer,
+        vzt::BufferCSpan(indexBuffer, indexBuffer.size()),
     }};
 
     const auto bottomAs = vzt::AccelerationStructure( //
