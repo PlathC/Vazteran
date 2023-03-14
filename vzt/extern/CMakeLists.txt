@@ -59,6 +59,7 @@ set(VZT_EXTERN_PUBLIC_LIBRARIES
 
     fmt
     glm::glm
+    SDL2::SDL2 SDL2::SDL2main
     volk
     Vulkan::Vulkan
 )
@@ -67,7 +68,6 @@ set(VZT_EXTERN_LIBRARIES
     ${VZT_EXTERN_LIBRARIES}
 
     glslang
-    SDL2::SDL2 SDL2::SDL2main
     SPIRV 
     tinyexr
 )

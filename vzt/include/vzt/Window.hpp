@@ -6,6 +6,7 @@
 #include "vzt/Ui/Input.hpp"
 #include "vzt/Vulkan/Instance.hpp"
 
+union SDL_Event;
 struct SDL_Window;
 namespace vzt
 {
@@ -27,6 +28,10 @@ namespace vzt
         inline uint32_t         getHeight() const;
         inline Extent2D         getExtent() const;
         inline const Input&     getInputs() const;
+        inline SDL_Window*      getHandle() const;
+
+        using EventCallback = std::function<void(SDL_Event*)>;
+        inline void setEventCallback(EventCallback eventCallback);
 
         bool update();
 
@@ -34,8 +39,7 @@ namespace vzt
         friend Surface;
 
       private:
-        inline SDL_Window* getHandle() const;
-        InstanceBuilder    getConfiguration(InstanceBuilder configuration = {}) const;
+        InstanceBuilder getConfiguration(InstanceBuilder configuration = {}) const;
 
         static std::atomic_size_t m_instanceCount;
 
@@ -47,6 +51,8 @@ namespace vzt
 
         Input    m_inputs;
         uint64_t m_lastTimeStep = 0;
+
+        EventCallback m_eventCallback = {};
     };
 
 } // namespace vzt

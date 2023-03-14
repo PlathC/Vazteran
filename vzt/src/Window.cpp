@@ -75,6 +75,9 @@ namespace vzt
         SDL_Event windowEvent;
         while (SDL_PollEvent(&windowEvent))
         {
+            if (m_eventCallback)
+                m_eventCallback(&windowEvent);
+
             switch (windowEvent.type)
             {
             case SDL_QUIT: closing = true; break;
