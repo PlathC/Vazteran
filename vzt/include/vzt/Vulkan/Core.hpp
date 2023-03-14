@@ -5,7 +5,11 @@
 
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+
+#ifndef VK_NO_PROTOTYPES
 #define VK_NO_PROTOTYPES
+#endif // VK_NO_PROTOTYPES
+
 #include <vk_mem_alloc.h>
 #include <volk.h>
 
