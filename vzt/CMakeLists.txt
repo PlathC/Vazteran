@@ -97,7 +97,5 @@ target_link_libraries(     Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_LIBRARIES})
 
 target_include_directories(Vazteran INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-if(VZT_MAINPROJECT)
-    add_dependency_folder(Vazteran VztShaders  "${CMAKE_CURRENT_SOURCE_DIR}/shaders" "${CMAKE_BINARY_DIR}/bin/shaders")
-    add_dependency_folder(Vazteran VztSamples  "${CMAKE_CURRENT_SOURCE_DIR}/samples" "${CMAKE_BINARY_DIR}/bin/samples")
-endif()
+add_dependency_folder(VztShaders  "${CMAKE_CURRENT_SOURCE_DIR}/shaders" "${CMAKE_BINARY_DIR}/bin/shaders")
+add_dependencies(Vazteran VztShaders)

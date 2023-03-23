@@ -191,8 +191,8 @@ int main(int /* argc */, char** /* argv */)
 
     vzt::Camera camera{};
     camera.up    = vzt::Vec3(0.f, 0.f, 1.f);
-    camera.front = vzt::Vec3(1.f, 0.f, 0.f);
-    camera.right = vzt::Vec3(0.f, -1.f, 0.f);
+    camera.front = vzt::Vec3(0.f, 1.f, 0.f);
+    camera.right = vzt::Vec3(1.f, 0.f, 0.f);
 
     const vzt::Vec3 target         = (minimum + maximum) * .5f;
     const float     bbRadius       = glm::compMax(glm::abs(maximum - target));

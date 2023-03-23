@@ -1,0 +1,7 @@
+Yasutoshi Mori created this light transport material test orb. Morgan McGuire at Williams College converted it from blender to OBJ + MTL format, fixed interpenetrations in the geometry, and added G3D Articulated Model files. Preview rendering by Syoyo Fujita.
+
+Copyright: © Yasutoshi Mori
+
+License: CC BY 3.0
+
+Source: https://casual-effects.com/data/

@@ -1,6 +1,5 @@
-function(add_dependency_folder main_target folder_target input_folder output_folder)	
+function(add_dependency_folder folder_target input_folder output_folder)	
 	file(GLOB_RECURSE folder_content ${input_folder}/*.*)
 	add_custom_target(  ${folder_target} COMMAND ${CMAKE_COMMAND} -E copy_directory ${input_folder}/ ${output_folder}/)
 	set_property(TARGET ${folder_target} APPEND PROPERTY SOURCES ${folder_content}) 
-	add_dependencies(${main_target} ${folder_target})
 endfunction()	
