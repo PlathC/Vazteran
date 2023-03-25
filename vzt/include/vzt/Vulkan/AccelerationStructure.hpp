@@ -94,6 +94,7 @@ namespace vzt
         BuildAccelerationStructureFlag flags;
         View<AccelerationStructure>    as;
         View<Buffer>                   scratchBuffer;
+        uint32_t                       scratchBufferMinAlignment = 1;
     };
 
     uint64_t getAccelerationStructureSize(BuildAccelerationStructureFlag        flags,

@@ -453,7 +453,8 @@ namespace vzt
         accelerationBuildGeometryInfo.dstAccelerationStructure  = builder.as->getHandle();
         accelerationBuildGeometryInfo.geometryCount             = static_cast<uint32_t>(vkGeometries.size());
         accelerationBuildGeometryInfo.pGeometries               = vkGeometries.data();
-        accelerationBuildGeometryInfo.scratchData.deviceAddress = builder.scratchBuffer->getDeviceAddress();
+        accelerationBuildGeometryInfo.scratchData.deviceAddress = vzt::align( //
+            builder.scratchBuffer->getDeviceAddress(), builder.scratchBufferMinAlignment);
 
         VkAccelerationStructureBuildRangeInfoKHR accelerationStructureBuildRangeInfo{};
         accelerationStructureBuildRangeInfo.primitiveCount  = maxPrimitiveCount;
