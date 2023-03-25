@@ -18,9 +18,10 @@ namespace vzt
         float*      out; // width * height * RGBA
         int         width;
         int         height;
-        const char* err = nullptr;
+        const char* layerName = nullptr;
+        const char* err       = nullptr;
 
-        int          ret = LoadEXR(&out, &width, &height, pathStr.c_str(), &err);
+        int          ret = LoadEXRWithLayer(&out, &width, &height, pathStr.c_str(), layerName, &err);
         Image<float> result{};
         if (ret != TINYEXR_SUCCESS)
         {
