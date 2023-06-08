@@ -25,7 +25,7 @@ The render graph allows to easily define various passes as presented in the `app
 
 To clone the project and its dependencies:
 ```
-git clone --recurse-submodules -j8 https://github.com/PlathC/Udock.git
+git clone --recurse-submodules -j8 https://github.com/PlathC/Vazteran.git
 ```
 
 Most of the dependencies are embedded but you must install Python3 and Vulkan SDK on your own.
