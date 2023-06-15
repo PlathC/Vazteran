@@ -130,6 +130,15 @@ namespace vzt
         bool        mappable    = false;
     };
 
+    struct SubresourceLayout
+    {
+        uint64_t offset;
+        uint64_t size;
+        uint64_t rowPitch;
+        uint64_t arrayPitch;
+        uint64_t depthPitch;
+    };
+
     class DeviceImage
     {
       public:
@@ -172,6 +181,9 @@ namespace vzt
         uint8_t*       map();
         const uint8_t* map() const;
         void           unmap() const;
+
+        SubresourceLayout getSubresourceLayout(const ImageAspect aspect, uint32_t mipLevel = 0,
+                                               uint32_t arrayLayer = 0) const;
 
         inline Extent3D      getSize() const;
         inline ImageUsage    getUsage() const;

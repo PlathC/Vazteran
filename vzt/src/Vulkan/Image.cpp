@@ -144,6 +144,17 @@ namespace vzt
 
     void DeviceImage::unmap() const { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
 
+    SubresourceLayout DeviceImage::getSubresourceLayout(const ImageAspect aspect, uint32_t mipLevel,
+                                                        uint32_t arrayLayer) const
+    {
+        VkImageSubresource  subResource{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
+        VkSubresourceLayout subResourceLayout;
+        vkGetImageSubresourceLayout(m_device->getHandle(), m_handle, &subResource, &subResourceLayout);
+
+        return {subResourceLayout.offset, subResourceLayout.size, subResourceLayout.rowPitch,
+                subResourceLayout.arrayPitch, subResourceLayout.depthPitch};
+    }
+
     ImageView::ImageView(View<Device> device, View<DeviceImage> image, ImageViewType type, ImageAspect aspect,
                          Format format, uint32_t baseMipLevel, uint32_t levelCount)
         : m_device(device), m_image(image), m_aspect(aspect), m_format(format)
