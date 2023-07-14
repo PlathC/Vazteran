@@ -241,7 +241,9 @@ int main(int /* argc */, char** /* argv */)
         offset = submission->imageId * modelsAlignment;
         updateUniformBuffer(commands, modelsUbo, offset, matrices.data(), matrices.size());
 
-        graph.record(submission->imageId, commands);
+        for (auto& pass : graph)
+            pass->record(submission->imageId, commands);
+
         commands.end();
 
         graphicsQueue->submit(commands, *submission);

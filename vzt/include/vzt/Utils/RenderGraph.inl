@@ -16,4 +16,9 @@ namespace vzt
     inline DescriptorLayout&       Pass::getDescriptorLayout() { return m_descriptorLayout; }
     inline DescriptorPool&         Pass::getDescriptorPool() { return m_pool; }
     inline View<RenderPass>        Pass::getRenderPass() const { return &m_renderPass; }
+
+    inline std::vector<std::unique_ptr<Pass>>::iterator       RenderGraph::begin() { return m_passes.begin(); }
+    inline std::vector<std::unique_ptr<Pass>>::iterator       RenderGraph::end() { return m_passes.end(); }
+    inline std::vector<std::unique_ptr<Pass>>::const_iterator RenderGraph::begin() const { return m_passes.begin(); }
+    inline std::vector<std::unique_ptr<Pass>>::const_iterator RenderGraph::end() const { return m_passes.end(); }
 } // namespace vzt

@@ -116,7 +116,7 @@ namespace vzt
         void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
 
         bool isDependingOn(const Pass& other) const;
-        void record(const RenderGraph& graph, uint32_t i, CommandBuffer& commands) const;
+        void record(uint32_t i, CommandBuffer& commands) const;
 
         inline View<Queue>             getQueue() const;
         inline void                    setDescriptorLayout(DescriptorLayout&& layout);
@@ -128,13 +128,14 @@ namespace vzt
         friend RenderGraph;
 
       private:
-        Pass(std::string name, View<Queue> queue, PassType type);
-        void compile(RenderGraph& graph, Format depthFormat);
-        void resize(RenderGraph& graph);
+        Pass(RenderGraph& graph, std::string name, View<Queue> queue, PassType type);
+        void compile(Format depthFormat);
+        void resize();
 
-        void createRenderObjects(RenderGraph& graph);
-        void createDescriptors(RenderGraph& graph);
+        void createRenderObjects();
+        void createDescriptors();
 
+        RenderGraph*     m_graph;
         std::string      m_name;
         View<Queue>      m_queue;
         PassType         m_type;
@@ -192,10 +193,13 @@ namespace vzt
 
         // User information check
         void compile();
-
         void record(uint32_t i, CommandBuffer& commands);
-
         void resize(const Extent2D& extent);
+
+        inline std::vector<std::unique_ptr<Pass>>::iterator       begin();
+        inline std::vector<std::unique_ptr<Pass>>::iterator       end();
+        inline std::vector<std::unique_ptr<Pass>>::const_iterator begin() const;
+        inline std::vector<std::unique_ptr<Pass>>::const_iterator end() const;
 
         friend Pass;
 
@@ -208,8 +212,8 @@ namespace vzt
 
         const AttachmentBuilder& getConfiguration(Handle handle);
 
-        void sort();
-        void createRenderTarget();
+        std::vector<std::size_t> sort();
+        void                     createRenderTarget();
 
         static inline std::atomic<std::size_t> m_handleCounter = 0;
 
@@ -219,7 +223,6 @@ namespace vzt
         HandleMap<StorageBuilder>    m_storageBuilders;
 
         std::hash<std::size_t>             m_hash{};
-        std::vector<std::size_t>           m_executionOrder;
         HandleMap<std::size_t>             m_handleToPhysical;
         HandleMap<QueueType>               handleQueues{};
         std::vector<std::unique_ptr<Pass>> m_passes;

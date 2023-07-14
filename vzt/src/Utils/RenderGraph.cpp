@@ -19,8 +19,9 @@ namespace vzt
             m_callback(i, set, commands);
     }
 
-    Pass::Pass(std::string name, View<Queue> queue, PassType type)
-        : m_name(std::move(name)), m_queue(std::move(queue)), m_type(type), m_descriptorLayout(m_queue->getDevice())
+    Pass::Pass(RenderGraph& graph, std::string name, View<Queue> queue, PassType type)
+        : m_graph(&graph), m_name(std::move(name)), m_queue(std::move(queue)), m_type(type),
+          m_descriptorLayout(m_queue->getDevice())
     {
     }
 
@@ -216,7 +217,7 @@ namespace vzt
         return false;
     }
 
-    void Pass::record(const RenderGraph& graph, uint32_t i, CommandBuffer& commands) const
+    void Pass::record(uint32_t i, CommandBuffer& commands) const
     {
         for (const auto& input : m_colorInputs)
         {
@@ -224,7 +225,7 @@ namespace vzt
                 continue;
 
             ImageBarrier barrier;
-            barrier.image     = graph.getImage(i, input.handle);
+            barrier.image     = m_graph->getImage(i, input.handle);
             barrier.oldLayout = input.use.initialLayout;
             barrier.newLayout = input.use.usedLayout;
             barrier.src       = Access::ColorAttachmentWrite;
@@ -243,7 +244,7 @@ namespace vzt
                 continue;
 
             BufferBarrier barrier;
-            barrier.buffer = graph.getStorage(i, input.handle);
+            barrier.buffer = m_graph->getStorage(i, input.handle);
             barrier.src    = Access::ShaderWrite;
             barrier.dst    = Access::ShaderRead;
 
@@ -264,7 +265,7 @@ namespace vzt
             commands.endPass();
     }
 
-    void Pass::compile(RenderGraph& graph, Format depthFormat)
+    void Pass::compile(Format depthFormat)
     {
         View<Device> device = m_queue->getDevice();
 
@@ -274,12 +275,12 @@ namespace vzt
             m_renderPass = RenderPass(device);
             for (const auto& output : m_colorOutputs)
             {
-                const AttachmentBuilder& attachmentBuilder = graph.m_attachmentBuilders[output.handle];
+                const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
 
                 AttachmentUse attachmentUse = output.use;
-                attachmentUse.format        = attachmentBuilder.format.value_or(graph.m_swapchain->getFormat());
+                attachmentUse.format        = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
 
-                if (graph.isBackBuffer(output.handle))
+                if (m_graph->isBackBuffer(output.handle))
                     attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
 
                 m_renderPass.addColor(attachmentUse);
@@ -294,48 +295,48 @@ namespace vzt
 
             m_renderPass.compile();
 
-            createRenderObjects(graph);
+            createRenderObjects();
         }
 
         // Create descriptors for the current pass
         m_descriptorLayout.compile();
 
-        const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
+        const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
         m_pool                          = DescriptorPool{device, m_descriptorLayout, swapchainImageNb};
         m_pool.allocate(swapchainImageNb, m_descriptorLayout);
 
-        createDescriptors(graph);
+        createDescriptors();
     }
 
-    void Pass::resize(RenderGraph& graph)
+    void Pass::resize()
     {
         if (m_type == PassType::Graphics)
-            createRenderObjects(graph);
+            createRenderObjects();
 
-        createDescriptors(graph);
+        createDescriptors();
     }
 
-    void Pass::createRenderObjects(RenderGraph& graph)
+    void Pass::createRenderObjects()
     {
         // Guess render pass extent from its outputs
         Optional<Extent2D> extent;
-        const Extent2D     swapchainExtent = graph.m_swapchain->getExtent();
+        const Extent2D     swapchainExtent = m_graph->m_swapchain->getExtent();
         for (const auto& output : m_colorOutputs)
         {
-            const auto& builder = graph.m_attachmentBuilders[output.handle];
+            const auto& builder = m_graph->m_attachmentBuilders[output.handle];
             extent              = builder.imageSize.value_or(swapchainExtent);
             break;
         }
 
         if (!extent && m_depthOutput)
         {
-            const auto& builder = graph.m_attachmentBuilders[m_depthOutput->handle];
+            const auto& builder = m_graph->m_attachmentBuilders[m_depthOutput->handle];
             extent              = builder.imageSize.value_or(swapchainExtent);
         }
 
         assert(extent && "Can't guess render pass extent since it has no output.");
 
-        const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
+        const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
         View<Device>   device           = m_queue->getDevice();
 
         m_frameBuffers.clear();
@@ -350,13 +351,13 @@ namespace vzt
             // Get attachment from framebuffer
             for (auto& output : m_colorOutputs)
             {
-                const AttachmentBuilder& builder = graph.getConfiguration(output.handle);
+                const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
 
                 View<DeviceImage> image;
                 if (!builder.format)
-                    image = graph.m_swapchain->getImage(i);
+                    image = m_graph->m_swapchain->getImage(i);
                 else
-                    image = graph.getImage(i, output.handle);
+                    image = m_graph->getImage(i, output.handle);
 
                 frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
             }
@@ -364,16 +365,16 @@ namespace vzt
             if (m_depthOutput)
             {
                 frameBuffer.addAttachment(
-                    ImageView{device, graph.getImage(i, m_depthOutput->handle), ImageAspect::Depth});
+                    ImageView{device, m_graph->getImage(i, m_depthOutput->handle), ImageAspect::Depth});
             }
 
             frameBuffer.compile(m_renderPass);
         }
     }
 
-    void Pass::createDescriptors(RenderGraph& graph)
+    void Pass::createDescriptors()
     {
-        const uint32_t swapchainImageNb = graph.m_swapchain->getImageNb();
+        const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
         View<Device>   device           = m_queue->getDevice();
 
         for (uint32_t i = 0; i < swapchainImageNb; i++)
@@ -384,7 +385,7 @@ namespace vzt
             // Sampled texture
             for (auto& input : m_colorInputs)
             {
-                View<DeviceImage> image = graph.getImage(i, input.handle);
+                View<DeviceImage> image = m_graph->getImage(i, input.handle);
 
                 m_textureSaves.emplace_back(device, image, SamplerBuilder{});
                 Texture& texture = m_textureSaves.back();
@@ -396,14 +397,14 @@ namespace vzt
             // SSBO
             for (auto& input : m_storageInputs)
             {
-                View<Buffer> storage = graph.getStorage(i, input.handle);
+                View<Buffer> storage = m_graph->getStorage(i, input.handle);
                 descriptors[input.binding] =
                     DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};
             }
 
             for (auto& output : m_storageOutputs)
             {
-                View<Buffer> storage = graph.getStorage(i, output.handle);
+                View<Buffer> storage = m_graph->getStorage(i, output.handle);
                 descriptors[output.binding] =
                     DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage, storage->size()}};
             }
@@ -433,7 +434,7 @@ namespace vzt
 
     Pass& RenderGraph::addPass(std::string name, View<Queue> queue, PassType type)
     {
-        m_passes.emplace_back(new Pass(name, queue, type));
+        m_passes.emplace_back(new Pass(*this, name, queue, type));
         return *m_passes.back();
     }
 
@@ -449,9 +450,13 @@ namespace vzt
 
     void RenderGraph::compile()
     {
-        m_executionOrder.clear();
+        const std::vector<std::size_t>     executionOrder = sort();
+        std::vector<std::unique_ptr<Pass>> sortedPasses{};
+        sortedPasses.reserve(m_passes.size());
 
-        sort();
+        for (std::size_t i = 0; i < m_passes.size(); i++)
+            sortedPasses.emplace_back(std::move(m_passes[executionOrder[i]]));
+        m_passes = std::move(sortedPasses);
 
         // Get all use handles and find by which queue it is used
         HandleMap<ImageLayout> handlesLastLayout{};
@@ -471,26 +476,25 @@ namespace vzt
             handlesLastLayout[attachment.handle] = attachment.use.usedLayout;
         };
 
-        for (const std::size_t passId : m_executionOrder)
+        for (auto& pass : m_passes)
         {
-            Pass& pass = *m_passes[passId];
-            for (auto& input : pass.m_colorInputs)
-                addAttachment(pass, input);
+            for (auto& input : pass->m_colorInputs)
+                addAttachment(*pass, input);
 
-            for (auto& output : pass.m_colorOutputs)
-                addAttachment(pass, output);
+            for (auto& output : pass->m_colorOutputs)
+                addAttachment(*pass, output);
 
-            for (auto& input : pass.m_storageInputs)
-                add(pass, input.handle);
+            for (auto& input : pass->m_storageInputs)
+                add(*pass, input.handle);
 
-            for (auto& output : pass.m_storageOutputs)
-                add(pass, output.handle);
+            for (auto& output : pass->m_storageOutputs)
+                add(*pass, output.handle);
 
-            if (pass.m_depthInput)
-                addAttachment(pass, *pass.m_depthInput);
+            if (pass->m_depthInput)
+                addAttachment(*pass, *pass->m_depthInput);
 
-            if (pass.m_depthOutput)
-                addAttachment(pass, *pass.m_depthOutput);
+            if (pass->m_depthOutput)
+                addAttachment(*pass, *pass->m_depthOutput);
         }
 
         createRenderTarget();
@@ -499,22 +503,22 @@ namespace vzt
         // Traverse pass in execution order to fit their id with their ressources
         const auto hardware    = m_swapchain->getDevice()->getHardware();
         const auto depthFormat = hardware.getDepthFormat();
-        for (const std::size_t passId : m_executionOrder)
-            m_passes[passId]->compile(*this, depthFormat);
+        for (auto& pass : m_passes)
+            pass->compile(depthFormat);
     }
 
     void RenderGraph::record(uint32_t i, CommandBuffer& commands)
     {
-        for (std::size_t passId : m_executionOrder)
-            m_passes[passId]->record(*this, i, commands);
+        for (auto& pass : m_passes)
+            pass->record(i, commands);
     }
 
     void RenderGraph::resize(const Extent2D& extent)
     {
         createRenderTarget();
 
-        for (const std::size_t passId : m_executionOrder)
-            m_passes[passId]->resize(*this);
+        for (auto& pass : m_passes)
+            pass->resize();
     }
 
     Handle RenderGraph::generateAttachmentHandle() const
@@ -538,20 +542,19 @@ namespace vzt
 
     const AttachmentBuilder& RenderGraph::getConfiguration(Handle handle) { return m_attachmentBuilders[handle]; }
 
-    void RenderGraph::sort()
+    std::vector<std::size_t> RenderGraph::sort()
     {
         // Graph sorting based on its topology
         // https://en.wikipedia.org/wiki/Topological_sorting
-        m_executionOrder.clear();
-        m_executionOrder.reserve(m_passes.size());
+        std::vector<std::size_t> executionOrder{};
+        executionOrder.reserve(m_passes.size());
 
         // 0: unmarked, 1: temporary marked, 2: permanent mark
         auto nodeStatus     = std::vector<std::size_t>(m_passes.size(), 0);
         auto remainingNodes = std::vector<std::size_t>(m_passes.size());
         std::iota(remainingNodes.begin(), remainingNodes.end(), 0);
 
-        std::function<void(std::size_t)> processNode;
-        processNode = [&](std::size_t idx) {
+        std::function<void(std::size_t)> processNode = [&](std::size_t idx) {
             const std::size_t currentStatus = nodeStatus[idx];
 
             if (currentStatus == 1)
@@ -572,27 +575,27 @@ namespace vzt
             }
 
             nodeStatus[idx] = 2;
-            m_executionOrder.emplace_back(idx);
+            executionOrder.emplace_back(idx);
             remainingNodes.erase(std::remove(remainingNodes.begin(), remainingNodes.end(), idx), remainingNodes.end());
         };
 
         while (!remainingNodes.empty())
             processNode(remainingNodes.front());
 
-        if (m_executionOrder.size() <= 2)
-            return;
+        if (executionOrder.size() <= 2)
+            return executionOrder;
 
         // Try to schedule passes based on dependers and dependees
         // Based on https://github.com/Themaister/Granite/blob/master/renderer/render_graph.cpp#L2886
 
         // Expecting that m_sortedRenderPassIndices contains the sorted list of render pass indices.
         std::vector<std::size_t> toProcess;
-        toProcess.reserve(m_executionOrder.size());
-        std::swap(toProcess, m_executionOrder);
+        toProcess.reserve(executionOrder.size());
+        std::swap(toProcess, executionOrder);
 
         const auto schedule = [&](unsigned index) {
             // Need to preserve the order of remaining elements.
-            m_executionOrder.push_back(toProcess[index]);
+            executionOrder.push_back(toProcess[index]);
             toProcess.erase(toProcess.begin() + index);
         };
 
@@ -607,7 +610,7 @@ namespace vzt
                 std::size_t overlapFactor = 0;
 
                 // Try to find the farthest non-depending pass
-                for (auto it = m_executionOrder.rbegin(); it != m_executionOrder.rend(); ++it)
+                for (auto it = executionOrder.rbegin(); it != executionOrder.rend(); ++it)
                 {
                     if (m_passes[toProcess[i]]->isDependingOn(*m_passes[*it]))
                         break;
@@ -635,9 +638,11 @@ namespace vzt
                 bestOverlapFactor = overlapFactor;
             }
 
-            m_executionOrder.emplace_back(toProcess[bestCandidateIdx]);
+            executionOrder.emplace_back(toProcess[bestCandidateIdx]);
             toProcess.erase(toProcess.begin() + bestCandidateIdx);
         }
+
+        return executionOrder;
     }
 
     void RenderGraph::createRenderTarget()
