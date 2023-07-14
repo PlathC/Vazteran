@@ -1,13 +1,14 @@
 #version 450
 #extension GL_KHR_vulkan_glsl: enable
+#extension GL_ARB_compute_shader: enable
 
-layout(set = 0, binding = 0) uniform UniformBuffer
+layout (set = 0, binding = 0) uniform UniformBuffer
 {
     uint uInstanceCount;
     uint uTime;
 } uniforms;
 
-layout(set = 0, binding = 1) buffer OutputBuffer
+layout (set = 0, binding = 1) buffer OutputBuffer
 {
     vec4 values[];
 } instances;
@@ -17,11 +18,10 @@ layout (local_size_x = 256) in;
 void main(void)
 {
     const int id = int(gl_LocalInvocationIndex);
-    if(id >= uniforms.uInstanceCount )
-        return;
+    if (id >= uniforms.uInstanceCount) return;
 
     const int range = int(sqrt(float(uniforms.uInstanceCount)));
-    const int x     = id % range - range / 2;
-    const int z     = id / range - range / 2;
-    instances.values[id] = vec4(x, sin(uniforms.uTime * 1e-3 + id) * 5e-1, z, 1.) * 1.75;
+    const int x = id % range - range / 2;
+    const int y = id / range - range / 2;
+    instances.values[id] = vec4(x * 1.5f, y * 1.5f, sin(float(uniforms.uTime) * 1e-3f + id) * 5e-1f, 1.f) * 1.75f;
 }

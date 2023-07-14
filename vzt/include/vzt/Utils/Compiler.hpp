@@ -8,6 +8,8 @@
 
 namespace vzt
 {
+    class Instance;
+
     enum class ShadingLanguage
     {
         GLSL,
@@ -17,7 +19,7 @@ namespace vzt
     class Compiler
     {
       public:
-        Compiler();
+        Compiler(View<Instance> instance);
 
         Shader compile(const Path& path, ShaderStage stage, ShadingLanguage language, bool optimize) const;
         Shader compile(const Path& path, ShaderStage stage, ShadingLanguage language = ShadingLanguage::GLSL) const;
@@ -25,6 +27,7 @@ namespace vzt
       private:
         static std::atomic<bool> IsInitialized;
 
+        View<Instance>    m_instance{};
         std::vector<Path> m_includePaths{};
     };
 } // namespace vzt

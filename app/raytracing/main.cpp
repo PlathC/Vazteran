@@ -19,14 +19,14 @@ int main(int argc, char** argv)
 {
     const std::string ApplicationName = "Vazteran Raytracing";
 
-    auto compiler = vzt::Compiler();
     auto window   = vzt::Window{ApplicationName};
     auto instance = vzt::Instance{window};
     auto surface  = vzt::Surface{window, instance};
+    auto compiler = vzt::Compiler(instance);
 
     auto device    = instance.getDevice(vzt::DeviceBuilder::rt(), surface);
     auto hardware  = device.getHardware();
-    auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
+    auto swapchain = vzt::Swapchain{device, surface};
 
     vzt::Mesh                mesh = vzt::readObj("samples/Dragon/dragon.obj");
     std::vector<VertexInput> vertexInputs;
@@ -38,9 +38,9 @@ int main(int argc, char** argv)
         vzt::BufferUsage::AccelerationStructureBuildInputReadOnly | //
         vzt::BufferUsage::ShaderDeviceAddress |                     //
         vzt::BufferUsage::StorageBuffer;
-    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>( //
+    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(   //
         device, vertexInputs, vzt::BufferUsage::VertexBuffer | GeometryBufferUsages);
-    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>( //
+    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(      //
         device, mesh.indices, vzt::BufferUsage::IndexBuffer | GeometryBufferUsages);
 
     vzt::GeometryAsBuilder bottomAsBuilder{vzt::AsTriangles{
@@ -250,7 +250,7 @@ int main(int argc, char** argv)
     {
         const auto& inputs = window.getInputs();
         if (inputs.windowResized)
-            swapchain.setExtent(inputs.windowSize);
+            swapchain.recreate();
 
         auto submission = swapchain.getSubmission();
         if (!submission)
@@ -261,7 +261,7 @@ int main(int argc, char** argv)
         // Per frame update
         vzt::Quat orientation = {1.f, 0.f, 0.f, 0.f};
         if (inputs.mouseLeftPressed)
-            t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWith());
+            t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWidth());
 
         const vzt::Quat rotation        = glm::angleAxis(t, camera.up);
         const vzt::Vec3 currentPosition = rotation * (cameraPosition - target) + target;
@@ -271,7 +271,7 @@ int main(int argc, char** argv)
         const float     projection = glm::dot(reference, direction);
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
-        else if (projection < 0.f) // If direction and reference are opposite
+        else if (projection < 0.f)              // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
@@ -333,8 +333,8 @@ int main(int argc, char** argv)
             device.wait();
 
             // Apply screen size update
-            vzt::Extent2D extent = window.getExtent();
-            camera.aspectRatio   = static_cast<float>(extent.width) / static_cast<float>(extent.height);
+            extent             = window.getExtent();
+            camera.aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
             storageImages.clear();
             storageImageView.clear();

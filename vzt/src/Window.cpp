@@ -116,8 +116,8 @@ namespace vzt
             case SDL_WINDOWEVENT:
                 if (windowEvent.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
                 {
-                    m_width  = windowEvent.window.data1;
-                    m_height = windowEvent.window.data2;
+                    m_width  = uint32_t(windowEvent.window.data1);
+                    m_height = uint32_t(windowEvent.window.data2);
 
                     m_inputs.windowSize    = {m_width, m_height};
                     m_inputs.windowResized = true;

@@ -25,10 +25,10 @@ int main(int /* argc */, char** /* argv */)
     auto surface   = vzt::Surface{window, instance};
     auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
     auto hardware  = device.getHardware();
-    auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
+    auto swapchain = vzt::Swapchain{device, surface};
 
     auto program  = vzt::Program(device);
-    auto compiler = vzt::Compiler();
+    auto compiler = vzt::Compiler(instance);
     program.setShader(compiler.compile("shaders/base/triangle.vert", vzt::ShaderStage::Vertex));
     program.setShader(compiler.compile("shaders/base/triangle.frag", vzt::ShaderStage::Fragment));
 
@@ -58,7 +58,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto pipeline = vzt::GraphicPipeline(device);
     pipeline.setProgram(program);
-    pipeline.setViewport(vzt::Viewport{window.getExtent()});
+    pipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
 
     vzt::DescriptorLayout descriptorLayout{device};
     // Model { mat4 modelView; mat4 projection; mat4 normal; }
@@ -90,7 +90,7 @@ int main(int /* argc */, char** /* argv */)
                           vzt::MemoryLocation::Device, true};
 
     // Assign buffer parts to their respective image
-    vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb()};
+    vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb() + descriptorLayout.size()};
     descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
 
     // Vertex inputs
@@ -104,7 +104,7 @@ int main(int /* argc */, char** /* argv */)
     const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
-    vzt::Extent2D                 extent = window.getExtent();
+    vzt::Extent2D                 extent = swapchain.getExtent();
     std::vector<vzt::DeviceImage> depthStencils;
     std::vector<vzt::FrameBuffer> frameBuffers;
     depthStencils.reserve(swapchain.getImageNb());
@@ -148,9 +148,10 @@ int main(int /* argc */, char** /* argv */)
     }
 
     vzt::Camera camera{};
-    camera.up    = vzt::Vec3(0.f, 0.f, 1.f);
-    camera.front = vzt::Vec3(0.f, 1.f, 0.f);
-    camera.right = vzt::Vec3(1.f, 0.f, 0.f);
+    camera.up          = vzt::Vec3(0.f, 0.f, 1.f);
+    camera.front       = vzt::Vec3(0.f, 1.f, 0.f);
+    camera.right       = vzt::Vec3(1.f, 0.f, 0.f);
+    camera.aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
     const vzt::Vec3 target   = (minimum + maximum) * .5f;
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
@@ -162,7 +163,7 @@ int main(int /* argc */, char** /* argv */)
     {
         const auto& inputs = window.getInputs();
         if (inputs.windowResized)
-            swapchain.setExtent(inputs.windowSize);
+            swapchain.recreate();
 
         auto submission = swapchain.getSubmission();
         if (!submission)
@@ -173,7 +174,7 @@ int main(int /* argc */, char** /* argv */)
 
         float t = std::fmod(static_cast<float>(inputs.time) * 1e-3f, vzt::Tau);
         if (inputs.mouseLeftPressed)
-            t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWith());
+            t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWidth());
 
         const vzt::Quat rotation        = glm::angleAxis(t, camera.up);
         const vzt::Vec3 currentPosition = rotation * (position - target) + target;
@@ -183,7 +184,7 @@ int main(int /* argc */, char** /* argv */)
         const float     projection = glm::dot(reference, direction);
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
-        else if (projection < 0.f) // If direction and reference are opposite
+        else if (projection < 0.f)              // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
@@ -224,7 +225,7 @@ int main(int /* argc */, char** /* argv */)
             device.wait();
 
             // Apply screen size update
-            extent             = window.getExtent();
+            extent             = swapchain.getExtent();
             camera.aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
             pipeline.resize(vzt::Viewport{extent});

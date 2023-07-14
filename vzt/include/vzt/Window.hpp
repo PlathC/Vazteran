@@ -2,6 +2,7 @@
 #define VZT_WINDOW_HPP
 
 #include <atomic>
+#include <string>
 
 #include "vzt/Ui/Input.hpp"
 #include "vzt/Vulkan/Instance.hpp"
@@ -24,7 +25,7 @@ namespace vzt
         ~Window();
 
         inline std::string_view getTitle() const;
-        inline uint32_t         getWith() const;
+        inline uint32_t         getWidth() const;
         inline uint32_t         getHeight() const;
         inline Extent2D         getExtent() const;
         inline const Input&     getInputs() const;

@@ -26,7 +26,7 @@ int main(int /* argc */, char** /* argv */)
     {
         const auto& inputs = window.getInputs();
         if (inputs.windowResized)
-            swapchain.setExtent(inputs.windowSize);
+            swapchain.resize();
 
         auto submission = swapchain.getSubmission();
         if (!submission)

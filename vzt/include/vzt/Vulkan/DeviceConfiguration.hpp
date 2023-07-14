@@ -24,16 +24,18 @@ namespace vzt
         constexpr Extension Spirv14                 = VK_KHR_SPIRV_1_4_EXTENSION_NAME;
         constexpr Extension ShaderFloatControls     = VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME;
         constexpr Extension GraphicsPipelineLibrary = VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME;
+        constexpr Extension PortabilitySubset       = "VK_KHR_portability_subset";
+
     } // namespace dext
 
     // Based on https://github.com/charles-lunarg/vk-bootstrap/blob/master/src/VkBootstrap.h#L161
-    // Copyright © 2020 Charles Giessen (charles@lunarg.com)
+    // Copyright ï¿½ 2020 Charles Giessen (charles@lunarg.com)
     // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-    // documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+    // documentation files (the ï¿½Softwareï¿½), to deal in the Software without restriction, including without limitation
     // the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
     // to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above
     // copyright notice and this permission notice shall be included in all copies or substantial portions of the
-    // Software. THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+    // Software. THE SOFTWARE IS PROVIDED ï¿½AS ISï¿½, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
     // LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
     // SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
     // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
@@ -70,7 +72,7 @@ namespace vzt
 
       private:
         // Mutable to allow dynamic chain creation
-        mutable VkPhysicalDeviceFeatures2         m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+        mutable VkPhysicalDeviceFeatures2 m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr};
         mutable std::vector<GenericDeviceFeature> m_features;
     };
 

@@ -3,10 +3,10 @@
 namespace vzt
 {
     template <class ValueType>
-    static inline DeviceImage DeviceImage::fromData(View<Device> device, ImageUsage usage, Format format,
-                                                    const Image<ValueType>& image, uint32_t mipLevels,
-                                                    ImageLayout layout, SampleCount sampleCount, ImageType type,
-                                                    SharingMode sharingMode, ImageTiling tiling, bool mappable)
+    inline DeviceImage DeviceImage::fromData(View<Device> device, ImageUsage usage, Format format,
+                                             const Image<ValueType>& image, uint32_t mipLevels, ImageLayout layout,
+                                             SampleCount sampleCount, ImageType type, SharingMode sharingMode,
+                                             ImageTiling tiling, bool mappable)
     {
         return fromData(device, usage, format, image.width, image.height,
                         {reinterpret_cast<const uint8_t*>(image.data.data()), image.data.size() * sizeof(ValueType)},

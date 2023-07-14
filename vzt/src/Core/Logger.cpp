@@ -25,8 +25,12 @@ namespace vzt::logger
     {
         const std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
         std::tm           local;
-        ::localtime_s(&local, &currentTime);
 
+#ifdef WIN32
+        ::localtime_s(&local, &currentTime);
+#else
+        ::localtime_r(&currentTime, &local);
+#endif
         fmt::print("[{:%Y-%m-%d %H:%M:%S}] [{}] {}\n", local, toString(level), str);
     }
 

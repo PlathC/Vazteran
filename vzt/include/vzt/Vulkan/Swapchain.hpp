@@ -29,7 +29,7 @@ namespace vzt
     class Swapchain
     {
       public:
-        Swapchain(View<Device> device, View<Surface> surface, Extent2D extent, SwapchainBuilder configuration = {});
+        Swapchain(View<Device> device, View<Surface> surface, SwapchainBuilder configuration = {});
 
         Swapchain(const Swapchain&)            = delete;
         Swapchain& operator=(const Swapchain&) = delete;
@@ -43,7 +43,7 @@ namespace vzt
         Optional<SwapchainSubmission> getSubmission();
         bool                          present();
 
-        inline void              setExtent(Extent2D extent);
+        inline void              recreate();
         inline Extent2D          getExtent() const;
         inline View<DeviceImage> getImage(std::size_t i) const;
         inline uint32_t          getImageNb() const;

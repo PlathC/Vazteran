@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <functional>
+#include <string>
 #include <unordered_set>
 
 #include "vzt/Vulkan/Buffer.hpp"

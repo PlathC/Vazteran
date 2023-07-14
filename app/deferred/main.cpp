@@ -26,9 +26,7 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Deferred + Instancing + Compute";
 
-    constexpr uint32_t InstanceCount = 32;
-
-    auto compiler = vzt::Compiler();
+    constexpr uint32_t InstanceCount = 128;
 
     auto window    = vzt::Window{ApplicationName};
     auto instance  = vzt::Instance{window};
@@ -36,7 +34,9 @@ int main(int /* argc */, char** /* argv */)
     auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
     auto queue     = device.getQueue(vzt::QueueType::Graphics);
     auto hardware  = device.getHardware();
-    auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
+    auto swapchain = vzt::Swapchain{device, surface};
+
+    auto compiler = vzt::Compiler(instance);
 
     vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
 
@@ -81,7 +81,7 @@ int main(int /* argc */, char** /* argv */)
     geometryProgram.setShader(compiler.compile("shaders/deferred/triangle.frag", vzt::ShaderStage::Fragment));
 
     auto geometryPipeline = vzt::GraphicPipeline(device);
-    geometryPipeline.setViewport(vzt::Viewport{window.getExtent()});
+    geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
     geometryPipeline.setProgram(geometryProgram);
     geometryPipeline.setDescriptorLayout(geometryLayout);
 
@@ -100,7 +100,7 @@ int main(int /* argc */, char** /* argv */)
     const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
     vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
-    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); // Position
+    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0});             // Position
     vertexDescription.add(
         vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0}); // Normal
     geometryPipeline.setVertexInputDescription(vertexDescription);
@@ -133,7 +133,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto shadingPipeline = vzt::GraphicPipeline(device);
     shadingPipeline.setProgram(shadingProgram);
-    shadingPipeline.setViewport(vzt::Viewport{window.getExtent()});
+    shadingPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
     shadingPipeline.setDescriptorLayout(shadingLayout);
 
     auto& shadingRazterization     = shadingPipeline.getRasterization();
@@ -204,7 +204,7 @@ int main(int /* argc */, char** /* argv */)
     {
         const auto& inputs = window.getInputs();
         if (inputs.windowResized)
-            swapchain.setExtent(inputs.windowSize);
+            swapchain.recreate();
 
         auto submission = swapchain.getSubmission();
         if (!submission)
@@ -215,17 +215,17 @@ int main(int /* argc */, char** /* argv */)
 
         float t = std::fmod(static_cast<float>(inputs.time) * 1e-3f, vzt::Tau);
         if (inputs.mouseLeftPressed)
-            t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWith());
+            t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWidth());
 
         const vzt::Quat rotation        = glm::angleAxis(t, camera.up);
         const vzt::Vec3 currentPosition = rotation * (cameraPosition - target) + target;
 
-        vzt::Vec3       direction  = glm::normalize(target - currentPosition);
+        const vzt::Vec3 direction  = glm::normalize(target - currentPosition);
         const vzt::Vec3 reference  = camera.front;
         const float     projection = glm::dot(reference, direction);
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
-        else if (projection < 0.f) // If direction and reference are opposite
+        else if (projection < 0.f)              // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
@@ -251,7 +251,7 @@ int main(int /* argc */, char** /* argv */)
             device.wait();
 
             // Apply screen size update
-            vzt::Extent2D extent = window.getExtent();
+            vzt::Extent2D extent = swapchain.getExtent();
             camera.aspectRatio   = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
             geometryPipeline.resize(vzt::Viewport{extent});

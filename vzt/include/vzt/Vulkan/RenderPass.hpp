@@ -92,7 +92,7 @@ namespace vzt
 
     struct SubpassDependency
     {
-        static constexpr uint32_t ExternalSubpass = ~0;
+        static constexpr uint32_t ExternalSubpass = ~uint32_t(0);
 
         uint32_t src;
         uint32_t dst;

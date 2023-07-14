@@ -31,8 +31,8 @@ namespace vzt
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    Swapchain::Swapchain(View<Device> device, View<Surface> surface, Extent2D extent, SwapchainBuilder configuration)
-        : m_configuration(configuration), m_device(device), m_surface(surface), m_extent(extent)
+    Swapchain::Swapchain(View<Device> device, View<Surface> surface, SwapchainBuilder configuration)
+        : m_configuration(configuration), m_device(device), m_surface(surface)
     {
         assert(m_device->getPresentQueue() && "Device must have a present queue to use the swapchain");
 
@@ -190,7 +190,8 @@ namespace vzt
         const VkPresentModeKHR presentMode = chooseSwapPresentMode(m_surface->getPresentModes(m_device));
 
         const VkSurfaceCapabilitiesKHR capabilities = m_surface->getCapabilities(m_device);
-        const VkExtent2D               extent       = chooseExtent(capabilities);
+        const VkExtent2D               vkExtent2D   = chooseExtent(capabilities);
+        m_extent                                    = Extent2D{vkExtent2D.width, vkExtent2D.height};
 
         m_imageNb = capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && m_imageNb > capabilities.maxImageCount)
@@ -203,7 +204,7 @@ namespace vzt
         createInfo.minImageCount    = m_imageNb;
         createInfo.imageFormat      = surfaceFormat.format;
         createInfo.imageColorSpace  = surfaceFormat.colorSpace;
-        createInfo.imageExtent      = extent;
+        createInfo.imageExtent      = vkExtent2D;
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage       = toVulkan(ImageUsage::ColorAttachment);
 
@@ -259,8 +260,7 @@ namespace vzt
 
         m_format = static_cast<Format>(surfaceFormat.format);
         for (VkImage image : m_images)
-            m_userImages.emplace_back(m_device, image, Extent2D{extent.width, extent.height},
-                                      ImageUsage::ColorAttachment, m_format, sharingMode);
+            m_userImages.emplace_back(m_device, image, m_extent, ImageUsage::ColorAttachment, m_format, sharingMode);
     }
 
     void Swapchain::cleanup()

@@ -6,6 +6,7 @@
 #include <glslang/Public/ShaderLang.h>
 
 #include "vzt/Core/Logger.hpp"
+#include "vzt/Vulkan/Instance.hpp"
 
 namespace vzt
 {
@@ -267,6 +268,19 @@ namespace vzt
         throw std::runtime_error("Unknown shader type");
     }
 
+    glslang::EShTargetClientVersion toBackend(VulkanVersion version)
+    {
+        switch (version)
+        {
+        case VulkanVersion::V1_0: return glslang::EShTargetClientVersion::EShTargetVulkan_1_0; break;
+        case VulkanVersion::V1_1: return glslang::EShTargetClientVersion::EShTargetVulkan_1_1; break;
+        case VulkanVersion::V1_2: return glslang::EShTargetClientVersion::EShTargetVulkan_1_2; break;
+        case VulkanVersion::V1_3: return glslang::EShTargetClientVersion::EShTargetVulkan_1_3; break;
+        }
+
+        throw std::runtime_error("Unsupported Vulkan version");
+    }
+
     glslang::EShSource toBackend(ShadingLanguage language)
     {
         switch (language)
@@ -278,7 +292,7 @@ namespace vzt
         throw std::runtime_error("Unknown shader language");
     }
 
-    Compiler::Compiler()
+    Compiler::Compiler(View<Instance> instance) : m_instance(instance)
     {
         // "Call this exactly once per process before using anything else"
         if (!IsInitialized)
@@ -302,15 +316,15 @@ namespace vzt
 
         // TODO: Make this dynamic based on renderer
         glslang::EShClient              clientType     = glslang::EShClientVulkan;
-        glslang::EShTargetClientVersion clientVersion  = glslang::EShTargetClientVersion::EShTargetVulkan_1_2;
-        constexpr int                   DefaultVersion = 140;
+        glslang::EShTargetClientVersion clientVersion  = toBackend(m_instance->getAPIVersion());
+        constexpr int                   DefaultVersion = 450;
 
         shader.setEntryPoint("main");
         shader.setEnvInput(toBackend(language), toBackend(stage), clientType, DefaultVersion);
         shader.setEnvClient(clientType, clientVersion);
         shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetSpv_1_4);
 
-        constexpr EProfile DefaultProfile = EProfile::ECompatibilityProfile;
+        constexpr EProfile DefaultProfile = EProfile::ECoreProfile;
 
         std::string    preprocessed{};
         ShaderIncluder includer{path.parent_path()};

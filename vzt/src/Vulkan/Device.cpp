@@ -237,7 +237,7 @@ namespace vzt
         allocatorInfo.physicalDevice         = m_device.getHandle();
         allocatorInfo.device                 = m_handle;
         allocatorInfo.instance               = instance->getHandle();
-        allocatorInfo.vulkanApiVersion       = getAPIVersion();
+        allocatorInfo.vulkanApiVersion       = toVulkan(instance->getAPIVersion());
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
         allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;

@@ -78,7 +78,14 @@ namespace vzt
     {
         DeviceBuilder builder{};
         builder.m_features   = DeviceFeatures::standard();
-        builder.m_extensions = {dext::Swapchain, dext::GetMemoryRequirements2, dext::DedicatedAllocation};
+        builder.m_extensions = {
+            dext::Swapchain,
+            dext::GetMemoryRequirements2,
+            dext::DedicatedAllocation,
+#ifdef __APPLE__
+            dext::PortabilitySubset,
+#endif // __APPLE__
+        };
         builder.m_queueTypes = QueueType::Graphics | QueueType::Compute;
 
         return builder;
