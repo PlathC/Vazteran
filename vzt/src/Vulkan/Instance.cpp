@@ -55,7 +55,7 @@ namespace vzt
     }
 
     Instance::Instance(const std::string& name, InstanceBuilder builder)
-        : m_enableValidation(std::move(builder.enableValidation)),
+        : m_version(builder.apiVersion), m_enableValidation(std::move(builder.enableValidation)),
           m_validationLayers(std::move(builder.validationLayers)), m_extensions(std::move(builder.extensions))
     {
         if (volkInitialize() != VK_SUCCESS)
@@ -67,15 +67,18 @@ namespace vzt
         VkApplicationInfo appInfo{};
         appInfo.sType            = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = name.c_str();
-        appInfo.pEngineName      = "Vazteran";
-        appInfo.engineVersion    = VK_MAKE_VERSION(0, 1, 0);
-        appInfo.apiVersion       = VK_API_VERSION_1_3;
+        appInfo.pEngineName      = builder.engineName.c_str();
+        appInfo.engineVersion    = builder.engineVersion;
+        appInfo.apiVersion       = toVulkan(builder.apiVersion);
 
         VkInstanceCreateInfo createInfo{};
         createInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo        = &appInfo;
         createInfo.enabledExtensionCount   = static_cast<uint32_t>(m_extensions.size());
         createInfo.ppEnabledExtensionNames = m_extensions.data();
+
+        if (builder.enablePortability)
+            createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
         createInfo.enabledLayerCount = 0;
 

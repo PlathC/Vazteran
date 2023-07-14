@@ -14,16 +14,12 @@
 #include <volk.h>
 
 #define VZT_DEFINE_TO_VULKAN_FUNCTION(BaseType, VulkanType) \
-    inline constexpr VulkanType toVulkan(const BaseType l)  \
-    {                                                       \
-        return static_cast<VulkanType>(l);                  \
-    }
+    inline constexpr VulkanType toVulkan(const BaseType l) { return static_cast<VulkanType>(l); }
 
 // Helpers
 namespace vzt
 {
-    void     vkCheck(VkResult result, std::string_view msg);
-    uint32_t getAPIVersion();
+    void vkCheck(VkResult result, std::string_view msg);
 } // namespace vzt
 
 #endif // VZT_VULKAN_CORE_HPP
