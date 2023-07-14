@@ -101,13 +101,13 @@ namespace vzt
     DescriptorSet::DescriptorSet(VkDescriptorSet handle) : m_handle(handle) {}
 
     DescriptorPool::DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes,
-                                   uint32_t maxSetNb)
+                                   uint32_t maxSetNb, uint32_t maxPerTypeNb)
         : m_device(device), m_maxSetNb(maxSetNb)
     {
         std::vector<VkDescriptorPoolSize> sizes;
         sizes.reserve(descriptorTypes.size());
         for (const auto& descriptorType : descriptorTypes)
-            sizes.emplace_back(VkDescriptorPoolSize{toVulkan(descriptorType), maxSetNb});
+            sizes.emplace_back(VkDescriptorPoolSize{toVulkan(descriptorType), maxPerTypeNb});
 
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -126,25 +126,29 @@ namespace vzt
     {
         const auto& bindings = descriptorLayout.getBindings();
 
-        std::unordered_set<DescriptorType> types{};
+        std::unordered_map<DescriptorType, uint32_t> types{};
         types.reserve(bindings.size());
         for (const auto& [_, descriptorType] : bindings)
-            types.emplace(descriptorType);
+        {
+            if (types.find(descriptorType) == types.end())
+                types[descriptorType] = 0;
+            types[descriptorType]++;
+        }
 
         std::vector<VkDescriptorPoolSize> sizes{};
         sizes.reserve(types.size());
-        for (const auto& descriptorType : types)
-            sizes.emplace_back(VkDescriptorPoolSize{toVulkan(descriptorType), maxSetNb});
+        for (const auto& [type, count] : types)
+            sizes.emplace_back(VkDescriptorPoolSize{toVulkan(type), maxSetNb * count});
 
-        VkDescriptorPoolCreateInfo pool_info = {};
-        pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags                      = 0;
-        pool_info.maxSets                    = maxSetNb;
-        pool_info.poolSizeCount              = static_cast<uint32_t>(sizes.size());
-        pool_info.pPoolSizes                 = sizes.data();
+        VkDescriptorPoolCreateInfo poolInfo = {};
+        poolInfo.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.flags                      = 0;
+        poolInfo.maxSets                    = maxSetNb;
+        poolInfo.poolSizeCount              = static_cast<uint32_t>(sizes.size());
+        poolInfo.pPoolSizes                 = sizes.data();
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        vkCheck(table.vkCreateDescriptorPool(m_device->getHandle(), &pool_info, nullptr, &m_handle),
+        vkCheck(table.vkCreateDescriptorPool(m_device->getHandle(), &poolInfo, nullptr, &m_handle),
                 "Failed to create descriptor pool.");
     }
 
@@ -207,7 +211,8 @@ namespace vzt
         descriptorAsInfo.reserve(descriptors.size());
         for (const auto& [i, descriptor] : descriptors)
         {
-            std::visit(Overloaded{[&](const DescriptorBuffer& buffer) {
+            std::visit(Overloaded{[this, &descriptorBufferInfo, &descriptorWrites, descriptorId,
+                                   i = i](const DescriptorBuffer& buffer) {
                                       VkDescriptorBufferInfo info{};
                                       info.buffer = buffer.buffer.buffer->getHandle();
                                       info.offset = buffer.buffer.offset;
@@ -224,7 +229,8 @@ namespace vzt
                                       descriptorWrite.pBufferInfo     = &descriptorBufferInfo.back();
                                       descriptorWrites.emplace_back(descriptorWrite);
                                   },
-                                  [&](const DescriptorImage& image) {
+                                  [this, &descriptorImageInfo, &descriptorWrites, descriptorId,
+                                   i = i](const DescriptorImage& image) {
                                       VkDescriptorImageInfo info{};
                                       info.imageLayout = toVulkan(image.layout);
                                       info.imageView   = image.image->getHandle();
@@ -244,7 +250,8 @@ namespace vzt
                                       descriptorWrite.pImageInfo      = &descriptorImageInfo.back();
                                       descriptorWrites.emplace_back(descriptorWrite);
                                   },
-                                  [&](const DescriptorAccelerationStructure& accelerationStructure) {
+                                  [this, &descriptorAsInfo, &descriptorWrites, descriptorId,
+                                   i = i](const DescriptorAccelerationStructure& accelerationStructure) {
                                       VkWriteDescriptorSetAccelerationStructureKHR info{};
                                       info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
                                       info.accelerationStructureCount = 1;

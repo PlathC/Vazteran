@@ -52,6 +52,7 @@ namespace vzt
 
         using Bindings = std::unordered_map<uint32_t /*binding*/, DescriptorType /*type */>;
         inline const Bindings&       getBindings() const;
+        inline uint32_t              size() const;
         inline VkDescriptorSetLayout getHandle() const;
 
       private:
@@ -105,7 +106,7 @@ namespace vzt
 
         DescriptorPool() = default;
         DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes = {},
-                       uint32_t maxSetNb = 64);
+                       uint32_t maxSetNb = 64, uint32_t maxPerTypeNb = 64);
         DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb = 64);
 
         DescriptorPool(const DescriptorPool&)            = delete;
