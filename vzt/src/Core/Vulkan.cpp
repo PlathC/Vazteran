@@ -8,6 +8,4 @@ namespace vzt
         if (result != VK_SUCCESS)
             logger::error("{}", msg);
     }
-
-    uint32_t getAPIVersion() { return VK_API_VERSION_1_3; }
 } // namespace vzt
