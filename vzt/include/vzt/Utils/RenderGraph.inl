@@ -10,13 +10,17 @@ namespace vzt
         m_recordCallback = std::make_unique<DerivedHandler>(std::forward<Args>(args)...);
     }
 
-    inline View<Queue> Pass::getQueue() const { return m_queue; }
-    inline void        Pass::setDescriptorLayout(DescriptorLayout&& layout) { m_descriptorLayout = std::move(layout); }
+    inline std::string_view Pass::getName() const { return m_name; }
+    inline View<Queue>      Pass::getQueue() const { return m_queue; }
+    inline void Pass::setDescriptorLayout(DescriptorLayout&& layout) { m_descriptorLayout = std::move(layout); }
     inline const DescriptorLayout& Pass::getDescriptorLayout() const { return m_descriptorLayout; }
     inline DescriptorLayout&       Pass::getDescriptorLayout() { return m_descriptorLayout; }
     inline DescriptorPool&         Pass::getDescriptorPool() { return m_pool; }
     inline View<RenderPass>        Pass::getRenderPass() const { return &m_renderPass; }
 
+    inline std::unique_ptr<Pass>&       RenderGraph::operator[](uint32_t passId) { return m_passes[passId]; }
+    inline const std::unique_ptr<Pass>& RenderGraph::operator[](uint32_t passId) const { return m_passes[passId]; }
+    inline uint32_t                     RenderGraph::size() const { return uint32_t(m_passes.size()); }
     inline std::vector<std::unique_ptr<Pass>>::iterator       RenderGraph::begin() { return m_passes.begin(); }
     inline std::vector<std::unique_ptr<Pass>>::iterator       RenderGraph::end() { return m_passes.end(); }
     inline std::vector<std::unique_ptr<Pass>>::const_iterator RenderGraph::begin() const { return m_passes.begin(); }

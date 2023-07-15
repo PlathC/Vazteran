@@ -118,6 +118,7 @@ namespace vzt
         bool isDependingOn(const Pass& other) const;
         void record(uint32_t i, CommandBuffer& commands) const;
 
+        inline std::string_view        getName() const;
         inline View<Queue>             getQueue() const;
         inline void                    setDescriptorLayout(DescriptorLayout&& layout);
         inline const DescriptorLayout& getDescriptorLayout() const;
@@ -188,14 +189,17 @@ namespace vzt
         Handle addStorage(StorageBuilder builder);
         Pass&  addPass(std::string name, View<Queue> queue, PassType type = PassType::Graphics);
 
-        void setBackBuffer(const Handle handle);
-        bool isBackBuffer(const Handle handle) const;
+        void setBackBuffer(Handle handle);
+        bool isBackBuffer(Handle handle) const;
 
         // User information check
         void compile();
         void record(uint32_t i, CommandBuffer& commands);
         void resize(const Extent2D& extent);
 
+        inline std::unique_ptr<Pass>&                             operator[](uint32_t passId);
+        inline const std::unique_ptr<Pass>&                       operator[](uint32_t passId) const;
+        inline uint32_t                                           size() const;
         inline std::vector<std::unique_ptr<Pass>>::iterator       begin();
         inline std::vector<std::unique_ptr<Pass>>::iterator       end();
         inline std::vector<std::unique_ptr<Pass>>::const_iterator begin() const;

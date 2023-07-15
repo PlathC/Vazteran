@@ -15,6 +15,7 @@ namespace vzt
     class ComputePipeline;
     class Device;
     class FrameBuffer;
+    class QueryPool;
     class Queue;
 
     struct Blit
@@ -70,7 +71,6 @@ namespace vzt
         void bind(const ComputePipeline& computePipeline, const DescriptorSet& set);
         void bind(const RaytracingPipeline& raytracingPipeline);
         void bind(const RaytracingPipeline& raytracingPipeline, const DescriptorSet& set);
-
         void bindVertexBuffer(const Buffer& buffer);
         void bindIndexBuffer(const Buffer& buffer, std::size_t index);
 
@@ -84,6 +84,9 @@ namespace vzt
 
         void setViewport(const Extent2D& size, float minDepth = 0.f, float maxDepth = 1.f);
         void setScissor(const Extent2D& size, Vec2i offset = {0u, 0u});
+
+        void reset(const QueryPool& pool, uint32_t firstQuery, uint32_t queryCount);
+        void writeTimeStamp(const QueryPool& pool, uint32_t query, PipelineStage waitingStage);
 
         void beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer);
         void endPass();

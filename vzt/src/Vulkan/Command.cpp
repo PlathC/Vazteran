@@ -6,6 +6,7 @@
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
 #include "vzt/Vulkan/Pipeline/ComputePipeline.hpp"
+#include "vzt/Vulkan/QueryPool.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 
 namespace vzt
@@ -375,6 +376,16 @@ namespace vzt
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
         table.vkCmdSetScissor(m_handle, 0, 1, &scissor);
+    }
+
+    void CommandBuffer::reset(const QueryPool& pool, uint32_t firstQuery, uint32_t queryCount)
+    {
+        vkCmdResetQueryPool(m_handle, pool.getHandle(), firstQuery, queryCount);
+    }
+
+    void CommandBuffer::writeTimeStamp(const QueryPool& pool, uint32_t query, PipelineStage waitingStage)
+    {
+        vkCmdWriteTimestamp(m_handle, toVulkan(waitingStage), pool.getHandle(), query);
     }
 
     void CommandBuffer::beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer)

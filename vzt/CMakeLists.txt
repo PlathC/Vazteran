@@ -35,6 +35,7 @@ set(VZT_HEADERS
         include/vzt/Vulkan/Instance.hpp
         include/vzt/Vulkan/Pipeline.hpp
         include/vzt/Vulkan/Program.hpp
+        include/vzt/Vulkan/QueryPool.hpp
         include/vzt/Vulkan/RenderPass.hpp
         include/vzt/Vulkan/Surface.hpp
         include/vzt/Vulkan/Swapchain.hpp
@@ -71,6 +72,7 @@ set(VZT_SOURCES
         src/Vulkan/Image.cpp
         src/Vulkan/Instance.cpp
         src/Vulkan/Program.cpp
+        src/Vulkan/QueryPool.cpp
         src/Vulkan/RenderPass.cpp
         src/Vulkan/Surface.cpp
         src/Vulkan/Swapchain.cpp

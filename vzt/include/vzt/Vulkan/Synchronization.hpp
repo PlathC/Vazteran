@@ -36,7 +36,7 @@ namespace vzt
         None                         = VK_PIPELINE_STAGE_NONE_KHR,
     };
     VZT_DEFINE_BITWISE_FUNCTIONS(PipelineStage)
-    VZT_DEFINE_TO_VULKAN_FUNCTION(PipelineStage, VkPipelineStageFlags)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(PipelineStage, VkPipelineStageFlagBits)
 
     enum class Dependency : uint8_t
     {

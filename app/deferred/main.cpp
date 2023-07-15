@@ -1,9 +1,11 @@
+#include <vzt/Core/Logger.hpp>
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Utils/IOMesh.hpp>
 #include <vzt/Utils/RenderGraph.hpp>
 #include <vzt/Vulkan/Pipeline/ComputePipeline.hpp>
+#include <vzt/Vulkan/QueryPool.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
@@ -26,14 +28,16 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Deferred + Instancing + Compute";
 
-    constexpr uint32_t InstanceCount = 128;
+    constexpr uint32_t InstanceCount = 32;
 
-    auto window    = vzt::Window{ApplicationName};
-    auto instance  = vzt::Instance{window};
-    auto surface   = vzt::Surface{window, instance};
-    auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
-    auto queue     = device.getQueue(vzt::QueueType::Graphics);
-    auto hardware  = device.getHardware();
+    auto        window   = vzt::Window{ApplicationName};
+    auto        instance = vzt::Instance{window};
+    auto        surface  = vzt::Surface{window, instance};
+    auto        device   = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
+    auto        queue    = device.getQueue(vzt::QueueType::Graphics);
+    auto        hardware = device.getHardware();
+    const float period   = hardware.getProperties().limits.timestampPeriod;
+
     auto swapchain = vzt::Swapchain{device, surface};
 
     auto compiler = vzt::Compiler(instance);
@@ -105,8 +109,8 @@ int main(int /* argc */, char** /* argv */)
         vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0}); // Normal
     geometryPipeline.setVertexInputDescription(vertexDescription);
 
-    auto& geometryRazterization    = geometryPipeline.getRasterization();
-    geometryRazterization.cullMode = vzt::CullMode::None;
+    auto& geometryRasterization    = geometryPipeline.getRasterization();
+    geometryRasterization.cullMode = vzt::CullMode::None;
 
     geometry.setRecordFunction<vzt::LambdaRecorder>(
         [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
@@ -148,6 +152,12 @@ int main(int /* argc */, char** /* argv */)
 
     graph.setBackBuffer(composed);
     graph.compile();
+
+    const vzt::QueryPool queryPool = {
+        device,
+        vzt::QueryType::Timestamp,
+        swapchain.getImageNb() * (graph.size() + 1) * 2,
+    };
 
     geometryPipeline.compile(geometry.getRenderPass());
     shadingPipeline.compile(shading.getRenderPass());
@@ -199,6 +209,10 @@ int main(int /* argc */, char** /* argv */)
     const float     distance       = bbRadius / std::tan(camera.fov * .5f);
     const vzt::Vec3 cameraPosition = target - camera.front * 1.15f * distance;
 
+    std::vector<uint64_t> times{};
+    times.resize((graph.size() + 1) * swapchain.getImageNb() * 2);
+    bool readyToBenchmark = false;
+
     // Actual rendering
     while (window.update())
     {
@@ -209,6 +223,30 @@ int main(int /* argc */, char** /* argv */)
         auto submission = swapchain.getSubmission();
         if (!submission)
             continue;
+
+        readyToBenchmark |= submission->imageId == (swapchain.getImageNb() - 1);
+        const uint32_t startId = submission->imageId * (graph.size() + 1) * 2;
+        if (readyToBenchmark)
+        {
+            queryPool.getResults(startId, (graph.size() + 1) * 2,
+                                 vzt::Span<uint64_t>(times.data() + startId, (graph.size() + 1) * 2), sizeof(uint64_t),
+                                 vzt::QueryResultFlag::N64 | vzt::QueryResultFlag::Wait);
+
+            for (uint32_t i = 0; i < graph.size(); i++)
+            {
+                auto& pass = graph[i];
+
+                const float ms =
+                    (static_cast<float>(times[startId + i * 2 + 1] - times[startId + i * 2 + 0]) * period) / 1000000.f;
+                vzt::logger::info("{}: {}ms", pass->getName(), ms);
+            }
+
+            const float ms =
+                (static_cast<float>(times[startId + graph.size() * 2 + 1] - times[startId + graph.size() * 2 + 0]) *
+                 period) /
+                1000000.f;
+            vzt::logger::info("Total: {}ms", ms);
+        }
 
         // Per frame update
         vzt::Quat orientation = {1.f, 0.f, 0.f, 0.f};
@@ -241,8 +279,16 @@ int main(int /* argc */, char** /* argv */)
         offset = submission->imageId * modelsAlignment;
         updateUniformBuffer(commands, modelsUbo, offset, matrices.data(), matrices.size());
 
-        for (auto& pass : graph)
+        commands.reset(queryPool, submission->imageId * (graph.size() + 1) * 2, (graph.size() + 1) * 2);
+        commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 0, vzt::PipelineStage::BottomOfPipe);
+        for (uint32_t i = 0; i < graph.size(); i++)
+        {
+            auto& pass = graph[i];
+            commands.writeTimeStamp(queryPool, startId + i * 2 + 0, vzt::PipelineStage::BottomOfPipe);
             pass->record(submission->imageId, commands);
+            commands.writeTimeStamp(queryPool, startId + i * 2 + 1, vzt::PipelineStage::BottomOfPipe);
+        }
+        commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 1, vzt::PipelineStage::BottomOfPipe);
 
         commands.end();
 
