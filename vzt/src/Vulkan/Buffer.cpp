@@ -97,7 +97,7 @@ namespace vzt
             vmaDestroyBuffer(m_device->getAllocator(), m_handle, m_allocation);
     }
 
-    uint8_t* Buffer::map()
+    uint8_t* Buffer::map() const
     {
         uint8_t* data = nullptr;
         vmaMapMemory(m_device->getAllocator(), m_allocation, reinterpret_cast<void**>(&data));
@@ -105,7 +105,7 @@ namespace vzt
         return data;
     }
 
-    void Buffer::unMap() { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
+    void Buffer::unMap() const { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
 
     uint64_t Buffer::getDeviceAddress() const
     {

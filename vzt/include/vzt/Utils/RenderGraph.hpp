@@ -30,9 +30,11 @@ namespace vzt
 
     struct StorageBuilder
     {
-        View<Device> device;
-        std::size_t  size;
-        BufferUsage  usage;
+        View<Device>   device;
+        std::size_t    size;
+        BufferUsage    usage;
+        MemoryLocation location = MemoryLocation::Device;
+        bool           mappable = false;
     };
 
     enum class HandleType
@@ -101,6 +103,8 @@ namespace vzt
         void addColorOutput(Handle& attachment, std::string attachmentName = "");
         void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "");
 
+        void addStorageInputIndirect(const Handle& storage, std::string storageName = "",
+                                     Optional<Range<std::size_t>> range = {});
         void addStorageInput(uint32_t binding, const Handle& storage, std::string storageName = "",
                              Optional<Range<std::size_t>> range = {});
         void addStorageOutput(uint32_t binding, Handle& storage, std::string storageName = "",
@@ -159,7 +163,13 @@ namespace vzt
             Handle                       handle;
             std::string                  name;
             Optional<Range<std::size_t>> range;
-            uint32_t                     binding = ~0u;
+
+            Access        waitAccess;
+            Access        targetAccess;
+            PipelineStage waitStage;
+            PipelineStage targetStage;
+
+            uint32_t binding = ~0u;
 
             bool operator<(const PassStorage& other) const { return handle.id < other.handle.id; }
         };
@@ -189,6 +199,9 @@ namespace vzt
         Handle addStorage(StorageBuilder builder);
         Pass&  addPass(std::string name, View<Queue> queue, PassType type = PassType::Graphics);
 
+        View<DeviceImage> getImage(uint32_t swapchainImageId, Handle handle) const;
+        View<Buffer>      getStorage(uint32_t swapchainImageId, Handle handle) const;
+
         void setBackBuffer(Handle handle);
         bool isBackBuffer(Handle handle) const;
 
@@ -210,9 +223,6 @@ namespace vzt
       private:
         Handle generateAttachmentHandle() const;
         Handle generateStorageHandle() const;
-
-        View<DeviceImage> getImage(uint32_t swapchainImageId, Handle handle) const;
-        View<Buffer>      getStorage(uint32_t swapchainImageId, Handle handle) const;
 
         const AttachmentBuilder& getConfiguration(Handle handle);
 

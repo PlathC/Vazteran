@@ -326,6 +326,12 @@ namespace vzt
                                instanceOffset);
     }
 
+    void CommandBuffer::drawIndexedIndirect(const BufferCSpan& buffer, uint32_t drawCount, uint32_t stride)
+    {
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdDrawIndexedIndirect(m_handle, buffer.buffer->getHandle(), buffer.offset, drawCount, stride);
+    }
+
     void CommandBuffer::traceRays(StridedSpan<uint64_t> raygen, StridedSpan<uint64_t> miss, StridedSpan<uint64_t> hit,
                                   StridedSpan<uint64_t> callable, uint32_t width, uint32_t height, uint32_t depth)
     {

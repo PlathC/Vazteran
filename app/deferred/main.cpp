@@ -1,3 +1,4 @@
+#include <glm/gtc/matrix_access.hpp>
 #include <vzt/Core/Logger.hpp>
 #include <vzt/Data/Camera.hpp>
 #include <vzt/Data/Mesh.hpp>
@@ -24,50 +25,105 @@ void updateUniformBuffer(vzt::CommandBuffer& commands, vzt::Buffer& buffer, std:
     commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
 }
 
+struct VertexInput
+{
+    vzt::Vec3 inPosition;
+    vzt::Vec3 inNormal;
+};
+
+struct alignas(16) GenerationInput
+{
+    uint32_t uMaxInstanceCount;
+    uint32_t uTime;
+};
+
 int main(int /* argc */, char** /* argv */)
 {
-    const std::string ApplicationName = "Vazteran Deferred + Instancing + Compute";
+    const std::string ApplicationName = "Vazteran Deferred + Indirect rendering + Instancing + Compute";
 
-    constexpr uint32_t InstanceCount = 32;
+    constexpr uint32_t MaxInstanceCount = 512;
+    constexpr uint32_t WorkGroupSize    = 256;
 
     auto        window   = vzt::Window{ApplicationName};
     auto        instance = vzt::Instance{window};
-    auto        surface  = vzt::Surface{window, instance};
+    const auto  surface  = vzt::Surface{window, instance};
     auto        device   = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
-    auto        queue    = device.getQueue(vzt::QueueType::Graphics);
+    const auto  queue    = device.getQueue(vzt::QueueType::Graphics);
     auto        hardware = device.getHardware();
     const float period   = hardware.getProperties().limits.timestampPeriod;
 
     auto swapchain = vzt::Swapchain{device, surface};
+    auto compiler  = vzt::Compiler(instance);
+    auto graph     = vzt::RenderGraph{swapchain};
 
-    auto compiler = vzt::Compiler(instance);
+    vzt::Mesh                mesh = vzt::readObj("samples/Bunny/Bunny.obj");
+    std::vector<VertexInput> vertexInputs;
+    vertexInputs.reserve(mesh.vertices.size());
 
-    vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
+    vzt::Vec3 min{std::numeric_limits<float>::max()}, max{std::numeric_limits<float>::lowest()};
+    for (std::size_t i = 0; i < mesh.vertices.size(); i++)
+    {
+        const vzt::Vec3 vertex = mesh.vertices[i];
+        vertexInputs.emplace_back(VertexInput{vertex, mesh.normals[i]});
+        min = glm::min(min, vertex);
+        max = glm::max(max, vertex);
+    }
 
-    auto graph = vzt::RenderGraph{swapchain};
+    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
+    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
-    auto instanceData = graph.addStorage(
-        vzt::StorageBuilder{device, sizeof(vzt::Vec4f) * InstanceCount, vzt::BufferUsage::StorageBuffer});
+    vzt::VertexInputDescription vertexDescription{};
+    vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
+    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0});             // Position
+    vertexDescription.add(
+        vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0}); // Normal
 
+    auto instancesPosition = graph.addStorage(vzt::StorageBuilder{
+        device,
+        sizeof(vzt::Vec4f) * MaxInstanceCount,
+        vzt::BufferUsage::StorageBuffer,
+    });
+    auto drawCommands      = graph.addStorage(vzt::StorageBuilder{
+        device,
+        sizeof(VkDrawIndexedIndirectCommand),
+        vzt::BufferUsage::StorageBuffer | vzt::BufferUsage::IndirectBuffer,
+        vzt::MemoryLocation::Device,
+        true,
+    });
+
+    // Instance generation pass
     auto& instanceGeneration       = graph.addPass("InstanceGeneration", queue, vzt::PassType::Compute);
     auto& instanceGenerationLayout = instanceGeneration.getDescriptorLayout();
     instanceGenerationLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
-    instanceGeneration.addStorageOutput(1, instanceData);
+    instanceGeneration.addStorageOutput(1, instancesPosition);
+    instanceGeneration.addStorageOutput(2, drawCommands);
 
-    auto computeProgram = vzt::Program(device);
-    computeProgram.setShader(compiler.compile("shaders/deferred/instance_generation.comp", vzt::ShaderStage::Compute));
+    auto computeInstanceProgram = vzt::Program(device);
+    computeInstanceProgram.setShader(
+        compiler.compile("shaders/deferred/instance_generation.comp", vzt::ShaderStage::Compute));
 
-    auto computePipeline = vzt::ComputePipeline(device);
-    computePipeline.setProgram(computeProgram);
-    computePipeline.setDescriptorLayout(instanceGenerationLayout);
-    computePipeline.compile();
+    auto computeInstancePipeline = vzt::ComputePipeline(device);
+    computeInstancePipeline.setProgram(computeInstanceProgram);
+    computeInstancePipeline.setDescriptorLayout(instanceGenerationLayout);
+    computeInstancePipeline.compile();
 
     instanceGeneration.setRecordFunction<vzt::LambdaRecorder>(
         [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-            commands.bind(computePipeline, set);
-            commands.dispatch(static_cast<uint32_t>(std::ceil(InstanceCount / static_cast<float>(InstanceCount))));
+            vzt::View<vzt::Buffer> buffer = graph.getStorage(i, drawCommands);
+
+            uint8_t*                           data = buffer->map();
+            const VkDrawIndexedIndirectCommand defaultCommand{uint32_t(mesh.indices.size()), 0, 0, 0, 0};
+            std::memcpy(data, &defaultCommand, sizeof(VkDrawIndexedIndirectCommand));
+            buffer->unMap();
+
+            vzt::BufferBarrier barrier{buffer, vzt::Access::TransferWrite, vzt::Access::UniformRead};
+            commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
+
+            commands.bind(computeInstancePipeline, set);
+            commands.dispatch(static_cast<uint32_t>(std::ceil(MaxInstanceCount / static_cast<float>(WorkGroupSize))));
         });
 
+    // Draw geometry pass
     auto position = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment, vzt::Format::R32G32B32A32SFloat});
     auto normal   = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8SNorm});
     auto depth    = graph.addAttachment({device, vzt::ImageUsage::DepthStencilAttachment});
@@ -75,7 +131,8 @@ int main(int /* argc */, char** /* argv */)
     auto& geometry       = graph.addPass("Geometry", queue);
     auto& geometryLayout = geometry.getDescriptorLayout();
     geometryLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
-    geometry.addStorageInput(1, instanceData);
+    geometry.addStorageInput(1, instancesPosition);
+    geometry.addStorageInputIndirect(drawCommands);
     geometry.addColorOutput(position);
     geometry.addColorOutput(normal);
     geometry.setDepthOutput(depth);
@@ -88,25 +145,6 @@ int main(int /* argc */, char** /* argv */)
     geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
     geometryPipeline.setProgram(geometryProgram);
     geometryPipeline.setDescriptorLayout(geometryLayout);
-
-    vzt::VertexInputDescription vertexDescription{};
-    struct VertexInput
-    {
-        vzt::Vec3 inPosition;
-        vzt::Vec3 inNormal;
-    };
-    std::vector<VertexInput> vertexInputs;
-    vertexInputs.reserve(mesh.vertices.size());
-    for (std::size_t i = 0; i < mesh.vertices.size(); i++)
-        vertexInputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
-
-    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
-    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
-
-    vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
-    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0});             // Position
-    vertexDescription.add(
-        vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0}); // Normal
     geometryPipeline.setVertexInputDescription(vertexDescription);
 
     auto& geometryRasterization    = geometryPipeline.getRasterization();
@@ -114,10 +152,14 @@ int main(int /* argc */, char** /* argv */)
 
     geometry.setRecordFunction<vzt::LambdaRecorder>(
         [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+            const vzt::View<vzt::Buffer> buffer = graph.getStorage(i, drawCommands);
+
             commands.bind(geometryPipeline, set);
             commands.bindVertexBuffer(vertexBuffer);
+            commands.bindIndexBuffer(indexBuffer, 0);
             for (const auto& subMesh : mesh.subMeshes)
-                commands.drawIndexed(indexBuffer, subMesh.indices, InstanceCount);
+                commands.drawIndexedIndirect({buffer, buffer->size()}, 1, 0);
+            // commands.drawIndexed(indexBuffer, subMesh.indices, InstanceCount);
         });
 
     auto  composed      = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment});
@@ -140,9 +182,9 @@ int main(int /* argc */, char** /* argv */)
     shadingPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
     shadingPipeline.setDescriptorLayout(shadingLayout);
 
-    auto& shadingRazterization     = shadingPipeline.getRasterization();
-    shadingRazterization.cullMode  = vzt::CullMode::Front;
-    shadingRazterization.frontFace = vzt::FrontFace::CounterClockwise;
+    auto& shadingRasterization     = shadingPipeline.getRasterization();
+    shadingRasterization.cullMode  = vzt::CullMode::Front;
+    shadingRasterization.frontFace = vzt::FrontFace::CounterClockwise;
 
     shading.setRecordFunction<vzt::LambdaRecorder>(
         [&shadingPipeline](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
@@ -167,7 +209,7 @@ int main(int /* argc */, char** /* argv */)
     vzt::Buffer       modelsUbo{device, modelsAlignment * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
                           vzt::MemoryLocation::Device, true};
 
-    const std::size_t generationAlignment = hardware.getUniformAlignment(sizeof(vzt::Vec2u));
+    const std::size_t generationAlignment = hardware.getUniformAlignment(sizeof(GenerationInput));
     vzt::Buffer generationUbo{device, generationAlignment * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
                               vzt::MemoryLocation::Device, true};
 
@@ -179,7 +221,7 @@ int main(int /* argc */, char** /* argv */)
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        vzt::BufferSpan        generationSpan{generationUbo, sizeof(vzt::Vec2u), i * generationAlignment};
+        vzt::BufferSpan        generationSpan{generationUbo, sizeof(GenerationInput), i * generationAlignment};
         vzt::IndexedDescriptor ubos{};
         ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, generationSpan};
         instanceGenerationDescriptorPool.update(i, ubos);
@@ -207,7 +249,7 @@ int main(int /* argc */, char** /* argv */)
     const vzt::Vec3 target         = (minimum + maximum) * .5f;
     const float     bbRadius       = glm::compMax(glm::abs(maximum - target));
     const float     distance       = bbRadius / std::tan(camera.fov * .5f);
-    const vzt::Vec3 cameraPosition = target - camera.front * 1.15f * distance;
+    const vzt::Vec3 cameraPosition = target - camera.front * 25.15f * distance;
 
     std::vector<uint64_t> times{};
     times.resize((graph.size() + 1) * swapchain.getImageNb() * 2);
@@ -238,6 +280,7 @@ int main(int /* argc */, char** /* argv */)
 
                 const float ms =
                     (static_cast<float>(times[startId + i * 2 + 1] - times[startId + i * 2 + 0]) * period) / 1000000.f;
+
                 vzt::logger::info("{}: {}ms", pass->getName(), ms);
             }
 
@@ -272,8 +315,13 @@ int main(int /* argc */, char** /* argv */)
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         commands.begin();
 
-        const vzt::Vec2u generationInput{InstanceCount, inputs.time};
-        std::size_t      offset = submission->imageId * generationAlignment;
+        const vzt::Vec3 center = (min + max) * 2.f;
+        GenerationInput generationInput{
+            MaxInstanceCount,
+            uint32_t(inputs.time),
+        };
+
+        std::size_t offset = submission->imageId * generationAlignment;
         updateUniformBuffer(commands, generationUbo, offset, &generationInput);
 
         offset = submission->imageId * modelsAlignment;

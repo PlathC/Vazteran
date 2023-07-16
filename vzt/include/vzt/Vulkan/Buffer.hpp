@@ -40,7 +40,7 @@ namespace vzt
         ShaderBindingTable = VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR,
     };
     VZT_DEFINE_BITWISE_FUNCTIONS(BufferUsage)
-    VZT_DEFINE_TO_VULKAN_FUNCTION(BufferUsage, VkBufferUsageFlags)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(BufferUsage, VkBufferUsageFlagBits)
 
     enum class MemoryLocation
     {
@@ -69,8 +69,8 @@ namespace vzt
 
         ~Buffer();
 
-        uint8_t* map();
-        void     unMap();
+        uint8_t* map() const;
+        void     unMap() const;
 
         // Requires dext::BufferDeviceAddress
         uint64_t getDeviceAddress() const;

@@ -5,7 +5,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Swapchain.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
@@ -94,7 +93,12 @@ namespace vzt
     {
         assert(handle.type == HandleType::Storage);
 
-        PassStorage storage{handle, name, range, binding};
+        PassStorage storage{handle, name, range};
+        storage.waitAccess   = Access::ShaderWrite;
+        storage.waitStage    = PipelineStage::ComputeShader;
+        storage.targetAccess = Access::ShaderRead;
+        storage.targetStage  = PipelineStage::VertexShader;
+        storage.binding      = binding;
         if (storage.name.empty())
             storage.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 
@@ -103,11 +107,30 @@ namespace vzt
         m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
     }
 
+    void Pass::addStorageInputIndirect(const Handle& handle, std::string name, Optional<Range<std::size_t>> range)
+    {
+        assert(handle.type == HandleType::Storage);
+
+        PassStorage storage{handle, name, range};
+        storage.waitAccess   = Access::ShaderWrite;
+        storage.waitStage    = PipelineStage::ComputeShader;
+        storage.targetAccess = Access::IndirectCommandRead;
+        storage.targetStage  = PipelineStage::DrawIndirect;
+        if (storage.name.empty())
+            storage.name = m_name + "StorageInIndirect" + std::to_string(m_storageInputs.size());
+
+        m_storageInputs.emplace_back(storage);
+    }
+
     void Pass::addStorageOutput(uint32_t binding, Handle& handle, std::string name, Optional<Range<std::size_t>> range)
     {
         handle.state++;
 
         PassStorage storage{handle, name, range};
+        storage.waitAccess   = Access::ShaderRead;
+        storage.waitStage    = PipelineStage::VertexInput;
+        storage.targetAccess = Access::ShaderWrite;
+        storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
         if (storage.name.empty())
             storage.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
 
@@ -245,14 +268,14 @@ namespace vzt
 
             BufferBarrier barrier;
             barrier.buffer = m_graph->getStorage(i, input.handle);
-            barrier.src    = Access::ShaderWrite;
-            barrier.dst    = Access::ShaderRead;
+            barrier.src    = input.waitAccess;
+            barrier.dst    = input.targetAccess;
 
             // TODO: Handle many queues
             // barrier.srcQueue
             // barrier.dstQueue
 
-            commands.barrier(PipelineStage::ComputeShader, PipelineStage::VertexShader, barrier);
+            commands.barrier(input.waitStage, input.targetStage, barrier);
         }
 
         if (m_type == PassType::Graphics)
@@ -397,6 +420,9 @@ namespace vzt
             // SSBO
             for (auto& input : m_storageInputs)
             {
+                if (input.binding == ~uint32_t(0))
+                    continue;
+                
                 View<Buffer> storage = m_graph->getStorage(i, input.handle);
                 descriptors[input.binding] =
                     DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};
@@ -697,8 +723,13 @@ namespace vzt
 
                 const StorageBuilder& storageBuilder = m_storageBuilders[handle];
                 for (uint32_t i = 0; i < swapchainImageNb; i++)
-                    m_storages.emplace_back(
-                        Buffer{storageBuilder.device, storageBuilder.size, vzt::BufferUsage::StorageBuffer});
+                    m_storages.emplace_back(Buffer{
+                        storageBuilder.device,
+                        storageBuilder.size,
+                        storageBuilder.usage,
+                        storageBuilder.location,
+                        storageBuilder.mappable,
+                    });
             }
         }
     }
