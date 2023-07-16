@@ -11,9 +11,9 @@ Here is the roadmap :
 | Render graph                                                    | Done      |
 | Instancing                                                      | Done      |
 | Compute shader                                                  | Done      |
+| Indirect rendering                                              | Done      |
 | Raytracing extension                                            | Done      |
-| Ui                                                              | To do     |
-| Real test with larger application                               | To do     |
+| Real test with larger application                               | WIP (See [Launcher of Particle](https://github.com/PlathC/LauncherOfParticle)) |
 
 ## Current state
 
