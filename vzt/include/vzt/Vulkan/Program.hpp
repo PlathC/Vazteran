@@ -78,6 +78,7 @@ namespace vzt
     class Program
     {
       public:
+        Program() = default;
         Program(View<Device> device);
 
         Program(const Program&)            = delete;

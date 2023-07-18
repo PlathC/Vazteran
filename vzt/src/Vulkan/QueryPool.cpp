@@ -26,6 +26,8 @@ namespace vzt
     {
         m_device = std::exchange(other.m_device, nullptr);
         m_handle = std::exchange(other.m_handle, VK_NULL_HANDLE);
+
+        return *this;
     }
 
     QueryPool::~QueryPool()

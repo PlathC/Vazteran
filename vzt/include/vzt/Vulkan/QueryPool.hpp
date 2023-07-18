@@ -57,6 +57,7 @@ namespace vzt
     class QueryPool
     {
       public:
+        QueryPool() = default;
         QueryPool(View<Device> device, QueryType type, uint32_t count);
 
         QueryPool(const QueryPool& pool)            = delete;
