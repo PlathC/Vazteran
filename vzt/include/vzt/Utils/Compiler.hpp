@@ -19,6 +19,7 @@ namespace vzt
     class Compiler
     {
       public:
+        Compiler() = default;
         Compiler(View<Instance> instance);
 
         Shader compile(const Path& path, ShaderStage stage, ShadingLanguage language, bool optimize) const;

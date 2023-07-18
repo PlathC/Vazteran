@@ -340,8 +340,13 @@ namespace vzt
         program.addShader(&shader);
         if (!program.link(EShMsgDefault))
         {
-            logger::debug(shader.getInfoDebugLog());
-            logger::error(shader.getInfoLog());
+            const char* debugLog = shader.getInfoDebugLog();
+            if (debugLog)
+                logger::debug(debugLog);
+
+            const char* infoLog = shader.getInfoLog();
+            if (infoLog)
+                logger::error(infoLog);
             throw std::runtime_error(fmt::format("Failed to link {}", path.string()));
         }
 
