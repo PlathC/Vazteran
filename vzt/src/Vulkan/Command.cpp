@@ -32,8 +32,7 @@ namespace vzt
                 baseBarrier.dstQueue ? baseBarrier.dstQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.image = baseBarrier.image->getHandle();
 
-            // TODO: Rewrite based on image properties
-            imageBarrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBarrier.subresourceRange.aspectMask     = toVulkan(baseBarrier.aspect);
             imageBarrier.subresourceRange.baseMipLevel   = baseBarrier.baseLevel;
             imageBarrier.subresourceRange.levelCount     = baseBarrier.levelCount;
             imageBarrier.subresourceRange.baseArrayLayer = 0;
