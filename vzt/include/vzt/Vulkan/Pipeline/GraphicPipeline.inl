@@ -50,6 +50,10 @@ namespace vzt
     inline const DepthStencil& GraphicPipeline::getDepthStencil() const { return m_depthStencil; }
     inline DepthStencil&       GraphicPipeline::getDepthStencil() { return m_depthStencil; }
 
+    inline void GraphicPipeline::setPrimitiveTopology(PrimitiveTopology topology) { m_primitiveTopology = topology; }
+    inline const PrimitiveTopology& GraphicPipeline::getPrimitiveTopology() const { return m_primitiveTopology; }
+    inline PrimitiveTopology&       GraphicPipeline::getPrimitiveTopology() { return m_primitiveTopology; }
+
     inline VkPipeline       GraphicPipeline::getHandle() const { return m_handle; }
     inline VkPipelineLayout GraphicPipeline::getLayout() const { return m_pipelineLayout; }
 

@@ -102,7 +102,7 @@ namespace vzt
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-        inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        inputAssembly.topology               = toVulkan(m_primitiveTopology);
         inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         auto [viewport, scissor] = toVulkan(m_viewport);

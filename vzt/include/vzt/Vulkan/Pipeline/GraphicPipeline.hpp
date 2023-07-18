@@ -66,6 +66,22 @@ namespace vzt
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(VertexInputRate, VkVertexInputRate)
 
+    enum class PrimitiveTopology
+    {
+        PointList                  = VK_PRIMITIVE_TOPOLOGY_POINT_LIST,
+        LineList                   = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,
+        LineStrip                  = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+        TriangleList               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        TriangleStrip              = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP,
+        TriangleFan                = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN,
+        LineListWithAdjacency      = VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY,
+        LineStripWithAdjacency     = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY,
+        TriangleListWithAdjacency  = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY,
+        TriangleStripWithAdjacency = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY,
+        PatchList                  = VK_PRIMITIVE_TOPOLOGY_PATCH_LIST,
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(PrimitiveTopology, VkPrimitiveTopology)
+
     struct Viewport
     {
         Extent2D size;
@@ -170,6 +186,10 @@ namespace vzt
         inline const DepthStencil& getDepthStencil() const;
         inline DepthStencil&       getDepthStencil();
 
+        inline void                     setPrimitiveTopology(PrimitiveTopology topology);
+        inline const PrimitiveTopology& getPrimitiveTopology() const;
+        inline PrimitiveTopology&       getPrimitiveTopology();
+
         void compile(View<RenderPass> renderPass);
         void resize(Viewport viewport);
 
@@ -192,6 +212,7 @@ namespace vzt
         Rasterization                    m_rasterization;
         MultiSampling                    m_multiSample;
         DepthStencil                     m_depthStencil;
+        PrimitiveTopology                m_primitiveTopology = PrimitiveTopology::TriangleList;
 
         View<RenderPass> m_cachedRenderPass;
         bool             m_compiled = false;
