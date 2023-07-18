@@ -38,12 +38,42 @@ namespace vzt
         attachment.use.loadOp      = LoadOp::Load;
         attachment.use.storeOp     = StoreOp::DontCare;
 
+        attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+        attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+        attachment.targetAccess = Access::ShaderRead;
+
         m_colorInputs.emplace_back(attachment);
 
         m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
     }
 
-    void Pass::addColorOutput(Handle& handle, std::string name)
+    void Pass::addDepthInput(uint32_t binding, const Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        PassAttachment attachment{handle, name};
+        attachment.binding = binding;
+        if (attachment.name.empty())
+            attachment.name = m_name + "DepthIn" + std::to_string(m_colorInputs.size());
+
+        attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.loadOp      = LoadOp::Load;
+        attachment.use.storeOp     = StoreOp::DontCare;
+
+        attachment.waitStage    = PipelineStage::LateFragmentTests | PipelineStage::ComputeShader;
+        attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::DepthStencilAttachmentWrite | Access::ShaderWrite;
+        attachment.targetAccess = Access::ShaderRead;
+        attachment.aspect       = ImageAspect::Depth;
+
+        m_colorInputs.emplace_back(attachment);
+
+        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
+    }
+
+    void Pass::addColorOutput(Handle& handle, std::string name, vzt::Vec4 clearColor)
     {
         assert(handle.type == HandleType::Attachment);
 
@@ -56,6 +86,8 @@ namespace vzt
         attachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
         attachment.use.loadOp      = LoadOp::Clear;
         attachment.use.storeOp     = StoreOp::Store;
+
+        attachment.use.clearValue = clearColor;
 
         m_colorOutputs.emplace_back(attachment);
     }
@@ -72,6 +104,11 @@ namespace vzt
         inAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
         inAttachment.use.loadOp      = LoadOp::Load;
         inAttachment.use.storeOp     = StoreOp::Store;
+
+        inAttachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+        inAttachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+        inAttachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+        inAttachment.targetAccess = Access::ShaderRead;
 
         m_colorInputs.emplace_back(inAttachment);
 
@@ -180,7 +217,7 @@ namespace vzt
         m_depthInput = attachment;
     }
 
-    void Pass::setDepthOutput(Handle& handle, std::string name)
+    void Pass::setDepthOutput(Handle& handle, std::string name, float depth)
     {
         assert(handle.type == HandleType::Attachment);
 
@@ -197,7 +234,7 @@ namespace vzt
         attachment.use.stencilLoapOp  = LoadOp::Clear;
         attachment.use.stencilStoreOp = StoreOp::Store;
 
-        attachment.use.clearValue = Vec4{1.f, 0.f, 0.f, 0.f};
+        attachment.use.clearValue = Vec4{depth, 0.f, 0.f, 0.f};
 
         m_depthOutput = attachment;
     }
@@ -214,6 +251,13 @@ namespace vzt
             for (const auto& output : other.m_colorOutputs)
             {
                 if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
+                    return true;
+            }
+
+            if (other.m_depthOutput)
+            {
+                if (other.m_depthOutput->handle.id == input.handle.id &&
+                    other.m_depthOutput->handle.state == input.handle.state)
                     return true;
             }
         }
@@ -251,14 +295,15 @@ namespace vzt
             barrier.image     = m_graph->getImage(i, input.handle);
             barrier.oldLayout = input.use.initialLayout;
             barrier.newLayout = input.use.usedLayout;
-            barrier.src       = Access::ColorAttachmentWrite;
-            barrier.dst       = Access::ShaderRead;
+            barrier.src       = input.waitAccess;
+            barrier.dst       = input.targetAccess;
+            barrier.aspect    = input.aspect;
 
             // TODO: Handle many queues
             // barrier.srcQueue
             // barrier.dstQueue
 
-            commands.barrier(PipelineStage::ColorAttachmentOutput, PipelineStage::FragmentShader, barrier);
+            commands.barrier(input.waitStage, input.targetStage, barrier);
         }
 
         for (const auto& input : m_storageInputs)
@@ -422,7 +467,7 @@ namespace vzt
             {
                 if (input.binding == ~uint32_t(0))
                     continue;
-                
+
                 View<Buffer> storage = m_graph->getStorage(i, input.handle);
                 descriptors[input.binding] =
                     DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage.get(), storage->size()}};

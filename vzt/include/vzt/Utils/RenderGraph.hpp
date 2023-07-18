@@ -100,7 +100,8 @@ namespace vzt
         ~Pass() = default;
 
         void addColorInput(uint32_t binding, const Handle& attachment, std::string name = "");
-        void addColorOutput(Handle& attachment, std::string attachmentName = "");
+        void addDepthInput(uint32_t binding, const Handle& attachment, std::string name = "");
+        void addColorOutput(Handle& attachment, std::string attachmentName = "", const vzt::Vec4 clearColor = {});
         void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "");
 
         void addStorageInputIndirect(const Handle& storage, std::string storageName = "",
@@ -113,7 +114,7 @@ namespace vzt
                                    Optional<Range<std::size_t>> range = {});
 
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
-        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "");
+        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "", float clearValue = 1.f);
 
         template <class DerivedHandler, class... Args>
         void setRecordFunction(Args&&... args);
@@ -154,6 +155,12 @@ namespace vzt
             std::string   name;
             AttachmentUse use;
             uint32_t      binding = ~0u;
+
+            Access        waitAccess;
+            Access        targetAccess;
+            PipelineStage waitStage;
+            PipelineStage targetStage;
+            ImageAspect   aspect = ImageAspect::Color;
 
             bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
         };
