@@ -311,8 +311,10 @@ namespace vzt
             if (input.handle.state == 0)
                 continue;
 
+            const View<Buffer> buffer = m_graph->getStorage(i, input.handle);
+            
             BufferBarrier barrier;
-            barrier.buffer = m_graph->getStorage(i, input.handle);
+            barrier.buffer = {buffer, buffer->size()};
             barrier.src    = input.waitAccess;
             barrier.dst    = input.targetAccess;
 

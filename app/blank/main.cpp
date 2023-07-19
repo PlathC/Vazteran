@@ -16,7 +16,7 @@ int main(int /* argc */, char** /* argv */)
     auto instance  = vzt::Instance{window};
     auto surface   = vzt::Surface{window, instance};
     auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
-    auto swapchain = vzt::Swapchain{device, surface, window.getExtent()};
+    auto swapchain = vzt::Swapchain{device, surface};
 
     auto program = vzt::Program(device);
 
@@ -26,7 +26,7 @@ int main(int /* argc */, char** /* argv */)
     {
         const auto& inputs = window.getInputs();
         if (inputs.windowResized)
-            swapchain.resize();
+            swapchain.recreate();
 
         auto submission = swapchain.getSubmission();
         if (!submission)

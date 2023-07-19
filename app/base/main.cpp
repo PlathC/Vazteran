@@ -199,7 +199,8 @@ int main(int /* argc */, char** /* argv */)
             modelsUbo.unMap();
 
             commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader,
-                             vzt::BufferBarrier{modelsUbo, vzt::Access::TransferWrite, vzt::Access::UniformRead});
+                             vzt::BufferBarrier{
+                                 {modelsUbo, modelsUbo.size()}, vzt::Access::TransferWrite, vzt::Access::UniformRead});
 
             commands.beginPass(renderPass, frameBuffers[submission->imageId]);
 

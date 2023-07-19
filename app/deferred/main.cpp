@@ -21,7 +21,7 @@ void updateUniformBuffer(vzt::CommandBuffer& commands, vzt::Buffer& buffer, std:
     std::memcpy(data + offset, ptr, size * sizeof(Type));
     buffer.unMap();
 
-    vzt::BufferBarrier barrier{buffer, vzt::Access::TransferWrite, vzt::Access::UniformRead};
+    vzt::BufferBarrier barrier{{buffer, buffer.size()}, vzt::Access::TransferWrite, vzt::Access::UniformRead};
     commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
 }
 
@@ -116,7 +116,7 @@ int main(int /* argc */, char** /* argv */)
             std::memcpy(data, &defaultCommand, sizeof(VkDrawIndexedIndirectCommand));
             buffer->unMap();
 
-            vzt::BufferBarrier barrier{buffer, vzt::Access::TransferWrite, vzt::Access::UniformRead};
+            vzt::BufferBarrier barrier{{buffer, buffer->size()}, vzt::Access::TransferWrite, vzt::Access::UniformRead};
             commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
 
             commands.bind(computeInstancePipeline, set);
@@ -157,9 +157,7 @@ int main(int /* argc */, char** /* argv */)
             commands.bind(geometryPipeline, set);
             commands.bindVertexBuffer(vertexBuffer);
             commands.bindIndexBuffer(indexBuffer, 0);
-            for (const auto& subMesh : mesh.subMeshes)
-                commands.drawIndexedIndirect({buffer, buffer->size()}, 1, 0);
-            // commands.drawIndexed(indexBuffer, subMesh.indices, InstanceCount);
+            commands.drawIndexedIndirect({buffer, buffer->size()}, 1, 0);
         });
 
     auto  composed      = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment});
