@@ -146,7 +146,7 @@ namespace vzt
         throw std::runtime_error("Failed to find supported format!");
     }
 
-    std::size_t PhysicalDevice::getUniformAlignment(std::size_t alignment)
+    std::size_t PhysicalDevice::getUniformAlignment(std::size_t alignment) const
     {
         const std::size_t minUboAlignment = m_properties.limits.minUniformBufferOffsetAlignment;
         if (minUboAlignment > 0)

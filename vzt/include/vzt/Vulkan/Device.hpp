@@ -27,9 +27,9 @@ namespace vzt
         bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;
         Format                               getDepthFormat() const;
 
-        std::size_t getUniformAlignment(std::size_t alignment);
+        std::size_t getUniformAlignment(std::size_t alignment) const;
         template <class Type>
-        std::size_t getUniformAlignment();
+        std::size_t getUniformAlignment() const;
 
         inline VkPhysicalDeviceProperties getProperties() const;
         inline VkPhysicalDevice           getHandle() const;
