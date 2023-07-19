@@ -3,7 +3,7 @@
 namespace vzt
 {
     template <class Type>
-    std::size_t PhysicalDevice::getUniformAlignment()
+    std::size_t PhysicalDevice::getUniformAlignment() const
     {
         return getUniformAlignment(sizeof(Type));
     }
