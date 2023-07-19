@@ -1,6 +1,6 @@
 function(get_cxx_flags compile_flag_var compile_definitions_var)
     # Reference: https://github.com/lefticus/cppbestpractices/blob/master/02-Use_the_Tools_Available.md
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    if (MSVC)
         set(${compile_flag_var}
                 ${${compile_flag_var}}
                 /permissive
