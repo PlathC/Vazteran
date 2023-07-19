@@ -1,11 +1,11 @@
 #ifndef VZT_VULKAN_SYNCHRONIZATION_HPP
 #define VZT_VULKAN_SYNCHRONIZATION_HPP
 
+#include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Image.hpp"
 
 namespace vzt
 {
-    class Buffer;
     class Queue;
 
     enum class PipelineStage : uint32_t
@@ -82,11 +82,11 @@ namespace vzt
 
     struct BufferBarrier
     {
-        View<Buffer> buffer;
-        Access       src;
-        Access       dst;
-        View<Queue>  srcQueue = {};
-        View<Queue>  dstQueue = {};
+        BufferCSpan buffer;
+        Access      src;
+        Access      dst;
+        View<Queue> srcQueue = {};
+        View<Queue> dstQueue = {};
     };
 
     struct ImageBarrier

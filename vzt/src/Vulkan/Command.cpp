@@ -54,9 +54,9 @@ namespace vzt
             bufferBarrier.dstQueueFamilyIndex =
                 baseBarrier.dstQueue ? baseBarrier.dstQueue->getId() : VK_QUEUE_FAMILY_IGNORED;
 
-            bufferBarrier.buffer = baseBarrier.buffer->getHandle();
-            bufferBarrier.size   = baseBarrier.buffer->size();
-            bufferBarrier.offset = 0;
+            bufferBarrier.buffer = baseBarrier.buffer.buffer->getHandle();
+            bufferBarrier.size   = baseBarrier.buffer.size;
+            bufferBarrier.offset = baseBarrier.buffer.offset;
 
             bufferBarriers.emplace_back(std::move(bufferBarrier));
         }
