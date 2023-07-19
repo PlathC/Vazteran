@@ -5,6 +5,7 @@
 #include <functional>
 #include <string>
 #include <unordered_set>
+#include <memory>
 
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Command.hpp"
