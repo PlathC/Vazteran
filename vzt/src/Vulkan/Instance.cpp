@@ -157,15 +157,22 @@ namespace vzt
         auto devices = std::vector<VkPhysicalDevice>(deviceCount);
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, devices.data());
 
+        uint32_t selectedDevice = 0;
+        bool isDiscrete = false;
         for (uint32_t i = 0; i < deviceCount; i++)
         {
             const auto device = PhysicalDevice(devices[i]);
             if (device.isSuitable(configuration, surface))
-                return {this, device, configuration, surface};
+                selectedDevice = i;
+
+            if(!isDiscrete && device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            {
+                selectedDevice = i;
+                isDiscrete = true;
+            }
         }
 
-        logger::error("Can't find suitable device, defaulting.");
-        return {this, PhysicalDevice(devices[0]), configuration, surface};
+        return {this, PhysicalDevice(devices[selectedDevice]), configuration, surface};
     }
 
 } // namespace vzt
