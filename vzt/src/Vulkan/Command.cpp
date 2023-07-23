@@ -325,10 +325,22 @@ namespace vzt
                                instanceOffset);
     }
 
+    void CommandBuffer::drawIndirect(const BufferCSpan& buffer, uint32_t drawCount, uint32_t stride)
+    {
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdDrawIndirect(m_handle, buffer.buffer->getHandle(), buffer.offset, drawCount, stride);
+    }
+
     void CommandBuffer::drawIndexedIndirect(const BufferCSpan& buffer, uint32_t drawCount, uint32_t stride)
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();
         table.vkCmdDrawIndexedIndirect(m_handle, buffer.buffer->getHandle(), buffer.offset, drawCount, stride);
+    }
+
+    void CommandBuffer::dispatchIndirect(const BufferCSpan& buffer)
+    {
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdDispatchIndirect(m_handle, buffer.buffer->getHandle(), buffer.offset);
     }
 
     void CommandBuffer::traceRays(StridedSpan<uint64_t> raygen, StridedSpan<uint64_t> miss, StridedSpan<uint64_t> hit,

@@ -79,7 +79,11 @@ namespace vzt
                   uint32_t instanceOffset = 0);
         void drawIndexed(const Buffer& indexBuffer, const Range<>& range, uint32_t instanceCount = 1,
                          int32_t vertexOffset = 0, uint32_t instanceOffset = 0);
+
+        void drawIndirect(const BufferCSpan& buffer, uint32_t drawCount, uint32_t stride);
         void drawIndexedIndirect(const BufferCSpan& buffer, uint32_t drawCount, uint32_t stride);
+        void dispatchIndirect(const BufferCSpan& buffer);
+
         void traceRays(StridedSpan<uint64_t> raygen, StridedSpan<uint64_t> miss, StridedSpan<uint64_t> hit,
                        StridedSpan<uint64_t> callable, uint32_t width, uint32_t height, uint32_t depth = 1);
 
