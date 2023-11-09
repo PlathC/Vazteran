@@ -128,8 +128,6 @@ namespace vzt
     void Pass::addStorageInput(uint32_t binding, const Handle& handle, std::string name,
                                Optional<Range<std::size_t>> range)
     {
-        assert(handle.type == HandleType::Storage);
-
         PassStorage storage{handle, name, range};
         storage.waitAccess   = Access::ShaderWrite;
         storage.waitStage    = PipelineStage::ComputeShader;
@@ -141,7 +139,9 @@ namespace vzt
 
         storage.binding = binding;
         m_storageInputs.emplace_back(storage);
-        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
+        m_descriptorLayout.addBinding( //
+            binding,
+            handle.type == HandleType::Attachment ? DescriptorType::StorageImage : DescriptorType::StorageBuffer);
     }
 
     void Pass::addStorageInputIndirect(const Handle& handle, std::string name, Optional<Range<std::size_t>> range)
@@ -164,16 +164,18 @@ namespace vzt
         handle.state++;
 
         PassStorage storage{handle, name, range};
-        storage.waitAccess   = Access::ShaderRead;
-        storage.waitStage    = PipelineStage::VertexInput;
         storage.targetAccess = Access::ShaderWrite;
         storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
+        storage.waitAccess   = Access::ShaderRead;
+        storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
         if (storage.name.empty())
             storage.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
 
         storage.binding = binding;
         m_storageOutputs.emplace_back(storage);
-        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
+        m_descriptorLayout.addBinding( //
+            binding,
+            handle.type == HandleType::Attachment ? DescriptorType::StorageImage : DescriptorType::StorageBuffer);
     }
 
     void Pass::addStorageInputOutput(uint32_t binding, Handle& handle, std::string inName, std::string outName,
@@ -312,7 +314,7 @@ namespace vzt
                 continue;
 
             const View<Buffer> buffer = m_graph->getStorage(i, input.handle);
-            
+
             BufferBarrier barrier;
             barrier.buffer = {buffer, buffer->size()};
             barrier.src    = input.waitAccess;
@@ -477,9 +479,21 @@ namespace vzt
 
             for (auto& output : m_storageOutputs)
             {
-                View<Buffer> storage = m_graph->getStorage(i, output.handle);
-                descriptors[output.binding] =
-                    DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage, storage->size()}};
+                if (output.handle.type == HandleType::Attachment)
+                {
+                    View<DeviceImage> image = m_graph->getImage(i, output.handle);
+                    m_textureSaves.emplace_back(device, image, SamplerBuilder{});
+                    Texture& texture = m_textureSaves.back();
+
+                    descriptors[output.binding] = DescriptorImage{DescriptorType::StorageImage, texture.getView()};
+                }
+                else
+                {
+                    View<Buffer> storage = m_graph->getStorage(i, output.handle);
+
+                    descriptors[output.binding] =
+                        DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage, storage->size()}};
+                }
             }
 
             if (!descriptors.empty())
