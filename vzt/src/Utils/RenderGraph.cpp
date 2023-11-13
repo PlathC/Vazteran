@@ -184,6 +184,10 @@ namespace vzt
         handle.state++;
 
         PassStorage inStorage{handle, inName, range};
+        inStorage.targetAccess = Access::ShaderRead | Access::ShaderWrite;
+        inStorage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
+        inStorage.waitAccess   = Access::ShaderRead | Access::ShaderWrite;
+        inStorage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
         if (inStorage.name.empty())
             inStorage.name = m_name + "In" + std::to_string(m_colorInputs.size());
 

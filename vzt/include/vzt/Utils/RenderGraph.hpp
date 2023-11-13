@@ -3,9 +3,9 @@
 
 #include <atomic>
 #include <functional>
+#include <memory>
 #include <string>
 #include <unordered_set>
-#include <memory>
 
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Command.hpp"
