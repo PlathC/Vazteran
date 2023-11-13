@@ -1,6 +1,7 @@
 #ifndef VZT_VULKAN_FORMAT_HPP
 #define VZT_VULKAN_FORMAT_HPP
 
+#include "vzt/Core/Meta.hpp"
 #include "vzt/Vulkan/Core.hpp"
 
 namespace vzt
@@ -290,6 +291,31 @@ namespace vzt
         G16B16R163Plane444UNormKHR              = VK_FORMAT_G16_B16_R16_3PLANE_444_UNORM_KHR,
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(Format, VkFormat)
+
+    enum class FormatFeature
+    {
+        SampledImage             = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT,
+        StorageImage             = VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,
+        StorageImageAtomic       = VK_FORMAT_FEATURE_STORAGE_IMAGE_ATOMIC_BIT,
+        UniformTexelBuffer       = VK_FORMAT_FEATURE_UNIFORM_TEXEL_BUFFER_BIT,
+        StorageTexelBuffer       = VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_BIT,
+        StorageTexelBufferAtomic = VK_FORMAT_FEATURE_STORAGE_TEXEL_BUFFER_ATOMIC_BIT,
+        VertexBuffer             = VK_FORMAT_FEATURE_VERTEX_BUFFER_BIT,
+        ColorAttachment          = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT,
+        ColorAttachmentBlend     = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BLEND_BIT,
+        DepthStencilAttachment   = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        BlitSrc                  = VK_FORMAT_FEATURE_BLIT_SRC_BIT,
+        BlitDst                  = VK_FORMAT_FEATURE_BLIT_DST_BIT,
+        SampledImageFilterLinear = VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT,
+        // Provided by VK_VERSION_1_1
+        TransferSrc = VK_FORMAT_FEATURE_TRANSFER_SRC_BIT,
+        // Provided by VK_VERSION_1_1
+        TransferDst = VK_FORMAT_FEATURE_TRANSFER_DST_BIT,
+        // Provided by VK_VERSION_1_1
+        MidpointChromaSamples = VK_FORMAT_FEATURE_MIDPOINT_CHROMA_SAMPLES_BIT,
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(FormatFeature, VkFormatFeatureFlagBits)
+    VZT_DEFINE_BITWISE_FUNCTIONS(FormatFeature)
 } // namespace vzt
 
 #endif // VZT_VULKAN_FORMAT_HPP
