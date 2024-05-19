@@ -101,6 +101,9 @@ namespace vzt
                        "hitGroupType must be equal to ShaderGroupType::ProceduralHitGroup");
                 shaderGroup.intersectionShader = index;
                 break;
+
+            default:
+                throw std::runtime_error("Unkown shader stage");
             }
 
             shaderGroups.emplace_back(std::move(shaderGroup));

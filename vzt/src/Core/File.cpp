@@ -15,12 +15,12 @@ namespace vzt
             return "";
         }
 
-        const std::size_t fileSize = file.tellg();
+        const std::size_t fileSize = static_cast<std::size_t>(file.tellg());
         std::string       buffer{};
         buffer.resize(fileSize);
 
         file.seekg(0);
-        file.read(buffer.data(), fileSize);
+        file.read(buffer.data(), static_cast<std::streamsize>(fileSize));
 
         file.close();
 

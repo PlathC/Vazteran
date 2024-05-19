@@ -36,10 +36,11 @@ int main(int /* argc */, char** /* argv */)
 
     // clang-format off
     renderPass.addColor(vzt::AttachmentUse{
-        vzt::Format::B8G8R8A8SRGB,
-        vzt::ImageLayout::Undefined,
-        vzt::ImageLayout::ColorAttachmentOptimal,
-        vzt::ImageLayout::ColorAttachmentOptimal
+        .format = vzt::Format::B8G8R8A8SRGB,
+        .initialLayout = vzt::ImageLayout::Undefined,
+        .finalLayout = vzt::ImageLayout::ColorAttachmentOptimal,
+        .usedLayout = vzt::ImageLayout::ColorAttachmentOptimal,
+        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f)
     });
     // clang-format on
 

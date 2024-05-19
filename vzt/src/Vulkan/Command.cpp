@@ -106,23 +106,23 @@ namespace vzt
 
         VkImageBlit2 blit2{};
         blit2.sType                         = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
-        blit2.srcOffsets[0].x               = blit.srcOffsets[0].width;
-        blit2.srcOffsets[0].y               = blit.srcOffsets[0].height;
-        blit2.srcOffsets[0].z               = blit.srcOffsets[0].depth;
-        blit2.srcOffsets[1].x               = blit.srcOffsets[1].width;
-        blit2.srcOffsets[1].y               = blit.srcOffsets[1].height;
-        blit2.srcOffsets[1].z               = blit.srcOffsets[1].depth;
+        blit2.srcOffsets[0].x               = static_cast<int32_t>(blit.srcOffsets[0].width);
+        blit2.srcOffsets[0].y               = static_cast<int32_t>(blit.srcOffsets[0].height);
+        blit2.srcOffsets[0].z               = static_cast<int32_t>(blit.srcOffsets[0].depth);
+        blit2.srcOffsets[1].x               = static_cast<int32_t>(blit.srcOffsets[1].width);
+        blit2.srcOffsets[1].y               = static_cast<int32_t>(blit.srcOffsets[1].height);
+        blit2.srcOffsets[1].z               = static_cast<int32_t>(blit.srcOffsets[1].depth);
         blit2.srcSubresource.aspectMask     = toVulkan(blit.srcAspect);
         blit2.srcSubresource.mipLevel       = blit.srcMipLevel;
         blit2.srcSubresource.baseArrayLayer = 0;
         blit2.srcSubresource.layerCount     = 1;
 
-        blit2.dstOffsets[0].x               = blit.dstOffsets[0].width;
-        blit2.dstOffsets[0].y               = blit.dstOffsets[0].height;
-        blit2.dstOffsets[0].z               = blit.dstOffsets[0].depth;
-        blit2.dstOffsets[1].x               = blit.dstOffsets[1].width;
-        blit2.dstOffsets[1].y               = blit.dstOffsets[1].height;
-        blit2.dstOffsets[1].z               = blit.dstOffsets[1].depth;
+        blit2.dstOffsets[0].x               = static_cast<int32_t>(blit.dstOffsets[0].width);
+        blit2.dstOffsets[0].y               = static_cast<int32_t>(blit.dstOffsets[0].height);
+        blit2.dstOffsets[0].z               = static_cast<int32_t>(blit.dstOffsets[0].depth);
+        blit2.dstOffsets[1].x               = static_cast<int32_t>(blit.dstOffsets[1].width);
+        blit2.dstOffsets[1].y               = static_cast<int32_t>(blit.dstOffsets[1].height);
+        blit2.dstOffsets[1].z               = static_cast<int32_t>(blit.dstOffsets[1].depth);
         blit2.dstSubresource.aspectMask     = toVulkan(blit.dstAspect);
         blit2.dstSubresource.mipLevel       = blit.dstMipLevel;
         blit2.dstSubresource.baseArrayLayer = 0;
@@ -151,22 +151,22 @@ namespace vzt
         // element of pRegions, srcOffsets[0].z must be 0 and srcOffsets[1].z must be 1
         VkImageBlit2 blit{};
         blit.sType                         = VK_STRUCTURE_TYPE_IMAGE_BLIT_2;
-        blit.srcOffsets[0].x               = srcStart.x;
-        blit.srcOffsets[0].y               = srcStart.y;
+        blit.srcOffsets[0].x               = static_cast<int32_t>(srcStart.x);
+        blit.srcOffsets[0].y               = static_cast<int32_t>(srcStart.y);
         blit.srcOffsets[0].z               = 0;
-        blit.srcOffsets[1].x               = srcEnd.x;
-        blit.srcOffsets[1].y               = srcEnd.y;
+        blit.srcOffsets[1].x               = static_cast<int32_t>(srcEnd.x);
+        blit.srcOffsets[1].y               = static_cast<int32_t>(srcEnd.y);
         blit.srcOffsets[1].z               = 1;
         blit.srcSubresource.aspectMask     = toVulkan(srcAspect);
         blit.srcSubresource.mipLevel       = 0;
         blit.srcSubresource.baseArrayLayer = 0;
         blit.srcSubresource.layerCount     = 1;
 
-        blit.dstOffsets[0].x               = dstStart.x;
-        blit.dstOffsets[0].y               = dstStart.y;
+        blit.dstOffsets[0].x               = static_cast<int32_t>(dstStart.x);
+        blit.dstOffsets[0].y               = static_cast<int32_t>(dstStart.y);
         blit.dstOffsets[0].z               = 0;
-        blit.dstOffsets[1].x               = dstEnd.x;
-        blit.dstOffsets[1].y               = dstEnd.y;
+        blit.dstOffsets[1].x               = static_cast<int32_t>(dstEnd.x);
+        blit.dstOffsets[1].y               = static_cast<int32_t>(dstEnd.y);
         blit.dstOffsets[1].z               = 1;
         blit.dstSubresource.aspectMask     = toVulkan(dstAspect);
         blit.dstSubresource.mipLevel       = 0;

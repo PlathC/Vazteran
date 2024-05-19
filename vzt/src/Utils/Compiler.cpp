@@ -22,7 +22,7 @@ namespace vzt
         ShaderIncluder(Path root) : m_root(std::move(root)) {}
         ~ShaderIncluder() override = default;
 
-        IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t inclusionDepth) override
+        IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t) override
         {
             const Path requested{headerName};
             const Path requesting{includerName};
@@ -50,7 +50,7 @@ namespace vzt
             return m_resultsSave.back().get();
         }
 
-        IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
+        IncludeResult* includeLocal(const char* headerName, const char*, size_t) override
         {
             const Path requested{headerName};
             const Path completePath = m_root / requested;

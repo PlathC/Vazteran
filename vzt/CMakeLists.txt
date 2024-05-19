@@ -92,9 +92,9 @@ target_compile_options(Vazteran PRIVATE ${VZT_COMPILATION_FLAGS})
 target_compile_definitions(Vazteran PRIVATE ${VZT_COMPILE_DEFINITIONS})
 target_include_directories(Vazteran PRIVATE ${VZT_EXTERN_INCLUDES} include/)
 target_link_libraries(Vazteran PRIVATE ${VZT_EXTERN_LIBRARIES})
-target_compile_features(Vazteran PRIVATE cxx_std_17)
+target_compile_features(Vazteran PRIVATE cxx_std_20)
 
-target_include_directories(Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_INCLUDES})
+target_include_directories(Vazteran SYSTEM PUBLIC ${VZT_EXTERN_PUBLIC_INCLUDES})
 target_link_libraries(Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_LIBRARIES})
 
 target_include_directories(Vazteran INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)

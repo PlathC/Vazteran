@@ -42,20 +42,18 @@ function(get_cxx_flags compile_flag_var compile_definitions_var)
                 -Wconversion
                 -Wsign-conversion
                 -Wmisleading-indentation
-                -Wduplicated-cond
-                -Wduplicated-branches
-                -Wlogical-op
                 -Wnull-dereference
-                -Wuseless-cast
                 -Wdouble-promotion
                 -Wformat=2
+                -Wno-missing-field-initializers
+                -Wno-missing-braces
                 )
     endif ()
 
     if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
         set(${compile_flag_var}
                 ${${compile_flag_var}}
-                -Xcc -Wno-nullability-completeness
+                -Wno-nullability-completeness
                 )
     endif ()
 

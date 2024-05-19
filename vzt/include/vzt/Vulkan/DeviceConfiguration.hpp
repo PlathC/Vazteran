@@ -72,7 +72,7 @@ namespace vzt
 
       private:
         // Mutable to allow dynamic chain creation
-        mutable VkPhysicalDeviceFeatures2 m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr};
+        mutable VkPhysicalDeviceFeatures2 m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr, {}};
         mutable std::vector<GenericDeviceFeature> m_features;
     };
 

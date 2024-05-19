@@ -260,8 +260,8 @@ namespace vzt
         case SDL_SCANCODE_RSHIFT: return Key::RShift;
         case SDL_SCANCODE_RALT: return Key::RAlt;
         case SDL_SCANCODE_RGUI: return Key::RGui;
+        default: return Key::Unknown;
         }
-        return Key::Unknown;
     }
 
 } // namespace vzt

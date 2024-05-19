@@ -34,10 +34,10 @@ namespace vzt
         return true;
     }
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT      messageSeverity,
-                                                        VkDebugUtilsMessageTypeFlagsEXT             messageType,
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                        VkDebugUtilsMessageTypeFlagsEXT,
                                                         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                        void*                                       pUserData)
+                                                        void*)
     {
 
         // TODO: Handle this in a real logger
@@ -158,17 +158,17 @@ namespace vzt
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, devices.data());
 
         uint32_t selectedDevice = 0;
-        bool isDiscrete = false;
+        bool     isDiscrete     = false;
         for (uint32_t i = 0; i < deviceCount; i++)
         {
             const auto device = PhysicalDevice(devices[i]);
             if (device.isSuitable(configuration, surface))
                 selectedDevice = i;
 
-            if(!isDiscrete && device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            if (!isDiscrete && device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
             {
                 selectedDevice = i;
-                isDiscrete = true;
+                isDiscrete     = true;
             }
         }
 

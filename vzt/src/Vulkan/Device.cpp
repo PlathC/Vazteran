@@ -173,17 +173,17 @@ namespace vzt
                 if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
                 {
                     selected |= QueueType::Graphics;
-                    queueFamily.queueFlags &= ~VK_QUEUE_GRAPHICS_BIT;
+                    queueFamily.queueFlags &= static_cast<VkQueueFlags>(~VK_QUEUE_GRAPHICS_BIT);
                 }
                 else if (queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
                 {
                     selected |= QueueType::Compute;
-                    queueFamily.queueFlags &= ~VK_QUEUE_COMPUTE_BIT;
+                    queueFamily.queueFlags &= static_cast<VkQueueFlags>(~VK_QUEUE_COMPUTE_BIT);
                 }
                 else if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT)
                 {
                     selected |= QueueType::Transfer;
-                    queueFamily.queueFlags &= ~VK_QUEUE_TRANSFER_BIT;
+                    queueFamily.queueFlags &= static_cast<VkQueueFlags>(~VK_QUEUE_TRANSFER_BIT);
                 }
                 else // Unsupported queue family
                 {

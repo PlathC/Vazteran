@@ -11,7 +11,7 @@ namespace vzt
     DeviceImage DeviceImage::fromData(View<Device> device, ImageUsage usage, Format format, uint32_t width,
                                       uint32_t height, const CSpan<uint8_t> data, uint32_t mipLevels,
                                       ImageLayout layout, SampleCount sampleCount, ImageType type,
-                                      SharingMode sharingMode, ImageTiling tiling, bool mappable)
+                                      SharingMode sharingMode, ImageTiling tiling, bool)
     {
         DeviceImage deviceImage{
             device,
@@ -144,8 +144,7 @@ namespace vzt
 
     void DeviceImage::unmap() const { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
 
-    SubresourceLayout DeviceImage::getSubresourceLayout(const ImageAspect aspect, uint32_t mipLevel,
-                                                        uint32_t arrayLayer) const
+    SubresourceLayout DeviceImage::getSubresourceLayout(const ImageAspect, uint32_t, uint32_t) const
     {
         VkImageSubresource  subResource{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0};
         VkSubresourceLayout subResourceLayout;

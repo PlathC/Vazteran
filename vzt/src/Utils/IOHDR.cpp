@@ -33,8 +33,8 @@ namespace vzt
         }
         else
         {
-            result.width    = width;
-            result.height   = height;
+            result.width    = static_cast<uint32_t>(width);
+            result.height   = static_cast<uint32_t>(height);
             result.channels = 4;
 
             result.data.resize(result.width * result.height * result.channels);

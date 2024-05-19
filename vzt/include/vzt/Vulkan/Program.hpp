@@ -40,12 +40,6 @@ namespace vzt
         ShaderStage           stage;
         std::vector<uint32_t> compiledSource;
 
-        Shader(const Shader&)            = default;
-        Shader& operator=(const Shader&) = default;
-
-        Shader(Shader&&)            = default;
-        Shader& operator=(Shader&&) = default;
-
         struct hash
         {
             inline std::size_t operator()(const Shader& handle) const;

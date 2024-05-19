@@ -37,17 +37,20 @@ int main(int /* argc */, char** /* argv */)
         {
             commands.begin();
 
-            vzt::ImageBarrier imageBarrier{};
-            imageBarrier.image     = image;
-            imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
-            imageBarrier.newLayout = vzt::ImageLayout::TransferDstOptimal;
+            vzt::ImageBarrier imageBarrier{
+                .image = image,
+                .oldLayout = vzt::ImageLayout::Undefined,
+                .newLayout = vzt::ImageLayout::TransferDstOptimal,
+            };
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
 
             commands.clear(image, vzt::ImageLayout::TransferDstOptimal, vzt::Vec4{1.f, 0.91f, 0.69f, 1.f});
 
-            imageBarrier.image     = image;
-            imageBarrier.oldLayout = vzt::ImageLayout::TransferDstOptimal;
-            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
+            imageBarrier = {
+                .image = image,
+                .oldLayout = vzt::ImageLayout::TransferDstOptimal,
+                .newLayout = vzt::ImageLayout::PresentSrcKHR,
+            };
             commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
 
             commands.end();

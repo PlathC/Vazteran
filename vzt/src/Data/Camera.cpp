@@ -8,6 +8,7 @@ namespace vzt
         perspective[1][1] *= -1;
         return perspective;
     }
+
     Mat4 Camera::getViewMatrix(const Vec3& position, const Quat& rotation) const
     {
         const Vec3 rFront = glm::normalize(rotation * front);

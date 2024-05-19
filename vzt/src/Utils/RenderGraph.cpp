@@ -604,7 +604,7 @@ namespace vzt
             pass->record(i, commands);
     }
 
-    void RenderGraph::resize(const Extent2D& extent)
+    void RenderGraph::resize(const Extent2D& )
     {
         createRenderTarget();
 
@@ -730,7 +730,7 @@ namespace vzt
             }
 
             executionOrder.emplace_back(toProcess[bestCandidateIdx]);
-            toProcess.erase(toProcess.begin() + bestCandidateIdx);
+            toProcess.erase(toProcess.begin() + static_cast<long>(bestCandidateIdx));
         }
 
         return executionOrder;
