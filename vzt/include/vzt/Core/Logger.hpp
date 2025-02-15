@@ -2,6 +2,7 @@
 #define VZT_CORE_LOGGER_HPP
 
 #include <fmt/core.h>
+#include <fmt/format.h>
 
 namespace vzt::logger
 {

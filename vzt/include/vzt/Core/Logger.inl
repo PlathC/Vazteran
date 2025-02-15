@@ -5,7 +5,7 @@ namespace vzt::logger
     template <typename... T>
     void log(Level level, std::string_view str, T&&... args)
     {
-        log(level, fmt::format(str, args...));
+        log(level, fmt::format(fmt::runtime(str), std::forward<T>(args)...));
     }
 
     template <typename... T>
