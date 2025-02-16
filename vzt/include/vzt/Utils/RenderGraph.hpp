@@ -157,11 +157,11 @@ namespace vzt
             AttachmentUse use;
             uint32_t      binding = ~0u;
 
-            Access        waitAccess;
-            Access        targetAccess;
-            PipelineStage waitStage;
-            PipelineStage targetStage;
-            ImageAspect   aspect = ImageAspect::Color;
+            Access        waitAccess   = vzt::Access::None;
+            Access        targetAccess = vzt::Access::None;
+            PipelineStage waitStage    = vzt::PipelineStage::None;
+            PipelineStage targetStage  = vzt::PipelineStage::None;
+            ImageAspect   aspect       = ImageAspect::Color;
 
             bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
         };

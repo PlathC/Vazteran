@@ -83,12 +83,26 @@ namespace vzt
         if (attachment.name.empty())
             attachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
 
+        // Attachment is already used as output
+        if (handle.state > 1)
+        {
+            attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+            attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+            attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+            attachment.targetAccess = Access::ShaderRead;
+
+            attachment.use.loadOp  = LoadOp::Load;
+            attachment.use.storeOp = StoreOp::Store;
+        }
+        else
+        {
+            attachment.use.loadOp     = LoadOp::Clear;
+            attachment.use.storeOp    = StoreOp::Store;
+            attachment.use.clearValue = clearColor;
+        }
+
         attachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
         attachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
-        attachment.use.loadOp      = LoadOp::Clear;
-        attachment.use.storeOp     = StoreOp::Store;
-
-        attachment.use.clearValue = clearColor;
 
         m_colorOutputs.emplace_back(attachment);
     }
@@ -288,6 +302,15 @@ namespace vzt
             }
         }
 
+        for (const auto& currentOutput : m_storageOutputs)
+        {
+            for (const auto& output : other.m_storageOutputs)
+            {
+                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
+                    return true;
+            }
+        }
+
         return false;
     }
 
@@ -330,6 +353,31 @@ namespace vzt
             // barrier.dstQueue
 
             commands.barrier(input.waitStage, input.targetStage, barrier);
+        }
+
+        for (const auto& output : m_colorOutputs)
+        {
+            if (output.handle.state == 0 || output.waitAccess == vzt::Access::None)
+                continue;
+
+            const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
+
+            ImageBarrier barrier;
+            if (!builder.format)
+                barrier.image = m_graph->m_swapchain->getImage(i);
+            else
+                barrier.image = m_graph->getImage(i, output.handle);
+            barrier.oldLayout = output.use.initialLayout;
+            barrier.newLayout = output.use.usedLayout;
+            barrier.src       = output.waitAccess;
+            barrier.dst       = output.targetAccess;
+            barrier.aspect    = output.aspect;
+
+            // TODO: Handle many queues
+            // barrier.srcQueue
+            // barrier.dstQueue
+
+            commands.barrier(output.waitStage, output.targetStage, barrier);
         }
 
         if (m_type == PassType::Graphics)
