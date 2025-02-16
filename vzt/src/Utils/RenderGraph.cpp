@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Swapchain.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
@@ -461,8 +462,14 @@ namespace vzt
             // Sampled texture
             for (auto& input : m_colorInputs)
             {
-                View<DeviceImage> image = m_graph->getImage(i, input.handle);
+                const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[input.handle];
+                if (!attachmentBuilder.format)
+                {
+                    vzt::logger::error("Swapchain images cannot be used as inputs.");
+                    throw std::runtime_error("Swapchain image cannot be inputs.");
+                }
 
+                View<DeviceImage> image = m_graph->getImage(i, input.handle);
                 m_textureSaves.emplace_back(device, image, SamplerBuilder{});
                 Texture& texture = m_textureSaves.back();
 
@@ -604,7 +611,7 @@ namespace vzt
             pass->record(i, commands);
     }
 
-    void RenderGraph::resize(const Extent2D& )
+    void RenderGraph::resize(const Extent2D&)
     {
         createRenderTarget();
 
