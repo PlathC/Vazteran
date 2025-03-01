@@ -143,6 +143,8 @@ namespace vzt
         bool mouseMiddleClicked = false;
         bool mouseMiddlePressed = false;
 
+        uint32_t fingerPressedNb = 0;
+
         std::unordered_set<Key> keyPressed;
         std::unordered_set<Key> keyClicked;
         std::unordered_set<Key> keyReleased;

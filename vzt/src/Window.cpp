@@ -13,6 +13,12 @@ namespace vzt
         : m_title(std::move(title)), m_width(width), m_height(height)
     {
         m_instanceCount++;
+
+#ifdef __APPLE__
+        // Use trackpad as touchpad on MacOS
+        SDL_SetHint(SDL_HINT_TRACKPAD_IS_TOUCH_ONLY, "1");
+#endif // __APPLE__
+
         if (m_instanceCount == 1 && !SDL_Init(SDL_INIT_VIDEO))
             logger::error("[SDL] {}", SDL_GetError());
 
@@ -128,6 +134,24 @@ namespace vzt
             case SDL_EVENT_KEY_UP: {
                 Key key = toKey(windowEvent.key.scancode);
                 m_inputs.setReleased(key);
+                break;
+            }
+            case SDL_EVENT_FINGER_DOWN: {
+                m_inputs.fingerPressedNb++;
+                break;
+            }
+            case SDL_EVENT_FINGER_UP:
+            case SDL_EVENT_FINGER_CANCELED: {
+                m_inputs.fingerPressedNb--;
+                break;
+            }
+            case SDL_EVENT_FINGER_MOTION: {
+                // Empirical value that seems to perform a good fit on a macbook pro m1.
+                // TODO: Is there a better way?
+                constexpr float TouchPadToScreenScale = 750.f;
+
+                m_inputs.deltaMousePosition.x = TouchPadToScreenScale * windowEvent.tfinger.dx;
+                m_inputs.deltaMousePosition.y = TouchPadToScreenScale * windowEvent.tfinger.dy;
                 break;
             }
             }
