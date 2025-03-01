@@ -1,6 +1,6 @@
 #include "vzt/Vulkan/Surface.hpp"
 
-#include <SDL_vulkan.h>
+#include <SDL3/SDL_vulkan.h>
 
 #include "vzt/Core/Logger.hpp"
 #include "vzt/Window.hpp"
@@ -9,7 +9,7 @@ namespace vzt
 {
     Surface::Surface(const Window& window, const Instance& instance) : m_window(window), m_instance(&instance)
     {
-        if (!SDL_Vulkan_CreateSurface(m_window->getHandle(), m_instance->getHandle(), &m_handle))
+        if (!SDL_Vulkan_CreateSurface(m_window->getHandle(), m_instance->getHandle(), nullptr, &m_handle))
             logger::error("[SDL] {}", SDL_GetError());
     }
 
@@ -79,7 +79,7 @@ namespace vzt
     Extent2D Surface::getExtent() const
     {
         int width, height;
-        SDL_Vulkan_GetDrawableSize(m_window->getHandle(), &width, &height);
+        SDL_GetWindowSizeInPixels(m_window->getHandle(), &width, &height);
         return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
     }
 } // namespace vzt

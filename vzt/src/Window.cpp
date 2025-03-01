@@ -1,7 +1,7 @@
 #include "vzt/Window.hpp"
 
-#include <SDL.h>
-#include <SDL_vulkan.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
 
 #include "vzt/Core/Logger.hpp"
 
@@ -13,13 +13,11 @@ namespace vzt
         : m_title(std::move(title)), m_width(width), m_height(height)
     {
         m_instanceCount++;
-        if (m_instanceCount == 1 && SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
+        if (m_instanceCount == 1 && !SDL_Init(SDL_INIT_VIDEO))
             logger::error("[SDL] {}", SDL_GetError());
 
-        m_handle =
-            SDL_CreateWindow(m_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, static_cast<int>(width),
-                             static_cast<int>(height),
-                             SDL_WINDOW_SHOWN | SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+        m_handle = SDL_CreateWindow(m_title.c_str(), static_cast<int>(width), static_cast<int>(height),
+                                    SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
 
         if (!m_handle)
             logger::error(SDL_GetError());
@@ -69,7 +67,7 @@ namespace vzt
         const uint64_t        now          = SDL_GetPerformanceCounter();
         m_inputs.deltaTime = static_cast<float>(static_cast<double>(now - m_lastTimeStep) / sdlFrequency);
         m_lastTimeStep     = now;
-        m_inputs.time      = SDL_GetTicks64();
+        m_inputs.time      = SDL_GetTicks();
 
         bool      closing = false;
         SDL_Event windowEvent;
@@ -80,14 +78,14 @@ namespace vzt
 
             switch (windowEvent.type)
             {
-            case SDL_QUIT: closing = true; break;
-            case SDL_MOUSEMOTION:
+            case SDL_EVENT_QUIT: closing = true; break;
+            case SDL_EVENT_MOUSE_MOTION:
                 m_inputs.deltaMousePosition.x = windowEvent.motion.xrel;
                 m_inputs.deltaMousePosition.y = windowEvent.motion.yrel;
                 m_inputs.mousePosition.x      = windowEvent.motion.x;
                 m_inputs.mousePosition.y      = windowEvent.motion.y;
                 break;
-            case SDL_MOUSEBUTTONDOWN:
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
                 switch (windowEvent.button.button)
                 {
                 case SDL_BUTTON_LEFT: {
@@ -105,7 +103,7 @@ namespace vzt
                     break;
                 }
                 break;
-            case SDL_MOUSEBUTTONUP:
+            case SDL_EVENT_MOUSE_BUTTON_UP:
                 switch (windowEvent.button.button)
                 {
                 case SDL_BUTTON_LEFT: m_inputs.mouseLeftPressed = false; break;
@@ -113,24 +111,22 @@ namespace vzt
                 case SDL_BUTTON_MIDDLE: m_inputs.mouseMiddlePressed = false; break;
                 }
                 break;
-            case SDL_WINDOWEVENT:
-                if (windowEvent.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-                {
-                    m_width  = uint32_t(windowEvent.window.data1);
-                    m_height = uint32_t(windowEvent.window.data2);
+            case SDL_EVENT_WINDOW_RESIZED:
 
-                    m_inputs.windowSize    = {m_width, m_height};
-                    m_inputs.windowResized = true;
-                }
+                m_width  = uint32_t(windowEvent.window.data1);
+                m_height = uint32_t(windowEvent.window.data2);
+
+                m_inputs.windowSize    = {m_width, m_height};
+                m_inputs.windowResized = true;
                 break;
 
-            case SDL_KEYDOWN: {
-                Key key = toKey(windowEvent.key.keysym.scancode);
+            case SDL_EVENT_KEY_DOWN: {
+                Key key = toKey(windowEvent.key.scancode);
                 m_inputs.setClicked(key);
                 break;
             }
-            case SDL_KEYUP: {
-                Key key = toKey(windowEvent.key.keysym.scancode);
+            case SDL_EVENT_KEY_UP: {
+                Key key = toKey(windowEvent.key.scancode);
                 m_inputs.setReleased(key);
                 break;
             }
@@ -142,15 +138,14 @@ namespace vzt
 
     InstanceBuilder Window::getConfiguration(InstanceBuilder configuration) const
     {
-        uint32_t count = 0;
-        if (!SDL_Vulkan_GetInstanceExtensions(m_handle, &count, nullptr))
+        uint32_t           count              = 0;
+        const char* const* instanceExtensions = SDL_Vulkan_GetInstanceExtensions(&count);
+        if (!instanceExtensions)
             logger::error("[SDL] {}", SDL_GetError());
 
         const std::size_t baseExtensionNb = configuration.extensions.size();
         configuration.extensions.resize(baseExtensionNb + count);
-
-        if (!SDL_Vulkan_GetInstanceExtensions(m_handle, &count, configuration.extensions.data() + baseExtensionNb))
-            logger::error("[SDL] {}", SDL_GetError());
+        std::memcpy(configuration.extensions.data() + baseExtensionNb, instanceExtensions, count * sizeof(const char*));
 
         return configuration;
     }

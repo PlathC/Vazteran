@@ -16,9 +16,6 @@
 [submodule "vzt/extern/SPIRV-Headers"]
 	path = vzt/extern/SPIRV-Headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
-[submodule "vzt/extern/SPIRV-Tools"]
-	path = vzt/extern/SPIRV-Tools
-	url = https://github.com/KhronosGroup/SPIRV-Tools
 [submodule "vzt/extern/tinyobjloader"]
 	path = vzt/extern/tinyobjloader
 	url = https://github.com/tinyobjloader/tinyobjloader.git
@@ -28,3 +25,6 @@
 [submodule "vzt/extern/tinyexr"]
 	path = vzt/extern/tinyexr
 	url = https://github.com/syoyo/tinyexr.git
+[submodule "vzt/extern/SPIRV-Tools"]
+	path = vzt/extern/SPIRV-Tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git

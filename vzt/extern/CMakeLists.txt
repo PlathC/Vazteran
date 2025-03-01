@@ -1,79 +1,63 @@
-if(NOT TARGET fmt)
+if (NOT TARGET fmt)
     add_subdirectory(fmt)
-endif() 
+endif ()
 
-if(NOT TARGET glm::glm)
+if (NOT TARGET glm::glm)
     add_subdirectory(glm)
-endif()
+endif ()
 
-if(NOT TARGET SDL2::SDL2)
-    set(SDL2_DISABLE_UNINSTALL      ON  CACHE BOOL "" FORCE)
-    set(SDL_TEST                    OFF CACHE BOOL "" FORCE)
-    set(SDL_TESTS                   OFF CACHE BOOL "" FORCE)
+if (NOT TARGET SDL3::SDL3)
+    set(SDL3_DISABLE_UNINSTALL ON CACHE BOOL "" FORCE)
+    set(SDL_TEST OFF CACHE BOOL "" FORCE)
+    set(SDL_TESTS OFF CACHE BOOL "" FORCE)
     add_subdirectory(SDL)
-endif() 
+endif ()
 
-if(NOT TARGET SPIRV)
-    set(SPIRV_HEADERS_SKIP_EXAMPLES ON CACHE BOOL "" FORCE)
-    set(SPIRV_HEADERS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
-    add_subdirectory(SPIRV-Headers)
-
-    set(SPIRV_SKIP_EXECUTABLES ON CACHE BOOL "" FORCE)
-    set(SPIRV_SKIP_TESTS ON CACHE BOOL "" FORCE)
-    add_subdirectory(SPIRV-Tools)
-endif() 
-
-if(NOT TARGET glslang)
-    set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
-    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-    set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
-    add_subdirectory(glslang)
-endif() 
-
-if(NOT TARGET volk)
+if (NOT TARGET volk)
     if (WIN32)
-       set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
-    endif()
+        set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
+    endif ()
     add_subdirectory(volk)
-endif()
+endif ()
 
-if(NOT TARGET tinyexr)
-    set(TINYEXR_BUILD_SAMPLE OFF)
-    add_subdirectory(tinyexr)
-endif()
+if (NOT TARGET tinyexr)
+    # set(TINYEXR_BUILD_SAMPLE OFF)
+    # add_subdirectory(tinyexr)
+endif ()
 
 # Prepare data for parent scope
 set(VZT_EXTERN_PUBLIC_INCLUDES
-    ${VZT_EXTERN_INCLUDES}
+        ${VZT_EXTERN_INCLUDES}
 
-    "${CMAKE_CURRENT_SOURCE_DIR}/glslang"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
-    "${CMAKE_CURRENT_SOURCE_DIR}/volk"
-    "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
-    "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr"
-    ${Vulkan_INCLUDE_DIRS}
+        "${CMAKE_CURRENT_SOURCE_DIR}/glslang"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
+        "${CMAKE_CURRENT_SOURCE_DIR}/volk"
+        "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr/deps/miniz"
+        ${Vulkan_INCLUDE_DIRS}
 )
 
 set(VZT_EXTERN_PUBLIC_LIBRARIES
-    ${VZT_EXTERN_PUBLIC_LIBRARIES}
+        ${VZT_EXTERN_PUBLIC_LIBRARIES}
 
-    fmt
-    glm::glm
-    SDL2::SDL2 SDL2::SDL2main
-    volk
-    Vulkan::Vulkan
+        fmt
+        glm::glm
+        SDL3::SDL3
+        volk
+        Vulkan::Vulkan
 )
 
 set(VZT_EXTERN_LIBRARIES
-    ${VZT_EXTERN_LIBRARIES}
+        ${VZT_EXTERN_LIBRARIES}
 
-    glslang
-    SPIRV 
-    tinyexr
+        Vulkan::glslang
+        Vulkan::SPIRV-Tools
 )
 
 set(VZT_EXTERN_SOURCES
-    ${VZT_EXTERN_SOURCES}
+        ${VZT_EXTERN_SOURCES}
+        "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr/deps/miniz/miniz.c"
 )
 
 set(VZT_COMPILATION_FLAGS ${VZT_COMPILATION_FLAGS} PARENT_SCOPE)

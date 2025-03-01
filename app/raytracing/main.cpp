@@ -15,7 +15,7 @@ struct VertexInput
     vzt::Vec3 inNormal;
 };
 
-int main(int argc, char** argv)
+int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Raytracing";
 
@@ -38,9 +38,9 @@ int main(int argc, char** argv)
         vzt::BufferUsage::AccelerationStructureBuildInputReadOnly | //
         vzt::BufferUsage::ShaderDeviceAddress |                     //
         vzt::BufferUsage::StorageBuffer;
-    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(   //
+    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>( //
         device, vertexInputs, vzt::BufferUsage::VertexBuffer | GeometryBufferUsages);
-    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(      //
+    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>( //
         device, mesh.indices, vzt::BufferUsage::IndexBuffer | GeometryBufferUsages);
 
     vzt::GeometryAsBuilder bottomAsBuilder{vzt::AsTriangles{
@@ -271,7 +271,7 @@ int main(int argc, char** argv)
         const float     projection = glm::dot(reference, direction);
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
-        else if (projection < 0.f)              // If direction and reference are opposite
+        else if (projection < 0.f) // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);

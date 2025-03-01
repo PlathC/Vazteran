@@ -2,8 +2,8 @@
 
 #include <unordered_map>
 
-#include <SPIRV/GlslangToSpv.h>
 #include <glslang/Public/ShaderLang.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
 
 #include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Instance.hpp"

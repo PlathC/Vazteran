@@ -1,5 +1,6 @@
 #include "vzt/Utils/IOHDR.hpp"
 
+#define TINYEXR_IMPLEMENTATION
 #include <tinyexr.h>
 
 #include "vzt/Core/Logger.hpp"

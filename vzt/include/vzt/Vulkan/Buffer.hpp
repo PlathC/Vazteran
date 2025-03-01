@@ -117,6 +117,8 @@ namespace vzt
         {
         }
         BufferCSpan(BufferSpan span) : buffer(span.buffer), size(span.size), offset(span.offset) {}
+        BufferCSpan(const Buffer& buffer) : buffer(&buffer), size(buffer.size()), offset(0) {}
+        BufferCSpan(const Buffer* buffer) : buffer(buffer), size(buffer->size()), offset(0) {}
 
         const Buffer* buffer = nullptr;
         std::size_t   size   = 0;

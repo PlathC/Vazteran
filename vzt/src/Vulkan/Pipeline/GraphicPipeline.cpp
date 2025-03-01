@@ -120,7 +120,7 @@ namespace vzt
         if (m_attachments.empty())
         {
             const auto& colorAttachments = renderPass->getColorAttachments();
-            for (const auto& _ : colorAttachments)
+            for (std::size_t i = 0; i < colorAttachments.size(); i++)
                 m_attachments.emplace_back(ColorMask::RGBA);
         }
 

@@ -131,8 +131,8 @@ namespace vzt
         uint64_t time;
         float    deltaTime;
 
-        Vec2i mousePosition;
-        Vec2i deltaMousePosition;
+        Vec2 mousePosition;
+        Vec2 deltaMousePosition;
 
         bool mouseLeftClicked = false;
         bool mouseLeftPressed = false;

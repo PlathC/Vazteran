@@ -15,7 +15,7 @@ namespace vzt::logger
     }
 
     template <typename... T>
-    void debug(std::string_view str, T&&... args)
+    void debug([[maybe_unused]] std::string_view str, [[maybe_unused]] T&&... args)
     {
 #ifndef NDEBUG
         log(Level::Debug, str, std::forward<T>(args)...);

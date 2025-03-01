@@ -74,7 +74,7 @@ int main(int /* argc */, char** /* argv */)
 
     vzt::VertexInputDescription vertexDescription{};
     vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
-    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0});             // Position
+    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); // Position
     vertexDescription.add(
         vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0}); // Normal
 
@@ -185,7 +185,7 @@ int main(int /* argc */, char** /* argv */)
     shadingRasterization.frontFace = vzt::FrontFace::CounterClockwise;
 
     shading.setRecordFunction<vzt::LambdaRecorder>(
-        [&shadingPipeline](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+        [&shadingPipeline](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
             commands.bind(shadingPipeline, set);
             commands.draw(3);
         });
@@ -304,7 +304,7 @@ int main(int /* argc */, char** /* argv */)
         const float     projection = glm::dot(reference, direction);
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
-        else if (projection < 0.f)              // If direction and reference are opposite
+        else if (projection < 0.f) // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
@@ -313,7 +313,6 @@ int main(int /* argc */, char** /* argv */)
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         commands.begin();
 
-        const vzt::Vec3 center = (min + max) * 2.f;
         GenerationInput generationInput{
             MaxInstanceCount,
             uint32_t(inputs.time),

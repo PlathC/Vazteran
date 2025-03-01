@@ -212,7 +212,7 @@ namespace vzt
         for (const auto& [i, descriptor] : descriptors)
         {
             std::visit(Overloaded{[this, &descriptorBufferInfo, &descriptorWrites, descriptorId,
-                                   i = i](const DescriptorBuffer& buffer) {
+                                   ii = i](const DescriptorBuffer& buffer) {
                                       VkDescriptorBufferInfo info{};
                                       info.buffer = buffer.buffer.buffer->getHandle();
                                       info.offset = buffer.buffer.offset;
@@ -222,7 +222,7 @@ namespace vzt
                                       VkWriteDescriptorSet descriptorWrite{};
                                       descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                                       descriptorWrite.dstSet          = m_descriptors[descriptorId];
-                                      descriptorWrite.dstBinding      = i;
+                                      descriptorWrite.dstBinding      = ii;
                                       descriptorWrite.dstArrayElement = 0;
                                       descriptorWrite.descriptorType  = toVulkan(buffer.type);
                                       descriptorWrite.descriptorCount = 1;
@@ -230,7 +230,7 @@ namespace vzt
                                       descriptorWrites.emplace_back(descriptorWrite);
                                   },
                                   [this, &descriptorImageInfo, &descriptorWrites, descriptorId,
-                                   i = i](const DescriptorImage& image) {
+                                   ii = i](const DescriptorImage& image) {
                                       VkDescriptorImageInfo info{};
                                       info.imageLayout = toVulkan(image.layout);
                                       info.imageView   = image.image->getHandle();
@@ -243,7 +243,7 @@ namespace vzt
                                       VkWriteDescriptorSet descriptorWrite{};
                                       descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                                       descriptorWrite.dstSet          = m_descriptors[descriptorId];
-                                      descriptorWrite.dstBinding      = i;
+                                      descriptorWrite.dstBinding      = ii;
                                       descriptorWrite.dstArrayElement = 0;
                                       descriptorWrite.descriptorType  = toVulkan(image.type);
                                       descriptorWrite.descriptorCount = 1;
@@ -251,7 +251,7 @@ namespace vzt
                                       descriptorWrites.emplace_back(descriptorWrite);
                                   },
                                   [this, &descriptorAsInfo, &descriptorWrites, descriptorId,
-                                   i = i](const DescriptorAccelerationStructure& accelerationStructure) {
+                                   ii = i](const DescriptorAccelerationStructure& accelerationStructure) {
                                       VkWriteDescriptorSetAccelerationStructureKHR info{};
                                       info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
                                       info.accelerationStructureCount = 1;
@@ -262,7 +262,7 @@ namespace vzt
                                       VkWriteDescriptorSet descriptorWrite{};
                                       descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                                       descriptorWrite.dstSet          = m_descriptors[descriptorId];
-                                      descriptorWrite.dstBinding      = i;
+                                      descriptorWrite.dstBinding      = ii;
                                       descriptorWrite.dstArrayElement = 0;
                                       descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
                                       descriptorWrite.descriptorCount = 1;
