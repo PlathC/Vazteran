@@ -3,10 +3,14 @@ project(Vazteran)
 
 set(VAZTERAN_VERSION 0.1)
 
-find_package(Vulkan REQUIRED COMPONENTS glslang SPIRV-Tools)
+find_package(Vulkan REQUIRED)
+
+include(../cmake/slang.cmake)
+fetch_slang()
 add_subdirectory(extern)
 
 set(VZT_HEADERS
+        include/vzt/Core/Assert.hpp
         include/vzt/Core/Logger.hpp
         include/vzt/Core/File.hpp
         include/vzt/Core/Math.hpp
@@ -101,7 +105,7 @@ target_include_directories(Vazteran PRIVATE include/)
 target_link_libraries(Vazteran PRIVATE ${VZT_EXTERN_LIBRARIES})
 target_compile_features(Vazteran PRIVATE cxx_std_20)
 
-target_link_libraries(Vazteran INTERFACE Vulkan::Vulkan Vulkan::glslang)
+target_link_libraries(Vazteran PUBLIC Vulkan::Vulkan slang)
 
 target_include_directories(Vazteran SYSTEM PUBLIC ${VZT_EXTERN_PUBLIC_INCLUDES})
 target_link_libraries(Vazteran PUBLIC ${VZT_EXTERN_PUBLIC_LIBRARIES})

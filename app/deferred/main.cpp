@@ -33,8 +33,8 @@ struct VertexInput
 
 struct alignas(16) GenerationInput
 {
-    uint32_t uMaxInstanceCount;
-    uint32_t uTime;
+    uint32_t maxInstanceCount;
+    uint32_t time;
 };
 
 int main(int /* argc */, char** /* argv */)
@@ -99,8 +99,7 @@ int main(int /* argc */, char** /* argv */)
     instanceGeneration.addStorageOutput(2, drawCommands);
 
     auto computeInstanceProgram = vzt::Program(device);
-    computeInstanceProgram.setShader(
-        compiler.compile("shaders/deferred/instance_generation.comp", vzt::ShaderStage::Compute));
+    computeInstanceProgram.setShader(compiler("shaders/deferred/instance_generation.slang", "main"));
 
     auto computeInstancePipeline = vzt::ComputePipeline(device);
     computeInstancePipeline.setProgram(computeInstanceProgram);
@@ -138,8 +137,8 @@ int main(int /* argc */, char** /* argv */)
     geometry.setDepthOutput(depth);
 
     auto geometryProgram = vzt::Program(device);
-    geometryProgram.setShader(compiler.compile("shaders/deferred/triangle.vert", vzt::ShaderStage::Vertex));
-    geometryProgram.setShader(compiler.compile("shaders/deferred/triangle.frag", vzt::ShaderStage::Fragment));
+    geometryProgram.setShader(compiler("shaders/deferred/triangle.slang", "vertexMain"));
+    geometryProgram.setShader(compiler("shaders/deferred/triangle.slang", "fragmentMain"));
 
     auto geometryPipeline = vzt::GraphicPipeline(device);
     geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
@@ -171,9 +170,8 @@ int main(int /* argc */, char** /* argv */)
     shading.setDepthOutput(composedDepth);
 
     auto shadingProgram = vzt::Program(device);
-    shadingProgram.setShader(compiler.compile("shaders/deferred/full_screen.vert", vzt::ShaderStage::Vertex));
-    shadingProgram.setShader(
-        compiler.compile("shaders/deferred/deferred_blinn_phong.frag", vzt::ShaderStage::Fragment));
+    shadingProgram.setShader(compiler("shaders/deferred/deferred_blinn_phong.slang", "vertexMain"));
+    shadingProgram.setShader(compiler("shaders/deferred/deferred_blinn_phong.slang", "fragmentMain"));
 
     auto shadingPipeline = vzt::GraphicPipeline(device);
     shadingPipeline.setProgram(shadingProgram);

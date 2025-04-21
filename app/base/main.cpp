@@ -29,8 +29,8 @@ int main(int /* argc */, char** /* argv */)
 
     auto program  = vzt::Program(device);
     auto compiler = vzt::Compiler(instance);
-    program.setShader(compiler.compile("shaders/base/triangle.vert", vzt::ShaderStage::Vertex));
-    program.setShader(compiler.compile("shaders/base/triangle.frag", vzt::ShaderStage::Fragment));
+    program.setShader(compiler("shaders/base/base.slang", "vertexMain"));
+    program.setShader(compiler("shaders/base/base.slang", "fragmentMain"));
 
     vzt::RenderPass renderPass{device};
 
@@ -185,7 +185,7 @@ int main(int /* argc */, char** /* argv */)
         const float     projection = glm::dot(reference, direction);
         if (std::abs(projection) < 1.f - 1e-6f) // If direction and reference are not the same
             orientation = glm::rotation(reference, direction);
-        else if (projection < 0.f)              // If direction and reference are opposite
+        else if (projection < 0.f) // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
