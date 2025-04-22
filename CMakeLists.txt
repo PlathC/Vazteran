@@ -24,6 +24,6 @@ include(cmake/get_cxx_flags.cmake)
 add_subdirectory(vzt)
 
 if (VZT_MAINPROJECT)
-    message("Including Vazteran samples.")
+    message(STATUS "Including Vazteran samples.")
     add_subdirectory(app)
 endif ()

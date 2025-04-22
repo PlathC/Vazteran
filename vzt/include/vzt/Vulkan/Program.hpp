@@ -8,8 +8,10 @@
 
 namespace vzt
 {
-    enum class ShaderStage : uint16_t
+    enum class ShaderStage : uint32_t
     {
+        All                    = VK_SHADER_STAGE_ALL,
+        AllGraphics            = VK_SHADER_STAGE_ALL_GRAPHICS,
         Vertex                 = VK_SHADER_STAGE_VERTEX_BIT,
         TessellationControl    = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
         TessellationEvaluation = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT,

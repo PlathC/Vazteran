@@ -6,7 +6,13 @@ set(VAZTERAN_VERSION 0.1)
 find_package(Vulkan REQUIRED)
 
 include(../cmake/slang.cmake)
-fetch_slang()
+
+
+set_source_files_properties(
+        "${CMAKE_CURRENT_SOURCE_DIR}/extern"
+        PROPERTIES
+        COMPILE_FLAGS "-w"
+)
 add_subdirectory(extern)
 
 set(VZT_HEADERS
@@ -102,6 +108,7 @@ target_compile_options(Vazteran PRIVATE ${VZT_COMPILATION_FLAGS})
 target_compile_definitions(Vazteran PRIVATE ${VZT_COMPILE_DEFINITIONS})
 target_include_directories(Vazteran SYSTEM PRIVATE ${VZT_EXTERN_INCLUDES})
 target_include_directories(Vazteran PRIVATE include/)
+target_include_directories(Vazteran SYSTEM INTERFACE include/)
 target_link_libraries(Vazteran PRIVATE ${VZT_EXTERN_LIBRARIES})
 target_compile_features(Vazteran PRIVATE cxx_std_20)
 

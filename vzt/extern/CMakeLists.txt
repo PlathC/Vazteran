@@ -1,24 +1,41 @@
+function(message)
+    if (NOT MESSAGE_QUIET)
+        _message(${ARGN})
+    endif ()
+endfunction()
+
+function(vzt_add_subdirectory)
+    set(MESSAGE_QUIET ON)
+    add_subdirectory(${ARGN})
+    unset(MESSAGE_QUIET)
+endfunction()
+
 if (NOT TARGET fmt)
-    add_subdirectory(fmt)
+    message(STATUS "Fetching fmt ...")
+    vzt_add_subdirectory(fmt)
 endif ()
 
 if (NOT TARGET glm::glm)
-    add_subdirectory(glm)
+    message(STATUS "Fetching glm ...")
+    vzt_add_subdirectory(glm)
     target_compile_definitions(glm INTERFACE GLM_ENABLE_EXPERIMENTAL)
 endif ()
 
 if (NOT TARGET SDL3::SDL3)
+    message(STATUS "Fetching SDL3 ...")
     set(SDL3_DISABLE_UNINSTALL ON CACHE BOOL "" FORCE)
     set(SDL_TEST OFF CACHE BOOL "" FORCE)
     set(SDL_TESTS OFF CACHE BOOL "" FORCE)
-    add_subdirectory(SDL)
+
+    vzt_add_subdirectory(SDL)
 endif ()
 
 if (NOT TARGET volk)
+    message(STATUS "Fetching volk ...")
     if (WIN32)
         set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
     endif ()
-    add_subdirectory(volk)
+    vzt_add_subdirectory(volk)
 endif ()
 
 # Prepare data for parent scope

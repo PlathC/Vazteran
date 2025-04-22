@@ -41,6 +41,7 @@ namespace vzt
         }
 
         VZT_NOT_REACHED();
+        return ShaderStage::All;
     }
 
     Compiler::~Compiler() = default;
@@ -49,38 +50,59 @@ namespace vzt
     {
         m_implementation = std::make_unique<Implementation>();
 
-        // First we need to create slang global session with work with the Slang API.
         slang::createGlobalSession(m_implementation->globalSession.writeRef());
 
-        // Next we create a compilation session to generate SPIRV code from Slang source.
         slang::SessionDesc sessionDesc = {};
-        slang::TargetDesc  targetDesc  = {};
-        targetDesc.format              = SLANG_SPIRV;
-        targetDesc.profile             = m_implementation->globalSession->findProfile("spirv_1_5");
-        targetDesc.flags               = 0;
+        slang::TargetDesc  target      = {
+                  .format  = SLANG_SPIRV,
+                  .profile = m_implementation->globalSession->findProfile("spirv_1_5"),
+                  .flags   = 0,
+        };
 
-        sessionDesc.targets     = &targetDesc;
+        sessionDesc.targets     = &target;
         sessionDesc.targetCount = 1;
 
-        std::vector<slang::CompilerOptionEntry> options;
-        options.push_back({slang::CompilerOptionName::EmitSpirvDirectly,
-                           {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}});
-        sessionDesc.compilerOptionEntries    = options.data();
-        sessionDesc.compilerOptionEntryCount = options.size();
+        std::vector<slang::CompilerOptionEntry> compilerOptions = {
+            {slang::CompilerOptionName::EmitSpirvDirectly, //
+             {slang::CompilerOptionValueKind::Int, 1, 0, nullptr, nullptr}},
+            {slang::CompilerOptionName::Optimization,
+             {slang::CompilerOptionValueKind::Int, SLANG_OPTIMIZATION_LEVEL_DEFAULT, 0, nullptr, nullptr}},
+            {slang::CompilerOptionName::DebugInformation,
+             {
+                 slang::CompilerOptionValueKind::Int,
+#ifndef NDEBUG
+                 SLANG_DEBUG_INFO_LEVEL_MAXIMAL,
+#else
+                 SLANG_DEBUG_INFO_LEVEL_NONE,
+#endif // NDEBUG
+                 0,
+                 nullptr,
+                 nullptr,
+             }},
+        };
+        sessionDesc.compilerOptionEntries    = compilerOptions.data();
+        sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(compilerOptions.size());
+
+        std::vector<const char*> searchPaths;
+        std::transform(begin(includeDirectories), end(includeDirectories), std::back_inserter(searchPaths),
+                       [](const vzt::Path& path) { return path.c_str(); });
+
+        sessionDesc.searchPaths     = searchPaths.data();
+        sessionDesc.searchPathCount = static_cast<SlangInt>(searchPaths.size());
 
         m_implementation->globalSession->createSession(sessionDesc, m_implementation->session.writeRef());
     }
 
     Shader Compiler::operator()(const Path& path, const std::string& entryPoint) const
     {
-        slang::IModule* module;
+        Slang::ComPtr<slang::IBlob> diagnostics;
+        slang::IModule*             module;
         {
-            Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-            module = m_implementation->session->loadModule(path.c_str(), diagnosticsBlob.writeRef());
+            module = m_implementation->session->loadModule(path.c_str(), diagnostics.writeRef());
             if (!module)
             {
                 vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
-                                   reinterpret_cast<const char*>(diagnosticsBlob->getBufferPointer()));
+                                   reinterpret_cast<const char*>(diagnostics->getBufferPointer()));
                 std::abort();
             }
         }
@@ -92,7 +114,6 @@ namespace vzt
         {
             Slang::ComPtr<slang::IEntryPoint> iEntryPoint;
             module->getDefinedEntryPoint(i, iEntryPoint.writeRef());
-            printf("%s\n", iEntryPoint->getFunctionReflection()->getName());
 
             foundEntryPoint |= iEntryPoint->getFunctionReflection()->getName() == entryPoint;
         }
@@ -104,13 +125,13 @@ namespace vzt
         Slang::ComPtr<slang::IComponentType> composedProgram;
         {
             std::vector<slang::IComponentType*> componentTypes = {module, iEntryPoint};
-            Slang::ComPtr<slang::IBlob>         diagnosticsBlob;
+
             if (SLANG_FAILED(m_implementation->session->createCompositeComponentType( //
-                    componentTypes.data(), componentTypes.size(), composedProgram.writeRef(),
-                    diagnosticsBlob.writeRef())))
+                    componentTypes.data(), static_cast<SlangInt>(componentTypes.size()), composedProgram.writeRef(),
+                    diagnostics.writeRef())))
             {
                 vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
-                                   reinterpret_cast<const char*>(diagnosticsBlob->getBufferPointer()));
+                                   reinterpret_cast<const char*>(diagnostics->getBufferPointer()));
                 std::abort();
             }
         }
@@ -118,15 +139,13 @@ namespace vzt
         Slang::ComPtr<slang::IBlob> kernelBlob;
         {
             Slang::ComPtr<slang::IBlob> diagnosticsBlob;
-            if (SLANG_FAILED(
-                    composedProgram->getEntryPointCode(0, 0, kernelBlob.writeRef(), diagnosticsBlob.writeRef())))
+            if (SLANG_FAILED(composedProgram->getEntryPointCode(0, 0, kernelBlob.writeRef(), diagnostics.writeRef())))
             {
                 vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
-                                   reinterpret_cast<const char*>(diagnosticsBlob->getBufferPointer()));
+                                   reinterpret_cast<const char*>(diagnostics->getBufferPointer()));
                 std::abort();
             }
         }
-        printf("%s\n", (const char*)kernelBlob->getBufferPointer());
 
         slang::ProgramLayout*        programLayout = composedProgram->getLayout();
         slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());

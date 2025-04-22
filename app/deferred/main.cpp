@@ -44,10 +44,14 @@ int main(int /* argc */, char** /* argv */)
     constexpr uint32_t MaxInstanceCount = 512;
     constexpr uint32_t WorkGroupSize    = 256;
 
-    auto        window   = vzt::Window{ApplicationName};
-    auto        instance = vzt::Instance{window};
-    const auto  surface  = vzt::Surface{window, instance};
-    auto        device   = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
+    auto       window   = vzt::Window{ApplicationName};
+    auto       instance = vzt::Instance{window};
+    const auto surface  = vzt::Surface{window, instance};
+
+    auto deviceBuilder = vzt::DeviceBuilder::standard();
+    deviceBuilder.add(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    auto device = instance.getDevice(deviceBuilder, surface);
+
     const auto  queue    = device.getQueue(vzt::QueueType::Graphics);
     auto        hardware = device.getHardware();
     const float period   = hardware.getProperties().limits.timestampPeriod;
@@ -115,7 +119,7 @@ int main(int /* argc */, char** /* argv */)
             std::memcpy(data, &defaultCommand, sizeof(VkDrawIndexedIndirectCommand));
             buffer->unMap();
 
-            vzt::BufferBarrier barrier{{buffer, buffer->size()}, vzt::Access::TransferWrite, vzt::Access::UniformRead};
+            vzt::BufferBarrier barrier{{buffer, buffer->size()}, vzt::Access::TransferWrite, vzt::Access::ShaderWrite};
             commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
 
             commands.bind(computeInstancePipeline, set);
@@ -166,7 +170,7 @@ int main(int /* argc */, char** /* argv */)
     auto& shadingLayout = shading.getDescriptorLayout();
     shading.addColorInput(0, position);
     shading.addColorInput(1, normal);
-    shading.addColorOutput(composed);
+    shading.addColorOutput(composed, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
     shading.setDepthOutput(composedDepth);
 
     auto shadingProgram = vzt::Program(device);
@@ -249,7 +253,7 @@ int main(int /* argc */, char** /* argv */)
 
     std::vector<uint64_t> times{};
     times.resize((graph.size() + 1) * swapchain.getImageNb() * 2);
-    bool readyToBenchmark = false;
+    bool hasBenchmark = false;
 
     // Actual rendering
     while (window.update())
@@ -262,9 +266,8 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        readyToBenchmark |= submission->imageId == (swapchain.getImageNb() - 1);
         const uint32_t startId = submission->imageId * (graph.size() + 1) * 2;
-        if (readyToBenchmark)
+        if (hasBenchmark)
         {
             queryPool.getResults(startId, (graph.size() + 1) * 2,
                                  vzt::Span<uint64_t>(times.data() + startId, (graph.size() + 1) * 2), sizeof(uint64_t),
@@ -286,6 +289,7 @@ int main(int /* argc */, char** /* argv */)
                 1000000.f;
             vzt::logger::info("Total: {}ms", ms);
         }
+        hasBenchmark |= submission->imageId == (swapchain.getImageNb() - 1);
 
         // Per frame update
         vzt::Quat orientation = {1.f, 0.f, 0.f, 0.f};

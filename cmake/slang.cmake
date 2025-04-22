@@ -112,3 +112,5 @@ function(fetch_slang)
         copy_file(${VZT_SLANG_BINARY_DIR}/bin/slang-rt.dll .)
     endif ()
 endfunction()
+
+fetch_slang()

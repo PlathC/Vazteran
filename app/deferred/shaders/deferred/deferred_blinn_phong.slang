@@ -31,6 +31,10 @@ float4 fragmentMain([[vk::location(0)]] float2 inUV: TEXCOORD0) : SV_Target
     const float4 normal     = textureNormal.Sample(samplerNormal, inUV);
     const float  shininess  = normal.w;
 
+    const float3 Background = float3(1.f, 0.91f, 0.69f);
+    if(dot(normal, float4(1.)) == 0.)
+        return float4(Background, 1.f);
+
     const float3 lightDir = normalize(-vsPosition.xyz);
     const float3 viewDir  = lightDir;
 
@@ -38,5 +42,6 @@ float4 fragmentMain([[vk::location(0)]] float2 inUV: TEXCOORD0) : SV_Target
     const float3 halfWay  = normalize(viewDir + lightDir);
     const float  specular = pow(max(dot(normal.xyz, halfWay), 0.0f), shininess);
 
-    return float4(LightIntensity * (cosTheta + specular), 1.0f);
+    const float3 BackgroundStrength = .2;
+    return float4(LightIntensity * (cosTheta + specular) + Background * BackgroundStrength, 1.0f);
 }

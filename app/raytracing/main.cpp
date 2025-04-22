@@ -113,9 +113,9 @@ int main(int /* argc */, char** /* argv */)
     }
 
     vzt::ShaderGroup shaderGroup{device};
-    shaderGroup.addShader(compiler.compile("shaders/raytracing/raygen.rgen", vzt::ShaderStage::RayGen));
-    shaderGroup.addShader(compiler.compile("shaders/raytracing/miss.rmiss", vzt::ShaderStage::Miss));
-    shaderGroup.addShader(compiler.compile("shaders/raytracing/closesthit.rchit", vzt::ShaderStage::ClosestHit),
+    shaderGroup.addShader(compiler("shaders/raytracing/raytracing.slang", "rayGen"));
+    shaderGroup.addShader(compiler("shaders/raytracing/raytracing.slang", "miss"));
+    shaderGroup.addShader(compiler("shaders/raytracing/raytracing.slang", "closestHit"),
                           vzt::ShaderGroupType::TrianglesHitGroup);
 
     vzt::DescriptorLayout layout{device};

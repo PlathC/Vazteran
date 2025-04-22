@@ -26,7 +26,7 @@ VertexStageOutput vertexMain(Vertex vertex)
     VertexStageOutput output;
     output.vsPosition = viewSpacePosition.xyz;
     output.position   = mul(transpose(projectionMatrix), viewSpacePosition);
-    output.normal     = normalize(mul(transpose(normalMatrix), float4(vertex.normal.xyz, 0.0f)).xyz);
+    output.normal     = normalize(mul(transpose(normalMatrix), float4(vertex.normal, 0.0f)).xyz);
 
     return output;
 }

@@ -1,3 +1,4 @@
+[[vk::binding(0, 0)]]
 cbuffer Model
 {
     float4x4 modelViewMatrix;
@@ -37,8 +38,15 @@ VertexStageOutput vertexMain(Vertex vertex, uint instanceIndex: SV_InstanceID)
     return output;
 }
 
-[shader("fragment")]
-float4 fragmentMain(float3 vsPosition: POSITIONT, float3 normal: NORMAL) : SV_Target
+struct Fragment
 {
-    return float4(dot(normal, -normalize(vsPosition)).xxx, 1.);
+	float4 vsPosition : SV_TARGET0;
+	float4 normal : SV_TARGET1;
+};
+
+[shader("fragment")]
+Fragment fragmentMain(float3 vsPosition: POSITIONT, float3 normal: NORMAL)
+{
+    Fragment fragment = { float4(vsPosition, 1.), float4(normal, 1.) };
+    return fragment;
 }
