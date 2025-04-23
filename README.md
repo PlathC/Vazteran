@@ -13,6 +13,7 @@ Here is the roadmap :
 | Indirect rendering                                              | ✅        |
 | Raytracing extension                                            | ✅        |
 | slang                                                           | ✅        |
+| New simpler API                                                 |           |
 
 ## Current state
 
