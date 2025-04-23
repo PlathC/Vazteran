@@ -44,7 +44,7 @@ int main(int /* argc */, char** /* argv */)
     constexpr uint32_t MaxInstanceCount = 512;
     constexpr uint32_t WorkGroupSize    = 256;
 
-    auto       window   = vzt::Window{ApplicationName};
+    auto       window   = vzt::Window{ApplicationName, 1024, 1024};
     auto       instance = vzt::Instance{window};
     const auto surface  = vzt::Surface{window, instance};
 
@@ -246,10 +246,10 @@ int main(int /* argc */, char** /* argv */)
     camera.front = vzt::Vec3(0.f, 1.f, 0.f);
     camera.right = vzt::Vec3(1.f, 0.f, 0.f);
 
-    const vzt::Vec3 target         = (minimum + maximum) * .5f;
-    const float     bbRadius       = glm::compMax(glm::abs(maximum - target));
-    const float     distance       = bbRadius / std::tan(camera.fov * .5f);
-    const vzt::Vec3 cameraPosition = target - camera.front * 25.15f * distance;
+    camera.aspectRatio = static_cast<float>(window.getWidth()) / static_cast<float>(window.getHeight());
+
+    const vzt::Vec3 target   = (minimum + maximum) * .5f;
+    const float     bbRadius = glm::compMax(glm::abs(maximum - target));
 
     std::vector<uint64_t> times{};
     times.resize((graph.size() + 1) * swapchain.getImageNb() * 2);
@@ -298,7 +298,15 @@ int main(int /* argc */, char** /* argv */)
         if (inputs.mouseLeftPressed)
             t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWidth());
 
-        const vzt::Quat rotation        = glm::angleAxis(t, camera.up);
+        const vzt::Quat rotation = glm::angleAxis(t, camera.up);
+
+        float distanceScale = 1.f;
+        if (inputs.mouseLeftPressed)
+            distanceScale = inputs.mousePosition.y / static_cast<float>(window.getHeight());
+
+        const float distance = distanceScale * 15.f * bbRadius / std::tan(camera.fov * .5f);
+
+        const vzt::Vec3 cameraPosition  = target - camera.front * distance;
         const vzt::Vec3 currentPosition = rotation * (cameraPosition - target) + target;
 
         const vzt::Vec3 direction  = glm::normalize(target - currentPosition);
