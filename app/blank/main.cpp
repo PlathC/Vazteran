@@ -3,7 +3,7 @@
 
 #include <vzt/Core/File.hpp>
 #include <vzt/Vulkan/Command.hpp>
-#include <vzt/Vulkan/Pipeline/GraphicPipeline.hpp>
+#include <vzt/Vulkan/Pipeline/GraphicsPipeline.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
@@ -38,7 +38,7 @@ int main(int /* argc */, char** /* argv */)
             commands.begin();
 
             vzt::ImageBarrier imageBarrier{
-                .image = image,
+                .image     = image,
                 .oldLayout = vzt::ImageLayout::Undefined,
                 .newLayout = vzt::ImageLayout::TransferDstOptimal,
             };
@@ -47,7 +47,7 @@ int main(int /* argc */, char** /* argv */)
             commands.clear(image, vzt::ImageLayout::TransferDstOptimal, vzt::Vec4{1.f, 0.91f, 0.69f, 1.f});
 
             imageBarrier = {
-                .image = image,
+                .image     = image,
                 .oldLayout = vzt::ImageLayout::TransferDstOptimal,
                 .newLayout = vzt::ImageLayout::PresentSrcKHR,
             };

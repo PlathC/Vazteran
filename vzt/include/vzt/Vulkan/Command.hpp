@@ -5,7 +5,7 @@
 
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
-#include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"
+#include "vzt/Vulkan/Pipeline/GraphicsPipeline.hpp"
 #include "vzt/Vulkan/Pipeline/RaytracingPipeline.hpp"
 
 namespace vzt

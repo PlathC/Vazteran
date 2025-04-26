@@ -1,4 +1,4 @@
-#include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"
+#include "vzt/Vulkan/Pipeline/GraphicsPipeline.hpp"
 
 #include <cassert>
 
@@ -7,9 +7,9 @@
 
 namespace vzt
 {
-    GraphicPipeline::GraphicPipeline(View<Device> device) : m_device(device) {}
+    GraphicPipeline::GraphicPipeline(View<Device> device) : Pipeline(), m_device(device) {}
 
-    GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept
+    GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept : Pipeline(std::move(other))
     {
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
@@ -38,6 +38,8 @@ namespace vzt
         std::swap(m_multiSample, other.m_multiSample);
         std::swap(m_depthStencil, other.m_depthStencil);
 
+        Pipeline::operator=(std::move(other));
+        
         return *this;
     }
 
@@ -54,6 +56,20 @@ namespace vzt
             const VolkDeviceTable& table = m_device->getFunctionTable();
             table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
         }
+    }
+
+    void GraphicPipeline::setProgram(const Program& program)
+    {
+        m_program = program;
+
+        m_descriptorLayout = vzt::DescriptorLayout(m_device);
+        for (const auto& module : m_program->getModules())
+        {
+            for (const auto [id, type] : module.getShader().bindings)
+                m_descriptorLayout.addBinding(id, type);
+        }
+
+        m_descriptorLayout.compile();
     }
 
     std::tuple<VkViewport, VkRect2D>               toVulkan(const Viewport& viewport);

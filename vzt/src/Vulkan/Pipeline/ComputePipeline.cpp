@@ -5,12 +5,12 @@
 
 namespace vzt
 {
-    ComputePipeline::ComputePipeline(View<Device> device) : m_device(device) {}
+    ComputePipeline::ComputePipeline(View<Device> device) : Pipeline(), m_device(device) {}
 
     ComputePipeline::ComputePipeline(ComputePipeline&& other) noexcept
-        : m_device(std::move(other.m_device)), m_handle(std::move(other.m_handle)),
+        : Pipeline(std::move(other)), m_device(std::move(other.m_device)), m_handle(std::move(other.m_handle)),
           m_pipelineLayout(std::move(other.m_pipelineLayout)), m_program(std::move(other.m_program)),
-          m_descriptorLayout(std::move(other.m_descriptorLayout)), m_compiled(std::move(other.m_compiled))
+          m_compiled(std::move(other.m_compiled))
     {
     }
 
@@ -23,10 +23,27 @@ namespace vzt
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_compiled, other.m_compiled);
 
+        Pipeline::operator=(std::move(other));
+
         return *this;
     }
 
     ComputePipeline::~ComputePipeline() { cleanup(); }
+
+    void ComputePipeline::setProgram(const Program& program)
+    {
+        m_program = program;
+
+        m_descriptorLayout = vzt::DescriptorLayout(m_device);
+        for (const auto& module : program.getModules())
+        {
+            const auto& shader = module.getShader();
+            for (const auto [id, type] : shader.bindings)
+                m_descriptorLayout.addBinding(id, type);
+        }
+
+        m_descriptorLayout.compile();
+    }
 
     void ComputePipeline::compile()
     {

@@ -30,6 +30,7 @@ namespace vzt
         InputAttachment       = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
         InlineUniformBlock    = VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK,
         AccelerationStructure = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR,
+        None                  = VK_DESCRIPTOR_TYPE_MAX_ENUM
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(DescriptorType, VkDescriptorType)
 
@@ -51,6 +52,7 @@ namespace vzt
         void compile();
 
         using Bindings = std::unordered_map<uint32_t /*binding*/, DescriptorType /*type */>;
+        inline Bindings&             getBindings();
         inline const Bindings&       getBindings() const;
         inline uint32_t              size() const;
         inline VkDescriptorSetLayout getHandle() const;
@@ -60,8 +62,7 @@ namespace vzt
         VkDescriptorSetLayout m_handle = VK_NULL_HANDLE;
 
         Bindings m_bindings;
-
-        bool m_compiled = false;
+        bool     m_compiled = false;
     };
 
     class DescriptorSet

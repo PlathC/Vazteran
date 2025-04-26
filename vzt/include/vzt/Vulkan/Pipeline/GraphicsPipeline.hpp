@@ -2,7 +2,7 @@
 #define VZT_GRAPHIC_PIPELINE_HPP
 
 #include "vzt/Core/Math.hpp"
-#include "vzt/Vulkan/Descriptor.hpp"
+#include "vzt/Vulkan/Pipeline/Pipeline.hpp"
 #include "vzt/Vulkan/Program.hpp"
 #include "vzt/Vulkan/Synchronization.hpp"
 
@@ -136,8 +136,7 @@ namespace vzt
         VertexInputRate inputRate = VertexInputRate::Vertex;
 
         template <class Type>
-        static VertexBinding Typed(uint32_t binding, VertexInputRate inputRate = VertexInputRate::Vertex);
-
+        static VertexBinding   Typed(uint32_t binding, VertexInputRate inputRate = VertexInputRate::Vertex);
         inline VertexAttribute getAttribute(uint32_t location, Format dataFormat, uint32_t offset);
     };
 
@@ -150,7 +149,7 @@ namespace vzt
         inline void add(VertexAttribute binding);
     };
 
-    class GraphicPipeline
+    class GraphicPipeline : public Pipeline
     {
       public:
         GraphicPipeline() = default;
@@ -164,11 +163,11 @@ namespace vzt
 
         ~GraphicPipeline();
 
+        void setProgram(const Program& program);
+
         inline void setVertexInputDescription(VertexInputDescription vertexDescription);
         inline void addAttachmentColorBlend(ColorMask mask = ColorComponent::RGBA);
         inline void addAttachmentsColorBlend(std::size_t nb, ColorMask mask = ColorComponent::RGBA);
-        inline void setProgram(const Program& program);
-        inline void setDescriptorLayout(DescriptorLayout descriptorLayout);
 
         inline void            setViewport(Viewport config);
         inline const Viewport& getViewport() const;
@@ -206,7 +205,6 @@ namespace vzt
         Viewport         m_viewport;
 
         std::vector<ColorMask> m_attachments;
-        DescriptorLayout       m_descriptorLayout;
 
         Optional<VertexInputDescription> m_vertexDescription = {};
         Rasterization                    m_rasterization;
@@ -219,6 +217,6 @@ namespace vzt
     };
 } // namespace vzt
 
-#include "vzt/Vulkan/Pipeline/GraphicPipeline.inl"
+#include "vzt/Vulkan/Pipeline/GraphicsPipeline.inl"
 
 #endif // VZT_GRAPHIC_PIPELINE_HPP

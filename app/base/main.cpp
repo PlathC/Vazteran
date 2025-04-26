@@ -10,7 +10,7 @@
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Descriptor.hpp>
 #include <vzt/Vulkan/FrameBuffer.hpp>
-#include <vzt/Vulkan/Pipeline/GraphicPipeline.hpp>
+#include <vzt/Vulkan/Pipeline/GraphicsPipeline.hpp>
 #include <vzt/Vulkan/RenderPass.hpp>
 #include <vzt/Vulkan/Surface.hpp>
 #include <vzt/Vulkan/Swapchain.hpp>

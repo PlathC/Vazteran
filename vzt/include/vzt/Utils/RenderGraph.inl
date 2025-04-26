@@ -10,11 +10,9 @@ namespace vzt
         m_recordCallback = std::make_unique<DerivedHandler>(std::forward<Args>(args)...);
     }
 
-    inline std::string_view Pass::getName() const { return m_name; }
-    inline View<Queue>      Pass::getQueue() const { return m_queue; }
-    inline void Pass::setDescriptorLayout(DescriptorLayout&& layout) { m_descriptorLayout = std::move(layout); }
+    inline std::string_view        Pass::getName() const { return m_name; }
+    inline View<Queue>             Pass::getQueue() const { return m_queue; }
     inline const DescriptorLayout& Pass::getDescriptorLayout() const { return m_descriptorLayout; }
-    inline DescriptorLayout&       Pass::getDescriptorLayout() { return m_descriptorLayout; }
     inline DescriptorPool&         Pass::getDescriptorPool() { return m_pool; }
     inline View<RenderPass>        Pass::getRenderPass() const { return &m_renderPass; }
 

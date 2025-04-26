@@ -1,4 +1,4 @@
-#include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"
+#include "vzt/Vulkan/Pipeline/GraphicsPipeline.hpp"
 
 namespace vzt
 {
@@ -25,13 +25,6 @@ namespace vzt
     {
         std::vector masks(nb, mask);
         m_attachments.insert(m_attachments.end(), masks.begin(), masks.end());
-    }
-
-    inline void GraphicPipeline::setProgram(const Program& program) { m_program = program; }
-    inline void GraphicPipeline::setDescriptorLayout(DescriptorLayout descriptorLayout)
-    {
-        m_descriptorLayout = descriptorLayout;
-        m_descriptorLayout.compile();
     }
 
     inline void            GraphicPipeline::setViewport(Viewport config) { m_viewport = std::move(config); }

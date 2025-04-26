@@ -51,7 +51,7 @@ set(VZT_HEADERS
         include/vzt/Vulkan/Texture.hpp
 
         include/vzt/Vulkan/Pipeline/ComputePipeline.hpp
-        include/vzt/Vulkan/Pipeline/GraphicPipeline.hpp
+        include/vzt/Vulkan/Pipeline/GraphicsPipeline.hpp
         include/vzt/Vulkan/Pipeline/RaytracingPipeline.hpp
 
         include/vzt/Window.hpp
@@ -88,7 +88,7 @@ set(VZT_SOURCES
         src/Vulkan/Texture.cpp
 
         src/Vulkan/Pipeline/ComputePipeline.cpp
-        src/Vulkan/Pipeline/GraphicPipeline.cpp
+        src/Vulkan/Pipeline/GraphicsPipeline.cpp
         src/Vulkan/Pipeline/RaytracingPipeline.cpp
 
         src/Window.cpp

@@ -5,9 +5,9 @@
 
 namespace vzt
 {
-    RaytracingPipeline::RaytracingPipeline(View<Device> device) : m_device(device) {}
+    RaytracingPipeline::RaytracingPipeline(View<Device> device) : Pipeline(), m_device(device) {}
 
-    RaytracingPipeline::RaytracingPipeline(RaytracingPipeline&& other) noexcept
+    RaytracingPipeline::RaytracingPipeline(RaytracingPipeline&& other) noexcept : Pipeline(std::move(other))
     {
         std::swap(m_device, other.m_device);
         std::swap(m_handle, other.m_handle);
@@ -24,10 +24,27 @@ namespace vzt
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_compiled, other.m_compiled);
 
+        Pipeline::operator=(std::move(other));
+
         return *this;
     }
 
     RaytracingPipeline::~RaytracingPipeline() { cleanup(); }
+
+    void RaytracingPipeline::setShaderGroup(const ShaderGroup& shaderGroup)
+    {
+        m_shaderGroup = shaderGroup;
+
+        m_descriptorLayout = vzt::DescriptorLayout(m_device);
+        for (const auto& group : shaderGroup.getShaders())
+        {
+            const Shader& shader = group.shaderModule.getShader();
+            for (const auto [id, type] : shader.bindings)
+                m_descriptorLayout.addBinding(id, type);
+        }
+
+        m_descriptorLayout.compile();
+    }
 
     void RaytracingPipeline::compile()
     {
@@ -102,8 +119,7 @@ namespace vzt
                 shaderGroup.intersectionShader = index;
                 break;
 
-            default:
-                throw std::runtime_error("Unkown shader stage");
+            default: throw std::runtime_error("Unkown shader stage");
             }
 
             shaderGroups.emplace_back(std::move(shaderGroup));

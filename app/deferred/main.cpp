@@ -96,9 +96,9 @@ int main(int /* argc */, char** /* argv */)
     });
 
     // Instance generation pass
-    auto& instanceGeneration       = graph.addPass("InstanceGeneration", queue, vzt::PassType::Compute);
-    auto& instanceGenerationLayout = instanceGeneration.getDescriptorLayout();
-    instanceGenerationLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+    auto& instanceGeneration = graph.addPass("InstanceGeneration", queue, vzt::PassType::Compute);
+    // auto& instanceGenerationLayout = instanceGeneration.getDescriptorLayout();
+    // instanceGenerationLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
     instanceGeneration.addStorageOutput(1, instancesPosition);
     instanceGeneration.addStorageOutput(2, drawCommands);
 
@@ -107,9 +107,10 @@ int main(int /* argc */, char** /* argv */)
 
     auto computeInstancePipeline = vzt::ComputePipeline(device);
     computeInstancePipeline.setProgram(computeInstanceProgram);
-    computeInstancePipeline.setDescriptorLayout(instanceGenerationLayout);
+    // computeInstancePipeline.setDescriptorLayout(instanceGenerationLayout);
     computeInstancePipeline.compile();
 
+    instanceGeneration.link(computeInstancePipeline);
     instanceGeneration.setRecordFunction<vzt::LambdaRecorder>(
         [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
             vzt::View<vzt::Buffer> buffer = graph.getStorage(i, drawCommands);
@@ -131,9 +132,9 @@ int main(int /* argc */, char** /* argv */)
     auto normal   = graph.addAttachment({device, vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8SNorm});
     auto depth    = graph.addAttachment({device, vzt::ImageUsage::DepthStencilAttachment});
 
-    auto& geometry       = graph.addPass("Geometry", queue);
-    auto& geometryLayout = geometry.getDescriptorLayout();
-    geometryLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
+    auto& geometry = graph.addPass("Geometry", queue);
+    // auto& geometryLayout = geometry.getDescriptorLayout();
+    // geometryLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
     geometry.addStorageInput(1, instancesPosition);
     geometry.addStorageInputIndirect(drawCommands);
     geometry.addColorOutput(position);
@@ -147,12 +148,13 @@ int main(int /* argc */, char** /* argv */)
     auto geometryPipeline = vzt::GraphicPipeline(device);
     geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
     geometryPipeline.setProgram(geometryProgram);
-    geometryPipeline.setDescriptorLayout(geometryLayout);
+    // geometryPipeline.setDescriptorLayout(geometryLayout);
     geometryPipeline.setVertexInputDescription(vertexDescription);
 
     auto& geometryRasterization    = geometryPipeline.getRasterization();
     geometryRasterization.cullMode = vzt::CullMode::None;
 
+    geometry.link(geometryPipeline);
     geometry.setRecordFunction<vzt::LambdaRecorder>(
         [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
             const vzt::View<vzt::Buffer> buffer = graph.getStorage(i, drawCommands);
@@ -167,7 +169,7 @@ int main(int /* argc */, char** /* argv */)
     auto  composedDepth = graph.addAttachment({device, vzt::ImageUsage::DepthStencilAttachment});
     auto& shading       = graph.addPass("Shading", queue);
 
-    auto& shadingLayout = shading.getDescriptorLayout();
+    // auto& shadingLayout = shading.getDescriptorLayout();
     shading.addColorInput(0, position);
     shading.addColorInput(1, normal);
     shading.addColorOutput(composed, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
@@ -180,12 +182,12 @@ int main(int /* argc */, char** /* argv */)
     auto shadingPipeline = vzt::GraphicPipeline(device);
     shadingPipeline.setProgram(shadingProgram);
     shadingPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-    shadingPipeline.setDescriptorLayout(shadingLayout);
 
     auto& shadingRasterization     = shadingPipeline.getRasterization();
     shadingRasterization.cullMode  = vzt::CullMode::Front;
     shadingRasterization.frontFace = vzt::FrontFace::CounterClockwise;
 
+    shading.link(shadingPipeline);
     shading.setRecordFunction<vzt::LambdaRecorder>(
         [&shadingPipeline](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
             commands.bind(shadingPipeline, set);

@@ -11,7 +11,7 @@
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
-#include "vzt/Vulkan/Pipeline/GraphicPipeline.hpp"
+#include "vzt/Vulkan/Pipeline/GraphicsPipeline.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
@@ -117,6 +117,8 @@ namespace vzt
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
         void setDepthOutput(Handle& depthStencil, std::string attachmentName = "", float clearValue = 1.f);
 
+        void link(const Pipeline& pipeline);
+
         template <class DerivedHandler, class... Args>
         void setRecordFunction(Args&&... args);
         void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
@@ -124,11 +126,10 @@ namespace vzt
         bool isDependingOn(const Pass& other) const;
         void record(uint32_t i, CommandBuffer& commands) const;
 
-        inline std::string_view        getName() const;
-        inline View<Queue>             getQueue() const;
-        inline void                    setDescriptorLayout(DescriptorLayout&& layout);
+        inline std::string_view getName() const;
+        inline View<Queue>      getQueue() const;
+
         inline const DescriptorLayout& getDescriptorLayout() const;
-        inline DescriptorLayout&       getDescriptorLayout();
         inline DescriptorPool&         getDescriptorPool();
         inline View<RenderPass>        getRenderPass() const;
 

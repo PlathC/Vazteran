@@ -5,6 +5,7 @@
 
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Core.hpp"
+#include "vzt/Vulkan/Descriptor.hpp"
 
 namespace vzt
 {
@@ -39,8 +40,9 @@ namespace vzt
 
     struct Shader
     {
-        ShaderStage           stage;
-        std::vector<uint32_t> compiledSource;
+        ShaderStage                stage;
+        std::vector<uint32_t>      compiledSource;
+        DescriptorLayout::Bindings bindings;
 
         struct hash
         {

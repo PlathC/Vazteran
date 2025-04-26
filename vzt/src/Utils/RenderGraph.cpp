@@ -260,6 +260,13 @@ namespace vzt
         m_depthOutput = attachment;
     }
 
+    void Pass::link(const Pipeline& pipeline)
+    {
+        const auto& layout = pipeline.getDescriptorLayout();
+        for (const auto [id, type] : layout.getBindings())
+            m_descriptorLayout.addBinding(id, type);
+    }
+
     void Pass::setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback)
     {
         m_recordCallback = std::move(recordCallback);

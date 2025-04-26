@@ -2,12 +2,12 @@
 #define VZT_VULKAN_PIPELINE_RAYTRACINGPIPELINE_HPP
 
 #include "vzt/Core/Type.hpp"
-#include "vzt/Vulkan/Descriptor.hpp"
+#include "vzt/Vulkan/Pipeline/Pipeline.hpp"
 #include "vzt/Vulkan/Program.hpp"
 
 namespace vzt
 {
-    class RaytracingPipeline
+    class RaytracingPipeline : public Pipeline
     {
       public:
         RaytracingPipeline(View<Device> device);
@@ -20,7 +20,6 @@ namespace vzt
 
         ~RaytracingPipeline();
 
-        inline void setDescriptorLayout(DescriptorLayout descriptorLayout);
         inline void setShaderGroup(const ShaderGroup& shaderGroup);
 
         void                    compile();
@@ -37,7 +36,6 @@ namespace vzt
         VkPipeline       m_handle         = VK_NULL_HANDLE;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
-        DescriptorLayout  m_descriptorLayout;
         View<ShaderGroup> m_shaderGroup;
 
         uint32_t             m_handleSize;

@@ -2,6 +2,7 @@
 
 namespace vzt
 {
+    inline DescriptorLayout::Bindings&       DescriptorLayout::getBindings() { return m_bindings; }
     inline const DescriptorLayout::Bindings& DescriptorLayout::getBindings() const { return m_bindings; }
     inline uint32_t                          DescriptorLayout::size() const { return uint32_t(m_bindings.size()); }
     inline VkDescriptorSetLayout             DescriptorLayout::getHandle() const { return m_handle; }

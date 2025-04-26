@@ -2,14 +2,14 @@
 #define VZT_COMPUTE_PIPELINE_HPP
 
 #include "vzt/Core/Type.hpp"
-#include "vzt/Vulkan/Descriptor.hpp"
+#include "vzt/Vulkan/Pipeline/Pipeline.hpp"
 
 namespace vzt
 {
     class Device;
     class Program;
 
-    class ComputePipeline
+    class ComputePipeline : public Pipeline
     {
       public:
         ComputePipeline() = default;
@@ -23,9 +23,7 @@ namespace vzt
 
         ~ComputePipeline();
 
-        inline void setProgram(const Program& program);
-        inline void setDescriptorLayout(DescriptorLayout descriptorLayout);
-
+        void setProgram(const Program& program);
         void compile();
 
         inline VkPipeline       getHandle() const;
@@ -38,7 +36,6 @@ namespace vzt
         VkPipeline       m_handle         = VK_NULL_HANDLE;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
         View<Program>    m_program;
-        DescriptorLayout m_descriptorLayout;
 
         bool m_compiled = false;
     };

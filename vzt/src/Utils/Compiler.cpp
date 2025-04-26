@@ -44,6 +44,73 @@ namespace vzt
         return ShaderStage::All;
     }
 
+    DescriptorType toDescriptorType(slang::VariableLayoutReflection* variable)
+    {
+        slang::TypeLayoutReflection* type = variable->getTypeLayout();
+        VZT_ASSERT(variable->getCategory() == slang::ParameterCategory::DescriptorTableSlot);
+
+        switch (type->getKind())
+        {
+        case slang::TypeReflection::Kind::ParameterBlock:
+        case slang::TypeReflection::Kind::ConstantBuffer: return DescriptorType::UniformBuffer;
+
+        case slang::TypeReflection::Kind::SamplerState: return DescriptorType::CombinedSampler;
+        case slang::TypeReflection::Kind::TextureBuffer: return DescriptorType::StorageTexelBuffer;
+        case slang::TypeReflection::Kind::ShaderStorageBuffer: return DescriptorType::StorageBuffer;
+
+        case slang::TypeReflection::Kind::Resource: {
+            switch (type->getResourceShape())
+            {
+            case SLANG_BYTE_ADDRESS_BUFFER:;
+            case SLANG_STRUCTURED_BUFFER: return DescriptorType::StorageBuffer;
+
+            case SLANG_ACCELERATION_STRUCTURE: return DescriptorType::AccelerationStructure;
+
+            case SLANG_TEXTURE_1D:
+            case SLANG_TEXTURE_2D:
+            case SLANG_TEXTURE_3D:
+            case SLANG_TEXTURE_CUBE:
+            case SLANG_TEXTURE_SUBPASS:;
+            case SLANG_RESOURCE_EXT_SHAPE_MASK:;
+            case SLANG_TEXTURE_FEEDBACK_FLAG:;
+            case SLANG_TEXTURE_SHADOW_FLAG:;
+            case SLANG_TEXTURE_ARRAY_FLAG:;
+            case SLANG_TEXTURE_MULTISAMPLE_FLAG:;
+            case SLANG_TEXTURE_1D_ARRAY:;
+            case SLANG_TEXTURE_2D_ARRAY:;
+            case SLANG_TEXTURE_CUBE_ARRAY:;
+            case SLANG_TEXTURE_2D_MULTISAMPLE:;
+            case SLANG_TEXTURE_2D_MULTISAMPLE_ARRAY:;
+            case SLANG_TEXTURE_SUBPASS_MULTISAMPLE: return DescriptorType::CombinedSampler;
+
+            case SLANG_TEXTURE_BUFFER: return DescriptorType::StorageTexelBuffer;
+
+            case SLANG_RESOURCE_BASE_SHAPE_MASK:
+            case SLANG_RESOURCE_UNKNOWN:
+            case SLANG_RESOURCE_NONE:; VZT_NOT_REACHED();
+            }
+        }
+
+        case slang::TypeReflection::Kind::GenericTypeParameter: // ?
+        case slang::TypeReflection::Kind::Interface:            // ?
+        case slang::TypeReflection::Kind::OutputStream:         // ?
+        case slang::TypeReflection::Kind::Specialized:          // ?
+        case slang::TypeReflection::Kind::Feedback:             // ?
+        case slang::TypeReflection::Kind::DynamicResource:      // ?
+
+        case slang::TypeReflection::Kind::Pointer:;
+        case slang::TypeReflection::Kind::None:
+        case slang::TypeReflection::Kind::Struct:
+        case slang::TypeReflection::Kind::Array:
+        case slang::TypeReflection::Kind::Matrix:
+        case slang::TypeReflection::Kind::Vector:
+        case slang::TypeReflection::Kind::Scalar: VZT_NOT_REACHED();
+        }
+
+        VZT_NOT_REACHED();
+        return DescriptorType::None;
+    }
+
     Compiler::~Compiler() = default;
 
     Compiler::Compiler(View<Instance> instance, const std::vector<vzt::Path>& includeDirectories) : m_instance(instance)
@@ -107,7 +174,7 @@ namespace vzt
             }
         }
 
-        int32_t entryPointCount = module->getDefinedEntryPointCount();
+        const int32_t entryPointCount = module->getDefinedEntryPointCount();
 
         bool foundEntryPoint = false;
         for (int32_t i = 0; i < entryPointCount; ++i)
@@ -153,6 +220,16 @@ namespace vzt
         Shader shader = Shader(toShaderStage(reflection->getStage()), {});
         shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
         std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
+
+        const uint32_t parameterCount = programLayout->getParameterCount();
+        for (uint32_t p = 0; p < parameterCount; p++)
+        {
+            slang::VariableLayoutReflection* variableLayout = programLayout->getParameterByIndex(p);
+
+            const uint32_t bindingId   = variableLayout->getBindingIndex();
+            shader.bindings[bindingId] = toDescriptorType(variableLayout);
+        }
+
         return shader;
     }
 } // namespace vzt
