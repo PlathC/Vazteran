@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "vzt/Core/Assert.hpp"
 #include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Swapchain.hpp"
 #include "vzt/Vulkan/Texture.hpp"
@@ -19,9 +20,8 @@ namespace vzt
             m_callback(i, set, commands);
     }
 
-    Pass::Pass(RenderGraph& graph, std::string name, View<Queue> queue, PassType type)
-        : m_graph(&graph), m_name(std::move(name)), m_queue(std::move(queue)), m_type(type),
-          m_descriptorLayout(m_queue->getDevice())
+    Pass::Pass(RenderGraph& graph, std::string name, PassType type)
+        : m_graph(&graph), m_name(std::move(name)), m_type(type), m_descriptorLayout(m_graph->getDevice())
     {
     }
 
@@ -399,7 +399,7 @@ namespace vzt
 
     void Pass::compile(Format depthFormat)
     {
-        View<Device> device = m_queue->getDevice();
+        View<Device> device = m_graph->getDevice();
 
         // If the pass is working with a compute queue, it does not need a render pass
         if (m_type == PassType::Graphics)
@@ -469,7 +469,7 @@ namespace vzt
         assert(extent && "Can't guess render pass extent since it has no output.");
 
         const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
-        View<Device>   device           = m_queue->getDevice();
+        View<Device>   device           = m_graph->getDevice();
 
         m_frameBuffers.clear();
         m_frameBuffers.reserve(swapchainImageNb);
@@ -507,7 +507,7 @@ namespace vzt
     void Pass::createDescriptors()
     {
         const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
-        View<Device>   device           = m_queue->getDevice();
+        View<Device>   device           = m_graph->getDevice();
 
         for (uint32_t i = 0; i < swapchainImageNb; i++)
         {
@@ -567,7 +567,40 @@ namespace vzt
         }
     }
 
-    RenderGraph::RenderGraph(View<Swapchain> swapchain) : m_swapchain(std::move(swapchain)) {}
+    ComputePass::ComputePass(RenderGraph& graph, std::string name, Program&& program)
+        : Pass(graph, std::move(name), PassType::Compute), m_program(std::move(program)), m_pipeline(m_program)
+    {
+        link(m_pipeline);
+    }
+
+    void ComputePass::compile(Format depthFormat)
+    {
+        Pass::compile(depthFormat);
+        m_pipeline.compile();
+    }
+
+    GraphicsPass::GraphicsPass(RenderGraph& graph, std::string name, Program&& program)
+        : Pass(graph, std::move(name), PassType::Graphics), m_program(std::move(program)), m_pipeline(m_program)
+    {
+        link(m_pipeline);
+    }
+
+    void GraphicsPass::compile(Format depthFormat)
+    {
+        Pass::compile(depthFormat);
+        m_pipeline.compile(m_renderPass);
+    }
+
+    void GraphicsPass::resize()
+    {
+        const Extent2D extent = m_graph->m_swapchain->getExtent();
+        m_pipeline.resize(vzt::Viewport{extent});
+    }
+
+    RenderGraph::RenderGraph(View<Device> device, View<Swapchain> swapchain)
+        : m_device(device), m_swapchain(std::move(swapchain))
+    {
+    }
 
     Handle RenderGraph::addAttachment(AttachmentBuilder builder)
     {
@@ -585,10 +618,43 @@ namespace vzt
         return handle;
     }
 
-    Pass& RenderGraph::addPass(std::string name, View<Queue> queue, PassType type)
+    Pass& RenderGraph::addPass(std::string name, PassType type)
     {
-        m_passes.emplace_back(new Pass(*this, name, queue, type));
+        m_passes.emplace_back(new Pass(*this, name, type));
         return *m_passes.back();
+    }
+
+    ComputePass& RenderGraph::addCompute(std::string name, Program&& program)
+    {
+        ComputePass* pass = new ComputePass(*this, name, std::move(program));
+        m_passes.emplace_back(pass);
+        return *pass;
+    }
+
+    ComputePass& RenderGraph::addCompute(std::string name, std::vector<Shader> shaders)
+    {
+        ComputePass* pass = new ComputePass(*this, name, Program(m_device, shaders));
+        m_passes.emplace_back(pass);
+        return *pass;
+    }
+
+    ComputePass& RenderGraph::addCompute(std::string name, Shader shader)
+    {
+        return addCompute(name, std::vector<Shader>{shader});
+    }
+
+    GraphicsPass& RenderGraph::addGraphics(std::string name, Program&& program)
+    {
+        GraphicsPass* pass = new GraphicsPass(*this, name, std::move(program));
+        m_passes.emplace_back(pass);
+        return *pass;
+    }
+
+    GraphicsPass& RenderGraph::addGraphics(std::string name, std::vector<Shader> shaders)
+    {
+        GraphicsPass* pass = new GraphicsPass(*this, name, Program(m_device, shaders));
+        m_passes.emplace_back(pass);
+        return *pass;
     }
 
     void RenderGraph::setBackBuffer(const Handle handle) { m_backBuffer = handle; }
@@ -613,16 +679,8 @@ namespace vzt
 
         // Get all use handles and find by which queue it is used
         HandleMap<ImageLayout> handlesLastLayout{};
-        handleQueues.clear();
-        const auto add = [this](const Pass& pass, const Handle& handle) {
-            if (handleQueues.find(handle) == handleQueues.end())
-                handleQueues[handle] = QueueType::None;
-            handleQueues[handle] |= pass.getQueue()->getType();
-        };
 
-        const auto addAttachment = [&add, &handlesLastLayout](const Pass& pass, Pass::PassAttachment& attachment) {
-            add(pass, attachment.handle);
-
+        const auto addAttachment = [&handlesLastLayout](const Pass& pass, Pass::PassAttachment& attachment) {
             if (handlesLastLayout.find(attachment.handle) != handlesLastLayout.end())
                 attachment.use.initialLayout = handlesLastLayout[attachment.handle];
 
@@ -636,12 +694,6 @@ namespace vzt
 
             for (auto& output : pass->m_colorOutputs)
                 addAttachment(*pass, output);
-
-            for (auto& input : pass->m_storageInputs)
-                add(*pass, input.handle);
-
-            for (auto& output : pass->m_storageOutputs)
-                add(*pass, output.handle);
 
             if (pass->m_depthInput)
                 addAttachment(*pass, *pass->m_depthInput);
@@ -811,53 +863,51 @@ namespace vzt
 
         std::size_t imageId   = 0;
         std::size_t storageId = 0;
-        for (const auto& [handle, queues] : handleQueues)
+
+        for (const auto& [handle, builder] : m_attachmentBuilders)
         {
-            if (handle.type == HandleType::Attachment)
+            VZT_ASSERT(handle.type == HandleType::Attachment);
+            AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[handle];
+
+            // Swapchain images does not need to be created
+            if (attachmentBuilder.format || attachmentBuilder.usage != ImageUsage::ColorAttachment)
             {
-                AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[handle];
+                if (!attachmentBuilder.format && attachmentBuilder.usage == ImageUsage::DepthStencilAttachment)
+                    attachmentBuilder.format = depthFormat;
 
-                // Swapchain images does not need to be created
-                if (attachmentBuilder.format || attachmentBuilder.usage != ImageUsage::ColorAttachment)
-                {
-                    if (!attachmentBuilder.format && attachmentBuilder.usage == ImageUsage::DepthStencilAttachment)
-                        attachmentBuilder.format = depthFormat;
+                m_handleToPhysical[handle] = imageId;
+                imageId++;
 
-                    m_handleToPhysical[handle] = imageId;
-                    imageId++;
-
-                    // clang-format off
+                // clang-format off
                     ImageBuilder builder{
-                        attachmentBuilder.imageSize.value_or(m_swapchain->getExtent()), 
+                        attachmentBuilder.imageSize.value_or(m_swapchain->getExtent()),
                         attachmentBuilder.usage,
                         *attachmentBuilder.format
                     };
-                    // clang-format on
+                // clang-format on
 
-                    builder.sampleCount = attachmentBuilder.sampleCount;
+                builder.sampleCount = attachmentBuilder.sampleCount;
+                builder.sharingMode = SharingMode::Exclusive;
 
-                    const std::size_t queueTypeNb = std::bitset<sizeof(QueueType)>(toUnderlying(queues)).count();
-                    builder.sharingMode           = queueTypeNb > 1u ? SharingMode::Concurrent : SharingMode::Exclusive;
-
-                    for (uint32_t i = 0; i < swapchainImageNb; i++)
-                        m_images.emplace_back(DeviceImage{attachmentBuilder.device, builder});
-                }
-            }
-            else if (handle.type == HandleType::Storage)
-            {
-                m_handleToPhysical[handle] = storageId;
-                storageId++;
-
-                const StorageBuilder& storageBuilder = m_storageBuilders[handle];
                 for (uint32_t i = 0; i < swapchainImageNb; i++)
-                    m_storages.emplace_back(Buffer{
-                        storageBuilder.device,
-                        storageBuilder.size,
-                        storageBuilder.usage,
-                        storageBuilder.location,
-                        storageBuilder.mappable,
-                    });
+                    m_images.emplace_back(DeviceImage{m_swapchain->getDevice(), builder});
             }
+        }
+        for (const auto& [handle, queues] : m_storageBuilders)
+        {
+            VZT_ASSERT(handle.type == HandleType::Storage);
+            m_handleToPhysical[handle] = storageId;
+            storageId++;
+
+            const StorageBuilder& storageBuilder = m_storageBuilders[handle];
+            for (uint32_t i = 0; i < swapchainImageNb; i++)
+                m_storages.emplace_back(Buffer{
+                    m_swapchain->getDevice(),
+                    storageBuilder.size,
+                    storageBuilder.usage,
+                    storageBuilder.location,
+                    storageBuilder.mappable,
+                });
         }
     }
 

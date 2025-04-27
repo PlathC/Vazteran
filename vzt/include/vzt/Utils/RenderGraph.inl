@@ -2,6 +2,12 @@
 
 namespace vzt
 {
+    template <class Type>
+    StorageBuilder StorageBuilder::fromType(BufferUsage usage, MemoryLocation location, bool mappable)
+    {
+        return StorageBuilder(sizeof(Type), usage, location, mappable);
+    }
+
     template <class DerivedHandler, class... Args>
     void Pass::setRecordFunction(Args&&... args)
     {
@@ -11,10 +17,12 @@ namespace vzt
     }
 
     inline std::string_view        Pass::getName() const { return m_name; }
-    inline View<Queue>             Pass::getQueue() const { return m_queue; }
     inline const DescriptorLayout& Pass::getDescriptorLayout() const { return m_descriptorLayout; }
     inline DescriptorPool&         Pass::getDescriptorPool() { return m_pool; }
     inline View<RenderPass>        Pass::getRenderPass() const { return &m_renderPass; }
+
+    inline ComputePipeline& ComputePass::getPipeline() { return m_pipeline; }
+    inline GraphicPipeline& GraphicsPass::getPipeline() { return m_pipeline; }
 
     inline std::unique_ptr<Pass>&       RenderGraph::operator[](uint32_t passId) { return m_passes[passId]; }
     inline const std::unique_ptr<Pass>& RenderGraph::operator[](uint32_t passId) const { return m_passes[passId]; }
@@ -23,4 +31,5 @@ namespace vzt
     inline std::vector<std::unique_ptr<Pass>>::iterator       RenderGraph::end() { return m_passes.end(); }
     inline std::vector<std::unique_ptr<Pass>>::const_iterator RenderGraph::begin() const { return m_passes.begin(); }
     inline std::vector<std::unique_ptr<Pass>>::const_iterator RenderGraph::end() const { return m_passes.end(); }
+    inline View<Device>                                       RenderGraph::getDevice() const { return m_device; }
 } // namespace vzt

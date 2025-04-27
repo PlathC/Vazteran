@@ -11,7 +11,9 @@
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/FrameBuffer.hpp"
+#include "vzt/Vulkan/Pipeline.hpp"
 #include "vzt/Vulkan/Pipeline/GraphicsPipeline.hpp"
+#include "vzt/Vulkan/Program.hpp"
 #include "vzt/Vulkan/RenderPass.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
@@ -22,7 +24,6 @@ namespace vzt
 
     struct AttachmentBuilder
     {
-        View<Device>       device;
         ImageUsage         usage;
         Optional<Format>   format{};    // if unset, use swapchain image
         Optional<Extent2D> imageSize{}; // if unset, use swapchain image size
@@ -31,11 +32,14 @@ namespace vzt
 
     struct StorageBuilder
     {
-        View<Device>   device;
         std::size_t    size;
         BufferUsage    usage;
         MemoryLocation location = MemoryLocation::Device;
         bool           mappable = false;
+
+        template <class Type>
+        static StorageBuilder fromType( //
+            BufferUsage usage, MemoryLocation location = MemoryLocation::Device, bool mappable = false);
     };
 
     enum class HandleType
@@ -98,7 +102,7 @@ namespace vzt
         Pass(Pass&&) noexcept   = default;
         Pass& operator=(Pass&&) = default;
 
-        ~Pass() = default;
+        virtual ~Pass() = default;
 
         void addColorInput(uint32_t binding, const Handle& attachment, std::string name = "");
         void addDepthInput(uint32_t binding, const Handle& attachment, std::string name = "");
@@ -127,7 +131,6 @@ namespace vzt
         void record(uint32_t i, CommandBuffer& commands) const;
 
         inline std::string_view getName() const;
-        inline View<Queue>      getQueue() const;
 
         inline const DescriptorLayout& getDescriptorLayout() const;
         inline DescriptorPool&         getDescriptorPool();
@@ -135,17 +138,16 @@ namespace vzt
 
         friend RenderGraph;
 
-      private:
-        Pass(RenderGraph& graph, std::string name, View<Queue> queue, PassType type);
-        void compile(Format depthFormat);
-        void resize();
+      protected:
+        Pass(RenderGraph& graph, std::string name, PassType type);
+        virtual void compile(Format depthFormat);
+        virtual void resize();
 
         void createRenderObjects();
         void createDescriptors();
 
         RenderGraph*     m_graph;
         std::string      m_name;
-        View<Queue>      m_queue;
         PassType         m_type;
         DescriptorLayout m_descriptorLayout;
 
@@ -198,15 +200,68 @@ namespace vzt
         std::vector<Texture>     m_textureSaves;
     };
 
+    class ComputePass : public Pass
+    {
+      public:
+        ComputePass(const ComputePass&)            = delete;
+        ComputePass& operator=(const ComputePass&) = delete;
+
+        ComputePass(ComputePass&&) noexcept   = default;
+        ComputePass& operator=(ComputePass&&) = default;
+
+        ~ComputePass() = default;
+
+        inline ComputePipeline& getPipeline();
+
+        friend RenderGraph;
+
+      private:
+        ComputePass(RenderGraph& graph, std::string name, Program&& program);
+        void compile(Format depthFormat) override;
+
+        Program         m_program;
+        ComputePipeline m_pipeline;
+    };
+
+    class GraphicsPass : public Pass
+    {
+      public:
+        GraphicsPass(const GraphicsPass&)            = delete;
+        GraphicsPass& operator=(const GraphicsPass&) = delete;
+
+        GraphicsPass(GraphicsPass&&) noexcept   = default;
+        GraphicsPass& operator=(GraphicsPass&&) = default;
+
+        ~GraphicsPass() = default;
+
+        inline GraphicPipeline& getPipeline();
+
+        friend RenderGraph;
+
+      private:
+        GraphicsPass(RenderGraph& graph, std::string name, Program&& program);
+        void compile(Format depthFormat) override;
+        void resize() override;
+
+        Program         m_program;
+        GraphicPipeline m_pipeline;
+    };
+
     class RenderGraph
     {
       public:
-        RenderGraph(View<Swapchain> swapchain);
+        RenderGraph(View<Device> device, View<Swapchain> swapchain);
 
         // User configuration
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
-        Pass&  addPass(std::string name, View<Queue> queue, PassType type = PassType::Graphics);
+
+        Pass&         addPass(std::string name, PassType type = PassType::Graphics);
+        ComputePass&  addCompute(std::string name, Program&& program);
+        ComputePass&  addCompute(std::string name, std::vector<Shader> shaders);
+        ComputePass&  addCompute(std::string name, Shader shader);
+        GraphicsPass& addGraphics(std::string name, Program&& program);
+        GraphicsPass& addGraphics(std::string name, std::vector<Shader> shaders);
 
         View<DeviceImage> getImage(uint32_t swapchainImageId, Handle handle) const;
         View<Buffer>      getStorage(uint32_t swapchainImageId, Handle handle) const;
@@ -227,7 +282,11 @@ namespace vzt
         inline std::vector<std::unique_ptr<Pass>>::const_iterator begin() const;
         inline std::vector<std::unique_ptr<Pass>>::const_iterator end() const;
 
+        inline View<Device> getDevice() const;
+
         friend Pass;
+        friend ComputePass;
+        friend GraphicsPass;
 
       private:
         Handle generateAttachmentHandle() const;
@@ -240,6 +299,7 @@ namespace vzt
 
         static inline std::atomic<std::size_t> m_handleCounter = 0;
 
+        View<Device>    m_device;
         View<Swapchain> m_swapchain;
 
         HandleMap<AttachmentBuilder> m_attachmentBuilders;
@@ -247,7 +307,6 @@ namespace vzt
 
         std::hash<std::size_t>             m_hash{};
         HandleMap<std::size_t>             m_handleToPhysical;
-        HandleMap<QueueType>               handleQueues{};
         std::vector<std::unique_ptr<Pass>> m_passes;
 
         std::vector<DeviceImage> m_images;   // [imageId  ]
