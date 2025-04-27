@@ -103,8 +103,7 @@ int main(int /* argc */, char** /* argv */)
     auto computeInstanceProgram = vzt::Program(device);
     computeInstanceProgram.setShader(compiler("shaders/deferred/instance_generation.slang", "main"));
 
-    auto computeInstancePipeline = vzt::ComputePipeline(device);
-    computeInstancePipeline.setProgram(computeInstanceProgram);
+    auto computeInstancePipeline = vzt::ComputePipeline(computeInstanceProgram);
     computeInstancePipeline.compile();
 
     instanceGeneration.link(computeInstancePipeline);
@@ -140,9 +139,8 @@ int main(int /* argc */, char** /* argv */)
     geometryProgram.setShader(compiler("shaders/deferred/triangle.slang", "vertexMain"));
     geometryProgram.setShader(compiler("shaders/deferred/triangle.slang", "fragmentMain"));
 
-    auto geometryPipeline = vzt::GraphicPipeline(device);
+    auto geometryPipeline = vzt::GraphicPipeline(geometryProgram);
     geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-    geometryPipeline.setProgram(geometryProgram);
     geometryPipeline.setVertexInputDescription(vertexDescription);
 
     auto& geometryRasterization    = geometryPipeline.getRasterization();
@@ -173,8 +171,7 @@ int main(int /* argc */, char** /* argv */)
     shadingProgram.setShader(compiler("shaders/deferred/deferred_blinn_phong.slang", "vertexMain"));
     shadingProgram.setShader(compiler("shaders/deferred/deferred_blinn_phong.slang", "fragmentMain"));
 
-    auto shadingPipeline = vzt::GraphicPipeline(device);
-    shadingPipeline.setProgram(shadingProgram);
+    auto shadingPipeline = vzt::GraphicPipeline(shadingProgram);
     shadingPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
 
     auto& shadingRasterization     = shadingPipeline.getRasterization();

@@ -81,12 +81,11 @@ namespace vzt
         inline MemoryLocation getLocation() const;
 
       private:
-        VmaAllocation m_allocation = VK_NULL_HANDLE;
-
-        std::size_t    m_size;
-        MemoryLocation m_location;
-        BufferUsage    m_usages;
-        bool           m_mappable = false;
+        VmaAllocation  m_allocation = VK_NULL_HANDLE;
+        std::size_t    m_size       = 0;
+        MemoryLocation m_location   = MemoryLocation::Host;
+        BufferUsage    m_usages     = BufferUsage::None;
+        bool           m_mappable   = false;
     };
 
     struct BufferSpan

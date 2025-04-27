@@ -34,6 +34,7 @@ set(VZT_HEADERS
 
         include/vzt/Vulkan/AccelerationStructure.hpp
         include/vzt/Vulkan/Buffer.hpp
+        include/vzt/Vulkan/BufferType.hpp
         include/vzt/Vulkan/Command.hpp
         include/vzt/Vulkan/Core.hpp
         include/vzt/Vulkan/Descriptor.hpp
@@ -73,6 +74,7 @@ set(VZT_SOURCES
 
         src/Vulkan/AccelerationStructure.cpp
         src/Vulkan/Buffer.cpp
+        src/Vulkan/BufferType.cpp
         src/Vulkan/Command.cpp
         src/Vulkan/Descriptor.cpp
         src/Vulkan/Device.cpp

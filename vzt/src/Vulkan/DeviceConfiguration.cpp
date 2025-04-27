@@ -85,7 +85,7 @@ namespace vzt
 #endif // __APPLE__
             dext::NonSemanticInfo,
         };
-        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute;
+        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
 
         return builder;
     }
@@ -94,18 +94,20 @@ namespace vzt
     {
         DeviceBuilder builder{};
         builder.m_features   = DeviceFeatures::rt();
-        builder.m_extensions = {dext::Swapchain,
-                                dext::GetMemoryRequirements2,
-                                dext::DedicatedAllocation,
-                                dext::AccelerationStructure,
-                                dext::RaytracingPipeline,
-                                dext::BufferDeviceAddress,
-                                dext::DeferredHostOperations,
-                                dext::DescriptorIndexing,
-                                dext::Spirv14,
-                                dext::ShaderFloatControls};
-        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute;
-
+        builder.m_extensions = {
+            dext::Swapchain,
+            dext::GetMemoryRequirements2,
+            dext::DedicatedAllocation,
+            dext::AccelerationStructure,
+            dext::RaytracingPipeline,
+            dext::BufferDeviceAddress,
+            dext::DeferredHostOperations,
+            dext::DescriptorIndexing,
+            dext::Spirv14,
+            dext::ShaderFloatControls,
+        };
+        
+        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
         return builder;
     }
 } // namespace vzt

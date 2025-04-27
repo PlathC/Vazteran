@@ -147,6 +147,7 @@ namespace vzt
 
         inline void add(VertexBinding binding);
         inline void add(VertexAttribute binding);
+        inline void add(uint32_t offset, uint32_t location, Format dataFormat, uint32_t binding);
     };
 
     class GraphicPipeline : public Pipeline

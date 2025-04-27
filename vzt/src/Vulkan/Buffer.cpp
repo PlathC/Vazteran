@@ -26,34 +26,34 @@ namespace vzt
     Buffer Buffer::fromData(View<Device> device, CSpan<uint8_t> data, BufferUsage usages, MemoryLocation location,
                             bool mappable)
     {
-        Buffer buffer{device, data.size, usages, location, mappable};
-
         if (mappable)
         {
+            Buffer   buffer     = {device, data.size, usages, location, mappable};
             uint8_t* bufferData = buffer.map();
             std::memcpy(bufferData, data.data, data.size);
             buffer.unMap();
-        }
-        else
-        {
-            auto transferBuffer = fromData(device, data, BufferUsage::TransferSrc, MemoryLocation::Host, true);
 
+            return buffer;
+        }
+
+        Buffer buffer         = {device, data.size, usages | BufferUsage::TransferDst, location, mappable};
+        Buffer transferBuffer = {device, data.size, BufferUsage::TransferSrc, MemoryLocation::Host, true};
+        {
             uint8_t* tempStagingData = transferBuffer.map();
             std::memcpy(tempStagingData, data.data, data.size);
             transferBuffer.unMap();
-
-            const View<Queue> queue = device->getQueues().front();
-            assert(vzt::any(queue->getType() & QueueType::Transfer) && "The selected queue must be able to transfert");
-            queue->oneShot([&transferBuffer, &buffer, &data](CommandBuffer& commands) {
-                commands.copy(transferBuffer, buffer, data.size);
-            });
         }
+
+        const View<Queue> queue = device->getQueue(QueueType::Transfer);
+        queue->oneShot([&transferBuffer, &buffer, &data](CommandBuffer& commands) {
+            commands.copy(transferBuffer, buffer, data.size);
+        });
 
         return buffer;
     }
 
     Buffer::Buffer(View<Device> device, std::size_t byteNb, BufferUsage usages, MemoryLocation location, bool mappable)
-        : DeviceObject<VkBuffer>(device), m_size(byteNb), m_usages(usages), m_mappable(mappable)
+        : DeviceObject<VkBuffer>(device), m_size(byteNb), m_location(location), m_usages(usages), m_mappable(mappable)
     {
         VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         bufferInfo.size               = m_size;
@@ -74,15 +74,19 @@ namespace vzt
     Buffer::Buffer(Buffer&& other) noexcept : DeviceObject<VkBuffer>(std::move(other))
     {
         std::swap(m_allocation, other.m_allocation);
-        std::swap(m_mappable, other.m_mappable);
         std::swap(m_size, other.m_size);
+        std::swap(m_location, other.m_location);
+        std::swap(m_usages, other.m_usages);
+        std::swap(m_mappable, other.m_mappable);
     }
 
     Buffer& Buffer::operator=(Buffer&& other) noexcept
     {
         std::swap(m_allocation, other.m_allocation);
-        std::swap(m_mappable, other.m_mappable);
         std::swap(m_size, other.m_size);
+        std::swap(m_location, other.m_location);
+        std::swap(m_usages, other.m_usages);
+        std::swap(m_mappable, other.m_mappable);
 
         DeviceObject<VkBuffer>::operator=(std::move(other));
         return *this;

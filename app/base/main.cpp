@@ -1,5 +1,4 @@
 #include <array>
-#include <cassert>
 #include <cstdlib>
 
 #include <vzt/Core/Logger.hpp>
@@ -7,6 +6,7 @@
 #include <vzt/Data/Mesh.hpp>
 #include <vzt/Utils/Compiler.hpp>
 #include <vzt/Utils/IOMesh.hpp>
+#include <vzt/Vulkan/BufferType.hpp>
 #include <vzt/Vulkan/Command.hpp>
 #include <vzt/Vulkan/Descriptor.hpp>
 #include <vzt/Vulkan/FrameBuffer.hpp>
@@ -28,6 +28,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto window    = vzt::Window{ApplicationName};
     auto instance  = vzt::Instance{window};
+    auto compiler  = vzt::Compiler(instance);
     auto surface   = vzt::Surface{window, instance};
     auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
     auto hardware  = device.getHardware();
@@ -53,7 +54,6 @@ int main(int /* argc */, char** /* argv */)
     }
     renderPass.compile();
 
-    const auto compiler = vzt::Compiler(instance);
     const auto program  = vzt::Program(device, compiler("shaders/base/base.slang"));
     auto       pipeline = vzt::GraphicPipeline(program);
     {
@@ -62,46 +62,23 @@ int main(int /* argc */, char** /* argv */)
 
         vzt::VertexInputDescription vertexDescription{};
         vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
-        vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); //
-        vertexDescription.add(
-            vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0});
+        vertexDescription.add(offsetof(VertexInput, inPosition), 0, vzt::Format::R32G32B32SFloat, 0);
+        vertexDescription.add(offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0);
         pipeline.setVertexInputDescription(vertexDescription);
     }
     pipeline.compile(renderPass);
 
+    // Initialize descriptors
     vzt::DescriptorPool descriptorPool{device, pipeline, swapchain.getImageNb()};
+    vzt::UniformBuffer  ubo = {device, sizeof(vzt::Mat4) * 3, swapchain.getImageNb(), true};
 
-    // Initialize buffer with default values
-    const std::size_t modelsAlignment    = hardware.getUniformAlignment(sizeof(vzt::Mat4) * 3);
-    const std::size_t materialsAlignment = hardware.getUniformAlignment<vzt::Vec4>();
-    const std::size_t uniformByteNb      = modelsAlignment + materialsAlignment;
-    vzt::Buffer       modelsUbo = {device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
-                                   vzt::MemoryLocation::Device, true};
+    const vzt::Format depthFormat = hardware.getDepthFormat();
+    vzt::Extent2D     extent      = swapchain.getExtent();
 
-    // Vertex inputs
-    vzt::Mesh   mesh = vzt::readObj("samples/Dragon/dragon.obj");
-    vzt::Buffer vertexBuffer;
-    vzt::Buffer indexBuffer;
-    {
-        std::vector<VertexInput> vertexInputs;
-        vertexInputs.reserve(mesh.vertices.size());
-        for (std::size_t i = 0; i < mesh.vertices.size(); i++)
-            vertexInputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
-
-        vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
-        indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
-    }
-
-    vzt::Extent2D                 extent = swapchain.getExtent();
     std::vector<vzt::DeviceImage> depthStencils;
     std::vector<vzt::FrameBuffer> frameBuffers;
     depthStencils.reserve(swapchain.getImageNb());
     frameBuffers.reserve(swapchain.getImageNb());
-
-    const vzt::Format depthFormat = hardware.getDepthFormat();
-
-    auto       graphicsQueue      = device.getQueue(vzt::QueueType::Graphics);
-    auto       commandPool        = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     const auto createRenderObject = [&](uint32_t i) {
         const auto& image = swapchain.getImage(i);
         frameBuffers.emplace_back(device, extent);
@@ -115,12 +92,21 @@ int main(int /* argc */, char** /* argv */)
 
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        vzt::BufferSpan        modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
-        vzt::IndexedDescriptor ubos{};
-        ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, modelSpan};
-        descriptorPool.update(i, ubos);
-
+        descriptorPool.update(i, {{0, ubo.getDescriptor(i)}});
         createRenderObject(i);
+    }
+
+    // Vertex inputs
+    vzt::Mesh   mesh = vzt::readObj("samples/Dragon/dragon.obj");
+    vzt::Buffer vertexBuffer;
+    vzt::Buffer indexBuffer;
+    {
+        std::vector<VertexInput> vertexInputs = std::vector<VertexInput>(mesh.vertices.size());
+        for (std::size_t i = 0; i < mesh.vertices.size(); i++)
+            vertexInputs[i] = VertexInput(mesh.vertices[i], mesh.normals[i]);
+
+        vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
+        indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
     }
 
     // Compute AABB to place camera in front of the model
@@ -144,6 +130,8 @@ int main(int /* argc */, char** /* argv */)
     const vzt::Vec3 position = target - camera.front * 1.15f * distance;
 
     // Actual rendering
+    auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
+    auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
     while (window.update())
     {
         const auto& inputs = window.getInputs();
@@ -153,6 +141,8 @@ int main(int /* argc */, char** /* argv */)
         auto submission = swapchain.getSubmission();
         if (!submission)
             continue;
+
+        const uint32_t frame = submission->imageId;
 
         // Per frame update
         vzt::Quat orientation = {1.f, 0.f, 0.f, 0.f};
@@ -175,21 +165,16 @@ int main(int /* argc */, char** /* argv */)
         vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
         std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
 
-        vzt::CommandBuffer commands = commandPool[submission->imageId];
+        vzt::CommandBuffer commands = commandPool[frame];
         commands.begin();
         {
-            uint8_t* uboData = modelsUbo.map();
-            std::memcpy(uboData + submission->imageId * uniformByteNb, matrices.data(),
-                        matrices.size() * sizeof(vzt::Mat4));
-            modelsUbo.unMap();
-
+            ubo.write(commands, vzt::CSpan<vzt::Mat4>{matrices.data(), matrices.size()}, frame);
             commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader,
-                             vzt::BufferBarrier{
-                                 {modelsUbo, modelsUbo.size()}, vzt::Access::TransferWrite, vzt::Access::UniformRead});
+                             {ubo.getSpan(frame), vzt::Access::TransferWrite, vzt::Access::UniformRead});
 
-            commands.beginPass(renderPass, frameBuffers[submission->imageId]);
+            commands.beginPass(renderPass, frameBuffers[frame]);
 
-            commands.bind(pipeline, descriptorPool[submission->imageId]);
+            commands.bind(pipeline, descriptorPool[frame]);
             commands.bindVertexBuffer(vertexBuffer);
             for (const auto& subMesh : mesh.subMeshes)
                 commands.drawIndexed(indexBuffer, subMesh.indices);

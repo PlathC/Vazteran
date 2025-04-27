@@ -15,6 +15,10 @@ namespace vzt
 
     inline void VertexInputDescription::add(VertexBinding binding) { bindings.emplace_back(std::move(binding)); }
     inline void VertexInputDescription::add(VertexAttribute binding) { attributes.emplace_back(std::move(binding)); }
+    inline void VertexInputDescription::add(uint32_t offset, uint32_t location, Format dataFormat, uint32_t binding)
+    {
+        add(VertexAttribute{offset, location, dataFormat, binding});
+    }
 
     inline void GraphicPipeline::setVertexInputDescription(VertexInputDescription vertexDescription)
     {
