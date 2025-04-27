@@ -680,7 +680,7 @@ namespace vzt
         // Get all use handles and find by which queue it is used
         HandleMap<ImageLayout> handlesLastLayout{};
 
-        const auto addAttachment = [&handlesLastLayout](const Pass& pass, Pass::PassAttachment& attachment) {
+        const auto addAttachment = [&handlesLastLayout](Pass::PassAttachment& attachment) {
             if (handlesLastLayout.find(attachment.handle) != handlesLastLayout.end())
                 attachment.use.initialLayout = handlesLastLayout[attachment.handle];
 
@@ -690,16 +690,16 @@ namespace vzt
         for (auto& pass : m_passes)
         {
             for (auto& input : pass->m_colorInputs)
-                addAttachment(*pass, input);
+                addAttachment(input);
 
             for (auto& output : pass->m_colorOutputs)
-                addAttachment(*pass, output);
+                addAttachment(output);
 
             if (pass->m_depthInput)
-                addAttachment(*pass, *pass->m_depthInput);
+                addAttachment(*pass->m_depthInput);
 
             if (pass->m_depthOutput)
-                addAttachment(*pass, *pass->m_depthOutput);
+                addAttachment(*pass->m_depthOutput);
         }
 
         createRenderTarget();
@@ -857,7 +857,8 @@ namespace vzt
         m_handleToPhysical.clear();
 
         // Create physical memory (Image, Buffer)
-        auto           hardware         = m_swapchain->getDevice()->getHardware();
+        View<Device>   device           = m_swapchain->getDevice();
+        auto           hardware         = device->getHardware();
         const auto     depthFormat      = hardware.getDepthFormat();
         const uint32_t swapchainImageNb = m_swapchain->getImageNb();
 
@@ -878,19 +879,17 @@ namespace vzt
                 m_handleToPhysical[handle] = imageId;
                 imageId++;
 
-                // clang-format off
-                    ImageBuilder builder{
-                        attachmentBuilder.imageSize.value_or(m_swapchain->getExtent()),
-                        attachmentBuilder.usage,
-                        *attachmentBuilder.format
-                    };
-                // clang-format on
+                ImageBuilder imageBuilder = {
+                    attachmentBuilder.imageSize.value_or(m_swapchain->getExtent()),
+                    attachmentBuilder.usage,
+                    *attachmentBuilder.format,
+                };
 
-                builder.sampleCount = attachmentBuilder.sampleCount;
-                builder.sharingMode = SharingMode::Exclusive;
+                imageBuilder.sampleCount = attachmentBuilder.sampleCount;
+                imageBuilder.sharingMode = SharingMode::Exclusive;
 
                 for (uint32_t i = 0; i < swapchainImageNb; i++)
-                    m_images.emplace_back(DeviceImage{m_swapchain->getDevice(), builder});
+                    m_images.emplace_back(device, imageBuilder);
             }
         }
         for (const auto& [handle, queues] : m_storageBuilders)

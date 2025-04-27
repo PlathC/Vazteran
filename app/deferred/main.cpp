@@ -39,7 +39,6 @@ int main(int /* argc */, char** /* argv */)
     deviceBuilder.add(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
     auto device = instance.getDevice(deviceBuilder, surface);
 
-    const auto  queue    = device.getQueue(vzt::QueueType::Graphics);
     auto        hardware = device.getHardware();
     const float period   = hardware.getProperties().limits.timestampPeriod;
 

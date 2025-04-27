@@ -251,7 +251,6 @@ namespace vzt
         std::vector<Shader> shaders         = {};
         shaders.reserve(static_cast<std::size_t>(entryPointCount));
 
-        bool foundEntryPoint = false;
         for (int32_t i = 0; i < entryPointCount; ++i)
         {
             Slang::ComPtr<slang::IEntryPoint> iEntryPoint;
