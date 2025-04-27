@@ -106,7 +106,7 @@ namespace vzt
         DependencyFlag dependencyFlags = DependencyFlag::ByRegion;
     };
 
-    class RenderPass
+    class RenderPass : public DeviceObject<VkRenderPass>
     {
       public:
         RenderPass() = default;
@@ -118,7 +118,7 @@ namespace vzt
         RenderPass(RenderPass&& other) noexcept;
         RenderPass& operator=(RenderPass&& other) noexcept;
 
-        ~RenderPass();
+        ~RenderPass() override;
 
         void addInput(AttachmentUse input);
         void addColor(AttachmentUse color);
@@ -129,12 +129,8 @@ namespace vzt
         inline const std::vector<AttachmentUse>& getInputAttachments() const;
         inline const std::vector<AttachmentUse>& getColorAttachments() const;
         inline const AttachmentUse&              getDepthAttachment() const;
-        inline VkRenderPass                      getHandle() const;
 
       private:
-        View<Device> m_device{};
-        VkRenderPass m_handle = VK_NULL_HANDLE;
-
         std::vector<AttachmentUse> m_inputAttachments{};
         std::vector<AttachmentUse> m_colorAttachments{};
         AttachmentUse              m_depthAttachment{};

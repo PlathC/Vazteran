@@ -15,6 +15,5 @@ namespace vzt
     {
         return static_cast<uint32_t>(m_maxSetNb - m_descriptors.size());
     }
-    inline uint32_t         DescriptorPool::getMaxSetNb() const { return m_maxSetNb; }
-    inline VkDescriptorPool DescriptorPool::getHandle() const { return m_handle; }
+    inline uint32_t DescriptorPool::getMaxSetNb() const { return m_maxSetNb; }
 } // namespace vzt

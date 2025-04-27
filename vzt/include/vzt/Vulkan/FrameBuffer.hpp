@@ -1,6 +1,7 @@
 #ifndef VZT_VULKAN_FRAMEBUFFER_HPP
 #define VZT_VULKAN_FRAMEBUFFER_HPP
 
+#include "vzt/Vulkan/DeviceObject.hpp"
 #include "vzt/Vulkan/Image.hpp"
 
 namespace vzt
@@ -8,7 +9,7 @@ namespace vzt
     class Device;
     class RenderPass;
 
-    class FrameBuffer
+    class FrameBuffer : public DeviceObject<VkFramebuffer>
     {
       public:
         FrameBuffer(View<Device> device, Extent2D size);
@@ -19,19 +20,15 @@ namespace vzt
         FrameBuffer(FrameBuffer&&) noexcept;
         FrameBuffer& operator=(FrameBuffer&&) noexcept;
 
-        ~FrameBuffer();
+        ~FrameBuffer() override;
 
         void addAttachment(ImageView attachment);
         void compile(View<RenderPass> renderPass);
 
-        inline VkFramebuffer getHandle() const;
-        inline Extent2D      getSize() const;
+        inline Extent2D getSize() const;
 
       private:
-        VkFramebuffer m_handle = VK_NULL_HANDLE;
-        View<Device>  m_device;
-        Extent2D      m_size;
-
+        Extent2D               m_size;
         std::vector<ImageView> m_attachments;
     };
 } // namespace vzt

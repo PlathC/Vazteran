@@ -102,7 +102,7 @@ namespace vzt
 
     DescriptorPool::DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes,
                                    uint32_t maxSetNb, uint32_t maxPerTypeNb)
-        : m_device(device), m_maxSetNb(maxSetNb)
+        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb)
     {
         std::vector<VkDescriptorPoolSize> sizes;
         sizes.reserve(descriptorTypes.size());
@@ -122,7 +122,7 @@ namespace vzt
     }
 
     DescriptorPool::DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb)
-        : m_device(device), m_maxSetNb(maxSetNb)
+        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb)
     {
         const auto& bindings = descriptorLayout.getBindings();
 
@@ -152,21 +152,18 @@ namespace vzt
                 "Failed to create descriptor pool.");
     }
 
-    DescriptorPool::DescriptorPool(DescriptorPool&& other) noexcept
+    DescriptorPool::DescriptorPool(DescriptorPool&& other) noexcept : DeviceObject<VkDescriptorPool>(std::move(other))
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_descriptors, other.m_descriptors);
         std::swap(m_maxSetNb, other.m_maxSetNb);
     }
 
     DescriptorPool& DescriptorPool::operator=(DescriptorPool&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_descriptors, other.m_descriptors);
         std::swap(m_maxSetNb, other.m_maxSetNb);
 
+        DeviceObject<VkDescriptorPool>::operator=(std::move(other));
         return *this;
     }
 

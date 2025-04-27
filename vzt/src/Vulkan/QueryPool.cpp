@@ -4,7 +4,7 @@
 
 namespace vzt
 {
-    QueryPool::QueryPool(View<Device> device, QueryType type, uint32_t count) : m_device(device)
+    QueryPool::QueryPool(View<Device> device, QueryType type, uint32_t count) : DeviceObject<VkQueryPool>(device)
     {
         VkQueryPoolCreateInfo createInfo = {};
         createInfo.sType                 = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
@@ -15,19 +15,6 @@ namespace vzt
         const VolkDeviceTable& table = m_device->getFunctionTable();
         vkCheck(table.vkCreateQueryPool(m_device->getHandle(), &createInfo, nullptr, &m_handle),
                 "Failed to create VkQueryPool!");
-    }
-
-    QueryPool::QueryPool(QueryPool&& other) noexcept
-        : m_device(std::exchange(other.m_device, nullptr)), m_handle(std::exchange(other.m_handle, VK_NULL_HANDLE))
-    {
-    }
-
-    QueryPool& QueryPool::operator=(QueryPool&& other) noexcept
-    {
-        m_device = std::exchange(other.m_device, nullptr);
-        m_handle = std::exchange(other.m_handle, VK_NULL_HANDLE);
-
-        return *this;
     }
 
     QueryPool::~QueryPool()

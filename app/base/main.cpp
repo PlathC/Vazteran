@@ -61,15 +61,6 @@ int main(int /* argc */, char** /* argv */)
     pipeline.setProgram(program);
     pipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
 
-    vzt::DescriptorLayout descriptorLayout{device};
-    // Model { mat4 modelView; mat4 projection; mat4 normal; }
-    descriptorLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
-    // Material { vec3 albedo; float shininess; }
-    descriptorLayout.addBinding(1, vzt::DescriptorType::UniformBuffer);
-    descriptorLayout.compile();
-
-    pipeline.setDescriptorLayout(descriptorLayout);
-
     vzt::VertexInputDescription vertexDescription{};
     struct VertexInput
     {
@@ -91,8 +82,9 @@ int main(int /* argc */, char** /* argv */)
                           vzt::MemoryLocation::Device, true};
 
     // Assign buffer parts to their respective image
-    vzt::DescriptorPool descriptorPool{device, descriptorLayout, swapchain.getImageNb() + descriptorLayout.size()};
-    descriptorPool.allocate(swapchain.getImageNb(), descriptorLayout);
+    vzt::DescriptorPool descriptorPool{device, pipeline.getDescriptorLayout(),
+                                       swapchain.getImageNb() + pipeline.getDescriptorLayout().size()};
+    descriptorPool.allocate(swapchain.getImageNb(), pipeline.getDescriptorLayout());
 
     // Vertex inputs
     vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
@@ -128,12 +120,9 @@ int main(int /* argc */, char** /* argv */)
 
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
-        vzt::BufferSpan modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
-        vzt::BufferSpan materialSpan{modelsUbo, sizeof(vzt::Vec4), i * uniformByteNb + modelsAlignment};
-
+        vzt::BufferSpan        modelSpan{modelsUbo, sizeof(vzt::Mat4) * 3u, i * uniformByteNb};
         vzt::IndexedDescriptor ubos{};
         ubos[0] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, modelSpan};
-        ubos[1] = vzt::DescriptorBuffer{vzt::DescriptorType::UniformBuffer, materialSpan};
         descriptorPool.update(i, ubos);
 
         createRenderObject(i);

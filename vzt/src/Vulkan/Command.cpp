@@ -11,7 +11,10 @@
 
 namespace vzt
 {
-    CommandBuffer::CommandBuffer(View<Device> device, VkCommandBuffer handle) : m_device(device), m_handle(handle) {}
+    CommandBuffer::CommandBuffer(View<Device> device, VkCommandBuffer handle)
+        : DeviceObject<VkCommandBuffer>(device, handle)
+    {
+    }
 
     void CommandBuffer::barrier(const PipelineBarrier& barrier)
     {
@@ -513,7 +516,8 @@ namespace vzt
         vkCheck(table.vkEndCommandBuffer(m_handle), "Failed to end command buffer recording");
     }
 
-    CommandPool::CommandPool(View<Device> device, View<Queue> queue, uint32_t bufferNb) : m_device(device)
+    CommandPool::CommandPool(View<Device> device, View<Queue> queue, uint32_t bufferNb)
+        : DeviceObject<VkCommandPool>(device)
     {
         VkCommandPoolCreateInfo commandPoolInfo{};
         commandPoolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -527,19 +531,16 @@ namespace vzt
         allocateCommandBuffers(bufferNb);
     }
 
-    CommandPool::CommandPool(CommandPool&& other) noexcept
+    CommandPool::CommandPool(CommandPool&& other) noexcept : DeviceObject<VkCommandPool>(std::move(other))
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_commandBuffers, other.m_commandBuffers);
     }
 
     CommandPool& CommandPool::operator=(CommandPool&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_commandBuffers, other.m_commandBuffers);
-
+        
+        DeviceObject<VkCommandPool>::operator=(std::move(other));
         return *this;
     }
 

@@ -29,7 +29,7 @@ namespace vzt
         std::vector<VkPresentModeKHR>   getPresentModes(View<Device> device) const;
         Extent2D                        getExtent() const;
 
-        inline VkSurfaceKHR getHandle() const;
+        inline const VkSurfaceKHR& getHandle() const;
 
       private:
         View<Window>   m_window;

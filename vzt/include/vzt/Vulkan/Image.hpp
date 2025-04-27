@@ -5,6 +5,7 @@
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
 #include "vzt/Data/Image.hpp"
+#include "vzt/Vulkan/DeviceObject.hpp"
 #include "vzt/Vulkan/Format.hpp"
 
 namespace vzt
@@ -139,7 +140,7 @@ namespace vzt
         uint64_t depthPitch;
     };
 
-    class DeviceImage
+    class DeviceImage : public DeviceObject<VkImage>
     {
       public:
         template <class ValueType>
@@ -172,7 +173,7 @@ namespace vzt
         DeviceImage(DeviceImage&& other) noexcept;
         DeviceImage& operator=(DeviceImage&& other) noexcept;
 
-        ~DeviceImage();
+        ~DeviceImage() override;
 
         template <class Type>
         Type* map();
@@ -194,11 +195,8 @@ namespace vzt
         inline ImageType     getImageType() const;
         inline SharingMode   getSharingMode() const;
         inline VmaAllocation getAllocation() const;
-        inline VkImage       getHandle() const;
 
       private:
-        View<Device>  m_device     = {};
-        VkImage       m_handle     = VK_NULL_HANDLE;
         VmaAllocation m_allocation = VK_NULL_HANDLE;
 
         Extent3D    m_size;

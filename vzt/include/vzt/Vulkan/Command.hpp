@@ -29,18 +29,18 @@ namespace vzt
         uint32_t    dstMipLevel;
     };
 
-    class CommandBuffer
+    class CommandBuffer : public DeviceObject<VkCommandBuffer>
     {
       public:
         friend CommandPool;
 
-        CommandBuffer(const CommandBuffer&)            = default;
-        CommandBuffer& operator=(const CommandBuffer&) = default;
+        CommandBuffer(const CommandBuffer&)            = delete;
+        CommandBuffer& operator=(const CommandBuffer&) = delete;
 
         CommandBuffer(CommandBuffer&& other) noexcept            = default;
         CommandBuffer& operator=(CommandBuffer&& other) noexcept = default;
 
-        ~CommandBuffer() = default;
+        ~CommandBuffer() override = default;
 
         void begin();
         void end();
@@ -98,15 +98,11 @@ namespace vzt
 
         void buildAs(AccelerationStructureBuilder& builder);
 
-        inline VkCommandBuffer getHandle() const;
-
       private:
         CommandBuffer(View<Device> m_device, VkCommandBuffer handle);
-
-        View<Device>    m_device = nullptr;
-        VkCommandBuffer m_handle = VK_NULL_HANDLE;
     };
-    class CommandPool
+
+    class CommandPool : public DeviceObject<VkCommandPool>
     {
       public:
         CommandPool() = default;
@@ -118,21 +114,15 @@ namespace vzt
         CommandPool(CommandPool&& other) noexcept;
         CommandPool& operator=(CommandPool&& other) noexcept;
 
-        ~CommandPool();
+        ~CommandPool() override;
 
         CommandBuffer operator[](uint32_t bufferNumber);
         void          allocateCommandBuffers(uint32_t count);
 
       private:
-        VkCommandPool m_handle{};
-
-        View<Device> m_device;
-        View<Queue>  m_queue;
-
+        View<Queue>                  m_queue;
         std::vector<VkCommandBuffer> m_commandBuffers;
     };
 } // namespace vzt
-
-#include "vzt/Vulkan/Command.inl"
 
 #endif // VZT_VULKAN_COMMAND_HPP

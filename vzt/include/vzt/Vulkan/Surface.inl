@@ -2,5 +2,5 @@
 
 namespace vzt
 {
-    inline VkSurfaceKHR Surface::getHandle() const { return m_handle; }
+    inline const VkSurfaceKHR& Surface::getHandle() const { return m_handle; }
 } // namespace vzt

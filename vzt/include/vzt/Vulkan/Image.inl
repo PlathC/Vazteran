@@ -33,7 +33,6 @@ namespace vzt
     inline ImageType     DeviceImage::getImageType() const { return m_type; }
     inline SharingMode   DeviceImage::getSharingMode() const { return m_sharingMode; }
     inline VmaAllocation DeviceImage::getAllocation() const { return m_allocation; }
-    inline VkImage       DeviceImage::getHandle() const { return m_handle; }
 
     inline ImageAspect       ImageView::getAspect() const { return m_aspect; }
     inline Format            ImageView::getFormat() const { return m_format; }

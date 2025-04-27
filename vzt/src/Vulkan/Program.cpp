@@ -4,7 +4,8 @@
 
 namespace vzt
 {
-    ShaderModule::ShaderModule(View<Device> device, Shader shader) : m_device(device), m_shader(std::move(shader))
+    ShaderModule::ShaderModule(View<Device> device, Shader shader)
+        : DeviceObject<VkShaderModule>(device), m_shader(std::move(shader))
     {
         VkShaderModuleCreateInfo shaderModuleCreateInfo{};
         shaderModuleCreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -15,19 +16,16 @@ namespace vzt
                 "Failed to create shader module.");
     }
 
-    ShaderModule::ShaderModule(ShaderModule&& other) noexcept
+    ShaderModule::ShaderModule(ShaderModule&& other) noexcept : DeviceObject<VkShaderModule>(std::move(other))
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
         std::swap(m_shader, other.m_shader);
     }
 
     ShaderModule& ShaderModule::operator=(ShaderModule&& other) noexcept
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
         std::swap(m_shader, other.m_shader);
 
+        DeviceObject<VkShaderModule>::operator=(std::move(other));
         return *this;
     }
 

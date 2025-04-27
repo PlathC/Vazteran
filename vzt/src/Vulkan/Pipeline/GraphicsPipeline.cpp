@@ -7,16 +7,12 @@
 
 namespace vzt
 {
-    GraphicPipeline::GraphicPipeline(View<Device> device) : Pipeline(), m_device(device) {}
+    GraphicPipeline::GraphicPipeline(View<Device> device) : Pipeline(device) {}
 
     GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept : Pipeline(std::move(other))
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_pipelineLayout, other.m_pipelineLayout);
         std::swap(m_attachments, other.m_attachments);
         std::swap(m_program, other.m_program);
-        std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_vertexDescription, other.m_vertexDescription);
         std::swap(m_viewport, other.m_viewport);
         std::swap(m_rasterization, other.m_rasterization);
@@ -26,12 +22,8 @@ namespace vzt
 
     GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_pipelineLayout, other.m_pipelineLayout);
         std::swap(m_attachments, other.m_attachments);
         std::swap(m_program, other.m_program);
-        std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_vertexDescription, other.m_vertexDescription);
         std::swap(m_viewport, other.m_viewport);
         std::swap(m_rasterization, other.m_rasterization);
@@ -39,7 +31,6 @@ namespace vzt
         std::swap(m_depthStencil, other.m_depthStencil);
 
         Pipeline::operator=(std::move(other));
-        
         return *this;
     }
 

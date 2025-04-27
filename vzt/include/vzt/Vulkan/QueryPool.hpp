@@ -4,6 +4,7 @@
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Core.hpp"
+#include "vzt/Vulkan/DeviceObject.hpp"
 
 namespace vzt
 {
@@ -54,7 +55,7 @@ namespace vzt
     VZT_DEFINE_TO_VULKAN_FUNCTION(QueryResultFlag, VkQueryResultFlagBits)
     VZT_DEFINE_BITWISE_FUNCTIONS(QueryResultFlag)
 
-    class QueryPool
+    class QueryPool : public DeviceObject<VkQueryPool>
     {
       public:
         QueryPool() = default;
@@ -63,10 +64,10 @@ namespace vzt
         QueryPool(const QueryPool& pool)            = delete;
         QueryPool& operator=(const QueryPool& pool) = delete;
 
-        QueryPool(QueryPool&& pool) noexcept;
-        QueryPool& operator=(QueryPool&& pool) noexcept;
+        QueryPool(QueryPool&& pool) noexcept            = default;
+        QueryPool& operator=(QueryPool&& pool) noexcept = default;
 
-        ~QueryPool();
+        ~QueryPool() override;
 
         template <typename ResultsType>
         void getResults(uint32_t firstQuery, uint32_t queryCount, Span<ResultsType> results, std::size_t stride,
@@ -74,10 +75,6 @@ namespace vzt
         void getResults(uint32_t firstQuery, uint32_t queryCount, Span<uint8_t> results, std::size_t stride,
                         QueryResultFlag flags) const;
         inline VkQueryPool getHandle() const;
-
-      private:
-        View<Device> m_device{};
-        VkQueryPool  m_handle = VK_NULL_HANDLE;
     };
 } // namespace vzt
 

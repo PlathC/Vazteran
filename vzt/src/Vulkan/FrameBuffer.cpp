@@ -5,23 +5,20 @@
 
 namespace vzt
 {
-    FrameBuffer::FrameBuffer(View<Device> device, Extent2D size) : m_device(device), m_size(size) {}
+    FrameBuffer::FrameBuffer(View<Device> device, Extent2D size) : DeviceObject<VkFramebuffer>(device), m_size(size) {}
 
-    FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept
+    FrameBuffer::FrameBuffer(FrameBuffer&& other) noexcept : DeviceObject<VkFramebuffer>(std::move(other))
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_size, other.m_size);
         std::swap(m_attachments, other.m_attachments);
     }
 
     FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_size, other.m_size);
         std::swap(m_attachments, other.m_attachments);
 
+        DeviceObject<VkFramebuffer>::operator=(std::move(other));
         return *this;
     }
 

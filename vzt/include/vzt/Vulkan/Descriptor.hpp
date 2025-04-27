@@ -100,7 +100,7 @@ namespace vzt
 
     using DescriptorWrite   = std::variant<DescriptorBuffer, DescriptorImage, DescriptorAccelerationStructure>;
     using IndexedDescriptor = std::unordered_map<uint32_t, DescriptorWrite>;
-    class DescriptorPool
+    class DescriptorPool : public DeviceObject<VkDescriptorPool>
     {
       public:
         const static std::vector<DescriptorType> DefaultDescriptors;
@@ -116,7 +116,7 @@ namespace vzt
         DescriptorPool(DescriptorPool&&) noexcept;
         DescriptorPool& operator=(DescriptorPool&&) noexcept;
 
-        ~DescriptorPool();
+        ~DescriptorPool() override;
 
         void allocate(uint32_t count, const DescriptorLayout& layout);
 
@@ -125,16 +125,12 @@ namespace vzt
         void update(std::size_t descriptorId, const IndexedDescriptor& descriptors);
         void update(const IndexedDescriptor& descriptors);
 
-        inline uint32_t         getRemaining() const;
-        inline uint32_t         getMaxSetNb() const;
-        inline VkDescriptorPool getHandle() const;
+        inline uint32_t getRemaining() const;
+        inline uint32_t getMaxSetNb() const;
 
       private:
-        View<Device>                 m_device;
-        VkDescriptorPool             m_handle = VK_NULL_HANDLE;
         std::vector<VkDescriptorSet> m_descriptors;
-
-        uint32_t m_maxSetNb = 0;
+        uint32_t                     m_maxSetNb = 0;
     };
 
 } // namespace vzt

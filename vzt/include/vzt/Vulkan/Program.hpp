@@ -51,7 +51,7 @@ namespace vzt
     };
 
     class Device;
-    class ShaderModule
+    class ShaderModule : public DeviceObject<VkShaderModule>
     {
       public:
         ShaderModule(View<Device> device, Shader shader);
@@ -62,15 +62,13 @@ namespace vzt
         ShaderModule(ShaderModule&& other) noexcept;
         ShaderModule& operator=(ShaderModule&& other) noexcept;
 
-        ~ShaderModule();
+        ~ShaderModule() override;
 
         inline VkShaderModule getHandle() const;
         inline const Shader&  getShader() const;
 
       private:
-        View<Device>   m_device = {};
-        VkShaderModule m_handle = VK_NULL_HANDLE;
-        Shader         m_shader = {};
+        Shader m_shader = {};
     };
 
     class Program
@@ -120,8 +118,7 @@ namespace vzt
         inline std::size_t              size() const;
 
       private:
-        View<Device> m_device;
-
+        View<Device>                   m_device;
         std::vector<ShaderGroupShader> m_shaders;
     };
 

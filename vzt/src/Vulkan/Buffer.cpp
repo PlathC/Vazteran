@@ -53,7 +53,7 @@ namespace vzt
     }
 
     Buffer::Buffer(View<Device> device, std::size_t byteNb, BufferUsage usages, MemoryLocation location, bool mappable)
-        : m_device(device), m_size(byteNb), m_usages(usages), m_mappable(mappable)
+        : DeviceObject<VkBuffer>(device), m_size(byteNb), m_usages(usages), m_mappable(mappable)
     {
         VkBufferCreateInfo bufferInfo = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         bufferInfo.size               = m_size;
@@ -71,10 +71,8 @@ namespace vzt
                 "Failed to create vertex buffer!");
     }
 
-    Buffer::Buffer(Buffer&& other) noexcept
+    Buffer::Buffer(Buffer&& other) noexcept : DeviceObject<VkBuffer>(std::move(other))
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_allocation, other.m_allocation);
         std::swap(m_mappable, other.m_mappable);
         std::swap(m_size, other.m_size);
@@ -82,12 +80,11 @@ namespace vzt
 
     Buffer& Buffer::operator=(Buffer&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_allocation, other.m_allocation);
         std::swap(m_mappable, other.m_mappable);
         std::swap(m_size, other.m_size);
 
+        DeviceObject<VkBuffer>::operator=(std::move(other));
         return *this;
     }
 

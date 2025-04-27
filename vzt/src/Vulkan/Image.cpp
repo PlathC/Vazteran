@@ -45,8 +45,9 @@ namespace vzt
     DeviceImage::DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels,
                              ImageLayout layout, SampleCount sampleCount, ImageType type, SharingMode sharingMode,
                              ImageTiling tiling, bool mappable)
-        : m_device(device), m_size(size), m_usage(usage), m_format(format), m_mipLevels(mipLevels), m_layout(layout),
-          m_sampleCount(sampleCount), m_type(type), m_sharingMode(sharingMode), m_tiling(tiling), m_mappable(mappable)
+        : DeviceObject<VkImage>(device), m_size(size), m_usage(usage), m_format(format), m_mipLevels(mipLevels),
+          m_layout(layout), m_sampleCount(sampleCount), m_type(type), m_sharingMode(sharingMode), m_tiling(tiling),
+          m_mappable(mappable)
     {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -78,15 +79,14 @@ namespace vzt
 
     DeviceImage::DeviceImage(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
                              SharingMode sharingMode, ImageTiling tiling, bool mappable)
-        : m_device(device), m_handle(image), m_size(size), m_usage(usage), m_format(format), m_sharingMode(sharingMode),
-          m_tiling(tiling), m_mappable(mappable)
+        : DeviceObject<VkImage>(device, image), m_size(size), m_usage(usage), m_format(format),
+          m_sharingMode(sharingMode), m_tiling(tiling), m_mappable(mappable)
     {
     }
 
     DeviceImage::DeviceImage(DeviceImage&& other) noexcept
-        : m_device(other.m_device), m_handle(std::exchange(other.m_handle, VK_NULL_HANDLE)),
-          m_allocation(std::exchange(other.m_allocation, VK_NULL_HANDLE)), m_size(std::move(other.m_size)),
-          m_usage(std::move(other.m_usage)), m_format(std::move(other.m_format)),
+        : DeviceObject<VkImage>(std::move(other)), m_allocation(std::exchange(other.m_allocation, VK_NULL_HANDLE)),
+          m_size(std::move(other.m_size)), m_usage(std::move(other.m_usage)), m_format(std::move(other.m_format)),
           m_mipLevels(std::move(other.m_mipLevels)), m_layout(std::move(other.m_layout)),
           m_sampleCount(std::move(other.m_sampleCount)), m_type(std::move(other.m_type)),
           m_sharingMode(std::move(other.m_sharingMode)), m_tiling(std::move(other.m_tiling)),
@@ -96,8 +96,6 @@ namespace vzt
 
     DeviceImage& DeviceImage::operator=(DeviceImage&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_allocation, other.m_allocation);
         std::swap(m_size, other.m_size);
         std::swap(m_usage, other.m_usage);
@@ -110,6 +108,7 @@ namespace vzt
         std::swap(m_tiling, other.m_tiling);
         std::swap(m_mappable, other.m_mappable);
 
+        DeviceObject<VkImage>::operator=(std::move(other));
         return *this;
     }
 

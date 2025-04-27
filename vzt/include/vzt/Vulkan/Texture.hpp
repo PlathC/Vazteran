@@ -55,7 +55,7 @@ namespace vzt
         BorderColor borderColor = vzt::BorderColor::IntOpaqueBlack;
     };
 
-    class Sampler
+    class Sampler : public DeviceObject<VkSampler>
     {
       public:
         Sampler() = default;
@@ -67,21 +67,18 @@ namespace vzt
         Sampler(Sampler&& other) noexcept;
         Sampler& operator=(Sampler&& other) noexcept;
 
-        ~Sampler();
+        ~Sampler() override;
 
         inline Filter      getFilter() const;
         inline AddressMode getAddressMode() const;
         inline MipmapMode  getMipmapMode() const;
         inline BorderColor getBorderColor() const;
-        inline VkSampler   getHandle() const;
 
       private:
-        View<Device> m_device;
-        VkSampler    m_handle = VK_NULL_HANDLE;
-        Filter       m_filter;
-        AddressMode  m_addressMode;
-        MipmapMode   m_mipmapMode;
-        BorderColor  m_borderColor;
+        Filter      m_filter;
+        AddressMode m_addressMode;
+        MipmapMode  m_mipmapMode;
+        BorderColor m_borderColor;
     };
 
     class Texture

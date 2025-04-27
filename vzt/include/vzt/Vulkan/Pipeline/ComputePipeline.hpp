@@ -21,26 +21,17 @@ namespace vzt
         ComputePipeline(ComputePipeline&&) noexcept;
         ComputePipeline& operator=(ComputePipeline&&) noexcept;
 
-        ~ComputePipeline();
+        ~ComputePipeline() override;
 
         void setProgram(const Program& program);
         void compile();
 
-        inline VkPipeline       getHandle() const;
-        inline VkPipelineLayout getLayout() const;
-
       private:
         void cleanup();
 
-        View<Device>     m_device;
-        VkPipeline       m_handle         = VK_NULL_HANDLE;
-        VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
-        View<Program>    m_program;
-
-        bool m_compiled = false;
+        View<Program> m_program;
+        bool          m_compiled = false;
     };
 } // namespace vzt
-
-#include "vzt/Vulkan/Pipeline/ComputePipeline.inl"
 
 #endif // VZT_COMPUTE_PIPELINE_HPP

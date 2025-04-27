@@ -32,7 +32,7 @@ namespace vzt
     }
 
     Swapchain::Swapchain(View<Device> device, View<Surface> surface, SwapchainBuilder configuration)
-        : m_configuration(configuration), m_device(device), m_surface(surface)
+        : DeviceObject<VkSwapchainKHR>(device), m_configuration(configuration), m_surface(surface)
     {
         assert(m_device->getPresentQueue() && "Device must have a present queue to use the swapchain");
 
@@ -60,11 +60,9 @@ namespace vzt
         create();
     }
 
-    Swapchain::Swapchain(Swapchain&& other) noexcept
+    Swapchain::Swapchain(Swapchain&& other) noexcept : DeviceObject<VkSwapchainKHR>(std::move(other))
     {
-        std::swap(m_handle, other.m_handle);
         std::swap(m_configuration, other.m_configuration);
-        std::swap(m_device, other.m_device);
         std::swap(m_surface, other.m_surface);
         std::swap(m_extent, other.m_extent);
         std::swap(m_framebufferResized, other.m_framebufferResized);
@@ -81,9 +79,7 @@ namespace vzt
 
     Swapchain& Swapchain::operator=(Swapchain&& other) noexcept
     {
-        std::swap(m_handle, other.m_handle);
         std::swap(m_configuration, other.m_configuration);
-        std::swap(m_device, other.m_device);
         std::swap(m_surface, other.m_surface);
         std::swap(m_extent, other.m_extent);
         std::swap(m_framebufferResized, other.m_framebufferResized);
@@ -97,6 +93,7 @@ namespace vzt
         std::swap(m_inFlightFences, other.m_inFlightFences);
         std::swap(m_imagesInFlight, other.m_imagesInFlight);
 
+        DeviceObject<VkSwapchainKHR>::operator=(std::move(other));
         return *this;
     }
 

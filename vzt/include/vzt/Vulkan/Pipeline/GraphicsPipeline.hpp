@@ -192,17 +192,11 @@ namespace vzt
         void compile(View<RenderPass> renderPass);
         void resize(Viewport viewport);
 
-        inline VkPipeline       getHandle() const;
-        inline VkPipelineLayout getLayout() const;
-
       private:
         void cleanup();
 
-        View<Device>     m_device;
-        VkPipeline       m_handle         = VK_NULL_HANDLE;
-        VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
-        View<Program>    m_program;
-        Viewport         m_viewport;
+        View<Program> m_program;
+        Viewport      m_viewport;
 
         std::vector<ColorMask> m_attachments;
 

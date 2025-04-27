@@ -19,12 +19,10 @@ namespace vzt
         return description;
     }
 
-    RenderPass::RenderPass(View<Device> device) : m_device(device) {}
+    RenderPass::RenderPass(View<Device> device) : DeviceObject<VkRenderPass>(device) {}
 
-    RenderPass::RenderPass(RenderPass&& other) noexcept
+    RenderPass::RenderPass(RenderPass&& other) noexcept : DeviceObject<VkRenderPass>(std::move(other))
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_inputAttachments, other.m_inputAttachments);
         std::swap(m_colorAttachments, other.m_colorAttachments);
         std::swap(m_depthAttachment, other.m_depthAttachment);
@@ -32,13 +30,12 @@ namespace vzt
     }
     RenderPass& RenderPass::operator=(RenderPass&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_inputAttachments, other.m_inputAttachments);
         std::swap(m_colorAttachments, other.m_colorAttachments);
         std::swap(m_depthAttachment, other.m_depthAttachment);
         std::swap(m_dependencies, other.m_dependencies);
 
+        DeviceObject<VkRenderPass>::operator=(std::move(other));
         return *this;
     }
 

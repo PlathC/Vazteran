@@ -5,7 +5,7 @@
 namespace vzt
 {
     Sampler::Sampler(View<Device> device, SamplerBuilder builder)
-        : m_device(device), m_filter(builder.filter), m_addressMode(builder.addressMode),
+        : DeviceObject<VkSampler>(device), m_filter(builder.filter), m_addressMode(builder.addressMode),
           m_mipmapMode(builder.mipmapMode), m_borderColor(builder.borderColor)
     {
         const PhysicalDevice             hardware   = m_device->getHardware();
@@ -31,21 +31,20 @@ namespace vzt
     }
 
     Sampler::Sampler(Sampler&& other) noexcept
-        : m_device(std::move(other.m_device)), m_handle(std::exchange(other.m_handle, VK_NULL_HANDLE)),
-          m_filter(std::move(other.m_filter)), m_addressMode(std::move(other.m_addressMode)),
-          m_mipmapMode(std::move(other.m_mipmapMode)), m_borderColor(std::move(other.m_borderColor))
+        : DeviceObject<VkSampler>(std::move(other)), m_filter(std::move(other.m_filter)),
+          m_addressMode(std::move(other.m_addressMode)), m_mipmapMode(std::move(other.m_mipmapMode)),
+          m_borderColor(std::move(other.m_borderColor))
     {
     }
 
     Sampler& Sampler::operator=(Sampler&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
         std::swap(m_filter, other.m_filter);
         std::swap(m_addressMode, other.m_addressMode);
         std::swap(m_mipmapMode, other.m_mipmapMode);
         std::swap(m_borderColor, other.m_borderColor);
 
+        DeviceObject<VkSampler>::operator=(std::move(other));
         return *this;
     }
 

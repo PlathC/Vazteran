@@ -51,7 +51,7 @@ namespace vzt
 
     AccelerationStructure::AccelerationStructure(View<Device> device, std::vector<GeometryAsBuilder> geometries,
                                                  AccelerationStructureType type)
-        : m_device(device), m_geometries(std::move(geometries)), m_type(type)
+        : DeviceObject<VkAccelerationStructureKHR>(device), m_geometries(std::move(geometries)), m_type(type)
     {
         std::vector<VkAccelerationStructureGeometryKHR> vkGeometries;
         vkGeometries.reserve(m_geometries.size());
@@ -121,9 +121,8 @@ namespace vzt
     }
 
     AccelerationStructure::AccelerationStructure(AccelerationStructure&& other) noexcept
+        : DeviceObject<VkAccelerationStructureKHR>(std::move(other))
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
         std::swap(m_geometries, other.m_geometries);
         std::swap(m_type, other.m_type);
         std::swap(m_maxPrimitiveCount, other.m_maxPrimitiveCount);
@@ -135,8 +134,6 @@ namespace vzt
 
     AccelerationStructure& AccelerationStructure::operator=(AccelerationStructure&& other) noexcept
     {
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_device, other.m_device);
         std::swap(m_geometries, other.m_geometries);
         std::swap(m_type, other.m_type);
         std::swap(m_maxPrimitiveCount, other.m_maxPrimitiveCount);
@@ -144,6 +141,8 @@ namespace vzt
         std::swap(m_deviceAddress, other.m_deviceAddress);
         std::swap(m_size, other.m_size);
         std::swap(m_scratchBufferSize, other.m_scratchBufferSize);
+
+        DeviceObject<VkAccelerationStructureKHR>::operator=(std::move(other));
 
         return *this;
     }

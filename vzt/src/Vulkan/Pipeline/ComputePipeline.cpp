@@ -5,26 +5,19 @@
 
 namespace vzt
 {
-    ComputePipeline::ComputePipeline(View<Device> device) : Pipeline(), m_device(device) {}
+    ComputePipeline::ComputePipeline(View<Device> device) : Pipeline(device) {}
 
     ComputePipeline::ComputePipeline(ComputePipeline&& other) noexcept
-        : Pipeline(std::move(other)), m_device(std::move(other.m_device)), m_handle(std::move(other.m_handle)),
-          m_pipelineLayout(std::move(other.m_pipelineLayout)), m_program(std::move(other.m_program)),
-          m_compiled(std::move(other.m_compiled))
+        : Pipeline(std::move(other)), m_program(std::move(other.m_program)), m_compiled(std::move(other.m_compiled))
     {
     }
 
     ComputePipeline& ComputePipeline::operator=(ComputePipeline&& other) noexcept
     {
-        std::swap(m_device, other.m_device);
-        std::swap(m_handle, other.m_handle);
-        std::swap(m_pipelineLayout, other.m_pipelineLayout);
         std::swap(m_program, other.m_program);
-        std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_compiled, other.m_compiled);
 
         Pipeline::operator=(std::move(other));
-
         return *this;
     }
 

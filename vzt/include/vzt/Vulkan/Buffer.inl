@@ -13,5 +13,4 @@ namespace vzt
     inline bool           Buffer::isMappable() const { return m_mappable; }
     inline std::size_t    Buffer::size() const { return m_size; }
     inline MemoryLocation Buffer::getLocation() const { return m_location; }
-    inline VkBuffer       Buffer::getHandle() const { return m_handle; }
 } // namespace vzt

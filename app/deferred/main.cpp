@@ -97,8 +97,6 @@ int main(int /* argc */, char** /* argv */)
 
     // Instance generation pass
     auto& instanceGeneration = graph.addPass("InstanceGeneration", queue, vzt::PassType::Compute);
-    // auto& instanceGenerationLayout = instanceGeneration.getDescriptorLayout();
-    // instanceGenerationLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
     instanceGeneration.addStorageOutput(1, instancesPosition);
     instanceGeneration.addStorageOutput(2, drawCommands);
 
@@ -107,7 +105,6 @@ int main(int /* argc */, char** /* argv */)
 
     auto computeInstancePipeline = vzt::ComputePipeline(device);
     computeInstancePipeline.setProgram(computeInstanceProgram);
-    // computeInstancePipeline.setDescriptorLayout(instanceGenerationLayout);
     computeInstancePipeline.compile();
 
     instanceGeneration.link(computeInstancePipeline);
@@ -133,8 +130,6 @@ int main(int /* argc */, char** /* argv */)
     auto depth    = graph.addAttachment({device, vzt::ImageUsage::DepthStencilAttachment});
 
     auto& geometry = graph.addPass("Geometry", queue);
-    // auto& geometryLayout = geometry.getDescriptorLayout();
-    // geometryLayout.addBinding(0, vzt::DescriptorType::UniformBuffer);
     geometry.addStorageInput(1, instancesPosition);
     geometry.addStorageInputIndirect(drawCommands);
     geometry.addColorOutput(position);
@@ -148,7 +143,6 @@ int main(int /* argc */, char** /* argv */)
     auto geometryPipeline = vzt::GraphicPipeline(device);
     geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
     geometryPipeline.setProgram(geometryProgram);
-    // geometryPipeline.setDescriptorLayout(geometryLayout);
     geometryPipeline.setVertexInputDescription(vertexDescription);
 
     auto& geometryRasterization    = geometryPipeline.getRasterization();

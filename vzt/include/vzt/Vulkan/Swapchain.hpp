@@ -26,7 +26,7 @@ namespace vzt
         VkFence     frameComplete;
     };
 
-    class Swapchain
+    class Swapchain : public DeviceObject<VkSwapchainKHR>
     {
       public:
         Swapchain(View<Device> device, View<Surface> surface, SwapchainBuilder configuration = {});
@@ -37,7 +37,7 @@ namespace vzt
         Swapchain(Swapchain&&) noexcept;
         Swapchain& operator=(Swapchain&&) noexcept;
 
-        ~Swapchain();
+        ~Swapchain() override;
 
         // Empty submission if frame buffer changed
         Optional<SwapchainSubmission> getSubmission();
@@ -48,7 +48,6 @@ namespace vzt
         inline View<DeviceImage> getImage(std::size_t i) const;
         inline uint32_t          getImageNb() const;
         inline Format            getFormat() const;
-        inline View<Device>      getDevice() const;
 
       private:
         void create();
@@ -56,10 +55,8 @@ namespace vzt
 
         VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
-        VkSwapchainKHR   m_handle = VK_NULL_HANDLE;
         SwapchainBuilder m_configuration;
 
-        View<Device>  m_device;
         View<Surface> m_surface;
         Extent2D      m_extent;
         bool          m_framebufferResized = false;

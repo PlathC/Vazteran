@@ -5,6 +5,7 @@
 
 #include "vzt/Core/Math.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
+#include "vzt/Vulkan/DeviceObject.hpp"
 #include "vzt/Vulkan/Format.hpp"
 
 namespace vzt
@@ -108,7 +109,7 @@ namespace vzt
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(AccelerationStructureType, VkAccelerationStructureTypeKHR)
 
-    class AccelerationStructure
+    class AccelerationStructure : public DeviceObject<VkAccelerationStructureKHR>
     {
       public:
         AccelerationStructure() = default;
@@ -123,7 +124,7 @@ namespace vzt
         AccelerationStructure(AccelerationStructure&&) noexcept;
         AccelerationStructure& operator=(AccelerationStructure&&) noexcept;
 
-        ~AccelerationStructure();
+        ~AccelerationStructure() override;
 
         inline AccelerationStructureType             getType() const;
         inline uint64_t                              getSize() const;
@@ -131,11 +132,8 @@ namespace vzt
         inline View<Buffer>                          getBuffer() const;
         inline const std::vector<GeometryAsBuilder>& getGeometries() const;
         inline uint64_t                              getDeviceAddress() const;
-        inline const VkAccelerationStructureKHR&     getHandle() const;
 
       private:
-        VkAccelerationStructureKHR     m_handle = VK_NULL_HANDLE;
-        View<Device>                   m_device;
         std::vector<GeometryAsBuilder> m_geometries;
         AccelerationStructureType      m_type;
         uint32_t                       m_maxPrimitiveCount{};

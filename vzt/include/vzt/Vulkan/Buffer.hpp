@@ -4,6 +4,7 @@
 #include "vzt/Core/Meta.hpp"
 #include "vzt/Core/Type.hpp"
 #include "vzt/Vulkan/Core.hpp"
+#include "vzt/Vulkan/DeviceObject.hpp"
 
 namespace vzt
 {
@@ -48,7 +49,7 @@ namespace vzt
         Device
     };
 
-    class Buffer
+    class Buffer : public DeviceObject<VkBuffer>
     {
       public:
         template <class Type>
@@ -67,7 +68,7 @@ namespace vzt
         Buffer(Buffer&& other) noexcept;
         Buffer& operator=(Buffer&& other) noexcept;
 
-        ~Buffer();
+        ~Buffer() override;
 
         uint8_t* map() const;
         void     unMap() const;
@@ -78,11 +79,8 @@ namespace vzt
         inline bool           isMappable() const;
         inline std::size_t    size() const;
         inline MemoryLocation getLocation() const;
-        inline VkBuffer       getHandle() const;
 
       private:
-        View<Device>  m_device{};
-        VkBuffer      m_handle     = VK_NULL_HANDLE;
         VmaAllocation m_allocation = VK_NULL_HANDLE;
 
         std::size_t    m_size;
@@ -109,6 +107,7 @@ namespace vzt
         std::size_t size   = 0;
         std::size_t offset = 0;
     };
+
     struct BufferCSpan
     {
         BufferCSpan() = default;
@@ -124,10 +123,6 @@ namespace vzt
         std::size_t   size   = 0;
         std::size_t   offset = 0;
     };
-
-    // using BufferSpan  = OffsetSpan<Buffer>;
-    // using BufferCSpan = OffsetCSpan<Buffer>;
-
 } // namespace vzt
 
 #include "vzt/Vulkan/Buffer.inl"
