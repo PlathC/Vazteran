@@ -10,7 +10,7 @@ namespace vzt
     class RaytracingPipeline : public Pipeline
     {
       public:
-        RaytracingPipeline(View<Device> device);
+        RaytracingPipeline(const ShaderGroup& shaderGroup);
 
         RaytracingPipeline(const RaytracingPipeline&)            = delete;
         RaytracingPipeline& operator=(const RaytracingPipeline&) = delete;
@@ -22,19 +22,13 @@ namespace vzt
 
         inline void setShaderGroup(const ShaderGroup& shaderGroup);
 
-        void                    compile();
-        inline VkPipeline       getHandle() const;
-        inline VkPipelineLayout getLayout() const;
-        inline CSpan<uint8_t>   getShaderHandleStorage() const;
-        inline uint32_t         getShaderHandleSize() const;
-        inline uint32_t         getShaderHandleSizeAligned() const;
+        void                  compile();
+        inline CSpan<uint8_t> getShaderHandleStorage() const;
+        inline uint32_t       getShaderHandleSize() const;
+        inline uint32_t       getShaderHandleSizeAligned() const;
 
       private:
         void cleanup();
-
-        View<Device>     m_device;
-        VkPipeline       m_handle         = VK_NULL_HANDLE;
-        VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
         View<ShaderGroup> m_shaderGroup;
 

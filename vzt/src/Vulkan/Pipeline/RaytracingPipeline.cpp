@@ -5,16 +5,26 @@
 
 namespace vzt
 {
-    RaytracingPipeline::RaytracingPipeline(View<Device> device) : Pipeline(device) {}
+    RaytracingPipeline::RaytracingPipeline(const ShaderGroup& shaderGroup)
+        : Pipeline(shaderGroup.getShaders()[0].shaderModule.getDevice())
+    {
+        setShaderGroup(shaderGroup);
+    }
 
     RaytracingPipeline::RaytracingPipeline(RaytracingPipeline&& other) noexcept : Pipeline(std::move(other))
     {
         std::swap(m_compiled, other.m_compiled);
+        std::swap(m_handleSize, other.m_handleSize);
+        std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
+        std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
     }
 
     RaytracingPipeline& RaytracingPipeline::operator=(RaytracingPipeline&& other) noexcept
     {
         std::swap(m_compiled, other.m_compiled);
+        std::swap(m_handleSize, other.m_handleSize);
+        std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
+        std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
 
         Pipeline::operator=(std::move(other));
         return *this;

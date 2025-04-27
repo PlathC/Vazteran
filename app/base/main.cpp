@@ -16,6 +16,12 @@
 #include <vzt/Vulkan/Swapchain.hpp>
 #include <vzt/Window.hpp>
 
+struct VertexInput
+{
+    vzt::Vec3 inPosition;
+    vzt::Vec3 inNormal;
+};
+
 int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Base";
@@ -27,75 +33,64 @@ int main(int /* argc */, char** /* argv */)
     auto hardware  = device.getHardware();
     auto swapchain = vzt::Swapchain{device, surface};
 
-    auto program  = vzt::Program(device);
-    auto compiler = vzt::Compiler(instance);
-    program.setShader(compiler("shaders/base/base.slang", "vertexMain"));
-    program.setShader(compiler("shaders/base/base.slang", "fragmentMain"));
-
     vzt::RenderPass renderPass{device};
+    {
+        renderPass.addColor(vzt::AttachmentUse{
+            .format        = vzt::Format::B8G8R8A8SRGB,
+            .initialLayout = vzt::ImageLayout::Undefined,
+            .finalLayout   = vzt::ImageLayout::ColorAttachmentOptimal,
+            .usedLayout    = vzt::ImageLayout::ColorAttachmentOptimal,
+            .clearValue    = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+        });
 
-    // clang-format off
-    renderPass.addColor(vzt::AttachmentUse{
-        .format = vzt::Format::B8G8R8A8SRGB,
-        .initialLayout = vzt::ImageLayout::Undefined,
-        .finalLayout = vzt::ImageLayout::ColorAttachmentOptimal,
-        .usedLayout = vzt::ImageLayout::ColorAttachmentOptimal,
-        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f)
-    });
-    // clang-format on
-
-    // clang-format off
-    vzt::AttachmentUse depth{
-        hardware.getDepthFormat(),
-        vzt::ImageLayout::Undefined,
-        vzt::ImageLayout::DepthStencilAttachmentOptimal,
-        vzt::ImageLayout::DepthStencilAttachmentOptimal
-    };
-    // clang-format on
-
-    depth.clearValue = vzt::Vec4{1.f, 0.f, 0.f, 0.f};
-    renderPass.setDepth(std::move(depth));
+        renderPass.setDepth(vzt::AttachmentUse{
+            .format        = hardware.getDepthFormat(),
+            .initialLayout = vzt::ImageLayout::Undefined,
+            .finalLayout   = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+            .usedLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+            .clearValue    = vzt::Vec4{1.f, 0.f, 0.f, 0.f},
+        });
+    }
     renderPass.compile();
 
-    auto pipeline = vzt::GraphicPipeline(device);
-    pipeline.setProgram(program);
-    pipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-
-    vzt::VertexInputDescription vertexDescription{};
-    struct VertexInput
+    const auto compiler = vzt::Compiler(instance);
+    const auto program  = vzt::Program(device, compiler("shaders/base/base.slang"));
+    auto       pipeline = vzt::GraphicPipeline(program);
     {
-        vzt::Vec3 inPosition;
-        vzt::Vec3 inNormal;
-    };
-    vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
-    vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); //
-    vertexDescription.add(vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0});
-    pipeline.setVertexInputDescription(vertexDescription);
+        pipeline.setProgram(program);
+        pipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
 
+        vzt::VertexInputDescription vertexDescription{};
+        vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
+        vertexDescription.add(vzt::VertexAttribute{0, 0, vzt::Format::R32G32B32SFloat, 0}); //
+        vertexDescription.add(
+            vzt::VertexAttribute{offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0});
+        pipeline.setVertexInputDescription(vertexDescription);
+    }
     pipeline.compile(renderPass);
+
+    vzt::DescriptorPool descriptorPool{device, pipeline, swapchain.getImageNb()};
 
     // Initialize buffer with default values
     const std::size_t modelsAlignment    = hardware.getUniformAlignment(sizeof(vzt::Mat4) * 3);
     const std::size_t materialsAlignment = hardware.getUniformAlignment<vzt::Vec4>();
     const std::size_t uniformByteNb      = modelsAlignment + materialsAlignment;
-    vzt::Buffer       modelsUbo{device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
-                          vzt::MemoryLocation::Device, true};
-
-    // Assign buffer parts to their respective image
-    vzt::DescriptorPool descriptorPool{device, pipeline.getDescriptorLayout(),
-                                       swapchain.getImageNb() + pipeline.getDescriptorLayout().size()};
-    descriptorPool.allocate(swapchain.getImageNb(), pipeline.getDescriptorLayout());
+    vzt::Buffer       modelsUbo = {device, uniformByteNb * swapchain.getImageNb(), vzt::BufferUsage::UniformBuffer,
+                                   vzt::MemoryLocation::Device, true};
 
     // Vertex inputs
-    vzt::Mesh mesh = vzt::readObj("samples/Dragon/dragon.obj");
+    vzt::Mesh   mesh = vzt::readObj("samples/Dragon/dragon.obj");
+    vzt::Buffer vertexBuffer;
+    vzt::Buffer indexBuffer;
+    {
+        std::vector<VertexInput> vertexInputs;
+        vertexInputs.reserve(mesh.vertices.size());
+        for (std::size_t i = 0; i < mesh.vertices.size(); i++)
+            vertexInputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
 
-    std::vector<VertexInput> vertexInputs;
-    vertexInputs.reserve(mesh.vertices.size());
-    for (std::size_t i = 0; i < mesh.vertices.size(); i++)
-        vertexInputs.emplace_back(VertexInput{mesh.vertices[i], mesh.normals[i]});
-
-    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
-    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
+        vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
+        indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
+    }
 
     vzt::Extent2D                 extent = swapchain.getExtent();
     std::vector<vzt::DeviceImage> depthStencils;

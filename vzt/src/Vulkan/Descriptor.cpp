@@ -1,9 +1,8 @@
 #include "vzt/Vulkan/Descriptor.hpp"
 
-#include <cassert>
-
 #include "vzt/Vulkan/AccelerationStructure.hpp"
 #include "vzt/Vulkan/Device.hpp"
+#include "vzt/Vulkan/Pipeline/Pipeline.hpp"
 #include "vzt/Vulkan/Texture.hpp"
 
 namespace vzt
@@ -122,7 +121,7 @@ namespace vzt
     }
 
     DescriptorPool::DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb)
-        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb)
+        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb), m_layout(descriptorLayout)
     {
         const auto& bindings = descriptorLayout.getBindings();
 
@@ -152,16 +151,24 @@ namespace vzt
                 "Failed to create descriptor pool.");
     }
 
+    DescriptorPool::DescriptorPool(View<Device> device, const Pipeline& pipeline, uint32_t count)
+        : DescriptorPool(device, pipeline.getDescriptorLayout(), pipeline.getDescriptorLayout().size() * count)
+    {
+        allocate(count, *m_layout);
+    }
+
     DescriptorPool::DescriptorPool(DescriptorPool&& other) noexcept : DeviceObject<VkDescriptorPool>(std::move(other))
     {
         std::swap(m_descriptors, other.m_descriptors);
         std::swap(m_maxSetNb, other.m_maxSetNb);
+        std::swap(m_layout, other.m_layout);
     }
 
     DescriptorPool& DescriptorPool::operator=(DescriptorPool&& other) noexcept
     {
         std::swap(m_descriptors, other.m_descriptors);
         std::swap(m_maxSetNb, other.m_maxSetNb);
+        std::swap(m_layout, other.m_layout);
 
         DeviceObject<VkDescriptorPool>::operator=(std::move(other));
         return *this;

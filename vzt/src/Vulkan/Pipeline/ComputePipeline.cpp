@@ -5,7 +5,10 @@
 
 namespace vzt
 {
-    ComputePipeline::ComputePipeline(View<Device> device) : Pipeline(device) {}
+    ComputePipeline::ComputePipeline(const Program& program) : Pipeline(program.getModules()[0].getDevice())
+    {
+        setProgram(program);
+    }
 
     ComputePipeline::ComputePipeline(ComputePipeline&& other) noexcept
         : Pipeline(std::move(other)), m_program(std::move(other.m_program)), m_compiled(std::move(other.m_compiled))

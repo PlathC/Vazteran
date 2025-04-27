@@ -17,7 +17,8 @@ namespace vzt
         Compiler(View<Instance> instance, const std::vector<vzt::Path>& includeDirectories = {"."});
         ~Compiler();
 
-        Shader operator()(const Path& path, const std::string& entryPoint) const;
+        Shader              operator()(const Path& path, const std::string& entryPoint) const;
+        std::vector<Shader> operator()(const Path& path) const;
 
       private:
         View<Instance>    m_instance{};

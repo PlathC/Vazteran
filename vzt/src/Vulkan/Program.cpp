@@ -39,6 +39,12 @@ namespace vzt
 
     Program::Program(View<Device> device) : m_device(device) {}
 
+    Program::Program(View<Device> device, std::vector<Shader> shaders) : Program(device)
+    {
+        for (auto&& shader : shaders)
+            setShader(std::move(shader));
+    }
+
     Program::Program(Program&& other) noexcept
     {
         std::swap(m_device, other.m_device);

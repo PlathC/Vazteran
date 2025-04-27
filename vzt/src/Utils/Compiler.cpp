@@ -232,4 +232,79 @@ namespace vzt
 
         return shader;
     }
+
+    std::vector<Shader> Compiler::operator()(const Path& path) const
+    {
+        Slang::ComPtr<slang::IBlob> diagnostics;
+        slang::IModule*             module;
+        {
+            module = m_implementation->session->loadModule(path.c_str(), diagnostics.writeRef());
+            if (!module)
+            {
+                vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
+                                   reinterpret_cast<const char*>(diagnostics->getBufferPointer()));
+                std::abort();
+            }
+        }
+
+        const int32_t       entryPointCount = module->getDefinedEntryPointCount();
+        std::vector<Shader> shaders         = {};
+        shaders.reserve(static_cast<std::size_t>(entryPointCount));
+
+        bool foundEntryPoint = false;
+        for (int32_t i = 0; i < entryPointCount; ++i)
+        {
+            Slang::ComPtr<slang::IEntryPoint> iEntryPoint;
+            module->getDefinedEntryPoint(i, iEntryPoint.writeRef());
+
+            Slang::ComPtr<slang::IComponentType> composedProgram;
+            {
+                std::vector<slang::IComponentType*> componentTypes = {module, iEntryPoint};
+
+                if (SLANG_FAILED(m_implementation->session->createCompositeComponentType( //
+                        componentTypes.data(), static_cast<SlangInt>(componentTypes.size()), composedProgram.writeRef(),
+                        diagnostics.writeRef())))
+                {
+                    vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
+                                       reinterpret_cast<const char*>(diagnostics->getBufferPointer()));
+                    std::abort();
+                }
+            }
+
+            Slang::ComPtr<slang::IBlob> kernelBlob;
+            {
+                Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+                if (SLANG_FAILED(
+                        composedProgram->getEntryPointCode(0, 0, kernelBlob.writeRef(), diagnostics.writeRef())))
+                {
+                    vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
+                                       reinterpret_cast<const char*>(diagnostics->getBufferPointer()));
+                    std::abort();
+                }
+            }
+
+            const std::string entryPoint = iEntryPoint->getFunctionReflection()->getName();
+
+            slang::ProgramLayout*        programLayout = composedProgram->getLayout();
+            slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());
+
+            Shader shader = Shader(toShaderStage(reflection->getStage()), {});
+            shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
+            std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
+
+            const uint32_t parameterCount = programLayout->getParameterCount();
+            for (uint32_t p = 0; p < parameterCount; p++)
+            {
+                slang::VariableLayoutReflection* variableLayout = programLayout->getParameterByIndex(p);
+
+                const uint32_t bindingId   = variableLayout->getBindingIndex();
+                shader.bindings[bindingId] = toDescriptorType(variableLayout);
+            }
+
+            shaders.emplace_back(std::move(shader));
+        }
+
+        return shaders;
+    }
+
 } // namespace vzt

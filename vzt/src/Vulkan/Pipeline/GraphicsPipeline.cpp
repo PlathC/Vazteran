@@ -7,7 +7,10 @@
 
 namespace vzt
 {
-    GraphicPipeline::GraphicPipeline(View<Device> device) : Pipeline(device) {}
+    GraphicPipeline::GraphicPipeline(const Program& program) : Pipeline(program.getModules()[0].getDevice())
+    {
+        setProgram(program);
+    }
 
     GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept : Pipeline(std::move(other))
     {

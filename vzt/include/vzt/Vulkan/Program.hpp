@@ -76,6 +76,7 @@ namespace vzt
       public:
         Program() = default;
         Program(View<Device> device);
+        Program(View<Device> device, std::vector<Shader> shaders);
 
         Program(const Program&)            = delete;
         Program& operator=(const Program&) = delete;
