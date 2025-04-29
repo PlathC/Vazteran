@@ -82,6 +82,40 @@ namespace vzt
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(PrimitiveTopology, VkPrimitiveTopology)
 
+    enum class BlendOp
+    {
+        Add             = VK_BLEND_OP_ADD,
+        Subtract        = VK_BLEND_OP_SUBTRACT,
+        ReverseSubtract = VK_BLEND_OP_REVERSE_SUBTRACT,
+        Min             = VK_BLEND_OP_MIN,
+        Max             = VK_BLEND_OP_MAX,
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(BlendOp, VkBlendOp)
+
+    enum class BlendFactor
+    {
+        Zero                  = VK_BLEND_FACTOR_ZERO,
+        One                   = VK_BLEND_FACTOR_ONE,
+        SrcColor              = VK_BLEND_FACTOR_SRC_COLOR,
+        OneMinusSrcColor      = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+        DstColor              = VK_BLEND_FACTOR_DST_COLOR,
+        OneMinusDstColor      = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR,
+        SrcAlpha              = VK_BLEND_FACTOR_SRC_ALPHA,
+        OneMinusSrcAlpha      = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        DstAlpha              = VK_BLEND_FACTOR_DST_ALPHA,
+        OneMinusDstAlpha      = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+        ConstantColor         = VK_BLEND_FACTOR_CONSTANT_COLOR,
+        OneMinusConstantColor = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+        ConstantAlpha         = VK_BLEND_FACTOR_CONSTANT_ALPHA,
+        OneMinusConstantAlpha = VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
+        SrcAlphaSaturate      = VK_BLEND_FACTOR_SRC_ALPHA_SATURATE,
+        Src1Color             = VK_BLEND_FACTOR_SRC1_COLOR,
+        OneMinusSrc1Color     = VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR,
+        Src1Alpha             = VK_BLEND_FACTOR_SRC1_ALPHA,
+        OneMinusSrc1Alpha     = VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA
+    };
+    VZT_DEFINE_TO_VULKAN_FUNCTION(BlendFactor, VkBlendFactor)
+
     struct Viewport
     {
         Extent2D size;
@@ -150,6 +184,18 @@ namespace vzt
         inline void add(uint32_t offset, uint32_t location, Format dataFormat, uint32_t binding);
     };
 
+    struct ColorBlend
+    {
+        bool           blendEnable;
+        BlendOp        colorBlendOp        = BlendOp::Add;
+        BlendOp        alphaBlendOp        = BlendOp::Add;
+        BlendFactor    srcColorBlendFactor = BlendFactor::SrcAlpha;
+        BlendFactor    dstColorBlendFactor = BlendFactor::OneMinusSrcAlpha;
+        BlendFactor    srcAlphaBlendFactor = BlendFactor::One;
+        BlendFactor    dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha;
+        ColorComponent colorWriteMask      = ColorMask::RGBA;
+    };
+
     class GraphicPipeline : public Pipeline
     {
       public:
@@ -167,8 +213,7 @@ namespace vzt
         void setProgram(const Program& program);
 
         inline void setVertexInputDescription(VertexInputDescription vertexDescription);
-        inline void addAttachmentColorBlend(ColorMask mask = ColorComponent::RGBA);
-        inline void addAttachmentsColorBlend(std::size_t nb, ColorMask mask = ColorComponent::RGBA);
+        inline void setColorBlend(uint32_t attachmentId, ColorBlend colorBlend);
 
         inline void            setViewport(Viewport config);
         inline const Viewport& getViewport() const;
@@ -199,7 +244,7 @@ namespace vzt
         View<Program> m_program;
         Viewport      m_viewport;
 
-        std::vector<ColorMask> m_attachments;
+        std::unordered_map<uint32_t /* id */, ColorBlend> m_colorBlends;
 
         Optional<VertexInputDescription> m_vertexDescription = {};
         Rasterization                    m_rasterization;

@@ -24,11 +24,10 @@ namespace vzt
     {
         m_vertexDescription = vertexDescription;
     }
-    inline void GraphicPipeline::addAttachmentColorBlend(ColorMask mask) { m_attachments.emplace_back(mask); }
-    inline void GraphicPipeline::addAttachmentsColorBlend(std::size_t nb, ColorMask mask)
+
+    inline void GraphicPipeline::setColorBlend(uint32_t attachmentId, ColorBlend colorBlend)
     {
-        std::vector masks(nb, mask);
-        m_attachments.insert(m_attachments.end(), masks.begin(), masks.end());
+        m_colorBlends[attachmentId] = colorBlend;
     }
 
     inline void            GraphicPipeline::setViewport(Viewport config) { m_viewport = std::move(config); }

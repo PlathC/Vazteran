@@ -14,7 +14,7 @@ namespace vzt
 
     GraphicPipeline::GraphicPipeline(GraphicPipeline&& other) noexcept : Pipeline(std::move(other))
     {
-        std::swap(m_attachments, other.m_attachments);
+        std::swap(m_colorBlends, other.m_colorBlends);
         std::swap(m_program, other.m_program);
         std::swap(m_vertexDescription, other.m_vertexDescription);
         std::swap(m_viewport, other.m_viewport);
@@ -25,7 +25,7 @@ namespace vzt
 
     GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept
     {
-        std::swap(m_attachments, other.m_attachments);
+        std::swap(m_colorBlends, other.m_colorBlends);
         std::swap(m_program, other.m_program);
         std::swap(m_vertexDescription, other.m_vertexDescription);
         std::swap(m_viewport, other.m_viewport);
@@ -127,19 +127,34 @@ namespace vzt
         const auto multisampling = toVulkan(m_multiSample);
         const auto depthStencil  = toVulkan(m_depthStencil);
 
-        if (m_attachments.empty())
-        {
-            const auto& colorAttachments = renderPass->getColorAttachments();
-            for (std::size_t i = 0; i < colorAttachments.size(); i++)
-                m_attachments.emplace_back(ColorMask::RGBA);
-        }
+        std::vector<ColorMask> attachments      = {};
+        const auto&            colorAttachments = renderPass->getColorAttachments();
+        for (std::size_t i = 0; i < colorAttachments.size(); i++)
+            attachments.emplace_back(ColorMask::RGBA);
 
         std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-        colorBlendAttachments.reserve(m_attachments.size());
-        for (const auto& m_attachment : m_attachments)
+        colorBlendAttachments.reserve(attachments.size());
+        for (uint32_t a = 0; a < attachments.size(); a++)
         {
+            if (m_colorBlends.find(a) != m_colorBlends.end())
+            {
+                const ColorBlend& blend = m_colorBlends[a];
+
+                VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+                colorBlendAttachment.blendEnable         = blend.blendEnable;
+                colorBlendAttachment.srcColorBlendFactor = vzt::toVulkan(blend.srcColorBlendFactor);
+                colorBlendAttachment.dstColorBlendFactor = vzt::toVulkan(blend.dstColorBlendFactor);
+                colorBlendAttachment.colorBlendOp        = vzt::toVulkan(blend.colorBlendOp);
+                colorBlendAttachment.srcAlphaBlendFactor = vzt::toVulkan(blend.srcAlphaBlendFactor);
+                colorBlendAttachment.dstAlphaBlendFactor = vzt::toVulkan(blend.dstAlphaBlendFactor);
+                colorBlendAttachment.alphaBlendOp        = vzt::toVulkan(blend.alphaBlendOp);
+                colorBlendAttachment.colorWriteMask      = vzt::toVulkan(blend.colorWriteMask);
+
+                colorBlendAttachments.emplace_back(colorBlendAttachment);
+                continue;
+            }
             VkPipelineColorBlendAttachmentState colorBlendAttachment{};
-            colorBlendAttachment.colorWriteMask = toVulkan(m_attachment);
+            colorBlendAttachment.colorWriteMask = toVulkan(attachments[a]);
             colorBlendAttachment.blendEnable    = VK_FALSE;
             colorBlendAttachments.emplace_back(colorBlendAttachment);
         }
