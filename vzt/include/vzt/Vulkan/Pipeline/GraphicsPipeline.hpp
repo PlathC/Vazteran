@@ -192,7 +192,7 @@ namespace vzt
         BlendFactor    srcColorBlendFactor = BlendFactor::SrcAlpha;
         BlendFactor    dstColorBlendFactor = BlendFactor::OneMinusSrcAlpha;
         BlendFactor    srcAlphaBlendFactor = BlendFactor::One;
-        BlendFactor    dstAlphaBlendFactor = BlendFactor::OneMinusSrcAlpha;
+        BlendFactor    dstAlphaBlendFactor = BlendFactor::Zero;
         ColorComponent colorWriteMask      = ColorMask::RGBA;
     };
 
