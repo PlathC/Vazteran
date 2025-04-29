@@ -28,7 +28,7 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Deferred + Indirect rendering + Instancing + Compute";
 
-    constexpr uint32_t MaxInstanceCount = 512;
+    constexpr uint32_t MaxInstanceCount = 2 << 7;
     constexpr uint32_t WorkGroupSize    = 256;
 
     auto       window   = vzt::Window{ApplicationName, 1024, 1024};
