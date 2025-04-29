@@ -595,6 +595,8 @@ namespace vzt
     {
         const Extent2D extent = m_graph->m_swapchain->getExtent();
         m_pipeline.resize(vzt::Viewport{extent});
+
+        Pass::resize();
     }
 
     RenderGraph::RenderGraph(View<Device> device, View<Swapchain> swapchain)
