@@ -8,7 +8,7 @@ namespace vzt
     struct Camera
     {
         float fov          = vzt::toRadians(45.f);
-        float nearClipping = 1e-4f;
+        float nearClipping = 1e-1f;
         float farClipping  = 1000.f;
         float aspectRatio  = 16.f / 9.f;
 
