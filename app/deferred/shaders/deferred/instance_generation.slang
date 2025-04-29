@@ -22,8 +22,6 @@ RWStructuredBuffer<float4> instances;
 [[vk::binding(2, 0)]]
 RWStructuredBuffer<DrawCommand> draw;
 
-
-
 // https://iquilezles.org/articles/functions/
 float gain( float x, float k )
 {
@@ -32,7 +30,7 @@ float gain( float x, float k )
 }
 
 bool isVisible(int id) {
-    const float t = gain(abs(sin(float(uniforms.time) * 0.0005)), .5f);
+    const float t = gain(abs(sin(float(uniforms.time) * 0.0005)), 5.f);
     return id < t * float(uniforms.maxInstanceCount);
 }
 
@@ -74,7 +72,7 @@ void main(uint3 dispatchThreadID: SV_DispatchThreadID)
     const float    y   = (float(id % range) / float(range));
 
     const float2 uv = float2(x, y) * 2. * PI;
-    const float3 position = Torus(uv.x, uv.y, 5.f, 3.f);
+    const float3 position = Torus(uv.x, uv.y, 7.f, 4.f);
 
     if (isVisible(id))
     {
