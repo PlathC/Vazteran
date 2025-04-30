@@ -11,7 +11,9 @@ namespace vzt
     {
       public:
         template <class Type>
-        static UniformBuffer fromData(View<Device> device, CSpan<Type> data, uint32_t frameNb, bool mappable = false);
+        static UniformBuffer From(View<Device> device, CSpan<Type> data, uint32_t frameNb, bool mappable = false);
+        template <class Type>
+        static UniformBuffer Typed(View<vzt::Device> device, uint32_t frameNb, bool mappable = false);
 
         UniformBuffer() = default;
         UniformBuffer(View<Device> device, std::size_t perFrameByteNb, uint32_t frameNb, bool mappable = false);

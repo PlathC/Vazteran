@@ -3,7 +3,7 @@
 namespace vzt
 {
     template <class Type>
-    UniformBuffer UniformBuffer::fromData(View<vzt::Device> device, CSpan<Type> data, uint32_t frameNb, bool mappable)
+    UniformBuffer UniformBuffer::From(View<vzt::Device> device, CSpan<Type> data, uint32_t frameNb, bool mappable)
     {
         UniformBuffer result = UniformBuffer(device, data.size * sizeof(Type), frameNb, mappable);
 
@@ -16,6 +16,12 @@ namespace vzt
 
         result.set(fullData);
         return result;
+    }
+
+    template <class Type>
+    UniformBuffer UniformBuffer::Typed(View<vzt::Device> device, uint32_t frameNb, bool mappable)
+    {
+        return UniformBuffer(device, sizeof(Type), frameNb, mappable);
     }
 
     template <class Type>
