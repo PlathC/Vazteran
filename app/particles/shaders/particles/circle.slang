@@ -18,7 +18,7 @@ struct VertexStageOutput
     uint32_t id;
 };
 
-const static float Radius = .025;
+const static float Radius = .05;
 
 [shader("vertex")]
 VertexStageOutput vertexMain(uint32_t vertexId : SV_VertexID, uint32_t instanceIndex : SV_InstanceID)
@@ -71,6 +71,7 @@ float3 idToColor(int id, int maximum)
     return palette(float(id) / float(maximum), float3(.5), float3(.5), float3(1.), float3(0.00, 0.10, 0.20) );
 }
 
+
 [shader("fragment")]
 float4 fragmentMain(VertexStageOutput output)
 {
@@ -82,7 +83,7 @@ float4 fragmentMain(VertexStageOutput output)
     const float t     = lerp( Radius - delta, Radius, d );
 
     const float3 Background = float3(1.f, 0.91f, 0.69f);
-    const float3 color = idToColor(output.id, 2 << 20);
+    const float3 color = idToColor(output.id, 2 << 19);
 
     return float4(color, 1. - t);
 }
