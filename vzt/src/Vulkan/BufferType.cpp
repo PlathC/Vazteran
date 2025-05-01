@@ -16,7 +16,8 @@ namespace vzt
             device, m_alignmentByteNb * frameNb, BufferUsage::UniformBuffer | BufferUsage::TransferDst,
             MemoryLocation::Device, mappable);
 
-        m_transferBuffer = Buffer(device, perFrameByteNb, BufferUsage::TransferSrc, MemoryLocation::Host, true);
+        m_transferBuffer =
+            Buffer(device, perFrameByteNb * frameNb, BufferUsage::TransferSrc, MemoryLocation::Host, true);
     }
 
     uint8_t* UniformBuffer::map(uint32_t frame) const

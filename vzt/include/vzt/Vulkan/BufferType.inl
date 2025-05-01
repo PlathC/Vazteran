@@ -21,35 +21,37 @@ namespace vzt
     template <class Type>
     UniformBuffer UniformBuffer::Typed(View<vzt::Device> device, uint32_t frameNb, bool mappable)
     {
-        return UniformBuffer(device, sizeof(Type), frameNb, mappable);
+        return {device, sizeof(Type), frameNb, mappable};
     }
 
     template <class Type>
-    void UniformBuffer::set(CSpan<Type> data)
+    void UniformBuffer::set(CSpan<Type> data, uint32_t frame)
     {
         uint8_t* ptr = m_transferBuffer.map();
-        std::memcpy(ptr, data.data, data.size * sizeof(Type));
+        std::memcpy(ptr + m_alignmentByteNb * frame, data.data, data.size * sizeof(Type));
         m_transferBuffer.unMap();
 
         // Transfer data
         View<Device>      device = m_buffer.getDevice();
         const View<Queue> queue  = device->getQueue(QueueType::Transfer);
         queue->oneShot([&](CommandBuffer& commands) { //
-            commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type));
+            commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type), m_alignmentByteNb * frame,
+                          m_alignmentByteNb * frame);
         });
     }
 
     template <class Type>
-    void UniformBuffer::set(const Type& data)
+    void UniformBuffer::set(const Type& data, uint32_t frame)
     {
         uint8_t* ptr = m_transferBuffer.map();
-        std::memcpy(ptr, &data, sizeof(Type));
+        std::memcpy(ptr + m_alignmentByteNb * frame, &data, sizeof(Type));
         m_transferBuffer.unMap();
 
         View<Device>      device = m_buffer.getDevice();
         const View<Queue> queue  = device->getQueue(QueueType::Transfer);
         queue->oneShot([&](CommandBuffer& commands) { //
-            commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type));
+            commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type), m_alignmentByteNb * frame,
+                          m_alignmentByteNb * frame);
         });
     }
 
@@ -57,19 +59,20 @@ namespace vzt
     void UniformBuffer::write(CommandBuffer& commands, CSpan<Type> data, uint32_t frame)
     {
         uint8_t* ptr = m_transferBuffer.map();
-        std::memcpy(ptr, data.data, data.size * sizeof(Type));
+        std::memcpy(ptr + m_alignmentByteNb * frame, data.data, data.size * sizeof(Type));
         m_transferBuffer.unMap();
 
-        commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type), 0, frame * m_alignmentByteNb);
+        commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type), m_alignmentByteNb * frame,
+                      frame * m_alignmentByteNb);
     }
 
     template <class Type>
     void UniformBuffer::write(CommandBuffer& commands, const Type& data, uint32_t frame)
     {
         uint8_t* ptr = m_transferBuffer.map();
-        std::memcpy(ptr, &data, sizeof(Type));
+        std::memcpy(ptr + m_alignmentByteNb * frame, &data, sizeof(Type));
         m_transferBuffer.unMap();
 
-        commands.copy(m_transferBuffer, m_buffer, sizeof(Type), 0, frame * m_alignmentByteNb);
+        commands.copy(m_transferBuffer, m_buffer, sizeof(Type), m_alignmentByteNb * frame, frame * m_alignmentByteNb);
     }
 } // namespace vzt

@@ -28,10 +28,10 @@ namespace vzt
         void     unMap() const;
 
         template <class Type>
-        void set(CSpan<Type> data);
+        void set(CSpan<Type> data, uint32_t frame = 0);
 
         template <class Type>
-        void set(const Type& data);
+        void set(const Type& data, uint32_t frame = 0);
 
         template <class Type>
         void write(CommandBuffer& commands, CSpan<Type> data, uint32_t frame);
