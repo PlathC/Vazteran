@@ -38,9 +38,9 @@ int main(int /* argc */, char** /* argv */)
         vzt::BufferUsage::AccelerationStructureBuildInputReadOnly | //
         vzt::BufferUsage::ShaderDeviceAddress |                     //
         vzt::BufferUsage::StorageBuffer;
-    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>( //
+    const auto vertexBuffer = vzt::Buffer::From<VertexInput>( //
         device, vertexInputs, vzt::BufferUsage::VertexBuffer | GeometryBufferUsages);
-    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>( //
+    const auto indexBuffer  = vzt::Buffer::From<uint32_t>( //
         device, mesh.indices, vzt::BufferUsage::IndexBuffer | GeometryBufferUsages);
 
     vzt::GeometryAsBuilder bottomAsBuilder{vzt::AsTriangles{
@@ -86,7 +86,7 @@ int main(int /* argc */, char** /* argv */)
             bottomAs.getDeviceAddress(),
         },
     };
-    auto instances = vzt::Buffer::fromData<VkAccelerationStructureInstanceKHR>( //
+    auto instances = vzt::Buffer::From<VkAccelerationStructureInstanceKHR>( //
         device, instancesData,
         vzt::BufferUsage::AccelerationStructureBuildInputReadOnly | vzt::BufferUsage::ShaderDeviceAddress);
 
@@ -124,9 +124,7 @@ int main(int /* argc */, char** /* argv */)
     layout.addBinding(2, vzt::DescriptorType::UniformBuffer);
     layout.compile();
 
-    vzt::RaytracingPipeline pipeline{device};
-    pipeline.setDescriptorLayout(layout);
-    pipeline.setShaderGroup(shaderGroup);
+    vzt::RaytracingPipeline pipeline{shaderGroup};
     pipeline.compile();
 
     vzt::DescriptorPool descriptorPool{device, layout};

@@ -144,17 +144,17 @@ namespace vzt
     {
       public:
         template <class ValueType>
-        static DeviceImage fromData(View<Device> device, ImageUsage usage, Format format, const Image<ValueType>& image,
-                                    uint32_t mipLevels = 1, ImageLayout layout = ImageLayout::Undefined,
-                                    SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
-                                    SharingMode sharingMode = SharingMode::Exclusive,
-                                    ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
-        static DeviceImage fromData(View<Device> device, ImageUsage usage, Format format, uint32_t width,
-                                    uint32_t height, const CSpan<uint8_t> data, uint32_t mipLevels = 1,
-                                    ImageLayout layout      = ImageLayout::Undefined,
-                                    SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
-                                    SharingMode sharingMode = SharingMode::Exclusive,
-                                    ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
+        static DeviceImage From(View<Device> device, ImageUsage usage, Format format, const Image<ValueType>& image,
+                                uint32_t mipLevels = 1, ImageLayout layout = ImageLayout::Undefined,
+                                SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
+                                SharingMode sharingMode = SharingMode::Exclusive,
+                                ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
+        static DeviceImage From(View<Device> device, ImageUsage usage, Format format, uint32_t width, uint32_t height,
+                                const CSpan<uint8_t> data, uint32_t mipLevels = 1,
+                                ImageLayout layout      = ImageLayout::Undefined,
+                                SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
+                                SharingMode sharingMode = SharingMode::Exclusive,
+                                ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
 
         DeviceImage() = default;
 

@@ -105,8 +105,8 @@ int main(int /* argc */, char** /* argv */)
         for (std::size_t i = 0; i < mesh.vertices.size(); i++)
             vertexInputs[i] = VertexInput(mesh.vertices[i], mesh.normals[i]);
 
-        vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
-        indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
+        vertexBuffer = vzt::Buffer::From<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
+        indexBuffer  = vzt::Buffer::From<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
     }
 
     // Compute AABB to place camera in front of the model

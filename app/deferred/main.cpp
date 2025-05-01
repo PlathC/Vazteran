@@ -59,8 +59,8 @@ int main(int /* argc */, char** /* argv */)
         max = glm::max(max, vertex);
     }
 
-    const auto vertexBuffer = vzt::Buffer::fromData<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
-    const auto indexBuffer  = vzt::Buffer::fromData<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
+    const auto vertexBuffer = vzt::Buffer::From<VertexInput>(device, vertexInputs, vzt::BufferUsage::VertexBuffer);
+    const auto indexBuffer  = vzt::Buffer::From<uint32_t>(device, mesh.indices, vzt::BufferUsage::IndexBuffer);
 
     vzt::VertexInputDescription vertexDescription{};
     vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
