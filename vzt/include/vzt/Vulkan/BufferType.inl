@@ -35,7 +35,7 @@ namespace vzt
         View<Device>      device = m_buffer.getDevice();
         const View<Queue> queue  = device->getQueue(QueueType::Transfer);
         queue->oneShot([&](CommandBuffer& commands) { //
-            commands.copy(m_transferBuffer, m_buffer, data.size);
+            commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type));
         });
     }
 
@@ -49,7 +49,7 @@ namespace vzt
         View<Device>      device = m_buffer.getDevice();
         const View<Queue> queue  = device->getQueue(QueueType::Transfer);
         queue->oneShot([&](CommandBuffer& commands) { //
-            commands.copy(m_transferBuffer, m_buffer, data.size);
+            commands.copy(m_transferBuffer, m_buffer, data.size * sizeof(Type));
         });
     }
 
