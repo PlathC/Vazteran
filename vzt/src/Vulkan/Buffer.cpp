@@ -1,5 +1,6 @@
 #include "vzt/Vulkan/Buffer.hpp"
 
+#include "vzt/Core/Assert.hpp"
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Device.hpp"
 
@@ -23,9 +24,10 @@ namespace vzt
         return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
     }
 
-    Buffer Buffer::fromData(View<Device> device, CSpan<uint8_t> data, BufferUsage usages, MemoryLocation location,
-                            bool mappable)
+    Buffer Buffer::From(View<Device> device, CSpan<uint8_t> data, BufferUsage usages, MemoryLocation location,
+                        bool mappable)
     {
+        VZT_ASSERT(data.size > 0);
         if (mappable)
         {
             Buffer   buffer     = {device, data.size, usages, location, mappable};

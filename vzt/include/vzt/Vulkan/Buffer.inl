@@ -3,11 +3,11 @@
 namespace vzt
 {
     template <class Type>
-    Buffer Buffer::fromData(View<Device> device, CSpan<Type> data, BufferUsage usages, MemoryLocation location,
-                            bool mappable)
+    Buffer Buffer::From(View<Device> device, CSpan<Type> data, BufferUsage usages, MemoryLocation location,
+                        bool mappable)
     {
         const CSpan<uint8_t> translated = {reinterpret_cast<const uint8_t*>(data.data), data.size * sizeof(Type)};
-        return fromData(device, translated, usages, location, mappable);
+        return From(device, translated, usages, location, mappable);
     }
 
     inline bool           Buffer::isMappable() const { return m_mappable; }

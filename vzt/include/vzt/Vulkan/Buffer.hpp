@@ -53,10 +53,10 @@ namespace vzt
     {
       public:
         template <class Type>
-        static Buffer fromData(View<Device> device, CSpan<Type> data, BufferUsage usages,
-                               MemoryLocation location = MemoryLocation::Device, bool mappable = false);
-        static Buffer fromData(View<Device> device, CSpan<uint8_t> data, BufferUsage usages,
-                               MemoryLocation location = MemoryLocation::Device, bool mappable = false);
+        static Buffer From(View<Device> device, CSpan<Type> data, BufferUsage usages,
+                           MemoryLocation location = MemoryLocation::Device, bool mappable = false);
+        static Buffer From(View<Device> device, CSpan<uint8_t> data, BufferUsage usages,
+                           MemoryLocation location = MemoryLocation::Device, bool mappable = false);
 
         Buffer() = default;
         Buffer(View<Device> device, std::size_t byteNb, BufferUsage usages,
