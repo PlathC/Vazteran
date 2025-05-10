@@ -25,6 +25,7 @@ namespace vzt
 
     GraphicPipeline& GraphicPipeline::operator=(GraphicPipeline&& other) noexcept
     {
+        std::swap(m_compiled, other.m_compiled);
         std::swap(m_colorBlends, other.m_colorBlends);
         std::swap(m_program, other.m_program);
         std::swap(m_vertexDescription, other.m_vertexDescription);

@@ -24,7 +24,7 @@ namespace vzt
         constexpr Extension Spirv14                 = VK_KHR_SPIRV_1_4_EXTENSION_NAME;
         constexpr Extension ShaderFloatControls     = VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME;
         constexpr Extension GraphicsPipelineLibrary = VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME;
-        constexpr Extension PortabilitySubset       = "VK_KHR_portability_subset";
+        constexpr Extension PortabilitySubset       = "";
         constexpr Extension NonSemanticInfo         = VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME;
     } // namespace dext
 

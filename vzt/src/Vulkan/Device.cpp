@@ -5,6 +5,9 @@
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 
+#define VOLK_IMPLEMENTATION
+#include <volk.h>
+
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Instance.hpp"
 #include "vzt/Vulkan/Surface.hpp"

@@ -18,7 +18,7 @@ namespace vzt
         RaytracingPipeline(RaytracingPipeline&& other) noexcept;
         RaytracingPipeline& operator=(RaytracingPipeline&& other) noexcept;
 
-        ~RaytracingPipeline();
+        ~RaytracingPipeline() override;
 
         inline void setShaderGroup(const ShaderGroup& shaderGroup);
 

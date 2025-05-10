@@ -81,8 +81,11 @@ namespace vzt
             case SLANG_TEXTURE_CUBE_ARRAY:;
             case SLANG_TEXTURE_2D_MULTISAMPLE:;
             case SLANG_TEXTURE_2D_MULTISAMPLE_ARRAY:;
-            case SLANG_TEXTURE_SUBPASS_MULTISAMPLE: return DescriptorType::CombinedSampler;
-
+            case SLANG_TEXTURE_SUBPASS_MULTISAMPLE: {
+                if (type->getResourceAccess() == SLANG_RESOURCE_ACCESS_READ_WRITE)
+                    return DescriptorType::StorageImage;
+                return DescriptorType::CombinedSampler;
+            }
             case SLANG_TEXTURE_BUFFER: return DescriptorType::StorageTexelBuffer;
 
             case SLANG_RESOURCE_BASE_SHAPE_MASK:
@@ -150,9 +153,12 @@ namespace vzt
         sessionDesc.compilerOptionEntries    = compilerOptions.data();
         sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(compilerOptions.size());
 
+        std::vector<std::string> searchPathsStrs;
         std::vector<const char*> searchPaths;
-        std::transform(begin(includeDirectories), end(includeDirectories), std::back_inserter(searchPaths),
-                       [](const vzt::Path& path) { return path.c_str(); });
+        std::transform(begin(includeDirectories), end(includeDirectories), std::back_inserter(searchPathsStrs),
+                       [](const vzt::Path& path) { return path.string(); });
+        std::transform(begin(searchPathsStrs), end(searchPathsStrs), std::back_inserter(searchPaths),
+                       [](const std::string& path) { return path.c_str(); });
 
         sessionDesc.searchPaths     = searchPaths.data();
         sessionDesc.searchPathCount = static_cast<SlangInt>(searchPaths.size());
@@ -162,10 +168,12 @@ namespace vzt
 
     Shader Compiler::operator()(const Path& path, const std::string& entryPoint) const
     {
+        const std::string pathStr = path.string();
+
         Slang::ComPtr<slang::IBlob> diagnostics;
         slang::IModule*             module;
         {
-            module = m_implementation->session->loadModule(path.c_str(), diagnostics.writeRef());
+            module = m_implementation->session->loadModule(pathStr.c_str(), diagnostics.writeRef());
             if (!module)
             {
                 vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
@@ -235,10 +243,12 @@ namespace vzt
 
     std::vector<Shader> Compiler::operator()(const Path& path) const
     {
+        const std::string pathStr = path.string();
+
         Slang::ComPtr<slang::IBlob> diagnostics;
         slang::IModule*             module;
         {
-            module = m_implementation->session->loadModule(path.c_str(), diagnostics.writeRef());
+            module = m_implementation->session->loadModule(pathStr.c_str(), diagnostics.writeRef());
             if (!module)
             {
                 vzt::logger::error("[SLANG] Compile Error, diagnostic {}",

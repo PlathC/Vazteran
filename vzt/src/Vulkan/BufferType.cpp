@@ -1,7 +1,5 @@
 #include "vzt/Vulkan/BufferType.hpp"
 
-#include <libcodedirectory.h>
-
 #include "vzt/Core/Assert.hpp"
 
 namespace vzt
