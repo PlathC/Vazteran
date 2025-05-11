@@ -5,14 +5,14 @@
 
 namespace vzt
 {
-    VkAccelerationStructureGeometryKHR toVulkan(const GeometryAsBuilder& geometryAs)
+    VkAccelerationStructureGeometryKHR toVulkan(const GeometryAccelerationStructureBuilder& geometryAs)
     {
         VkAccelerationStructureGeometryKHR vkGeometry{};
         vkGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
         vkGeometry.flags = toVulkan(geometryAs.flags);
 
         std::visit(
-            Overloaded{[&vkGeometry](const AsTriangles& trianglesAs) {
+            Overloaded{[&vkGeometry](const AccelerationStructureTriangles& trianglesAs) {
                            vkGeometry.geometryType = toVulkan(GeometryType::Triangles);
                            vkGeometry.geometry.triangles.sType =
                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
@@ -30,14 +30,14 @@ namespace vzt
                            vkGeometry.geometry.triangles.indexData.deviceAddress     = indexBuffer.getDeviceAddress();
                            vkGeometry.geometry.triangles.transformData.deviceAddress = 0;
                        },
-                       [&vkGeometry](const AsInstance& instance) {
+                       [&vkGeometry](const AccelerationStructureInstance& instance) {
                            vkGeometry.geometryType = toVulkan(GeometryType::Instances);
                            vkGeometry.geometry.instances.sType =
                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
                            vkGeometry.geometry.instances.arrayOfPointers    = VK_FALSE;
                            vkGeometry.geometry.instances.data.deviceAddress = instance.deviceAddress;
                        },
-                       [&vkGeometry](const AsAabbs& aabbsAs) {
+                       [&vkGeometry](const AccelerationStructureAabbs& aabbsAs) {
                            vkGeometry.geometryType = toVulkan(GeometryType::AABBs);
                            vkGeometry.geometry.aabbs.sType =
                                VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
@@ -49,7 +49,7 @@ namespace vzt
         return vkGeometry;
     }
 
-    AccelerationStructure::AccelerationStructure(View<Device> device, std::vector<GeometryAsBuilder> geometries,
+    AccelerationStructure::AccelerationStructure(View<Device> device, std::vector<GeometryAccelerationStructureBuilder> geometries,
                                                  AccelerationStructureType type)
         : DeviceObject<VkAccelerationStructureKHR>(device), m_geometries(std::move(geometries)), m_type(type)
     {
@@ -59,15 +59,15 @@ namespace vzt
         for (const auto& geometry : m_geometries)
         {
             std::visit(Overloaded{
-                           [this](const AsTriangles& trianglesAs) {
+                           [this](const AccelerationStructureTriangles& trianglesAs) {
                                m_maxPrimitiveCount += static_cast<uint32_t>(trianglesAs.indexBuffer.buffer->size() /
                                                                             (3 * sizeof(uint32_t)));
                            },
-                           [this](const AsAabbs& aabbsAs) {
+                           [this](const AccelerationStructureAabbs& aabbsAs) {
                                m_maxPrimitiveCount +=
                                    static_cast<uint32_t>(aabbsAs.aabbs.buffer->size() / aabbsAs.stride);
                            },
-                           [this](const AsInstance& instancesAs) { m_maxPrimitiveCount += instancesAs.count; },
+                           [this](const AccelerationStructureInstance& instancesAs) { m_maxPrimitiveCount += instancesAs.count; },
                        },
                        geometry.geometry);
 
@@ -114,7 +114,7 @@ namespace vzt
             m_device->getHandle(), &accelerationDeviceAddressInfo);
     }
 
-    AccelerationStructure::AccelerationStructure(View<Device> device, GeometryAsBuilder geometry,
+    AccelerationStructure::AccelerationStructure(View<Device> device, GeometryAccelerationStructureBuilder geometry,
                                                  AccelerationStructureType type)
         : AccelerationStructure(device, std::vector{geometry}, type)
     {

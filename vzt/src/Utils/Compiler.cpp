@@ -225,7 +225,7 @@ namespace vzt
         slang::ProgramLayout*        programLayout = composedProgram->getLayout();
         slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());
 
-        Shader shader = Shader(toShaderStage(reflection->getStage()), {});
+        Shader shader = Shader(entryPoint, toShaderStage(reflection->getStage()), {});
         shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
         std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
 
@@ -297,7 +297,7 @@ namespace vzt
             slang::ProgramLayout*        programLayout = composedProgram->getLayout();
             slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());
 
-            Shader shader = Shader(toShaderStage(reflection->getStage()), {});
+            Shader shader = Shader(entryPoint, toShaderStage(reflection->getStage()), {});
             shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
             std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
 

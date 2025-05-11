@@ -143,7 +143,7 @@ namespace vzt
             default: throw std::runtime_error("Unkown shader stage");
             }
 
-            shaderGroups.emplace_back(std::move(shaderGroup));
+            shaderGroups.emplace_back(shaderGroup);
 
             VkPipelineShaderStageCreateInfo createInfo{};
             createInfo.module = shaderGroupShader.shaderModule.getHandle();
@@ -182,8 +182,8 @@ namespace vzt
         const uint32_t sbtSize    = groupCount * m_handleSizeAligned;
 
         m_shaderHandleStorage = std::vector<uint8_t>(sbtSize);
-        vkCheck(vkGetRayTracingShaderGroupHandlesKHR(m_device->getHandle(), m_handle, 0, groupCount, sbtSize,
-                                                     m_shaderHandleStorage.data()),
+        vkCheck(vkGetRayTracingShaderGroupHandlesKHR( //
+                    m_device->getHandle(), m_handle, 0, groupCount, sbtSize, m_shaderHandleStorage.data()),
                 "Can't get shader group handles.");
 
         m_compiled = true;
