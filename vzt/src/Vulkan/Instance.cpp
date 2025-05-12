@@ -162,10 +162,13 @@ namespace vzt
         for (uint32_t i = 0; i < deviceCount; i++)
         {
             const auto device = PhysicalDevice(devices[i]);
-            if (device.isSuitable(configuration, surface))
+            const bool suitable = device.isSuitable(configuration, surface);
+            if (!isDiscrete && suitable)
                 selectedDevice = i;
 
-            if (!isDiscrete && device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            // Override selection if current GPU is discrete
+            const bool isCurrentDiscrete = device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+            if (!isDiscrete && suitable && isCurrentDiscrete)
             {
                 selectedDevice = i;
                 isDiscrete     = true;
