@@ -1,5 +1,7 @@
 #include "vzt/Vulkan/Image.hpp"
 
+#include <utility>
+
 #include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Buffer.hpp"
 #include "vzt/Vulkan/Command.hpp"
