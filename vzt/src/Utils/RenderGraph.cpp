@@ -140,6 +140,30 @@ namespace vzt
         m_colorOutputs.emplace_back(outAttachment);
     }
 
+    void Pass::addAttachmentInputOutput(uint32_t binding, Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        PassAttachment attachment{handle, std::move(name)};
+        attachment.binding = binding;
+        if (attachment.name.empty())
+            attachment.name = m_name + "InOut" + std::to_string(m_colorInputs.size());
+
+        attachment.use.finalLayout = ImageLayout::General;
+        attachment.use.usedLayout  = ImageLayout::General;
+        attachment.use.loadOp      = LoadOp::Load;
+        attachment.use.storeOp     = StoreOp::DontCare;
+
+        attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+        attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+        attachment.targetAccess = Access::ShaderRead | Access::ShaderWrite;
+
+        m_colorInputs.emplace_back(attachment);
+
+        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
+    }
+
     void Pass::addStorageInput(uint32_t binding, const Handle& handle, std::string name,
                                Optional<Range<std::size_t>> range)
     {
@@ -456,14 +480,14 @@ namespace vzt
         for (const auto& output : m_colorOutputs)
         {
             const auto& builder = m_graph->m_attachmentBuilders[output.handle];
-            extent              = builder.imageSize.value_or(swapchainExtent);
+            extent              = builder.size.value_or(swapchainExtent);
             break;
         }
 
         if (!extent && m_depthOutput)
         {
             const auto& builder = m_graph->m_attachmentBuilders[m_depthOutput->handle];
-            extent              = builder.imageSize.value_or(swapchainExtent);
+            extent              = builder.size.value_or(swapchainExtent);
         }
 
         assert(extent && "Can't guess render pass extent since it has no output.");
@@ -882,9 +906,16 @@ namespace vzt
                 imageId++;
 
                 ImageBuilder imageBuilder = {
-                    attachmentBuilder.imageSize.value_or(m_swapchain->getExtent()),
-                    attachmentBuilder.usage,
-                    *attachmentBuilder.format,
+                    .size        = attachmentBuilder.size.value_or(m_swapchain->getExtent()),
+                    .usage       = attachmentBuilder.usage,
+                    .format      = *attachmentBuilder.format,
+                    .mipLevels   = attachmentBuilder.mipLevels,
+                    .layout      = attachmentBuilder.layout,
+                    .sampleCount = attachmentBuilder.sampleCount,
+                    .type        = attachmentBuilder.type,
+                    .sharingMode = attachmentBuilder.sharingMode,
+                    .tiling      = attachmentBuilder.tiling,
+                    .mappable    = attachmentBuilder.mappable,
                 };
 
                 imageBuilder.sampleCount = attachmentBuilder.sampleCount;

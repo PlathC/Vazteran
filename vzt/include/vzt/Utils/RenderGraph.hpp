@@ -25,9 +25,15 @@ namespace vzt
     struct AttachmentBuilder
     {
         ImageUsage         usage;
-        Optional<Format>   format{};    // if unset, use swapchain image
-        Optional<Extent2D> imageSize{}; // if unset, use swapchain image size
-        SampleCount        sampleCount = vzt::SampleCount::Sample1;
+        Optional<Extent3D> size        = {};
+        Optional<Format>   format      = {};
+        uint32_t           mipLevels   = 1;
+        ImageLayout        layout      = ImageLayout::Undefined;
+        SampleCount        sampleCount = SampleCount::Sample1;
+        ImageType          type        = ImageType::T2D;
+        SharingMode        sharingMode = SharingMode::Exclusive;
+        ImageTiling        tiling      = ImageTiling::Optimal;
+        bool               mappable    = false;
     };
 
     struct StorageBuilder
@@ -108,6 +114,8 @@ namespace vzt
         void addDepthInput(uint32_t binding, const Handle& attachment, std::string name = "");
         void addColorOutput(Handle& attachment, std::string attachmentName = "", const vzt::Vec4 clearColor = {});
         void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "");
+
+        void addAttachmentInputOutput(uint32_t binding, Handle& attachment, std::string attachmentName = "");
 
         void addStorageInputIndirect(const Handle& storage, std::string storageName = "",
                                      Optional<Range<std::size_t>> range = {});
