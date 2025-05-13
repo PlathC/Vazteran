@@ -140,33 +140,11 @@ namespace vzt
         m_colorOutputs.emplace_back(outAttachment);
     }
 
-    void Pass::addAttachmentInputOutput(uint32_t binding, Handle& handle, std::string name)
-    {
-        assert(handle.type == HandleType::Attachment);
-
-        PassAttachment attachment{handle, std::move(name)};
-        attachment.binding = binding;
-        if (attachment.name.empty())
-            attachment.name = m_name + "InOut" + std::to_string(m_colorInputs.size());
-
-        attachment.use.finalLayout = ImageLayout::General;
-        attachment.use.usedLayout  = ImageLayout::General;
-        attachment.use.loadOp      = LoadOp::Load;
-        attachment.use.storeOp     = StoreOp::DontCare;
-
-        attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
-        attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
-        attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
-        attachment.targetAccess = Access::ShaderRead | Access::ShaderWrite;
-
-        m_colorInputs.emplace_back(attachment);
-
-        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
-    }
-
     void Pass::addStorageInput(uint32_t binding, const Handle& handle, std::string name,
                                Optional<Range<std::size_t>> range)
     {
+        VZT_ASSERT(handle.type == HandleType::Storage);
+
         PassStorage storage{handle, name, range};
         storage.waitAccess   = Access::ShaderWrite;
         storage.waitStage    = PipelineStage::ComputeShader;
@@ -178,14 +156,12 @@ namespace vzt
 
         storage.binding = binding;
         m_storageInputs.emplace_back(storage);
-        m_descriptorLayout.addBinding( //
-            binding,
-            handle.type == HandleType::Attachment ? DescriptorType::StorageImage : DescriptorType::StorageBuffer);
+        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
     }
 
     void Pass::addStorageInputIndirect(const Handle& handle, std::string name, Optional<Range<std::size_t>> range)
     {
-        assert(handle.type == HandleType::Storage);
+        VZT_ASSERT(handle.type == HandleType::Storage);
 
         PassStorage storage{handle, name, range};
         storage.waitAccess   = Access::ShaderWrite;
@@ -202,19 +178,39 @@ namespace vzt
     {
         handle.state++;
 
-        PassStorage storage{handle, name, range};
-        storage.targetAccess = Access::ShaderWrite;
-        storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
-        storage.waitAccess   = Access::ShaderRead;
-        storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
-        if (storage.name.empty())
-            storage.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
+        if (handle.type == HandleType::Storage)
+        {
+            PassStorage storage{handle, name, range};
+            storage.targetAccess = Access::ShaderWrite;
+            storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
+            storage.waitAccess   = Access::ShaderRead;
+            storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
+            if (storage.name.empty())
+                storage.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
 
-        storage.binding = binding;
-        m_storageOutputs.emplace_back(storage);
-        m_descriptorLayout.addBinding( //
-            binding,
-            handle.type == HandleType::Attachment ? DescriptorType::StorageImage : DescriptorType::StorageBuffer);
+            storage.binding = binding;
+            m_storageOutputs.emplace_back(storage);
+            m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
+        }
+        else if (handle.type == HandleType::Attachment)
+        {
+            PassAttachment storage{handle, name};
+            storage.targetAccess = Access::ShaderWrite;
+            storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
+            storage.waitAccess   = Access::ShaderRead;
+            storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
+            if (storage.name.empty())
+                storage.name = m_name + "StorageImageOut" + std::to_string(m_storageImageOutputs.size());
+
+            storage.use.finalLayout = ImageLayout::General;
+            storage.use.usedLayout  = ImageLayout::General;
+            // storage.use.loadOp      = LoadOp::Load;
+            // storage.use.storeOp     = StoreOp::DontCare;
+
+            storage.binding = binding;
+            m_storageImageOutputs.emplace_back(storage);
+            m_descriptorLayout.addBinding(binding, DescriptorType::StorageImage);
+        }
     }
 
     void Pass::addStorageInputOutput(uint32_t binding, Handle& handle, std::string inName, std::string outName,
@@ -222,25 +218,47 @@ namespace vzt
     {
         handle.state++;
 
-        PassStorage inStorage{handle, inName, range};
-        inStorage.targetAccess = Access::ShaderRead | Access::ShaderWrite;
-        inStorage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
-        inStorage.waitAccess   = Access::ShaderRead | Access::ShaderWrite;
-        inStorage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
-        if (inStorage.name.empty())
-            inStorage.name = m_name + "In" + std::to_string(m_colorInputs.size());
+        if (handle.type == HandleType::Storage)
+        {
+            PassStorage inStorage{handle, inName, range};
+            inStorage.targetAccess = Access::ShaderRead | Access::ShaderWrite;
+            inStorage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
+            inStorage.waitAccess   = Access::ShaderRead | Access::ShaderWrite;
+            inStorage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
+            if (inStorage.name.empty())
+                inStorage.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 
-        inStorage.binding = binding;
-        m_storageInputs.emplace_back(inStorage);
+            inStorage.binding = binding;
+            m_storageInputs.emplace_back(inStorage);
 
-        PassStorage outStorage{handle, outName, range};
-        if (outStorage.name.empty())
-            outStorage.name = m_name + "Out" + std::to_string(m_colorInputs.size());
+            PassStorage outStorage{handle, outName, range};
+            if (outStorage.name.empty())
+                outStorage.name = m_name + "StorageOut" + std::to_string(m_storageOutputs.size());
 
-        outStorage.binding = binding;
-        m_storageOutputs.emplace_back(outStorage);
+            outStorage.binding = binding;
+            m_storageOutputs.emplace_back(outStorage);
 
-        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
+            m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
+        }
+        else if (handle.type == HandleType::Attachment)
+        {
+            PassAttachment storage{handle, inName};
+            storage.targetAccess = Access::ShaderWrite;
+            storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
+            storage.waitAccess   = Access::ShaderRead;
+            storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
+            if (storage.name.empty())
+                storage.name = m_name + "StorageImageOut" + std::to_string(m_storageImageOutputs.size());
+
+            storage.use.finalLayout = ImageLayout::General;
+            storage.use.usedLayout  = ImageLayout::General;
+            // storage.use.loadOp      = LoadOp::Load;
+            // storage.use.storeOp     = StoreOp::DontCare;
+
+            storage.binding = binding;
+            m_storageImageOutputs.emplace_back(storage);
+            m_descriptorLayout.addBinding(binding, DescriptorType::StorageImage);
+        }
     }
 
     void Pass::setDepthInput(const Handle& handle, std::string name)
@@ -300,6 +318,12 @@ namespace vzt
     {
         for (const auto& input : m_colorInputs)
         {
+            for (const auto& output : other.m_storageImageOutputs)
+            {
+                if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
+                    return true;
+            }
+
             for (const auto& output : other.m_colorOutputs)
             {
                 if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
@@ -323,21 +347,42 @@ namespace vzt
             }
         }
 
+        for (const auto& currentOutput : m_storageOutputs)
+        {
+            for (const auto& output : other.m_storageOutputs)
+            {
+                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
+                    return true;
+            }
+
+            for (const auto& output : other.m_storageImageOutputs)
+            {
+                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
+                    return true;
+            }
+        }
+
+        for (const auto& currentOutput : m_colorOutputs)
+        {
+            for (const auto& output : other.m_storageOutputs)
+            {
+                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
+                    return true;
+            }
+
+            for (const auto& output : other.m_storageImageOutputs)
+            {
+                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
+                    return true;
+            }
+        }
+
         if (m_depthInput)
         {
             if (other.m_depthOutput)
             {
                 if (other.m_depthOutput->handle.id == m_depthInput->handle.id &&
                     other.m_depthOutput->handle.state == m_depthInput->handle.state)
-                    return true;
-            }
-        }
-
-        for (const auto& currentOutput : m_storageOutputs)
-        {
-            for (const auto& output : other.m_storageOutputs)
-            {
-                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
                     return true;
             }
         }
@@ -411,6 +456,31 @@ namespace vzt
             commands.barrier(output.waitStage, output.targetStage, barrier);
         }
 
+        for (const auto& output : m_storageImageOutputs)
+        {
+            if (output.handle.state == 0 || output.waitAccess == vzt::Access::None)
+                continue;
+
+            const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
+
+            ImageBarrier barrier;
+            if (!builder.format)
+                barrier.image = m_graph->m_swapchain->getImage(i);
+            else
+                barrier.image = m_graph->getImage(i, output.handle);
+            barrier.oldLayout = output.use.initialLayout;
+            barrier.newLayout = output.use.usedLayout;
+            barrier.src       = output.waitAccess;
+            barrier.dst       = output.targetAccess;
+            barrier.aspect    = output.aspect;
+
+            // TODO: Handle many queues
+            // barrier.srcQueue
+            // barrier.dstQueue
+
+            commands.barrier(output.waitStage, output.targetStage, barrier);
+        }
+
         if (m_type == PassType::Graphics)
             commands.beginPass(m_renderPass, m_frameBuffers[i]);
 
@@ -440,6 +510,17 @@ namespace vzt
                     attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
 
                 m_renderPass.addColor(attachmentUse);
+            }
+
+            for (const auto& output : m_storageImageOutputs)
+            {
+                const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
+
+                AttachmentUse attachmentUse = output.use;
+                attachmentUse.format        = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
+
+                if (m_graph->isBackBuffer(output.handle))
+                    attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
             }
 
             if (!m_depthOutput)
@@ -569,21 +650,21 @@ namespace vzt
 
             for (auto& output : m_storageOutputs)
             {
-                if (output.handle.type == HandleType::Attachment)
-                {
-                    View<DeviceImage> image = m_graph->getImage(i, output.handle);
-                    m_textureSaves.emplace_back(device, image, SamplerBuilder{});
-                    Texture& texture = m_textureSaves.back();
+                View<Buffer> storage = m_graph->getStorage(i, output.handle);
 
-                    descriptors[output.binding] = DescriptorImage{DescriptorType::StorageImage, texture.getView()};
-                }
-                else
-                {
-                    View<Buffer> storage = m_graph->getStorage(i, output.handle);
+                descriptors[output.binding] =
+                    DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage, storage->size()}};
+            }
 
-                    descriptors[output.binding] =
-                        DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage, storage->size()}};
-                }
+            for (auto& output : m_storageImageOutputs)
+            {
+                View<DeviceImage> image = m_graph->getImage(i, output.handle);
+                m_imageViews.emplace_back(device, image, ImageAspect::Color);
+
+                ImageView& imageView = m_imageViews.back();
+
+                descriptors[output.binding] =
+                    DescriptorImage{DescriptorType::StorageImage, imageView, {}, output.use.usedLayout};
             }
 
             if (!descriptors.empty())

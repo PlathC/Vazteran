@@ -8,9 +8,10 @@ cbuffer Uniforms
     float4   texelScale;
 }
 
-[[vk::binding(1, 0)]]
+[[vk::combinedImageSampler]][[vk::binding(1, 0)]]
 Texture3D<float> sdf;
-SamplerState     samplerSdf;
+[[vk::combinedImageSampler]][[vk::binding(1, 0)]]
+SamplerState samplerSdf;
 
 struct VertexStageOutput
 {

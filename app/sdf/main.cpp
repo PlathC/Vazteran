@@ -30,14 +30,16 @@ int main(int /* argc */, char** /* argv */)
 
     constexpr uint32_t WorkGroupSize = 8;
     constexpr uint32_t GridWidth     = 8 * 8;
-    constexpr uint32_t MipLevel      = 6;
+    constexpr uint32_t MipLevel      = 1;
 
     auto       window   = vzt::Window{ApplicationName, 1280, 720};
     auto       instance = vzt::Instance{window};
     const auto surface  = vzt::Surface{window, instance};
 
     auto deviceBuilder = vzt::DeviceBuilder::standard();
-    auto device        = instance.getDevice(deviceBuilder, surface);
+    deviceBuilder.add(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+
+    auto device = instance.getDevice(deviceBuilder, surface);
 
     auto        hardware = device.getHardware();
     const float period   = hardware.getProperties().limits.timestampPeriod;
@@ -64,9 +66,9 @@ int main(int /* argc */, char** /* argv */)
     // Instance generation pass
     auto& sdfGeneration = graph.addCompute("SDF generation", compiler("shaders/sdf/grid.slang", "main"));
     {
-        sdfGeneration.addAttachmentInputOutput(1, sdfTexture);
+        sdfGeneration.addStorageOutput(1, sdfTexture);
         sdfGeneration.setRecordFunction<vzt::LambdaRecorder>( //
-            [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+            [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
                 commands.bind(sdfGeneration.getPipeline(), set);
                 commands.dispatch(GridWidth / WorkGroupSize, GridWidth / WorkGroupSize, GridWidth / WorkGroupSize);
             });
@@ -78,7 +80,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/sdf/raycast.slang"));
     {
-        geometry.addStorageInput(1, sdfTexture);
+        geometry.addColorInput(1, sdfTexture);
         geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
         geometry.setDepthOutput(depth);
 
@@ -89,7 +91,7 @@ int main(int /* argc */, char** /* argv */)
         geometryRasterization.cullMode = vzt::CullMode::None;
 
         geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+            [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
                 commands.bind(geometryPipeline, set);
                 commands.drawIndexed(indexBuffer, {0, 3 * 3 * 2});
             });
@@ -106,8 +108,8 @@ int main(int /* argc */, char** /* argv */)
 
     // Initialize buffer with default values
     const uint32_t     frameNb       = swapchain.getImageNb();
-    vzt::UniformBuffer modelsUbo     = vzt::UniformBuffer(device, sizeof(vzt::Mat4) * 3, frameNb, true);
-    vzt::UniformBuffer generationUbo = vzt::UniformBuffer(device, sizeof(GenerationInput), frameNb, true);
+    vzt::UniformBuffer generationUbo = vzt::UniformBuffer::Typed<GenerationInput>(device, frameNb, true);
+    vzt::UniformBuffer raycastUbo    = vzt::UniformBuffer::Typed<RaycastInput>(device, frameNb, true);
 
     // Assign buffer parts to their respective image
     vzt::DescriptorPool& generationDescriptorPool = sdfGeneration.getDescriptorPool();
@@ -118,7 +120,7 @@ int main(int /* argc */, char** /* argv */)
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
         generationDescriptorPool.update(i, {{0, generationUbo.getDescriptor(i)}});
-        geometryDescriptorPool.update(i, {{0, modelsUbo.getDescriptor(i)}});
+        geometryDescriptorPool.update(i, {{0, raycastUbo.getDescriptor(i)}});
     }
 
     // Compute AABB to place camera in front of the model
@@ -201,19 +203,19 @@ int main(int /* argc */, char** /* argv */)
         else if (projection < 0.f) // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
-        vzt::Mat4    view         = camera.getViewMatrix(currentPosition, orientation);
-        RaycastInput raycastInput = {
+        const vzt::Mat4    view         = camera.getViewMatrix(currentPosition, orientation);
+        const RaycastInput raycastInput = {
             .worldToScreen = glm::transpose(camera.getProjectionMatrix() * view),
+            .cameraPos     = vzt::Vec4(cameraPosition, 1.f),
+            .texelScale    = vzt::Vec4(1.f / static_cast<float>(GridWidth)),
         };
-        std::array matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
+        const GenerationInput generationInput = {.gridX = GridWidth, .gridY = GridWidth, .gridZ = GridWidth};
 
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         commands.begin();
 
-        GenerationInput generationInput = {.gridX = GridWidth, .gridY = GridWidth, .gridZ = GridWidth};
-
         generationUbo.write(commands, generationInput, submission->imageId);
-        modelsUbo.write(commands, matrices, submission->imageId);
+        raycastUbo.write(commands, raycastInput, submission->imageId);
 
         commands.reset(queryPool, submission->imageId * (graph.size() + 1) * 2, (graph.size() + 1) * 2);
         commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 0, vzt::PipelineStage::BottomOfPipe);

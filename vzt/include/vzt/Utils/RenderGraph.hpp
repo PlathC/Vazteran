@@ -115,8 +115,6 @@ namespace vzt
         void addColorOutput(Handle& attachment, std::string attachmentName = "", const vzt::Vec4 clearColor = {});
         void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "");
 
-        void addAttachmentInputOutput(uint32_t binding, Handle& attachment, std::string attachmentName = "");
-
         void addStorageInputIndirect(const Handle& storage, std::string storageName = "",
                                      Optional<Range<std::size_t>> range = {});
         void addStorageInput(uint32_t binding, const Handle& storage, std::string storageName = "",
@@ -166,7 +164,8 @@ namespace vzt
             Handle        handle;
             std::string   name;
             AttachmentUse use;
-            uint32_t      binding = ~0u;
+
+            uint32_t binding = ~0u;
 
             Access        waitAccess   = vzt::Access::None;
             Access        targetAccess = vzt::Access::None;
@@ -199,6 +198,7 @@ namespace vzt
 
         std::vector<PassAttachment> m_colorOutputs;
         std::vector<PassStorage>    m_storageOutputs;
+        std::vector<PassAttachment> m_storageImageOutputs;
         Optional<PassAttachment>    m_depthOutput;
 
         RenderPass     m_renderPass;
@@ -206,6 +206,7 @@ namespace vzt
 
         std::vector<FrameBuffer> m_frameBuffers; // [swapchainImageId]
         std::vector<Texture>     m_textureSaves;
+        std::vector<ImageView>   m_imageViews;
     };
 
     class ComputePass : public Pass

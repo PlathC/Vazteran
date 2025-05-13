@@ -52,9 +52,11 @@ namespace vzt
         switch (type->getKind())
         {
         case slang::TypeReflection::Kind::ParameterBlock:
-        case slang::TypeReflection::Kind::ConstantBuffer: return DescriptorType::UniformBuffer;
+        case slang::TypeReflection::Kind::ConstantBuffer:
+            return DescriptorType::UniformBuffer;
 
-        case slang::TypeReflection::Kind::SamplerState: return DescriptorType::CombinedSampler;
+            // TODO: Differentiate Sampler and CombinedSampler
+        // case slang::TypeReflection::Kind::SamplerState: return DescriptorType::Sampler;
         case slang::TypeReflection::Kind::TextureBuffer: return DescriptorType::StorageTexelBuffer;
         case slang::TypeReflection::Kind::ShaderStorageBuffer: return DescriptorType::StorageBuffer;
 
@@ -81,13 +83,16 @@ namespace vzt
             case SLANG_TEXTURE_CUBE_ARRAY:;
             case SLANG_TEXTURE_2D_MULTISAMPLE:;
             case SLANG_TEXTURE_2D_MULTISAMPLE_ARRAY:;
-            case SLANG_TEXTURE_SUBPASS_MULTISAMPLE: return DescriptorType::CombinedSampler;
+            case SLANG_TEXTURE_SUBPASS_MULTISAMPLE:
+                if (type->getResourceAccess() == SLANG_RESOURCE_ACCESS_READ_WRITE)
+                    return DescriptorType::StorageImage;
+                return DescriptorType::CombinedSampler;
 
             case SLANG_TEXTURE_BUFFER: return DescriptorType::StorageTexelBuffer;
 
             case SLANG_RESOURCE_BASE_SHAPE_MASK:
             case SLANG_RESOURCE_UNKNOWN:
-            case SLANG_RESOURCE_NONE:; VZT_NOT_REACHED();
+            case SLANG_RESOURCE_NONE:; return DescriptorType::None;
             }
         }
 
@@ -104,10 +109,9 @@ namespace vzt
         case slang::TypeReflection::Kind::Array:
         case slang::TypeReflection::Kind::Matrix:
         case slang::TypeReflection::Kind::Vector:
-        case slang::TypeReflection::Kind::Scalar: VZT_NOT_REACHED();
+        case slang::TypeReflection::Kind::Scalar: return DescriptorType::None; ;
         }
 
-        VZT_NOT_REACHED();
         return DescriptorType::None;
     }
 
@@ -226,8 +230,13 @@ namespace vzt
         {
             slang::VariableLayoutReflection* variableLayout = programLayout->getParameterByIndex(p);
 
-            const uint32_t bindingId   = variableLayout->getBindingIndex();
-            shader.bindings[bindingId] = toDescriptorType(variableLayout);
+            const uint32_t bindingId = variableLayout->getBindingIndex();
+
+            const DescriptorType type = toDescriptorType(variableLayout);
+            if (type == DescriptorType::None)
+                continue;
+
+            shader.bindings[bindingId] = type;
         }
 
         return shader;
@@ -296,8 +305,12 @@ namespace vzt
             {
                 slang::VariableLayoutReflection* variableLayout = programLayout->getParameterByIndex(p);
 
-                const uint32_t bindingId   = variableLayout->getBindingIndex();
-                shader.bindings[bindingId] = toDescriptorType(variableLayout);
+                const uint32_t       bindingId = variableLayout->getBindingIndex();
+                const DescriptorType type      = toDescriptorType(variableLayout);
+                if (type == DescriptorType::None)
+                    continue;
+
+                shader.bindings[bindingId] = type;
             }
 
             shaders.emplace_back(std::move(shader));

@@ -16,8 +16,9 @@ namespace vzt
     DeviceFeatures DeviceFeatures::standard()
     {
         DeviceFeatures             features;
-        VkPhysicalDeviceFeatures2& vkFeatures2 = features.getPhysicalFeatures();
-        vkFeatures2.features.samplerAnisotropy = true;
+        VkPhysicalDeviceFeatures2& vkFeatures2    = features.getPhysicalFeatures();
+        vkFeatures2.features.samplerAnisotropy    = true;
+        vkFeatures2.features.shaderResourceMinLod = true;
 
         VkPhysicalDeviceVulkan12Features features12{};
         features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -106,7 +107,7 @@ namespace vzt
             dext::Spirv14,
             dext::ShaderFloatControls,
         };
-        
+
         builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
         return builder;
     }

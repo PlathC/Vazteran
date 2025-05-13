@@ -58,7 +58,10 @@ namespace vzt
 
     void DescriptorLayout::addBinding(uint32_t binding, DescriptorType type)
     {
-        m_bindings.emplace(binding, type);
+        if (m_bindings.contains(binding))
+            m_bindings[binding] = type;
+        else
+            m_bindings.emplace(binding, type);
         m_compiled = false;
     }
 
