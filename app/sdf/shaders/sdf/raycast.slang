@@ -73,18 +73,12 @@ float3 normal(VertexStageOutput output, float3 uvw)
 
 bool outside(float3 uwv) { return any(abs(uwv - float3(0.5, 0.5, 0.5)) > float3(0.5, 0.5, 0.5)); }
 
-[shader("fragment")]
-float4 fragmentMain(VertexStageOutput output)
-{
-    float3 rayPos = output.uvw;
-    float3 rayDir = normalize(output.localPos - output.localCameraPosLod.xyz);
 
-    rayDir *= 1.; // ubo.volume_scale.xyz;
+float intersect(float3 rayPos, float3 rayDir, float lod){
 
     // Do the first step without the outside check
     // Rasterization does not guarantee perfect interpolation
-    float s = sdf.Sample(samplerSdf, rayPos, 0, output.localCameraPosLod.w);
-    s       = s * 2.0 - 1.0;
+    float s = sdf.Sample(samplerSdf, rayPos, 0, lod);
 
     float d = s;
     if (s > 0.00025)
@@ -93,18 +87,31 @@ float4 fragmentMain(VertexStageOutput output)
         {
             float3 uvw = rayPos + rayDir * d;
             if (outside(uvw))
-            {
-                discard;
-                break;
-            }
+                return -1.;
 
-            float s = sdf.Sample(samplerSdf, uvw, 0, output.localCameraPosLod.w).x;
-            s       = s * 2.0 - 1.0;
-
+            float s = sdf.Sample(samplerSdf, uvw, 0, lod).x;
             d += s;
             if (s < 0.00025)
                 break;
         }
     }
-    return float4(normal(output, rayPos + rayDir * d), 1.0);
+
+    return d;
+}
+
+[shader("fragment")]
+float4 fragmentMain(VertexStageOutput output)
+{
+    float3 rayPos = output.uvw;
+    float3 rayDir = normalize(output.localPos - output.localCameraPosLod.xyz);
+
+    float lod = output.localCameraPosLod.w;
+    float d   = intersect(rayPos, rayDir, lod);
+    if( d == -1.)
+        discard;
+
+    float3 p = rayPos + rayDir * d;
+    float3 n = normal(output, p);
+
+    return float4((n * .5 + .5), 1.0);
 }

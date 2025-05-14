@@ -15,6 +15,7 @@
 struct alignas(16) GenerationInput
 {
     uint32_t gridX, gridY, gridZ;
+    uint64_t time;
 };
 
 struct alignas(16) RaycastInput
@@ -28,9 +29,9 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Particles";
 
-    constexpr uint32_t WorkGroupSize = 8;
-    constexpr uint32_t GridWidth     = 8 * 8;
-    constexpr uint32_t MipLevel      = 1;
+    constexpr uint32_t WorkGroupSize = 4;
+    constexpr uint32_t GridWidth     = 512;
+    constexpr uint32_t MipLevel      = 6;
 
     auto       window   = vzt::Window{ApplicationName, 1280, 720};
     auto       instance = vzt::Instance{window};
@@ -48,6 +49,9 @@ int main(int /* argc */, char** /* argv */)
         0, 2, 1, 2, 3, 1, //
         5, 4, 1, 1, 4, 0, //
         0, 4, 6, 0, 6, 2, //
+        6, 5, 7, 6, 4, 5, //
+        2, 6, 3, 6, 7, 3, //
+        7, 1, 3, 7, 5, 1, //
     };
     vzt::Buffer indexBuffer = vzt::Buffer::From<uint32_t>(device, indices, vzt::BufferUsage::IndexBuffer);
 
@@ -93,7 +97,7 @@ int main(int /* argc */, char** /* argv */)
         geometry.setRecordFunction<vzt::LambdaRecorder>(
             [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
                 commands.bind(geometryPipeline, set);
-                commands.drawIndexed(indexBuffer, {0, 3 * 3 * 2});
+                commands.drawIndexed(indexBuffer, {0, 3 * 6 * 2});
             });
     }
 
@@ -190,7 +194,7 @@ int main(int /* argc */, char** /* argv */)
         if (inputs.mouseLeftPressed)
             distanceScale = inputs.mousePosition.y / static_cast<float>(window.getHeight());
 
-        const float distance = distanceScale * 13.f * bbRadius / std::tan(camera.fov * .5f);
+        const float distance = distanceScale * 2.f * bbRadius / std::tan(camera.fov * .5f);
 
         const vzt::Vec3 cameraPosition  = target - camera.front * distance;
         const vzt::Vec3 currentPosition = rotation * (cameraPosition - target) + target;
@@ -206,10 +210,11 @@ int main(int /* argc */, char** /* argv */)
         const vzt::Mat4    view         = camera.getViewMatrix(currentPosition, orientation);
         const RaycastInput raycastInput = {
             .worldToScreen = glm::transpose(camera.getProjectionMatrix() * view),
-            .cameraPos     = vzt::Vec4(cameraPosition, 1.f),
+            .cameraPos     = vzt::Vec4(currentPosition, 1.f),
             .texelScale    = vzt::Vec4(1.f / static_cast<float>(GridWidth)),
         };
-        const GenerationInput generationInput = {.gridX = GridWidth, .gridY = GridWidth, .gridZ = GridWidth};
+        const GenerationInput generationInput = {
+            .gridX = GridWidth, .gridY = GridWidth, .gridZ = GridWidth, .time = inputs.time};
 
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         commands.begin();

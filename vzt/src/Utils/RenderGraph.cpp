@@ -630,7 +630,8 @@ namespace vzt
                 }
 
                 View<DeviceImage> image = m_graph->getImage(i, input.handle);
-                m_textureSaves.emplace_back(device, image, SamplerBuilder{});
+                m_textureSaves.emplace_back(
+                    device, image, SamplerBuilder{.filter = Filter::Linear, .mipmapMode = MipmapMode::Nearest});
                 Texture& texture = m_textureSaves.back();
 
                 descriptors[input.binding] =
