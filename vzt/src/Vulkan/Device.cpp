@@ -6,9 +6,9 @@
 #include <vk_mem_alloc.h>
 
 #define VOLK_IMPLEMENTATION
-#include <volk.h>
-
 #include <stdexcept>
+
+#include <volk.h>
 
 #include "vzt/Vulkan/Command.hpp"
 #include "vzt/Vulkan/Instance.hpp"
@@ -258,14 +258,18 @@ namespace vzt
         vkCheck(vmaCreateAllocator(&allocatorInfo, &m_allocator), "Failed to create allocator.");
     }
 
-    Device::Device(Device&& other) noexcept : m_device(std::move(other.m_device))
+    Device::Device(Device&& other) noexcept
     {
         std::swap(m_instance, other.m_instance);
+        std::swap(m_device, other.m_device);
         std::swap(m_table, other.m_table);
+
         std::swap(m_handle, other.m_handle);
         std::swap(m_allocator, other.m_allocator);
         std::swap(m_configuration, other.m_configuration);
-        std::swap(m_queues, other.m_queues);
+
+        for (auto& queue : other.m_queues)
+            m_queues.emplace(this, queue.getType(), queue.getId(), queue.canPresent());
     }
 
     Device& Device::operator=(Device&& other) noexcept
@@ -273,12 +277,15 @@ namespace vzt
         std::swap(m_instance, other.m_instance);
         std::swap(m_device, other.m_device);
         std::swap(m_table, other.m_table);
+
         std::swap(m_handle, other.m_handle);
         std::swap(m_allocator, other.m_allocator);
         std::swap(m_configuration, other.m_configuration);
-        std::swap(m_queues, other.m_queues);
 
+        for (auto& queue : other.m_queues)
+            m_queues.emplace(this, queue.getType(), queue.getId(), queue.canPresent());
         return *this;
+        ;
     }
 
     Device::~Device()

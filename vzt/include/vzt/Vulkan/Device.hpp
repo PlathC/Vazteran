@@ -19,6 +19,7 @@ namespace vzt
     class PhysicalDevice
     {
       public:
+        PhysicalDevice() = default;
         PhysicalDevice(VkPhysicalDevice handle);
 
         bool                                 isSuitable(DeviceBuilder configuration, View<Surface> surface = {}) const;
@@ -43,6 +44,7 @@ namespace vzt
     class Device
     {
       public:
+        Device() = default;
         Device(View<Instance> instance, PhysicalDevice device, DeviceBuilder configuration = {},
                View<Surface> surface = {});
 

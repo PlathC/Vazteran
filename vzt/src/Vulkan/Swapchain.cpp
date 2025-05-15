@@ -32,7 +32,7 @@ namespace vzt
     }
 
     Swapchain::Swapchain(View<Device> device, View<Surface> surface, SwapchainBuilder configuration)
-        : DeviceObject<VkSwapchainKHR>(device), m_configuration(configuration), m_surface(surface)
+        : DeviceObject(device), m_configuration(configuration), m_surface(surface)
     {
         assert(m_device->getPresentQueue() && "Device must have a present queue to use the swapchain");
 
@@ -75,6 +75,7 @@ namespace vzt
         std::swap(m_renderFinishedSemaphores, other.m_renderFinishedSemaphores);
         std::swap(m_inFlightFences, other.m_inFlightFences);
         std::swap(m_imagesInFlight, other.m_imagesInFlight);
+        std::swap(m_format, other.m_format);
     }
 
     Swapchain& Swapchain::operator=(Swapchain&& other) noexcept
@@ -92,6 +93,7 @@ namespace vzt
         std::swap(m_renderFinishedSemaphores, other.m_renderFinishedSemaphores);
         std::swap(m_inFlightFences, other.m_inFlightFences);
         std::swap(m_imagesInFlight, other.m_imagesInFlight);
+        std::swap(m_format, other.m_format);
 
         DeviceObject<VkSwapchainKHR>::operator=(std::move(other));
         return *this;
@@ -99,6 +101,9 @@ namespace vzt
 
     Swapchain::~Swapchain()
     {
+        if (m_handle == VK_NULL_HANDLE)
+            return;
+
         cleanup();
 
         for (std::size_t i = 0; i < m_configuration.maxFramesInFlight; i++)
@@ -262,6 +267,9 @@ namespace vzt
 
     void Swapchain::cleanup()
     {
+        if (m_handle == VK_NULL_HANDLE)
+            return;
+
         for (auto& fence : m_imagesInFlight)
         {
             if (fence != VK_NULL_HANDLE)

@@ -29,6 +29,7 @@ namespace vzt
     class Swapchain : public DeviceObject<VkSwapchainKHR>
     {
       public:
+        Swapchain() = default;
         Swapchain(View<Device> device, View<Surface> surface, SwapchainBuilder configuration = {});
 
         Swapchain(const Swapchain&)            = delete;
@@ -57,10 +58,10 @@ namespace vzt
 
         SwapchainBuilder m_configuration;
 
-        View<Surface> m_surface;
-        Extent2D      m_extent;
+        View<Surface> m_surface            = {};
+        Extent2D      m_extent             = {};
         bool          m_framebufferResized = false;
-        Format        m_format;
+        Format        m_format             = {};
 
         uint32_t                 m_currentFrame = 0u;
         uint32_t                 m_currentImage = 0u;

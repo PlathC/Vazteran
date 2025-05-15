@@ -495,22 +495,38 @@ namespace vzt
     {
         View<Device> device = m_graph->getDevice();
 
+        for (auto& input : m_colorInputs)
+        {
+            const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[input.handle];
+            if (input.use.format == vzt::Format::Undefined)
+                input.use.format = *attachmentBuilder.format;
+
+            const bool isDepth = vzt::any(attachmentBuilder.usage & ImageUsage::DepthStencilAttachment);
+            input.aspect       = isDepth ? ImageAspect::Depth : ImageAspect::Color;
+        }
+
+        for (auto& output : m_storageImageOutputs)
+        {
+            const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
+            output.use.format = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
+        }
+
+        for (auto& output : m_colorOutputs)
+        {
+            const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
+            if (output.use.format == vzt::Format::Undefined)
+                output.use.format = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
+
+            if (m_graph->isBackBuffer(output.handle))
+                output.use.finalLayout = ImageLayout::PresentSrcKHR;
+        }
+
         // If the pass is working with a compute queue, it does not need a render pass
         if (m_type == PassType::Graphics)
         {
             m_renderPass = RenderPass(device);
             for (const auto& output : m_colorOutputs)
-            {
-                const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
-
-                AttachmentUse attachmentUse = output.use;
-                attachmentUse.format        = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
-
-                if (m_graph->isBackBuffer(output.handle))
-                    attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
-
-                m_renderPass.addColor(attachmentUse);
-            }
+                m_renderPass.addColor(output.use);
 
             for (const auto& output : m_storageImageOutputs)
             {
@@ -518,9 +534,6 @@ namespace vzt
 
                 AttachmentUse attachmentUse = output.use;
                 attachmentUse.format        = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
-
-                if (m_graph->isBackBuffer(output.handle))
-                    attachmentUse.finalLayout = ImageLayout::PresentSrcKHR;
             }
 
             if (!m_depthOutput)
@@ -558,17 +571,18 @@ namespace vzt
         // Guess render pass extent from its outputs
         Optional<Extent2D> extent;
         const Extent2D     swapchainExtent = m_graph->m_swapchain->getExtent();
-        for (const auto& output : m_colorOutputs)
+        for (auto& output : m_colorOutputs)
         {
             const auto& builder = m_graph->m_attachmentBuilders[output.handle];
             extent              = builder.size.value_or(swapchainExtent);
             break;
         }
 
-        if (!extent && m_depthOutput)
+        if (m_depthOutput)
         {
             const auto& builder = m_graph->m_attachmentBuilders[m_depthOutput->handle];
-            extent              = builder.size.value_or(swapchainExtent);
+            if (!extent)
+                extent = builder.size.value_or(swapchainExtent);
         }
 
         assert(extent && "Can't guess render pass extent since it has no output.");
@@ -628,6 +642,9 @@ namespace vzt
                     vzt::logger::error("Swapchain images cannot be used as inputs.");
                     throw std::runtime_error("Swapchain image cannot be inputs.");
                 }
+
+                if (input.use.format == vzt::Format::Undefined)
+                    input.use.format = *attachmentBuilder.format;
 
                 View<DeviceImage> image = m_graph->getImage(i, input.handle);
                 m_textureSaves.emplace_back(
@@ -981,7 +998,7 @@ namespace vzt
             // Swapchain images does not need to be created
             if (attachmentBuilder.format || attachmentBuilder.usage != ImageUsage::ColorAttachment)
             {
-                if (!attachmentBuilder.format && attachmentBuilder.usage == ImageUsage::DepthStencilAttachment)
+                if (!attachmentBuilder.format && any(attachmentBuilder.usage & ImageUsage::DepthStencilAttachment))
                     attachmentBuilder.format = depthFormat;
 
                 m_handleToPhysical[handle] = imageId;

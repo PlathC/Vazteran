@@ -13,8 +13,12 @@ namespace vzt
     class Compiler
     {
       public:
-        Compiler() = default;
+        Compiler();
         Compiler(View<Instance> instance, const std::vector<vzt::Path>& includeDirectories = {"."});
+
+        Compiler(Compiler&& other);
+        Compiler& operator=(Compiler&& other);
+
         ~Compiler();
 
         Shader              operator()(const Path& path, const std::string& entryPoint) const;

@@ -464,18 +464,20 @@ namespace vzt
         for (std::size_t i = 0; i < geometries.size(); i++)
         {
             const auto& geometry = geometries[i];
-            std::visit(
-                Overloaded{
-                    [&maxPrimitiveCount](const AccelerationStructureTriangles& trianglesAs) {
-                        maxPrimitiveCount +=
-                            static_cast<uint32_t>(trianglesAs.indexBuffer.buffer->size() / (3 * sizeof(uint32_t)));
-                    },
-                    [&maxPrimitiveCount](const AccelerationStructureAabbs& aabbsAs) {
-                        maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.buffer->size() / aabbsAs.stride);
-                    },
-                    [&maxPrimitiveCount](const AccelerationStructureInstance& instancesAs) { maxPrimitiveCount += instancesAs.count; },
-                },
-                geometry.geometry);
+            std::visit(Overloaded{
+                           [&maxPrimitiveCount](const AccelerationStructureTriangles& trianglesAs) {
+                               maxPrimitiveCount += static_cast<uint32_t>(trianglesAs.indexBuffer.buffer->size() /
+                                                                          (3 * sizeof(uint32_t)));
+                           },
+                           [&maxPrimitiveCount](const AccelerationStructureAabbs& aabbsAs) {
+                               maxPrimitiveCount +=
+                                   static_cast<uint32_t>(aabbsAs.aabbs.buffer->size() / aabbsAs.stride);
+                           },
+                           [&maxPrimitiveCount](const AccelerationStructureInstance& instancesAs) {
+                               maxPrimitiveCount += instancesAs.count;
+                           },
+                       },
+                       geometry.geometry);
 
             auto vkGeometry = toVulkan(geometry);
             vkGeometries.emplace_back(std::move(vkGeometry));
@@ -534,12 +536,14 @@ namespace vzt
     CommandPool::CommandPool(CommandPool&& other) noexcept : DeviceObject<VkCommandPool>(std::move(other))
     {
         std::swap(m_commandBuffers, other.m_commandBuffers);
+        std::swap(m_queue, other.m_queue);
     }
 
     CommandPool& CommandPool::operator=(CommandPool&& other) noexcept
     {
         std::swap(m_commandBuffers, other.m_commandBuffers);
-        
+        std::swap(m_queue, other.m_queue);
+
         DeviceObject<VkCommandPool>::operator=(std::move(other));
         return *this;
     }

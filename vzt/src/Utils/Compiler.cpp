@@ -115,7 +115,10 @@ namespace vzt
         return DescriptorType::None;
     }
 
-    Compiler::~Compiler() = default;
+    Compiler::Compiler()                            = default;
+    Compiler::Compiler(Compiler&& other)            = default;
+    Compiler& Compiler::operator=(Compiler&& other) = default;
+    Compiler::~Compiler()                           = default;
 
     Compiler::Compiler(View<Instance> instance, const std::vector<vzt::Path>& includeDirectories) : m_instance(instance)
     {

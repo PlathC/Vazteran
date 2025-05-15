@@ -259,6 +259,7 @@ namespace vzt
     class RenderGraph
     {
       public:
+        RenderGraph() = default;
         RenderGraph(View<Device> device, View<Swapchain> swapchain);
 
         // User configuration

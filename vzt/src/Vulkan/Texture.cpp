@@ -59,7 +59,8 @@ namespace vzt
     Texture::Texture(View<Device> device, View<DeviceImage> image, SamplerBuilder samplerSettings)
         : m_sampler(device, samplerSettings),
           m_imageView(device, image,
-                      image->getUsage() == ImageUsage::DepthStencilAttachment ? ImageAspect::Depth : ImageAspect::Color)
+                      any(image->getUsage() & ImageUsage::DepthStencilAttachment) ? ImageAspect::Depth
+                                                                                  : ImageAspect::Color)
     {
     }
 
