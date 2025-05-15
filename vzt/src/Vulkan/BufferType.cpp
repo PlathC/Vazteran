@@ -1,7 +1,5 @@
 #include "vzt/Vulkan/BufferType.hpp"
 
-#include <libcodedirectory.h>
-
 #include "vzt/Core/Assert.hpp"
 
 namespace vzt
@@ -17,7 +15,7 @@ namespace vzt
             MemoryLocation::Device, mappable);
 
         m_transferBuffer =
-            Buffer(device, perFrameByteNb * frameNb, BufferUsage::TransferSrc, MemoryLocation::Host, true);
+            Buffer(device, m_alignmentByteNb * frameNb, BufferUsage::TransferSrc, MemoryLocation::Host, true);
     }
 
     uint8_t* UniformBuffer::map(uint32_t frame) const

@@ -39,7 +39,7 @@ namespace vzt
     VZT_DEFINE_TO_VULKAN_FUNCTION(BuildAccelerationStructureFlag, VkBuildAccelerationStructureFlagsKHR)
     VZT_DEFINE_BITWISE_FUNCTIONS(BuildAccelerationStructureFlag)
 
-    struct AsTriangles
+    struct AccelerationStructureTriangles
     {
         Format      vertexFormat;
         BufferCSpan vertexBuffer;
@@ -51,7 +51,7 @@ namespace vzt
     };
 
     using AabbPositions = VkAabbPositionsKHR;
-    struct AsAabbs
+    struct AccelerationStructureAabbs
     {
         BufferCSpan aabbs; // Must contain AabbPositions
         std::size_t stride = 0;
@@ -74,20 +74,21 @@ namespace vzt
     VZT_DEFINE_TO_VULKAN_FUNCTION(GeometryInstanceFlag, VkGeometryInstanceFlagsKHR)
     VZT_DEFINE_BITWISE_FUNCTIONS(GeometryInstanceFlag)
 
-    struct AsInstance
+    struct AccelerationStructureInstance
     {
         uint64_t deviceAddress;
         uint32_t count;
     };
 
-    using AsGeometry = std::variant<AsTriangles, AsAabbs, AsInstance>;
+    using AccelerationStructureGeometry =
+        std::variant<AccelerationStructureTriangles, AccelerationStructureAabbs, AccelerationStructureInstance>;
 
-    struct GeometryAsBuilder
+    struct GeometryAccelerationStructureBuilder
     {
-        AsGeometry   geometry;
-        GeometryFlag flags = GeometryFlag::Opaque;
+        AccelerationStructureGeometry geometry;
+        GeometryFlag                  flags = GeometryFlag::Opaque;
     };
-    VkAccelerationStructureGeometryKHR toVulkan(const GeometryAsBuilder& geometryAs);
+    VkAccelerationStructureGeometryKHR toVulkan(const GeometryAccelerationStructureBuilder& geometryAs);
 
     class AccelerationStructure;
     struct AccelerationStructureBuilder
@@ -98,8 +99,8 @@ namespace vzt
         uint32_t                       scratchBufferMinAlignment = 1;
     };
 
-    uint64_t getAccelerationStructureSize(BuildAccelerationStructureFlag        flags,
-                                          const std::vector<GeometryAsBuilder>& geometries);
+    uint64_t getAccelerationStructureSize(BuildAccelerationStructureFlag                           flags,
+                                          const std::vector<GeometryAccelerationStructureBuilder>& geometries);
 
     enum class AccelerationStructureType
     {
@@ -114,9 +115,10 @@ namespace vzt
       public:
         AccelerationStructure() = default;
 
-        AccelerationStructure(View<Device> device, std::vector<GeometryAsBuilder> geometries,
+        AccelerationStructure(View<Device> device, std::vector<GeometryAccelerationStructureBuilder> geometries,
                               AccelerationStructureType type);
-        AccelerationStructure(View<Device> device, GeometryAsBuilder geometry, AccelerationStructureType type);
+        AccelerationStructure(View<Device> device, GeometryAccelerationStructureBuilder geometry,
+                              AccelerationStructureType type);
 
         AccelerationStructure(const AccelerationStructure&)            = delete;
         AccelerationStructure& operator=(const AccelerationStructure&) = delete;
@@ -126,21 +128,21 @@ namespace vzt
 
         ~AccelerationStructure() override;
 
-        inline AccelerationStructureType             getType() const;
-        inline uint64_t                              getSize() const;
-        inline uint64_t                              getScratchBufferSize() const;
-        inline View<Buffer>                          getBuffer() const;
-        inline const std::vector<GeometryAsBuilder>& getGeometries() const;
-        inline uint64_t                              getDeviceAddress() const;
+        inline AccelerationStructureType                                getType() const;
+        inline uint64_t                                                 getSize() const;
+        inline uint64_t                                                 getScratchBufferSize() const;
+        inline View<Buffer>                                             getBuffer() const;
+        inline const std::vector<GeometryAccelerationStructureBuilder>& getGeometries() const;
+        inline uint64_t                                                 getDeviceAddress() const;
 
       private:
-        std::vector<GeometryAsBuilder> m_geometries;
-        AccelerationStructureType      m_type;
-        uint32_t                       m_maxPrimitiveCount{};
-        Buffer                         m_buffer;
-        uint64_t                       m_deviceAddress{};
-        uint64_t                       m_size{};
-        uint64_t                       m_scratchBufferSize{};
+        std::vector<GeometryAccelerationStructureBuilder> m_geometries;
+        AccelerationStructureType                         m_type;
+        uint32_t                                          m_maxPrimitiveCount{};
+        Buffer                                            m_buffer;
+        uint64_t                                          m_deviceAddress{};
+        uint64_t                                          m_size{};
+        uint64_t                                          m_scratchBufferSize{};
     };
 
 } // namespace vzt

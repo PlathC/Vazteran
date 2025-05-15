@@ -1,5 +1,7 @@
 #include "vzt/Vulkan/Pipeline/RaytracingPipeline.hpp"
 
+#include <stdexcept>
+
 #include "vzt/Vulkan/Device.hpp"
 #include "vzt/Vulkan/Program.hpp"
 
@@ -17,6 +19,7 @@ namespace vzt
         std::swap(m_handleSize, other.m_handleSize);
         std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
         std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
+        std::swap(m_shaderGroup, other.m_shaderGroup);
     }
 
     RaytracingPipeline& RaytracingPipeline::operator=(RaytracingPipeline&& other) noexcept
@@ -25,12 +28,26 @@ namespace vzt
         std::swap(m_handleSize, other.m_handleSize);
         std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
         std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
+        std::swap(m_shaderGroup, other.m_shaderGroup);
 
         Pipeline::operator=(std::move(other));
         return *this;
     }
 
-    RaytracingPipeline::~RaytracingPipeline() { cleanup(); }
+    RaytracingPipeline::~RaytracingPipeline()
+    {
+        if (m_handle != VK_NULL_HANDLE)
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        }
+
+        if (m_pipelineLayout != VK_NULL_HANDLE)
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        }
+    }
 
     void RaytracingPipeline::setShaderGroup(const ShaderGroup& shaderGroup)
     {
@@ -49,7 +66,10 @@ namespace vzt
 
     void RaytracingPipeline::compile()
     {
-        cleanup();
+        assert(m_shaderGroup && "You must provide a program before compiling pipeline.");
+
+        if (m_compiled)
+            cleanup();
 
         VkPipelineLayoutCreateInfo pipelineLayoutCI{};
         pipelineLayoutCI.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -123,7 +143,7 @@ namespace vzt
             default: throw std::runtime_error("Unkown shader stage");
             }
 
-            shaderGroups.emplace_back(std::move(shaderGroup));
+            shaderGroups.emplace_back(shaderGroup);
 
             VkPipelineShaderStageCreateInfo createInfo{};
             createInfo.module = shaderGroupShader.shaderModule.getHandle();
@@ -162,8 +182,8 @@ namespace vzt
         const uint32_t sbtSize    = groupCount * m_handleSizeAligned;
 
         m_shaderHandleStorage = std::vector<uint8_t>(sbtSize);
-        vkCheck(vkGetRayTracingShaderGroupHandlesKHR(m_device->getHandle(), m_handle, 0, groupCount, sbtSize,
-                                                     m_shaderHandleStorage.data()),
+        vkCheck(vkGetRayTracingShaderGroupHandlesKHR( //
+                    m_device->getHandle(), m_handle, 0, groupCount, sbtSize, m_shaderHandleStorage.data()),
                 "Can't get shader group handles.");
 
         m_compiled = true;

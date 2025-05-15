@@ -458,7 +458,7 @@ namespace vzt
 
         std::vector<VkAccelerationStructureGeometryKHR> vkGeometries;
 
-        const std::vector<GeometryAsBuilder>& geometries = builder.as->getGeometries();
+        const std::vector<GeometryAccelerationStructureBuilder>& geometries = builder.as->getGeometries();
         vkGeometries.reserve(geometries.size());
         uint32_t maxPrimitiveCount = 0;
         for (std::size_t i = 0; i < geometries.size(); i++)
@@ -466,14 +466,14 @@ namespace vzt
             const auto& geometry = geometries[i];
             std::visit(
                 Overloaded{
-                    [&maxPrimitiveCount](const AsTriangles& trianglesAs) {
+                    [&maxPrimitiveCount](const AccelerationStructureTriangles& trianglesAs) {
                         maxPrimitiveCount +=
                             static_cast<uint32_t>(trianglesAs.indexBuffer.buffer->size() / (3 * sizeof(uint32_t)));
                     },
-                    [&maxPrimitiveCount](const AsAabbs& aabbsAs) {
+                    [&maxPrimitiveCount](const AccelerationStructureAabbs& aabbsAs) {
                         maxPrimitiveCount += static_cast<uint32_t>(aabbsAs.aabbs.buffer->size() / aabbsAs.stride);
                     },
-                    [&maxPrimitiveCount](const AsInstance& instancesAs) { maxPrimitiveCount += instancesAs.count; },
+                    [&maxPrimitiveCount](const AccelerationStructureInstance& instancesAs) { maxPrimitiveCount += instancesAs.count; },
                 },
                 geometry.geometry);
 

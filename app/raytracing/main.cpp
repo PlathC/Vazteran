@@ -43,7 +43,7 @@ int main(int /* argc */, char** /* argv */)
     const auto indexBuffer  = vzt::Buffer::From<uint32_t>( //
         device, mesh.indices, vzt::BufferUsage::IndexBuffer | GeometryBufferUsages);
 
-    vzt::GeometryAsBuilder bottomAsBuilder{vzt::AsTriangles{
+    vzt::GeometryAccelerationStructureBuilder bottomAsBuilder{vzt::AccelerationStructureTriangles{
         vzt::Format::R32G32B32SFloat,
         vzt::BufferCSpan(vertexBuffer, vertexBuffer.size()),
         sizeof(VertexInput),
@@ -90,8 +90,9 @@ int main(int /* argc */, char** /* argv */)
         device, instancesData,
         vzt::BufferUsage::AccelerationStructureBuildInputReadOnly | vzt::BufferUsage::ShaderDeviceAddress);
 
-    vzt::GeometryAsBuilder topAsBuilder{vzt::AsInstance{instances.getDeviceAddress(), 1}};
-    const auto             topAs = vzt::AccelerationStructure( //
+    vzt::GeometryAccelerationStructureBuilder topAsBuilder{
+        vzt::AccelerationStructureInstance{instances.getDeviceAddress(), 1}};
+    const auto topAs = vzt::AccelerationStructure( //
         device, topAsBuilder, vzt::AccelerationStructureType::TopLevel);
     {
         auto scratchBuffer = vzt::Buffer{
@@ -272,8 +273,11 @@ int main(int /* argc */, char** /* argv */)
         else if (projection < 0.f) // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
-        vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
-        std::array<vzt::Mat4, 2> matrices{glm::inverse(view), glm::inverse(camera.getProjectionMatrix())};
+        vzt::Mat4  view     = camera.getViewMatrix(currentPosition, orientation);
+        std::array matrices = {
+            glm::transpose(glm::inverse(view)),
+            glm::transpose(glm::inverse(camera.getProjectionMatrix())),
+        };
 
         const auto&        image    = swapchain.getImage(submission->imageId);
         vzt::CommandBuffer commands = commandPool[submission->imageId];

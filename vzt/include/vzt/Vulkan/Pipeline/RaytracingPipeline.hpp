@@ -18,7 +18,7 @@ namespace vzt
         RaytracingPipeline(RaytracingPipeline&& other) noexcept;
         RaytracingPipeline& operator=(RaytracingPipeline&& other) noexcept;
 
-        ~RaytracingPipeline();
+        ~RaytracingPipeline() override;
 
         inline void setShaderGroup(const ShaderGroup& shaderGroup);
 
@@ -32,9 +32,9 @@ namespace vzt
 
         View<ShaderGroup> m_shaderGroup;
 
-        uint32_t             m_handleSize;
-        uint32_t             m_handleSizeAligned;
-        std::vector<uint8_t> m_shaderHandleStorage;
+        uint32_t             m_handleSize          = {};
+        uint32_t             m_handleSizeAligned   = {};
+        std::vector<uint8_t> m_shaderHandleStorage = {};
 
         bool m_compiled = false;
     };

@@ -1,6 +1,7 @@
 #ifndef VZT_VULKAN_PROGRAM_HPP
 #define VZT_VULKAN_PROGRAM_HPP
 
+#include <string>
 #include <vector>
 
 #include "vzt/Core/Type.hpp"
@@ -40,6 +41,7 @@ namespace vzt
 
     struct Shader
     {
+        std::string                name;
         ShaderStage                stage;
         std::vector<uint32_t>      compiledSource;
         DescriptorLayout::Bindings bindings;

@@ -37,6 +37,7 @@ namespace vzt
         VkPhysicalDeviceVulkan12Features features12{};
         features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
         features12.bufferDeviceAddress = VK_TRUE;
+        features12.descriptorIndexing = VK_TRUE;
         features.add(features12);
 
         VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};

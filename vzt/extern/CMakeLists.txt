@@ -56,7 +56,7 @@ set(VZT_EXTERN_PUBLIC_LIBRARIES
         fmt
         glm::glm
         SDL3::SDL3
-        volk
+        volk_headers
         Vulkan::Vulkan
 )
 

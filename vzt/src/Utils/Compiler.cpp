@@ -52,10 +52,9 @@ namespace vzt
         switch (type->getKind())
         {
         case slang::TypeReflection::Kind::ParameterBlock:
-        case slang::TypeReflection::Kind::ConstantBuffer:
-            return DescriptorType::UniformBuffer;
+        case slang::TypeReflection::Kind::ConstantBuffer: return DescriptorType::UniformBuffer;
 
-            // TODO: Differentiate Sampler and CombinedSampler
+        // TODO: Differentiate Sampler and CombinedSampler
         // case slang::TypeReflection::Kind::SamplerState: return DescriptorType::Sampler;
         case slang::TypeReflection::Kind::TextureBuffer: return DescriptorType::StorageTexelBuffer;
         case slang::TypeReflection::Kind::ShaderStorageBuffer: return DescriptorType::StorageBuffer;
@@ -154,9 +153,12 @@ namespace vzt
         sessionDesc.compilerOptionEntries    = compilerOptions.data();
         sessionDesc.compilerOptionEntryCount = static_cast<uint32_t>(compilerOptions.size());
 
+        std::vector<std::string> searchPathsStrs;
         std::vector<const char*> searchPaths;
-        std::transform(begin(includeDirectories), end(includeDirectories), std::back_inserter(searchPaths),
-                       [](const vzt::Path& path) { return path.c_str(); });
+        std::transform(begin(includeDirectories), end(includeDirectories), std::back_inserter(searchPathsStrs),
+                       [](const vzt::Path& path) { return path.string(); });
+        std::transform(begin(searchPathsStrs), end(searchPathsStrs), std::back_inserter(searchPaths),
+                       [](const std::string& path) { return path.c_str(); });
 
         sessionDesc.searchPaths     = searchPaths.data();
         sessionDesc.searchPathCount = static_cast<SlangInt>(searchPaths.size());
@@ -166,10 +168,12 @@ namespace vzt
 
     Shader Compiler::operator()(const Path& path, const std::string& entryPoint) const
     {
+        const std::string pathStr = path.string();
+
         Slang::ComPtr<slang::IBlob> diagnostics;
         slang::IModule*             module;
         {
-            module = m_implementation->session->loadModule(path.c_str(), diagnostics.writeRef());
+            module = m_implementation->session->loadModule(pathStr.c_str(), diagnostics.writeRef());
             if (!module)
             {
                 vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
@@ -221,7 +225,7 @@ namespace vzt
         slang::ProgramLayout*        programLayout = composedProgram->getLayout();
         slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());
 
-        Shader shader = Shader(toShaderStage(reflection->getStage()), {});
+        Shader shader = Shader(entryPoint, toShaderStage(reflection->getStage()), {});
         shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
         std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
 
@@ -244,10 +248,12 @@ namespace vzt
 
     std::vector<Shader> Compiler::operator()(const Path& path) const
     {
+        const std::string pathStr = path.string();
+
         Slang::ComPtr<slang::IBlob> diagnostics;
         slang::IModule*             module;
         {
-            module = m_implementation->session->loadModule(path.c_str(), diagnostics.writeRef());
+            module = m_implementation->session->loadModule(pathStr.c_str(), diagnostics.writeRef());
             if (!module)
             {
                 vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
@@ -296,7 +302,7 @@ namespace vzt
             slang::ProgramLayout*        programLayout = composedProgram->getLayout();
             slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());
 
-            Shader shader = Shader(toShaderStage(reflection->getStage()), {});
+            Shader shader = Shader(entryPoint, toShaderStage(reflection->getStage()), {});
             shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
             std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
 
