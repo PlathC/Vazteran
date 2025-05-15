@@ -108,7 +108,8 @@ namespace vzt
         case slang::TypeReflection::Kind::Array:
         case slang::TypeReflection::Kind::Matrix:
         case slang::TypeReflection::Kind::Vector:
-        case slang::TypeReflection::Kind::Scalar: return DescriptorType::None; ;
+        case slang::TypeReflection::Kind::Scalar:
+        default: return DescriptorType::None;
         }
 
         return DescriptorType::None;
