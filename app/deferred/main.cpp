@@ -98,9 +98,11 @@ int main(int /* argc */, char** /* argv */)
     }
 
     // Draw geometry pass
-    auto position = graph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R32G32B32A32SFloat});
-    auto normal   = graph.addAttachment({vzt::ImageUsage::ColorAttachment, vzt::Format::R8G8B8A8SNorm});
-    auto depth    = graph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
+    auto position =
+        graph.addAttachment({.usage = vzt::ImageUsage::ColorAttachment, .format = vzt::Format::R32G32B32A32SFloat});
+    auto normal =
+        graph.addAttachment({.usage = vzt::ImageUsage::ColorAttachment, .format = vzt::Format::R8G8B8A8SNorm});
+    auto depth = graph.addAttachment({vzt::ImageUsage::DepthStencilAttachment});
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/deferred/triangle.slang"));
     {
