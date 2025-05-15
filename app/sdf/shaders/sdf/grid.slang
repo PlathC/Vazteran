@@ -23,6 +23,6 @@ void main(uint3 dispatchThreadID: SV_DispatchThreadID)
     float  r = .15;
     float3 s = float3(r);
     float3 q = p - (s*(round(p/s)));
-    float  d = length( q ) - r * .5;
+    float  d = length( q ) - r * .25;
     sdf[dispatchThreadID] = d;
 }
