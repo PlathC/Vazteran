@@ -18,6 +18,11 @@ namespace vzt
         Slang::ComPtr<slang::ISession>       session;
     };
 
+    struct Module::Implementation
+    {
+        slang::IModule* data;
+    };
+
     ShaderStage toShaderStage(SlangStage stage)
     {
         switch (stage)
@@ -170,7 +175,7 @@ namespace vzt
         m_implementation->globalSession->createSession(sessionDesc, m_implementation->session.writeRef());
     }
 
-    Shader Compiler::operator()(const Path& path, const std::string& entryPoint) const
+    Shader Compiler::operator()(const Path& path, const std::string& entryPoint, CSpan<Module> modules) const
     {
         const std::string pathStr = path.string();
 
@@ -204,6 +209,8 @@ namespace vzt
         Slang::ComPtr<slang::IComponentType> composedProgram;
         {
             std::vector<slang::IComponentType*> componentTypes = {module, iEntryPoint};
+            for (uint32_t m = 0; m < modules.size; ++m)
+                componentTypes.emplace_back(modules[m].implementation->data);
 
             if (SLANG_FAILED(m_implementation->session->createCompositeComponentType( //
                     componentTypes.data(), static_cast<SlangInt>(componentTypes.size()), composedProgram.writeRef(),
@@ -250,7 +257,7 @@ namespace vzt
         return shader;
     }
 
-    std::vector<Shader> Compiler::operator()(const Path& path) const
+    std::vector<Shader> Compiler::operator()(const Path& path, CSpan<Module> modules) const
     {
         const std::string pathStr = path.string();
 
@@ -278,6 +285,8 @@ namespace vzt
             Slang::ComPtr<slang::IComponentType> composedProgram;
             {
                 std::vector<slang::IComponentType*> componentTypes = {module, iEntryPoint};
+                for (uint32_t m = 0; m < modules.size; ++m)
+                    componentTypes.emplace_back(modules[m].implementation->data);
 
                 if (SLANG_FAILED(m_implementation->session->createCompositeComponentType( //
                         componentTypes.data(), static_cast<SlangInt>(componentTypes.size()), composedProgram.writeRef(),
@@ -329,4 +338,31 @@ namespace vzt
         return shaders;
     }
 
+    Module::Module()                                   = default;
+    Module::Module(Module&& other) noexcept            = default;
+    Module& Module::operator=(Module&& other) noexcept = default;
+
+    Module::~Module() = default;
+
+    Module Compiler::load(const Path& path) const
+    {
+        const std::string pathStr = path.string();
+
+        Slang::ComPtr<slang::IBlob> diagnostics;
+        slang::IModule*             module;
+        {
+            module = m_implementation->session->loadModule(pathStr.c_str(), diagnostics.writeRef());
+            if (!module)
+            {
+                vzt::logger::error("[SLANG] Compile Error, diagnostic {}",
+                                   reinterpret_cast<const char*>(diagnostics->getBufferPointer()));
+                std::abort();
+            }
+        }
+
+        Module result         = {};
+        result.implementation = std::make_unique<Module::Implementation>(module);
+
+        return std::move(result);
+    }
 } // namespace vzt

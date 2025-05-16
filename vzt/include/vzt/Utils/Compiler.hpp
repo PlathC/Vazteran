@@ -9,7 +9,7 @@
 namespace vzt
 {
     class Instance;
-
+    class Module;
     class Compiler
     {
       public:
@@ -21,8 +21,10 @@ namespace vzt
 
         ~Compiler();
 
-        Shader              operator()(const Path& path, const std::string& entryPoint) const;
-        std::vector<Shader> operator()(const Path& path) const;
+        Shader operator()(const Path& path, const std::string& entryPoint, CSpan<Module> modules = {}) const;
+        std::vector<Shader> operator()(const Path& path, CSpan<Module> modules = {}) const;
+
+        Module load(const Path& path) const;
 
       private:
         View<Instance>    m_instance{};
@@ -30,6 +32,22 @@ namespace vzt
 
         struct Implementation;
         std::unique_ptr<Implementation> m_implementation;
+    };
+
+    class Module
+    {
+      public:
+        friend Compiler;
+
+        Module(Module&& other) noexcept;
+        Module& operator=(Module&& other) noexcept;
+        ~Module();
+
+      private:
+        Module();
+
+        struct Implementation;
+        std::unique_ptr<Implementation> implementation;
     };
 } // namespace vzt
 
