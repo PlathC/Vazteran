@@ -48,6 +48,7 @@ namespace vzt
     PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) : m_handle(handle)
     {
         vkGetPhysicalDeviceProperties(m_handle, &m_properties);
+        vkGetPhysicalDeviceFeatures(m_handle, &m_features);
     }
 
     bool PhysicalDevice::isSuitable(DeviceBuilder configuration, View<Surface> surface) const

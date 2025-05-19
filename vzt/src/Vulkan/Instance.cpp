@@ -147,6 +147,34 @@ namespace vzt
         vkDestroyInstance(m_handle, nullptr);
     }
 
+    namespace
+    {
+        // Heavily based on
+        // https://www.reddit.com/r/vulkan/comments/1buoetk/how_to_properly_choose_physical_device_and_queue/
+        uint32_t rate(const PhysicalDevice& device)
+        {
+            uint32_t score = 0;
+
+            const VkPhysicalDeviceProperties properties = device.getProperties();
+            {
+                if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+                    score += 1000;
+            }
+
+            const VkPhysicalDeviceFeatures features = device.getFeatures();
+            {
+                score += static_cast<uint32_t>(!!features.tessellationShader);
+                score += static_cast<uint32_t>(!!features.geometryShader);
+                score += static_cast<uint32_t>(!!features.shaderFloat64);
+                score += static_cast<uint32_t>(!!features.shaderInt64);
+                score += static_cast<uint32_t>(!!features.shaderInt16);
+                score += static_cast<uint32_t>(!!features.largePoints);
+            }
+
+            return score;
+        }
+    } // namespace
+
     Device Instance::getDevice(DeviceBuilder configuration, View<Surface> surface)
     {
         uint32_t deviceCount = 0;
@@ -158,17 +186,16 @@ namespace vzt
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, devices.data());
 
         uint32_t selectedDevice = 0;
-        bool     isDiscrete     = false;
+        uint32_t bestRate       = 0;
         for (uint32_t i = 0; i < deviceCount; i++)
         {
-            const auto device = PhysicalDevice(devices[i]);
-            if (device.isSuitable(configuration, surface))
-                selectedDevice = i;
+            const auto     device  = PhysicalDevice(devices[i]);
+            const uint32_t current = rate(device);
 
-            if (!isDiscrete && device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            if (current > bestRate)
             {
+                bestRate       = current;
                 selectedDevice = i;
-                isDiscrete     = true;
             }
         }
 

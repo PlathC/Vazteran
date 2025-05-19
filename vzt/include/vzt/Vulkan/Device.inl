@@ -7,6 +7,8 @@ namespace vzt
     {
         return getUniformAlignment(sizeof(Type));
     }
+
+    inline VkPhysicalDeviceFeatures   PhysicalDevice::getFeatures() const { return m_features; }
     inline VkPhysicalDeviceProperties PhysicalDevice::getProperties() const { return m_properties; }
     inline VkPhysicalDevice           PhysicalDevice::getHandle() const { return m_handle; }
     inline VkDevice                   Device::getHandle() const { return m_handle; }

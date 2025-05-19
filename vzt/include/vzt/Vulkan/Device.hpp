@@ -32,12 +32,14 @@ namespace vzt
         template <class Type>
         std::size_t getUniformAlignment() const;
 
+        inline VkPhysicalDeviceFeatures   getFeatures() const;
         inline VkPhysicalDeviceProperties getProperties() const;
         inline VkPhysicalDevice           getHandle() const;
 
       private:
         VkPhysicalDevice           m_handle = VK_NULL_HANDLE;
         VkPhysicalDeviceProperties m_properties;
+        VkPhysicalDeviceFeatures   m_features;
     };
 
     class Queue;
