@@ -280,6 +280,26 @@ namespace vzt
         m_depthInput = attachment;
     }
 
+    void Pass::setDepthInputOutput(const Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "DepthInOut";
+
+        attachment.use.initialLayout  = ImageLayout::Undefined;
+        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.loadOp         = LoadOp::Load;
+        attachment.use.storeOp        = StoreOp::DontCare;
+        attachment.use.stencilLoapOp  = LoadOp::Load;
+        attachment.use.stencilStoreOp = StoreOp::DontCare;
+
+        m_depthInput  = attachment;
+        m_depthOutput = attachment;
+    }
+
     void Pass::setDepthOutput(Handle& handle, std::string name, float depth)
     {
         assert(handle.type == HandleType::Attachment);
@@ -509,6 +529,9 @@ namespace vzt
         {
             const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
             output.use.format = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
+
+            const bool isDepth = vzt::any(attachmentBuilder.usage & ImageUsage::DepthStencilAttachment);
+            output.aspect      = isDepth ? ImageAspect::Depth : ImageAspect::Color;
         }
 
         for (auto& output : m_colorOutputs)
@@ -677,7 +700,7 @@ namespace vzt
             for (auto& output : m_storageImageOutputs)
             {
                 View<DeviceImage> image = m_graph->getImage(i, output.handle);
-                m_imageViews.emplace_back(device, image, ImageAspect::Color);
+                m_imageViews.emplace_back(device, image, output.aspect);
 
                 ImageView& imageView = m_imageViews.back();
 

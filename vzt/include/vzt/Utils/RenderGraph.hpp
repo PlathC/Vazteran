@@ -125,6 +125,7 @@ namespace vzt
                                    Optional<Range<std::size_t>> range = {});
 
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
+        void setDepthInputOutput(const Handle& depthStencil, std::string attachmentName = "");
         void setDepthOutput(Handle& depthStencil, std::string attachmentName = "", float clearValue = 1.f);
 
         void link(const Pipeline& pipeline);
