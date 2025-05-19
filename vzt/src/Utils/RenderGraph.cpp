@@ -113,7 +113,7 @@ namespace vzt
 
         PassAttachment inAttachment{handle, inName};
         if (inAttachment.name.empty())
-            inAttachment.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
+            inAttachment.name = m_name + "ColorIn" + std::to_string(m_colorOutputs.size());
 
         inAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
         inAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
@@ -124,8 +124,6 @@ namespace vzt
         inAttachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
         inAttachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
         inAttachment.targetAccess = Access::ShaderRead;
-
-        m_colorInputs.emplace_back(inAttachment);
 
         handle.state++;
         PassAttachment outAttachment{handle, outName};
@@ -292,9 +290,9 @@ namespace vzt
         attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
         attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
         attachment.use.loadOp         = LoadOp::Load;
-        attachment.use.storeOp        = StoreOp::DontCare;
+        attachment.use.storeOp        = StoreOp::Store;
         attachment.use.stencilLoapOp  = LoadOp::Load;
-        attachment.use.stencilStoreOp = StoreOp::DontCare;
+        attachment.use.stencilStoreOp = StoreOp::Store;
 
         m_depthInput  = attachment;
         m_depthOutput = attachment;
