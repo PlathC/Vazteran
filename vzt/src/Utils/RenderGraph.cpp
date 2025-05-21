@@ -111,20 +111,6 @@ namespace vzt
     {
         assert(handle.type == HandleType::Attachment);
 
-        PassAttachment inAttachment{handle, inName};
-        if (inAttachment.name.empty())
-            inAttachment.name = m_name + "ColorIn" + std::to_string(m_colorOutputs.size());
-
-        inAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
-        inAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
-        inAttachment.use.loadOp      = LoadOp::Load;
-        inAttachment.use.storeOp     = StoreOp::Store;
-
-        inAttachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
-        inAttachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
-        inAttachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
-        inAttachment.targetAccess = Access::ShaderRead;
-
         handle.state++;
         PassAttachment outAttachment{handle, outName};
         if (outAttachment.name.empty())
@@ -134,6 +120,11 @@ namespace vzt
         outAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
         outAttachment.use.loadOp      = LoadOp::Load;
         outAttachment.use.storeOp     = StoreOp::Store;
+
+        outAttachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+        outAttachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+        outAttachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+        outAttachment.targetAccess = Access::ShaderRead;
 
         m_colorOutputs.emplace_back(outAttachment);
     }
@@ -275,6 +266,11 @@ namespace vzt
         attachment.use.stencilLoapOp  = LoadOp::Load;
         attachment.use.stencilStoreOp = StoreOp::DontCare;
 
+        attachment.targetAccess = Access::DepthStencilAttachmentWrite;
+        attachment.targetStage  = PipelineStage::LateFragmentTests | PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::ShaderRead;
+        attachment.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
+
         m_depthInput = attachment;
     }
 
@@ -293,6 +289,11 @@ namespace vzt
         attachment.use.storeOp        = StoreOp::Store;
         attachment.use.stencilLoapOp  = LoadOp::Load;
         attachment.use.stencilStoreOp = StoreOp::Store;
+
+        attachment.targetAccess = Access::DepthStencilAttachmentWrite;
+        attachment.targetStage  = PipelineStage::LateFragmentTests | PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::ShaderRead;
+        attachment.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
 
         m_depthInput  = attachment;
         m_depthOutput = attachment;
