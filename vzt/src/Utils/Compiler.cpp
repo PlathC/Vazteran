@@ -52,7 +52,8 @@ namespace vzt
     DescriptorType toDescriptorType(slang::VariableLayoutReflection* variable)
     {
         slang::TypeLayoutReflection* type = variable->getTypeLayout();
-        VZT_ASSERT(variable->getCategory() == slang::ParameterCategory::DescriptorTableSlot);
+        if (variable->getCategory() != slang::ParameterCategory::DescriptorTableSlot)
+            return DescriptorType::None;
 
         switch (type->getKind())
         {
