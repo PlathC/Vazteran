@@ -2,13 +2,13 @@
 
 #include <unordered_map>
 
-#include <slang/slang.h>
+#include <slang.h>
 
 #include "vzt/Core/Assert.hpp"
 #include "vzt/Core/Logger.hpp"
 #include "vzt/Vulkan/Instance.hpp"
 
-#include <slang/slang-com-ptr.h>
+#include <slang-com-ptr.h>
 
 namespace vzt
 {

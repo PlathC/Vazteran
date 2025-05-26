@@ -85,6 +85,8 @@ function(fetch_slang)
     set(VZT_SLANG_INCLUDE_DIR ${slang_SOURCE_DIR}/include)
     set(VZT_SLANG_BINARY_DIR ${slang_SOURCE_DIR})
 
+    set(VZT_SLANG_INCLUDE_DIR ${VZT_SLANG_INCLUDE_DIR} PARENT_SCOPE)
+
     add_library(slang SHARED IMPORTED GLOBAL)
 
     if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
