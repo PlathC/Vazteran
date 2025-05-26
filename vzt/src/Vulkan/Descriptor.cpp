@@ -104,7 +104,7 @@ namespace vzt
 
     DescriptorPool::DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes,
                                    uint32_t maxSetNb, uint32_t maxPerTypeNb)
-        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb)
+        : DeviceObject(device), m_maxSetNb(maxSetNb)
     {
         std::vector<VkDescriptorPoolSize> sizes;
         sizes.reserve(descriptorTypes.size());
@@ -124,7 +124,7 @@ namespace vzt
     }
 
     DescriptorPool::DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb)
-        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb), m_layout(descriptorLayout)
+        : DeviceObject(device), m_maxSetNb(maxSetNb), m_layout(descriptorLayout)
     {
         const auto& bindings = descriptorLayout.getBindings();
 
