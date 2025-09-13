@@ -31,7 +31,7 @@ int main(int /* argc */, char** /* argv */)
     constexpr uint32_t MaxInstanceCount = 2 << 19;
     constexpr uint32_t WorkGroupSize    = 256;
 
-    auto       window   = vzt::Window{ApplicationName, 1024, 1024};
+    auto       window   = vzt::Window{ApplicationName, 1500, 700};
     auto       instance = vzt::Instance{window};
     const auto surface  = vzt::Surface{window, instance};
 
@@ -190,13 +190,14 @@ int main(int /* argc */, char** /* argv */)
         if (inputs.mouseLeftPressed)
             t = inputs.mousePosition.x * vzt::Tau / static_cast<float>(window.getWidth());
 
-        const vzt::Quat rotation = glm::angleAxis(t, camera.up);
+        const vzt::Quat rotation = glm::angleAxis(t, camera.right);
 
         float distanceScale = 1.f;
         if (inputs.mouseLeftPressed)
             distanceScale = inputs.mousePosition.y / static_cast<float>(window.getHeight());
 
-        const float distance = distanceScale * 13.f * bbRadius / std::tan(camera.fov * .5f);
+        camera.fov           = glm::radians(20.f);
+        const float distance = distanceScale * 5.f * bbRadius / std::tan(camera.fov * .5f);
 
         const vzt::Vec3 cameraPosition  = target - camera.front * distance;
         const vzt::Vec3 currentPosition = rotation * (cameraPosition - target) + target;
