@@ -1,13 +1,13 @@
-#include <vzt/Data/Camera.hpp>
-#include <vzt/Utils/Compiler.hpp>
+#include <../../vzt/include/vzt/camera.hpp>
+#include <../../vzt/include/vzt/compiler.hpp>
 #include <vzt/Utils/IOMesh.hpp>
-#include <vzt/Vulkan/AccelerationStructure.hpp>
-#include <vzt/Vulkan/Buffer.hpp>
-#include <vzt/Vulkan/Command.hpp>
-#include <vzt/Vulkan/Pipeline/RaytracingPipeline.hpp>
-#include <vzt/Vulkan/Surface.hpp>
-#include <vzt/Vulkan/Swapchain.hpp>
-#include <vzt/Window.hpp>
+#include <vzt/vulkan/acceleration_structure.hpp>
+#include <vzt/vulkan/buffer.hpp>
+#include <vzt/vulkan/command.hpp>
+#include <vzt/vulkan/pipeline/RaytracingPipeline.hpp>
+#include <vzt/vulkan/surface.hpp>
+#include <vzt/vulkan/swapchain.hpp>
+#include <vzt/window.hpp>
 
 struct VertexInput
 {

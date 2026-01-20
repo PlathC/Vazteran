@@ -1,3 +1,4 @@
+# IMGUI
 set(IMGUI_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imconfig.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.cpp"
@@ -13,7 +14,21 @@ set(IMGUI_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/imgui/backends/imgui_impl_vulkan.h"
 )
 
-set(IMGUI_SOURCES
-        ${IMGUI_SOURCES}
-        PARENT_SCOPE
+add_library(VztImGui STATIC ${IMGUI_SOURCES})
+target_link_libraries(VztImGui PRIVATE SDL3::SDL3)
+target_compile_options(VztImGui PRIVATE "")
+target_compile_definitions(VztImGui PRIVATE IMGUI_IMPL_VULKAN_NO_PROTOTYPES)
+target_include_directories(VztImGui PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
+
+# TinyObjLoader
+add_library(VztTinyObjLoader INTERFACE)
+target_include_directories(VztTinyObjLoader INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader")
+
+
+set(VZT_APP_DEPENDENCIES
+
+        VztImGui
+        VztTinyObjLoader
 )
+
+set(VZT_APP_DEPENDENCIES ${VZT_APP_DEPENDENCIES} PARENT_SCOPE)

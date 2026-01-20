@@ -1,19 +1,17 @@
 #include <cassert>
 #include <cstdlib>
 
-#include <vzt/Core/File.hpp>
-#include <vzt/Vulkan/Command.hpp>
-#include <vzt/Vulkan/Pipeline/GraphicsPipeline.hpp>
-#include <vzt/Vulkan/Surface.hpp>
-#include <vzt/Vulkan/Swapchain.hpp>
-#include <vzt/Window.hpp>
+#include <vzt/vulkan/command.hpp>
+#include <vzt/vulkan/surface.hpp>
+#include <vzt/vulkan/swapchain.hpp>
+#include <vzt/window.hpp>
 
 int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Blank";
 
     auto window    = vzt::Window{ApplicationName};
-    auto instance  = vzt::Instance{window};
+    auto instance  = vzt::Instance{ApplicationName, window.getConfiguration()};
     auto surface   = vzt::Surface{window, instance};
     auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
     auto swapchain = vzt::Swapchain{device, surface};

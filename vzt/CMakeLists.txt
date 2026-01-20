@@ -7,100 +7,74 @@ find_package(Vulkan REQUIRED)
 
 include(../cmake/slang.cmake)
 
-
-set_source_files_properties(
-        "${CMAKE_CURRENT_SOURCE_DIR}/extern"
-        PROPERTIES
-        COMPILE_FLAGS "-w"
-)
 add_subdirectory(extern)
 
 set(VZT_HEADERS
-        include/vzt/Core/Assert.hpp
-        include/vzt/Core/Logger.hpp
-        include/vzt/Core/File.hpp
-        include/vzt/Core/Math.hpp
-        include/vzt/Core/Meta.hpp
-        include/vzt/Core/Type.hpp
 
-        include/vzt/Data/Camera.hpp
-
-        include/vzt/Ui/Input.hpp
-
-        include/vzt/Utils/Compiler.hpp
-        include/vzt/Utils/IOMesh.hpp
-        include/vzt/Utils/IOHDR.hpp
-        include/vzt/Utils/RenderGraph.hpp
-
-        include/vzt/Vulkan/AccelerationStructure.hpp
-        include/vzt/Vulkan/Buffer.hpp
-        include/vzt/Vulkan/BufferType.hpp
-        include/vzt/Vulkan/Command.hpp
-        include/vzt/Vulkan/Core.hpp
-        include/vzt/Vulkan/Descriptor.hpp
-        include/vzt/Vulkan/Device.hpp
-        include/vzt/Vulkan/DeviceConfiguration.hpp
-        include/vzt/Vulkan/FrameBuffer.hpp
-        include/vzt/Vulkan/Image.hpp
-        include/vzt/Vulkan/Instance.hpp
-        include/vzt/Vulkan/Pipeline.hpp
-        include/vzt/Vulkan/Program.hpp
-        include/vzt/Vulkan/QueryPool.hpp
-        include/vzt/Vulkan/RenderPass.hpp
-        include/vzt/Vulkan/Surface.hpp
-        include/vzt/Vulkan/Swapchain.hpp
-        include/vzt/Vulkan/Texture.hpp
-
-        include/vzt/Vulkan/Pipeline/ComputePipeline.hpp
-        include/vzt/Vulkan/Pipeline/GraphicsPipeline.hpp
-        include/vzt/Vulkan/Pipeline/RaytracingPipeline.hpp
-
+        include/vzt/camera.hpp
+        include/vzt/input.hpp
+        include/vzt/compiler.hpp
+        include/vzt/render_graph.hpp
         include/vzt/Window.hpp
+
+        include/vzt/core/assert.hpp
+        include/vzt/core/logger.hpp
+        include/vzt/core/file.hpp
+        include/vzt/core/math.hpp
+        include/vzt/core/meta.hpp
+        include/vzt/core/type.hpp
+
+        include/vzt/vulkan/acceleration_structure.hpp
+        include/vzt/vulkan/buffer.hpp
+        include/vzt/vulkan/command.hpp
+        include/vzt/vulkan/descriptor.hpp
+        include/vzt/vulkan/device.hpp
+        include/vzt/vulkan/frame_buffer.hpp
+        include/vzt/vulkan/image.hpp
+        include/vzt/vulkan/instance.hpp
+        include/vzt/vulkan/pipeline.hpp
+        include/vzt/vulkan/program.hpp
+        include/vzt/vulkan/query_pool.hpp
+        include/vzt/vulkan/render_pass.hpp
+        include/vzt/vulkan/setup.hpp
+        include/vzt/vulkan/surface.hpp
+        include/vzt/vulkan/swapchain.hpp
+
+        include/vzt/Vulkan/pipeline/compute.hpp
+        include/vzt/Vulkan/pipeline/graphics.hpp
+        include/vzt/Vulkan/pipeline/raytracing.hpp
 )
 
 set(VZT_SOURCES
-        src/Core/File.cpp
-        src/Core/Logger.cpp
-        src/Core/Vulkan.cpp
 
-        src/Data/Camera.cpp
+        src/camera.cpp
+        src/compiler.cpp
+        src/input.cpp
+        src/render_graph.cpp
+        src/window.cpp
 
-        src/Ui/Input.cpp
+        src/core/file.cpp
+        src/core/logger.cpp
 
-        src/Utils/Compiler.cpp
-        src/Utils/IOHDR.cpp
-        src/Utils/IOMesh.cpp
-        src/Utils/RenderGraph.cpp
+        src/vulkan/acceleration_structure.cpp
+        src/vulkan/buffer.cpp
+        src/vulkan/command.cpp
+        src/vulkan/descriptor.cpp
+        src/vulkan/device.cpp
+        src/vulkan/frame_buffer.cpp
+        src/vulkan/image.cpp
+        src/vulkan/instance.cpp
+        src/vulkan/program.cpp
+        src/vulkan/query_pool.cpp
+        src/vulkan/render_pass.cpp
+        src/vulkan/setup.cpp
+        src/vulkan/surface.cpp
+        src/vulkan/swapchain.cpp
+        src/vulkan/uniform.cpp
 
-        src/Vulkan/AccelerationStructure.cpp
-        src/Vulkan/Buffer.cpp
-        src/Vulkan/BufferType.cpp
-        src/Vulkan/Command.cpp
-        src/Vulkan/Descriptor.cpp
-        src/Vulkan/Device.cpp
-        src/Vulkan/DeviceConfiguration.cpp
-        src/Vulkan/FrameBuffer.cpp
-        src/Vulkan/Image.cpp
-        src/Vulkan/Instance.cpp
-        src/Vulkan/Program.cpp
-        src/Vulkan/QueryPool.cpp
-        src/Vulkan/RenderPass.cpp
-        src/Vulkan/Surface.cpp
-        src/Vulkan/Swapchain.cpp
-        src/Vulkan/Texture.cpp
-
-        src/Vulkan/Pipeline/ComputePipeline.cpp
-        src/Vulkan/Pipeline/GraphicsPipeline.cpp
-        src/Vulkan/Pipeline/RaytracingPipeline.cpp
-
-        src/Window.cpp
-)
-
-# Deactivate warning for dependencies
-set_source_files_properties(
-        ${VZT_EXTERN_SOURCES}
-        PROPERTIES
-        COMPILE_FLAGS ""
+        src/vulkan/pipeline/compute.cpp
+        src/vulkan/pipeline/graphics.cpp
+        src/vulkan/pipeline/raytracing.cpp
 )
 
 add_library(Vazteran STATIC ${VZT_HEADERS} ${VZT_SOURCES} ${VZT_EXTERN_SOURCES})

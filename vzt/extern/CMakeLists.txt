@@ -42,11 +42,8 @@ endif ()
 set(VZT_EXTERN_PUBLIC_INCLUDES
         ${VZT_EXTERN_INCLUDES}
 
-        "${CMAKE_CURRENT_SOURCE_DIR}/tinyobjloader"
         "${CMAKE_CURRENT_SOURCE_DIR}/volk"
         "${CMAKE_CURRENT_SOURCE_DIR}/VulkanMemoryAllocator/include"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr"
-        "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr/deps/miniz"
         ${Vulkan_INCLUDE_DIRS}
 )
 
@@ -66,7 +63,6 @@ set(VZT_EXTERN_LIBRARIES
 
 set(VZT_EXTERN_SOURCES
         ${VZT_EXTERN_SOURCES}
-        "${CMAKE_CURRENT_SOURCE_DIR}/tinyexr/deps/miniz/miniz.c"
 )
 
 set(VZT_COMPILATION_FLAGS ${VZT_COMPILATION_FLAGS} PARENT_SCOPE)

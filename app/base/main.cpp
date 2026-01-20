@@ -1,20 +1,20 @@
 #include <array>
 #include <cstdlib>
 
-#include <vzt/Core/Logger.hpp>
-#include <vzt/Data/Camera.hpp>
-#include <vzt/Data/Mesh.hpp>
-#include <vzt/Utils/Compiler.hpp>
-#include <vzt/Utils/IOMesh.hpp>
-#include <vzt/Vulkan/BufferType.hpp>
-#include <vzt/Vulkan/Command.hpp>
-#include <vzt/Vulkan/Descriptor.hpp>
-#include <vzt/Vulkan/FrameBuffer.hpp>
-#include <vzt/Vulkan/Pipeline/GraphicsPipeline.hpp>
-#include <vzt/Vulkan/RenderPass.hpp>
-#include <vzt/Vulkan/Surface.hpp>
-#include <vzt/Vulkan/Swapchain.hpp>
-#include <vzt/Window.hpp>
+#include <vzt/camera.hpp>
+#include <vzt/compiler.hpp>
+#include <vzt/core/logger.hpp>
+#include <vzt/vulkan/command.hpp>
+#include <vzt/vulkan/descriptor.hpp>
+#include <vzt/vulkan/frame_buffer.hpp>
+#include <vzt/vulkan/pipeline/graphics.hpp>
+#include <vzt/vulkan/render_pass.hpp>
+#include <vzt/vulkan/surface.hpp>
+#include <vzt/vulkan/swapchain.hpp>
+#include <vzt/vulkan/uniform.hpp>
+#include <vzt/window.hpp>
+
+#include "common/loader.hpp"
 
 struct VertexInput
 {
@@ -26,8 +26,9 @@ int main(int /* argc */, char** /* argv */)
 {
     const std::string ApplicationName = "Vazteran Base";
 
-    auto window    = vzt::Window{ApplicationName};
-    auto instance  = vzt::Instance{window};
+    auto window   = vzt::Window{ApplicationName};
+    auto instance = vzt::Instance{ApplicationName, window.getConfiguration()};
+
     auto compiler  = vzt::Compiler(instance);
     auto surface   = vzt::Surface{window, instance};
     auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);

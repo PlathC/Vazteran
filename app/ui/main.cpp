@@ -4,13 +4,13 @@
 #include <imgui/backends/imgui_impl_sdl3.h>
 #include <imgui/backends/imgui_impl_vulkan.h>
 #include <imgui/imgui.h>
-#include <vzt/Vulkan/Command.hpp>
-#include <vzt/Vulkan/Surface.hpp>
-#include <vzt/Vulkan/Swapchain.hpp>
-#include <vzt/Window.hpp>
+#include <vzt/vulkan/command.hpp>
+#include <vzt/vulkan/surface.hpp>
+#include <vzt/vulkan/swapchain.hpp>
+#include <vzt/window.hpp>
 
-#include "vzt/Vulkan/FrameBuffer.hpp"
-#include "vzt/Vulkan/RenderPass.hpp"
+#include "vzt/vulkan/frame_buffer.hpp"
+#include "vzt/vulkan/render_pass.hpp"
 
 class Ui
 {
@@ -166,7 +166,7 @@ int main(int /* argc */, char** /* argv */)
     const std::string ApplicationName = "Vazteran Blank";
 
     auto window    = vzt::Window{ApplicationName};
-    auto instance  = vzt::Instance{window};
+    auto instance  = vzt::Instance{ApplicationName, window.getConfiguration()};
     auto surface   = vzt::Surface{window, instance};
     auto device    = instance.getDevice(vzt::DeviceBuilder::standard(), surface);
     auto swapchain = vzt::Swapchain{device, surface};
@@ -209,11 +209,12 @@ int main(int /* argc */, char** /* argv */)
             imageBarrier = {
                 .image     = image,
                 .oldLayout = vzt::ImageLayout::TransferDstOptimal,
-                .newLayout = vzt::ImageLayout::PresentSrcKHR,
+                .newLayout = vzt::ImageLayout::ColorAttachmentOptimal,
             };
-            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::Transfer, imageBarrier);
+            commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::BottomOfPipe, imageBarrier);
 
             ui.record(submission->imageId, commands);
+
             commands.end();
         }
 

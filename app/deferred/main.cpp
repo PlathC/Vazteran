@@ -1,16 +1,14 @@
-#include <glm/gtc/matrix_access.hpp>
-#include <vzt/Core/Logger.hpp>
-#include <vzt/Data/Camera.hpp>
-#include <vzt/Data/Mesh.hpp>
-#include <vzt/Utils/Compiler.hpp>
-#include <vzt/Utils/IOMesh.hpp>
-#include <vzt/Utils/RenderGraph.hpp>
-#include <vzt/Vulkan/BufferType.hpp>
-#include <vzt/Vulkan/Pipeline/ComputePipeline.hpp>
-#include <vzt/Vulkan/QueryPool.hpp>
-#include <vzt/Vulkan/Surface.hpp>
-#include <vzt/Vulkan/Swapchain.hpp>
-#include <vzt/Window.hpp>
+#include <vzt/camera.hpp>
+#include <vzt/compiler.hpp>
+#include <vzt/core/logger.hpp>
+#include <vzt/render_graph.hpp>
+#include <vzt/vulkan/query_pool.hpp>
+#include <vzt/vulkan/surface.hpp>
+#include <vzt/vulkan/swapchain.hpp>
+#include <vzt/vulkan/uniform.hpp>
+#include <vzt/window.hpp>
+
+#include "common/loader.hpp"
 
 struct VertexInput
 {
@@ -32,7 +30,7 @@ int main(int /* argc */, char** /* argv */)
     constexpr uint32_t WorkGroupSize    = 256;
 
     auto       window   = vzt::Window{ApplicationName, 1024, 1024};
-    auto       instance = vzt::Instance{window};
+    auto       instance = vzt::Instance{ApplicationName, window.getConfiguration()};
     const auto surface  = vzt::Surface{window, instance};
 
     auto deviceBuilder = vzt::DeviceBuilder::standard();
