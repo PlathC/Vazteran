@@ -1,13 +1,14 @@
-#include <../../vzt/include/vzt/camera.hpp>
-#include <../../vzt/include/vzt/compiler.hpp>
-#include <vzt/Utils/IOMesh.hpp>
+#include <vzt/camera.hpp>
+#include <vzt/compiler.hpp>
 #include <vzt/vulkan/acceleration_structure.hpp>
 #include <vzt/vulkan/buffer.hpp>
 #include <vzt/vulkan/command.hpp>
-#include <vzt/vulkan/pipeline/RaytracingPipeline.hpp>
+#include <vzt/vulkan/pipeline/raytracing.hpp>
 #include <vzt/vulkan/surface.hpp>
 #include <vzt/vulkan/swapchain.hpp>
 #include <vzt/window.hpp>
+
+#include "common/loader.hpp"
 
 struct VertexInput
 {
@@ -20,7 +21,7 @@ int main(int /* argc */, char** /* argv */)
     const std::string ApplicationName = "Vazteran Raytracing";
 
     auto window   = vzt::Window{ApplicationName};
-    auto instance = vzt::Instance{window};
+    auto instance = vzt::Instance{ApplicationName, window.getConfiguration()};
     auto surface  = vzt::Surface{window, instance};
     auto compiler = vzt::Compiler(instance);
 
