@@ -11,6 +11,7 @@ namespace vzt
     inline void DeviceBuilder::add(dext::Extension extension) { m_extensions.emplace_back(std::move(extension)); }
 
     inline const DeviceFeatures&               DeviceBuilder::getDeviceFeatures() const { return m_features; }
+    inline DeviceFeatures&                     DeviceBuilder::getDeviceFeatures() { return m_features; }
     inline QueueType                           DeviceBuilder::getQueueTypes() const { return m_queueTypes; }
     inline const std::vector<dext::Extension>& DeviceBuilder::getExtensions() const { return m_extensions; }
 

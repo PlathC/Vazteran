@@ -110,6 +110,7 @@ namespace vzt
         inline void add(dext::Extension extension);
 
         inline const DeviceFeatures&               getDeviceFeatures() const;
+        inline DeviceFeatures&                     getDeviceFeatures();
         inline QueueType                           getQueueTypes() const;
         inline const std::vector<dext::Extension>& getExtensions() const;
 

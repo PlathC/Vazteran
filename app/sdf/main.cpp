@@ -36,8 +36,12 @@ int main(int /* argc */, char** /* argv */)
     const auto surface  = vzt::Surface{window, instance};
 
     auto deviceBuilder = vzt::DeviceBuilder::standard();
-    deviceBuilder.add(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    {
+        deviceBuilder.add(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
 
+        auto& physicalFeatures                = deviceBuilder.getDeviceFeatures().getPhysicalFeatures();
+        physicalFeatures.features.shaderInt64 = true;
+    }
     auto device = instance.getDevice(deviceBuilder, surface);
 
     auto        hardware = device.getHardware();
