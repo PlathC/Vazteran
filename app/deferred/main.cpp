@@ -42,7 +42,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto swapchain = vzt::Swapchain{device, surface};
     auto compiler  = vzt::Compiler(instance);
-    auto graph     = vzt::RenderGraph{device, swapchain};
+    auto graph     = vzt::RenderGraph{device};
 
     vzt::Mesh                mesh = vzt::readObj("samples/Bunny/Bunny.obj");
     std::vector<VertexInput> vertexInputs;
@@ -152,7 +152,7 @@ int main(int /* argc */, char** /* argv */)
             });
     }
 
-    graph.setBackBuffer(composed);
+    graph.setBackbuffer(swapchain, composed);
     graph.compile();
 
     const vzt::QueryPool queryPool = {

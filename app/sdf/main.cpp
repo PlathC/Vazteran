@@ -59,7 +59,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto swapchain = vzt::Swapchain{device, surface};
     auto compiler  = vzt::Compiler(instance);
-    auto graph     = vzt::RenderGraph{device, swapchain};
+    auto graph     = vzt::RenderGraph{device};
 
     auto sdfTexture = graph.addAttachment(vzt::AttachmentBuilder{
         .size      = vzt::Extent3D{GridWidth, GridWidth, GridWidth},
@@ -103,7 +103,7 @@ int main(int /* argc */, char** /* argv */)
             });
     }
 
-    graph.setBackBuffer(color);
+    graph.setBackbuffer(swapchain, color);
     graph.compile();
 
     const vzt::QueryPool queryPool = {

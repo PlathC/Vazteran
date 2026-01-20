@@ -21,7 +21,7 @@ namespace vzt
     inline DescriptorPool&         Pass::getDescriptorPool() { return m_pool; }
     inline View<RenderPass>        Pass::getRenderPass() const { return &m_renderPass; }
 
-    inline compute& ComputePass::getPipeline() { return m_pipeline; }
+    inline compute&         ComputePass::getPipeline() { return m_pipeline; }
     inline GraphicPipeline& GraphicsPass::getPipeline() { return m_pipeline; }
 
     inline std::unique_ptr<Pass>&       RenderGraph::operator[](uint32_t passId) { return m_passes[passId]; }
@@ -31,5 +31,9 @@ namespace vzt
     inline std::vector<std::unique_ptr<Pass>>::iterator       RenderGraph::end() { return m_passes.end(); }
     inline std::vector<std::unique_ptr<Pass>>::const_iterator RenderGraph::begin() const { return m_passes.begin(); }
     inline std::vector<std::unique_ptr<Pass>>::const_iterator RenderGraph::end() const { return m_passes.end(); }
-    inline View<Device>                                       RenderGraph::getDevice() const { return m_device; }
+
+    inline Format       RenderGraph::getBackbufferFormat() const { return m_backbufferFormat; }
+    inline Extent2D     RenderGraph::getBackbufferExtent() const { return m_backbufferExtent; }
+    inline uint32_t     RenderGraph::getBackbufferNb() const { return m_backbufferNb; }
+    inline View<Device> RenderGraph::getDevice() const { return m_device; }
 } // namespace vzt

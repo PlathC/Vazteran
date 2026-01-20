@@ -42,7 +42,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto swapchain = vzt::Swapchain{device, surface};
     auto compiler  = vzt::Compiler(instance);
-    auto graph     = vzt::RenderGraph{device, swapchain};
+    auto graph     = vzt::RenderGraph{device};
 
     auto instancesPosition = graph.addStorage( //
         vzt::StorageBuilder{sizeof(vzt::Vec4f) * MaxInstanceCount, vzt::BufferUsage::StorageBuffer});
@@ -101,7 +101,7 @@ int main(int /* argc */, char** /* argv */)
             });
     }
 
-    graph.setBackBuffer(color);
+    graph.setBackbuffer(swapchain, color);
     graph.compile();
 
     const vzt::QueryPool queryPool = {

@@ -438,10 +438,7 @@ namespace vzt
             const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
 
             ImageBarrier barrier;
-            if (!builder.format)
-                barrier.image = m_graph->m_swapchain->getImage(i);
-            else
-                barrier.image = m_graph->getImage(i, output.handle);
+            barrier.image     = m_graph->getImage(i, output.handle);
             barrier.oldLayout = output.use.initialLayout;
             barrier.newLayout = output.use.usedLayout;
             barrier.src       = output.waitAccess;
@@ -463,10 +460,7 @@ namespace vzt
             const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
 
             ImageBarrier barrier;
-            if (!builder.format)
-                barrier.image = m_graph->m_swapchain->getImage(i);
-            else
-                barrier.image = m_graph->getImage(i, output.handle);
+            barrier.image     = m_graph->getImage(i, output.handle);
             barrier.oldLayout = output.use.initialLayout;
             barrier.newLayout = output.use.usedLayout;
             barrier.src       = output.waitAccess;
@@ -507,14 +501,14 @@ namespace vzt
         for (auto& output : m_storageImageOutputs)
         {
             const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
-            output.use.format = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
+            output.use.format = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
         }
 
         for (auto& output : m_colorOutputs)
         {
             const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
             if (output.use.format == vzt::Format::Undefined)
-                output.use.format = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
+                output.use.format = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
 
             if (m_graph->isBackBuffer(output.handle))
                 output.use.finalLayout = ImageLayout::PresentSrcKHR;
@@ -532,7 +526,7 @@ namespace vzt
                 const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
 
                 AttachmentUse attachmentUse = output.use;
-                attachmentUse.format        = attachmentBuilder.format.value_or(m_graph->m_swapchain->getFormat());
+                attachmentUse.format        = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
             }
 
             if (!m_depthOutput)
@@ -550,9 +544,10 @@ namespace vzt
         // Create descriptors for the current pass
         m_descriptorLayout.compile();
 
-        const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
-        m_pool                          = DescriptorPool{device, m_descriptorLayout, swapchainImageNb};
-        m_pool.allocate(swapchainImageNb, m_descriptorLayout);
+        const uint32_t backbufferNb = m_graph->getBackbufferNb();
+
+        m_pool = DescriptorPool{device, m_descriptorLayout, backbufferNb};
+        m_pool.allocate(backbufferNb, m_descriptorLayout);
 
         createDescriptors();
     }
@@ -569,11 +564,11 @@ namespace vzt
     {
         // Guess render pass extent from its outputs
         Optional<Extent2D> extent;
-        const Extent2D     swapchainExtent = m_graph->m_swapchain->getExtent();
+        Extent2D           backbufferExtent = m_graph->getBackbufferExtent();
         for (auto& output : m_colorOutputs)
         {
             const auto& builder = m_graph->m_attachmentBuilders[output.handle];
-            extent              = builder.size.value_or(swapchainExtent);
+            extent              = builder.size.value_or(backbufferExtent);
             break;
         }
 
@@ -581,19 +576,19 @@ namespace vzt
         {
             const auto& builder = m_graph->m_attachmentBuilders[m_depthOutput->handle];
             if (!extent)
-                extent = builder.size.value_or(swapchainExtent);
+                extent = builder.size.value_or(backbufferExtent);
         }
 
         assert(extent && "Can't guess render pass extent since it has no output.");
 
-        const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
-        View<Device>   device           = m_graph->getDevice();
+        const uint32_t backbufferNb = m_graph->getBackbufferNb();
+        View<Device>   device       = m_graph->getDevice();
 
         m_frameBuffers.clear();
-        m_frameBuffers.reserve(swapchainImageNb);
+        m_frameBuffers.reserve(backbufferNb);
         m_textureSaves.clear();
-        m_textureSaves.reserve(m_colorInputs.size() * swapchainImageNb);
-        for (uint32_t i = 0; i < swapchainImageNb; i++)
+        m_textureSaves.reserve(m_colorInputs.size() * backbufferNb);
+        for (uint32_t i = 0; i < backbufferNb; i++)
         {
             m_frameBuffers.emplace_back(device, *extent);
             FrameBuffer& frameBuffer = m_frameBuffers.back();
@@ -601,14 +596,7 @@ namespace vzt
             // Get attachment from framebuffer
             for (auto& output : m_colorOutputs)
             {
-                const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
-
-                View<DeviceImage> image;
-                if (!builder.format)
-                    image = m_graph->m_swapchain->getImage(i);
-                else
-                    image = m_graph->getImage(i, output.handle);
-
+                const View<DeviceImage> image = m_graph->getImage(i, output.handle);
                 frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
             }
 
@@ -624,10 +612,10 @@ namespace vzt
 
     void Pass::createDescriptors()
     {
-        const uint32_t swapchainImageNb = m_graph->m_swapchain->getImageNb();
-        View<Device>   device           = m_graph->getDevice();
+        const uint32_t backbufferNb = m_graph->getBackbufferNb();
+        View<Device>   device       = m_graph->getDevice();
 
-        for (uint32_t i = 0; i < swapchainImageNb; i++)
+        for (uint32_t i = 0; i < backbufferNb; i++)
         {
             IndexedDescriptor descriptors{};
             descriptors.reserve(m_colorInputs.size() + m_storageInputs.size());
@@ -715,15 +703,24 @@ namespace vzt
 
     void GraphicsPass::resize()
     {
-        const Extent2D extent = m_graph->m_swapchain->getExtent();
-        m_pipeline.resize(vzt::Viewport{extent});
+        const Extent2D extent = m_graph->getBackbufferExtent();
+        m_pipeline.resize(Viewport{extent});
 
         Pass::resize();
     }
 
-    RenderGraph::RenderGraph(View<Device> device, View<Swapchain> swapchain)
-        : m_device(device), m_swapchain(std::move(swapchain))
+    RenderGraph::RenderGraph(View<Device> device) : m_device(device) {}
+
+    void RenderGraph::setBackbuffer(View<Swapchain> swapchain, const Handle handle)
     {
+        m_backbufferNb     = swapchain->getImageNb();
+        m_backbufferFormat = swapchain->getFormat();
+        m_backbufferExtent = swapchain->getExtent();
+
+        for (uint32_t i = 0; i < m_backbufferNb; ++i)
+            m_externalBackbuffers.emplace_back(swapchain->getImage(i));
+
+        m_backbuffer = handle;
     }
 
     Handle RenderGraph::addAttachment(AttachmentBuilder builder)
@@ -781,18 +778,19 @@ namespace vzt
         return *pass;
     }
 
-    void RenderGraph::setBackBuffer(const Handle handle) { m_backBuffer = handle; }
-
-    bool RenderGraph::isBackBuffer(const vzt::Handle backBufferHandle) const
+    bool RenderGraph::isBackBuffer(const Handle backbufferHandle) const
     {
-        if (m_backBuffer)
-            return m_backBuffer->id == backBufferHandle.id && m_backBuffer->state == backBufferHandle.state;
+        if (m_backbuffer)
+            return m_backbuffer->id == backbufferHandle.id && m_backbuffer->state == backbufferHandle.state;
 
         return false;
     }
 
     void RenderGraph::compile()
     {
+        // Back buffer must be set before compiling render graph
+        VZT_ASSERT(m_backbuffer);
+
         const std::vector<std::size_t>     executionOrder = sort();
         std::vector<std::unique_ptr<Pass>> sortedPasses{};
         sortedPasses.reserve(m_passes.size());
@@ -830,7 +828,7 @@ namespace vzt
 
         // Create render passes and their corresponding data such as the FrameBuffer
         // Traverse pass in execution order to fit their id with their ressources
-        const auto hardware    = m_swapchain->getDevice()->getHardware();
+        const auto hardware    = m_device->getHardware();
         const auto depthFormat = hardware.getDepthFormat();
         for (auto& pass : m_passes)
             pass->compile(depthFormat);
@@ -857,16 +855,19 @@ namespace vzt
 
     Handle RenderGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), HandleType::Storage, 0}; }
 
-    View<DeviceImage> RenderGraph::getImage(uint32_t swapchainImageId, Handle handle) const
+    View<DeviceImage> RenderGraph::getImage(uint32_t backbufferId, Handle handle) const
     {
+        if (isBackBuffer(handle))
+            return m_externalBackbuffers[backbufferId];
+
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
-        return m_images[handlePhysicalId * m_swapchain->getImageNb() + swapchainImageId];
+        return m_images[handlePhysicalId * m_backbufferNb + backbufferId];
     }
 
-    View<Buffer> RenderGraph::getStorage(uint32_t swapchainImageId, Handle handle) const
+    View<Buffer> RenderGraph::getStorage(uint32_t backbufferId, Handle handle) const
     {
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
-        return m_storages[handlePhysicalId * m_swapchain->getImageNb() + swapchainImageId];
+        return m_storages[handlePhysicalId * m_backbufferNb + backbufferId];
     }
 
     const AttachmentBuilder& RenderGraph::getConfiguration(Handle handle) { return m_attachmentBuilders[handle]; }
@@ -981,10 +982,8 @@ namespace vzt
         m_handleToPhysical.clear();
 
         // Create physical memory (Image, Buffer)
-        View<Device>   device           = m_swapchain->getDevice();
-        auto           hardware         = device->getHardware();
-        const auto     depthFormat      = hardware.getDepthFormat();
-        const uint32_t swapchainImageNb = m_swapchain->getImageNb();
+        auto       hardware    = m_device->getHardware();
+        const auto depthFormat = hardware.getDepthFormat();
 
         std::size_t imageId   = 0;
         std::size_t storageId = 0;
@@ -1004,7 +1003,7 @@ namespace vzt
                 imageId++;
 
                 ImageBuilder imageBuilder = {
-                    .size        = attachmentBuilder.size.value_or(m_swapchain->getExtent()),
+                    .size        = attachmentBuilder.size.value_or(m_backbufferExtent),
                     .usage       = attachmentBuilder.usage,
                     .format      = *attachmentBuilder.format,
                     .mipLevels   = attachmentBuilder.mipLevels,
@@ -1019,10 +1018,11 @@ namespace vzt
                 imageBuilder.sampleCount = attachmentBuilder.sampleCount;
                 imageBuilder.sharingMode = SharingMode::Exclusive;
 
-                for (uint32_t i = 0; i < swapchainImageNb; i++)
-                    m_images.emplace_back(device, imageBuilder);
+                for (uint32_t i = 0; i < m_backbufferNb; i++)
+                    m_images.emplace_back(m_device, imageBuilder);
             }
         }
+
         for (const auto& [handle, queues] : m_storageBuilders)
         {
             VZT_ASSERT(handle.type == HandleType::Storage);
@@ -1030,9 +1030,9 @@ namespace vzt
             storageId++;
 
             const StorageBuilder& storageBuilder = m_storageBuilders[handle];
-            for (uint32_t i = 0; i < swapchainImageNb; i++)
+            for (uint32_t i = 0; i < m_backbufferNb; i++)
                 m_storages.emplace_back(Buffer{
-                    m_swapchain->getDevice(),
+                    m_device,
                     storageBuilder.size,
                     storageBuilder.usage,
                     storageBuilder.location,
@@ -1040,5 +1040,4 @@ namespace vzt
                 });
         }
     }
-
 } // namespace vzt

@@ -259,9 +259,10 @@ namespace vzt
     {
       public:
         RenderGraph() = default;
-        RenderGraph(View<Device> device, View<Swapchain> swapchain);
+        RenderGraph(View<Device> device);
 
         // User configuration
+        void   setBackbuffer(View<Swapchain> swapchain, Handle handle);
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
 
@@ -272,10 +273,9 @@ namespace vzt
         GraphicsPass& addGraphics(std::string name, Program&& program);
         GraphicsPass& addGraphics(std::string name, std::vector<Shader> shaders);
 
-        View<DeviceImage> getImage(uint32_t swapchainImageId, Handle handle) const;
-        View<Buffer>      getStorage(uint32_t swapchainImageId, Handle handle) const;
+        View<DeviceImage> getImage(uint32_t backbufferId, Handle handle) const;
+        View<Buffer>      getStorage(uint32_t backbufferId, Handle handle) const;
 
-        void setBackBuffer(Handle handle);
         bool isBackBuffer(Handle handle) const;
 
         // User information check
@@ -283,14 +283,18 @@ namespace vzt
         void record(uint32_t i, CommandBuffer& commands);
         void resize(const Extent2D& extent);
 
-        inline std::unique_ptr<Pass>&                             operator[](uint32_t passId);
-        inline const std::unique_ptr<Pass>&                       operator[](uint32_t passId) const;
-        inline uint32_t                                           size() const;
+        inline std::unique_ptr<Pass>&       operator[](uint32_t passId);
+        inline const std::unique_ptr<Pass>& operator[](uint32_t passId) const;
+        inline uint32_t                     size() const;
+
         inline std::vector<std::unique_ptr<Pass>>::iterator       begin();
         inline std::vector<std::unique_ptr<Pass>>::iterator       end();
         inline std::vector<std::unique_ptr<Pass>>::const_iterator begin() const;
         inline std::vector<std::unique_ptr<Pass>>::const_iterator end() const;
 
+        inline Format       getBackbufferFormat() const;
+        inline Extent2D     getBackbufferExtent() const;
+        inline uint32_t     getBackbufferNb() const;
         inline View<Device> getDevice() const;
 
         friend Pass;
@@ -308,8 +312,7 @@ namespace vzt
 
         static inline std::atomic<std::size_t> m_handleCounter = 0;
 
-        View<Device>    m_device;
-        View<Swapchain> m_swapchain;
+        View<Device> m_device;
 
         HandleMap<AttachmentBuilder> m_attachmentBuilders;
         HandleMap<StorageBuilder>    m_storageBuilders;
@@ -321,7 +324,12 @@ namespace vzt
         std::vector<DeviceImage> m_images;   // [imageId  ]
         std::vector<Buffer>      m_storages; // [storageId]
 
-        Optional<Handle> m_backBuffer;
+        Optional<Handle> m_backbuffer;
+        uint32_t         m_backbufferNb = 1;
+        Format           m_backbufferFormat;
+        Extent2D         m_backbufferExtent;
+
+        std::vector<View<DeviceImage>> m_externalBackbuffers;
     };
 } // namespace vzt
 
