@@ -142,6 +142,18 @@ namespace vzt
         vkDestroyInstance(m_handle, nullptr);
     }
 
+    bool Instance::hasExtension(const char* extension) const
+    {
+        std::string sExtension = extension;
+        for (const auto& current : m_extensions)
+        {
+            if (std::string(current) == sExtension)
+                return true;
+        }
+
+        return false;
+    }
+
     Device Instance::getDevice(DeviceBuilder configuration, View<Surface> surface)
     {
         uint32_t deviceCount = 0;

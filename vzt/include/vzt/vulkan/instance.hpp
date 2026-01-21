@@ -83,6 +83,7 @@ namespace vzt
         inline const std::vector<const char*>& getValidationLayers() const;
         inline const std::vector<const char*>& getExtensions() const;
 
+        bool   hasExtension(const char* extension) const;
         Device getDevice(DeviceBuilder configuration = {}, View<Surface> surface = {});
 
       private:

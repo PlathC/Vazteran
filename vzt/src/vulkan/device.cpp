@@ -91,6 +91,23 @@ namespace vzt
         return m_physicalFeatures;
     }
 
+    DeviceBuilder DeviceBuilder::offline()
+    {
+        DeviceBuilder builder{};
+        builder.m_features   = DeviceFeatures::standard();
+        builder.m_extensions = {
+            dext::GetMemoryRequirements2,
+            dext::DedicatedAllocation,
+#ifdef __APPLE__
+            dext::PortabilitySubset,
+#endif // __APPLE__
+            dext::NonSemanticInfo,
+        };
+        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
+
+        return builder;
+    }
+
     DeviceBuilder DeviceBuilder::standard()
     {
         DeviceBuilder builder{};
@@ -345,9 +362,16 @@ namespace vzt
                 "Failed to create logical device.");
         volkLoadDeviceTable(&m_table, m_handle);
 
-        queueTypes = configuration.getQueueTypes();
+        const bool testPresentation = m_device.hasExtensions({VK_KHR_SWAPCHAIN_EXTENSION_NAME}) &&
+                                      m_instance->hasExtension(VK_KHR_SURFACE_EXTENSION_NAME);
         for (auto [type, id] : queueIds)
-            m_queues.emplace(this, type, id, m_device.canQueueFamilyPresent(id, surface));
+        {
+            bool canPresent = false;
+            if (testPresentation)
+                canPresent = m_device.canQueueFamilyPresent(id, surface);
+
+            m_queues.emplace(this, type, id, canPresent);
+        }
 
         VmaAllocatorCreateInfo allocatorInfo = {};
         allocatorInfo.physicalDevice         = m_device.getHandle();

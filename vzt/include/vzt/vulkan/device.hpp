@@ -99,6 +99,7 @@ namespace vzt
     class DeviceBuilder
     {
       public:
+        static DeviceBuilder offline();
         static DeviceBuilder standard();
         static DeviceBuilder rt();
 
