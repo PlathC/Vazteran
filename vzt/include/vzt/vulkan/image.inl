@@ -4,12 +4,11 @@ namespace vzt
 {
     template <class ValueType>
     DeviceImage DeviceImage::From(View<Device> device, ImageUsage usage, Format format, uint32_t width, uint32_t height,
-                                  const CSpan<ValueType> data, uint32_t mipLevels, ImageLayout layout,
-                                  SampleCount sampleCount, ImageType type, SharingMode sharingMode, ImageTiling tiling,
-                                  bool mappable)
+                                  const CSpan<ValueType> data, uint32_t mipLevels, SampleCount sampleCount,
+                                  ImageType type, SharingMode sharingMode, ImageTiling tiling, bool mappable)
     {
         return From(device, usage, format, width, height,
-                    {reinterpret_cast<const uint8_t*>(data.data), data.size * sizeof(ValueType)}, mipLevels, layout,
+                    {reinterpret_cast<const uint8_t*>(data.data), data.size * sizeof(ValueType)}, mipLevels,
                     sampleCount, type, sharingMode, tiling, mappable);
     }
 
@@ -28,7 +27,6 @@ namespace vzt
     inline ImageUsage    DeviceImage::getUsage() const { return m_usage; }
     inline Format        DeviceImage::getFormat() const { return m_format; }
     inline uint32_t      DeviceImage::getMipLevels() const { return m_mipLevels; }
-    inline ImageLayout   DeviceImage::getLayout() const { return m_layout; }
     inline SampleCount   DeviceImage::getSampleCount() const { return m_sampleCount; }
     inline ImageType     DeviceImage::getImageType() const { return m_type; }
     inline SharingMode   DeviceImage::getSharingMode() const { return m_sharingMode; }

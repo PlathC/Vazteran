@@ -14,7 +14,6 @@ namespace vzt
         ImageUsage  usage;
         Format      format;
         uint32_t    mipLevels   = 1;
-        ImageLayout layout      = ImageLayout::Undefined;
         SampleCount sampleCount = SampleCount::Sample1;
         ImageType   type        = ImageType::T2D;
         SharingMode sharingMode = SharingMode::Exclusive;
@@ -37,14 +36,12 @@ namespace vzt
         template <class ValueType>
         static DeviceImage From(View<Device> device, ImageUsage usage, Format format, uint32_t width, uint32_t height,
                                 const CSpan<ValueType> data, uint32_t mipLevels = 1,
-                                ImageLayout layout      = ImageLayout::Undefined,
                                 SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
                                 SharingMode sharingMode = SharingMode::Exclusive,
                                 ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
 
         static DeviceImage From(View<Device> device, ImageUsage usage, Format format, uint32_t width, uint32_t height,
                                 const CSpan<uint8_t> data, uint32_t mipLevels = 1,
-                                ImageLayout layout      = ImageLayout::Undefined,
                                 SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
                                 SharingMode sharingMode = SharingMode::Exclusive,
                                 ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
@@ -52,9 +49,9 @@ namespace vzt
         DeviceImage() = default;
 
         DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels = 1,
-                    ImageLayout layout = ImageLayout::Undefined, SampleCount sampleCount = SampleCount::Sample1,
-                    ImageType type = ImageType::T2D, SharingMode sharingMode = SharingMode::Exclusive,
-                    ImageTiling tiling = ImageTiling::Optimal, bool mappable = false);
+                    SampleCount sampleCount = SampleCount::Sample1, ImageType type = ImageType::T2D,
+                    SharingMode sharingMode = SharingMode::Exclusive, ImageTiling tiling = ImageTiling::Optimal,
+                    bool mappable = false);
         DeviceImage(View<Device> device, ImageBuilder builder);
         DeviceImage(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
                     SharingMode sharingMode = SharingMode::Exclusive, ImageTiling tiling = ImageTiling::Optimal,
@@ -83,7 +80,6 @@ namespace vzt
         inline ImageUsage    getUsage() const;
         inline Format        getFormat() const;
         inline uint32_t      getMipLevels() const;
-        inline ImageLayout   getLayout() const;
         inline SampleCount   getSampleCount() const;
         inline ImageType     getImageType() const;
         inline SharingMode   getSharingMode() const;
@@ -96,7 +92,6 @@ namespace vzt
         ImageUsage  m_usage;
         Format      m_format;
         uint32_t    m_mipLevels = 1;
-        ImageLayout m_layout;
         SampleCount m_sampleCount;
         ImageType   m_type = ImageType::T2D;
         SharingMode m_sharingMode;
