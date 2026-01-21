@@ -11,9 +11,8 @@
 namespace vzt
 {
     DeviceImage DeviceImage::From(View<Device> device, ImageUsage usage, Format format, uint32_t width, uint32_t height,
-                                  const CSpan<uint8_t> data, uint32_t mipLevels, ImageLayout layout,
-                                  SampleCount sampleCount, ImageType type, SharingMode sharingMode, ImageTiling tiling,
-                                  bool)
+                                  const CSpan<uint8_t> data, uint32_t mipLevels, SampleCount sampleCount,
+                                  ImageType type, SharingMode sharingMode, ImageTiling tiling, bool)
     {
         DeviceImage deviceImage{
             device,
@@ -21,7 +20,6 @@ namespace vzt
             usage | vzt::ImageUsage::TransferDst,
             format,
             mipLevels,
-            layout,
             sampleCount,
             type,
             sharingMode,
@@ -45,11 +43,10 @@ namespace vzt
     }
 
     DeviceImage::DeviceImage(View<Device> device, Extent3D size, ImageUsage usage, Format format, uint32_t mipLevels,
-                             ImageLayout layout, SampleCount sampleCount, ImageType type, SharingMode sharingMode,
-                             ImageTiling tiling, bool mappable)
+                             SampleCount sampleCount, ImageType type, SharingMode sharingMode, ImageTiling tiling,
+                             bool mappable)
         : DeviceObject<VkImage>(device), m_size(size), m_usage(usage), m_format(format), m_mipLevels(mipLevels),
-          m_layout(layout), m_sampleCount(sampleCount), m_type(type), m_sharingMode(sharingMode), m_tiling(tiling),
-          m_mappable(mappable)
+          m_sampleCount(sampleCount), m_type(type), m_sharingMode(sharingMode), m_tiling(tiling), m_mappable(mappable)
     {
         VkImageCreateInfo imageInfo{};
         imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -60,9 +57,9 @@ namespace vzt
         imageInfo.arrayLayers   = 1;
         imageInfo.samples       = toVulkan(m_sampleCount);
         imageInfo.tiling        = toVulkan(m_tiling);
-        imageInfo.usage         = toVulkan(m_usage | vzt::ImageUsage::Sampled);
+        imageInfo.usage         = toVulkan(m_usage | ImageUsage::Sampled);
         imageInfo.sharingMode   = toVulkan(m_sharingMode);
-        imageInfo.initialLayout = toVulkan(m_layout);
+        imageInfo.initialLayout = toVulkan(ImageLayout::Undefined);
 
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage                   = VMA_MEMORY_USAGE_AUTO;
@@ -74,25 +71,24 @@ namespace vzt
     }
 
     DeviceImage::DeviceImage(View<Device> device, ImageBuilder builder)
-        : DeviceImage(device, builder.size, builder.usage, builder.format, builder.mipLevels, builder.layout,
-                      builder.sampleCount, builder.type, builder.sharingMode, builder.tiling, builder.mappable)
+        : DeviceImage(device, builder.size, builder.usage, builder.format, builder.mipLevels, builder.sampleCount,
+                      builder.type, builder.sharingMode, builder.tiling, builder.mappable)
     {
     }
 
     DeviceImage::DeviceImage(View<Device> device, VkImage image, Extent3D size, ImageUsage usage, Format format,
                              SharingMode sharingMode, ImageTiling tiling, bool mappable)
-        : DeviceObject<VkImage>(device, image), m_size(size), m_usage(usage), m_format(format),
-          m_sharingMode(sharingMode), m_tiling(tiling), m_mappable(mappable)
+        : DeviceObject(device, image), m_size(size), m_usage(usage), m_format(format), m_sharingMode(sharingMode),
+          m_tiling(tiling), m_mappable(mappable)
     {
     }
 
     DeviceImage::DeviceImage(DeviceImage&& other) noexcept
-        : DeviceObject<VkImage>(std::move(other)), m_allocation(std::exchange(other.m_allocation, VK_NULL_HANDLE)),
+        : DeviceObject(std::move(other)), m_allocation(std::exchange(other.m_allocation, VK_NULL_HANDLE)),
           m_size(std::move(other.m_size)), m_usage(std::move(other.m_usage)), m_format(std::move(other.m_format)),
-          m_mipLevels(std::move(other.m_mipLevels)), m_layout(std::move(other.m_layout)),
-          m_sampleCount(std::move(other.m_sampleCount)), m_type(std::move(other.m_type)),
-          m_sharingMode(std::move(other.m_sharingMode)), m_tiling(std::move(other.m_tiling)),
-          m_mappable(other.m_mappable)
+          m_mipLevels(std::move(other.m_mipLevels)), m_sampleCount(std::move(other.m_sampleCount)),
+          m_type(std::move(other.m_type)), m_sharingMode(std::move(other.m_sharingMode)),
+          m_tiling(std::move(other.m_tiling)), m_mappable(other.m_mappable)
     {
     }
 
@@ -103,7 +99,6 @@ namespace vzt
         std::swap(m_usage, other.m_usage);
         std::swap(m_format, other.m_format);
         std::swap(m_mipLevels, other.m_mipLevels);
-        std::swap(m_layout, other.m_layout);
         std::swap(m_sampleCount, other.m_sampleCount);
         std::swap(m_type, other.m_type);
         std::swap(m_sharingMode, other.m_sharingMode);
