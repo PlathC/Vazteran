@@ -2,13 +2,19 @@
 
 #include <unordered_map>
 
+//
+#include "vzt/core/disable_warnings.hpp"
+//
 #include <slang/slang.h>
+
+#include <slang/slang-com-ptr.h>
+//
+#include "vzt/core/enable_warnings.hpp"
+//
 
 #include "vzt/core/assert.hpp"
 #include "vzt/core/logger.hpp"
 #include "vzt/vulkan/instance.hpp"
-
-#include <slang/slang-com-ptr.h>
 
 namespace vzt
 {

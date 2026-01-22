@@ -18,6 +18,8 @@ set(VZT_HEADERS
         include/vzt/Window.hpp
 
         include/vzt/core/assert.hpp
+        include/vzt/core/disable_warnings.hpp
+        include/vzt/core/enable_warnings.hpp
         include/vzt/core/logger.hpp
         include/vzt/core/file.hpp
         include/vzt/core/math.hpp

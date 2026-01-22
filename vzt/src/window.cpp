@@ -1,7 +1,13 @@
 #include "vzt/window.hpp"
 
+//
+#include "vzt/core/disable_warnings.hpp"
+//
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+//
+#include "vzt/core/enable_warnings.hpp"
+//
 
 #include "vzt/core/logger.hpp"
 

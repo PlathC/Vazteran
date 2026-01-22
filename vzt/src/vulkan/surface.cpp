@@ -1,6 +1,14 @@
 #include "vzt/vulkan/surface.hpp"
 
+//
+#include "vzt/core/disable_warnings.hpp"
+//
+
 #include <SDL3/SDL_vulkan.h>
+
+//
+#include "vzt/core/enable_warnings.hpp"
+//
 
 #include "vzt/core/logger.hpp"
 #include "vzt/window.hpp"

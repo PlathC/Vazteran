@@ -1,23 +1,29 @@
 #include <cassert>
 #include <cstdlib>
 
+//
+#include <vzt/core/disable_warnings.hpp>
+//
 #include <imgui/backends/imgui_impl_sdl3.h>
 #include <imgui/backends/imgui_impl_vulkan.h>
 #include <imgui/imgui.h>
+//
+#include <vzt/core/enable_warnings.hpp>
+//
+
 #include <vzt/vulkan/command.hpp>
+#include <vzt/vulkan/frame_buffer.hpp>
+#include <vzt/vulkan/render_pass.hpp>
 #include <vzt/vulkan/surface.hpp>
 #include <vzt/vulkan/swapchain.hpp>
 #include <vzt/window.hpp>
-
-#include "vzt/vulkan/frame_buffer.hpp"
-#include "vzt/vulkan/render_pass.hpp"
 
 class Ui
 {
   public:
     Ui(vzt::Window& window, vzt::View<vzt::Instance> instance, vzt::View<vzt::Device> device,
        vzt::View<vzt::Swapchain> swapchain)
-        : m_device(device), m_imageNb(swapchain->getImageNb()), m_swapchain(swapchain)
+        : m_device(device), m_swapchain(swapchain), m_imageNb(swapchain->getImageNb())
     {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
@@ -28,7 +34,6 @@ class Ui
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
-        ImGuiStyle& style = ImGui::GetStyle();
 
         ImGui_ImplVulkan_LoadFunctions(
             vzt::toVulkan(instance->getAPIVersion()),
@@ -60,7 +65,8 @@ class Ui
             vzt::DescriptorType::StorageBufferDynamic,
             vzt::DescriptorType::InputAttachment,
         };
-        m_descriptorPool         = vzt::DescriptorPool(m_device, poolTypes, 1000 * poolTypes.size());
+
+        m_descriptorPool = vzt::DescriptorPool(m_device, poolTypes, static_cast<uint32_t>((1000) * poolTypes.size()));
         init_info.DescriptorPool = m_descriptorPool.getHandle();
         init_info.Subpass        = 0;
         init_info.MinImageCount  = 2;
@@ -180,7 +186,7 @@ int main(int /* argc */, char** /* argv */)
     {
         ui.newFrame();
         {
-            const ImGuiIO& io = ImGui::GetIO();
+            // const ImGuiIO& io = ImGui::GetIO();
             ImGui::ShowDemoWindow();
         }
 
