@@ -163,8 +163,8 @@ int main(int /* argc */, char** /* argv */)
         else if (projection < 0.f) // If direction and reference are opposite
             orientation = glm::angleAxis(-vzt::Pi, camera.up);
 
-        vzt::Mat4                view = camera.getViewMatrix(currentPosition, orientation);
-        std::array<vzt::Mat4, 3> matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
+        vzt::Mat4  view = camera.getViewMatrix(currentPosition, orientation);
+        std::array matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
 
         vzt::CommandBuffer commands = commandPool[frame];
         commands.begin();
