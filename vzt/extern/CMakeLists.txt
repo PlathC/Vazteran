@@ -28,6 +28,11 @@ if (NOT TARGET SDL3::SDL3)
     set(SDL_TESTS OFF CACHE BOOL "" FORCE)
 
     vzt_add_subdirectory(SDL)
+
+    # Disable SDL deprecated warnings on MacOS.
+    if (APPLE)
+        target_compile_options(SDL3-shared PRIVATE "-Wno-deprecated-declarations")
+    endif ()
 endif ()
 
 if (NOT TARGET volk)
