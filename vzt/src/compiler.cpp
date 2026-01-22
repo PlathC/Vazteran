@@ -1,4 +1,4 @@
-#include "../include/vzt/compiler.hpp"
+#include "vzt/compiler.hpp"
 
 #include <unordered_map>
 
@@ -363,6 +363,6 @@ namespace vzt
         Module result         = {};
         result.implementation = std::make_unique<Module::Implementation>(module);
 
-        return std::move(result);
+        return result;
     }
 } // namespace vzt

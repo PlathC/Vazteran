@@ -1,9 +1,9 @@
-#include "vzt/Vulkan/pipeline/raytracing.hpp"
+#include "vzt/vulkan/pipeline/raytracing.hpp"
 
 #include <stdexcept>
 
-#include "vzt/Vulkan/Device.hpp"
-#include "vzt/Vulkan/Program.hpp"
+#include "vzt/vulkan/device.hpp"
+#include "vzt/vulkan/program.hpp"
 
 namespace vzt
 {

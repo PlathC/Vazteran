@@ -1,13 +1,11 @@
-#include "vzt/Vulkan/Device.hpp"
-#include "vzt/Vulkan/Program.hpp"
-#include "vzt/Vulkan/pipeline/compute.hpp"
+#include "vzt/vulkan/pipeline/compute.hpp"
+
+#include "vzt/vulkan/device.hpp"
+#include "vzt/vulkan/program.hpp"
 
 namespace vzt
 {
-    compute::compute(const Program& program) : pipeline(program.getModules()[0].getDevice())
-    {
-        setProgram(program);
-    }
+    compute::compute(const Program& program) : pipeline(program.getModules()[0].getDevice()) { setProgram(program); }
 
     compute::compute(compute&& other) noexcept
         : pipeline(std::move(other)), m_program(std::move(other.m_program)), m_compiled(std::move(other.m_compiled))

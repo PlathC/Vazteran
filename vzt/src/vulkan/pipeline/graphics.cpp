@@ -2,7 +2,7 @@
 
 #include <cassert>
 
-#include "vzt/vulkan/Device.hpp"
+#include "vzt/vulkan/device.hpp"
 #include "vzt/vulkan/render_pass.hpp"
 
 namespace vzt
