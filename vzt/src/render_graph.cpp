@@ -838,7 +838,6 @@ namespace vzt
 
         // Create render passes and their corresponding data such as the FrameBuffer
         // Traverse pass in execution order to fit their id with their ressources
-        const auto hardware = m_device->getHardware();
         for (auto& pass : m_passes)
             pass->compile();
     }
