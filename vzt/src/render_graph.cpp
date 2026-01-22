@@ -435,8 +435,6 @@ namespace vzt
             if (output.handle.state == 0 || output.waitAccess == vzt::Access::None)
                 continue;
 
-            const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
-
             ImageBarrier barrier;
             barrier.image     = m_graph->getImage(i, output.handle);
             barrier.oldLayout = output.use.initialLayout;
@@ -456,8 +454,6 @@ namespace vzt
         {
             if (output.handle.state == 0 || output.waitAccess == vzt::Access::None)
                 continue;
-
-            const AttachmentBuilder& builder = m_graph->getConfiguration(output.handle);
 
             ImageBarrier barrier;
             barrier.image     = m_graph->getImage(i, output.handle);
@@ -484,7 +480,7 @@ namespace vzt
             commands.endPass();
     }
 
-    void Pass::compile(Format depthFormat)
+    void Pass::compile()
     {
         View<Device> device = m_graph->getDevice();
 
@@ -511,7 +507,7 @@ namespace vzt
                 output.use.format = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
 
             if (m_graph->isBackBuffer(output.handle))
-                output.use.finalLayout = ImageLayout::PresentSrcKHR;
+                output.use.finalLayout = m_graph->m_backbufferLayout;
         }
 
         // If the pass is working with a compute queue, it does not need a render pass
@@ -531,6 +527,9 @@ namespace vzt
 
             if (!m_depthOutput)
                 throw std::runtime_error("Graphics pass must have a depth output.");
+
+            const auto hardware    = device->getHardware();
+            const auto depthFormat = hardware.getDepthFormat();
 
             AttachmentUse attachmentUse = m_depthOutput->use;
             attachmentUse.format        = depthFormat;
@@ -683,9 +682,9 @@ namespace vzt
         link(m_pipeline);
     }
 
-    void ComputePass::compile(Format depthFormat)
+    void ComputePass::compile()
     {
-        Pass::compile(depthFormat);
+        Pass::compile();
         m_pipeline.compile();
     }
 
@@ -695,9 +694,9 @@ namespace vzt
         link(m_pipeline);
     }
 
-    void GraphicsPass::compile(Format depthFormat)
+    void GraphicsPass::compile()
     {
-        Pass::compile(depthFormat);
+        Pass::compile();
         m_pipeline.compile(m_renderPass);
     }
 
@@ -711,16 +710,27 @@ namespace vzt
 
     RenderGraph::RenderGraph(View<Device> device) : m_device(device) {}
 
+    void RenderGraph::setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle)
+    {
+        m_backbufferNb     = 1;
+        m_backbufferFormat = image->getFormat();
+        m_backbufferExtent = image->getSize();
+        m_backbufferLayout = finalLayout;
+
+        m_backbuffer = handle;
+        m_externalBackbuffers.emplace_back(image);
+    }
+
     void RenderGraph::setBackbuffer(View<Swapchain> swapchain, const Handle handle)
     {
         m_backbufferNb     = swapchain->getImageNb();
         m_backbufferFormat = swapchain->getFormat();
         m_backbufferExtent = swapchain->getExtent();
+        m_backbufferLayout = ImageLayout::PresentSrcKHR;
+        m_backbuffer       = handle;
 
         for (uint32_t i = 0; i < m_backbufferNb; ++i)
             m_externalBackbuffers.emplace_back(swapchain->getImage(i));
-
-        m_backbuffer = handle;
     }
 
     Handle RenderGraph::addAttachment(AttachmentBuilder builder)
@@ -828,10 +838,9 @@ namespace vzt
 
         // Create render passes and their corresponding data such as the FrameBuffer
         // Traverse pass in execution order to fit their id with their ressources
-        const auto hardware    = m_device->getHardware();
-        const auto depthFormat = hardware.getDepthFormat();
+        const auto hardware = m_device->getHardware();
         for (auto& pass : m_passes)
-            pass->compile(depthFormat);
+            pass->compile();
     }
 
     void RenderGraph::record(uint32_t i, CommandBuffer& commands)
@@ -1007,7 +1016,6 @@ namespace vzt
                     .usage       = attachmentBuilder.usage,
                     .format      = *attachmentBuilder.format,
                     .mipLevels   = attachmentBuilder.mipLevels,
-                    .layout      = attachmentBuilder.layout,
                     .sampleCount = attachmentBuilder.sampleCount,
                     .type        = attachmentBuilder.type,
                     .sharingMode = attachmentBuilder.sharingMode,

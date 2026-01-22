@@ -145,7 +145,7 @@ namespace vzt
 
       protected:
         Pass(RenderGraph& graph, std::string name, PassType type);
-        virtual void compile(Format depthFormat);
+        virtual void compile();
         virtual void resize();
 
         void createRenderObjects();
@@ -225,7 +225,7 @@ namespace vzt
 
       private:
         ComputePass(RenderGraph& graph, std::string name, Program&& program);
-        void compile(Format depthFormat) override;
+        void compile() override;
 
         Program m_program;
         compute m_pipeline;
@@ -248,7 +248,7 @@ namespace vzt
 
       private:
         GraphicsPass(RenderGraph& graph, std::string name, Program&& program);
-        void compile(Format depthFormat) override;
+        void compile() override;
         void resize() override;
 
         Program         m_program;
@@ -262,7 +262,9 @@ namespace vzt
         RenderGraph(View<Device> device);
 
         // User configuration
-        void   setBackbuffer(View<Swapchain> swapchain, Handle handle);
+        void setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle);
+        void setBackbuffer(View<Swapchain> swapchain, Handle handle);
+
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
 
@@ -328,6 +330,7 @@ namespace vzt
         uint32_t         m_backbufferNb = 1;
         Format           m_backbufferFormat;
         Extent2D         m_backbufferExtent;
+        ImageLayout      m_backbufferLayout;
 
         std::vector<View<DeviceImage>> m_externalBackbuffers;
     };
