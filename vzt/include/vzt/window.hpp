@@ -11,10 +11,27 @@ union SDL_Event;
 struct SDL_Window;
 namespace vzt
 {
+    struct WindowBuilder
+    {
+        uint32_t width  = 1280;
+        uint32_t height = 720;
+
+        std::string title           = "";
+        bool        fullScreen      = false;
+        bool        resizable       = true;
+        bool        borderless      = false;
+        bool        hidden          = false;
+        bool        maximized       = false;
+        bool        mouseGrabbed    = false;
+        bool        alwaysOnTop     = false;
+        bool        keyboardGrabbed = false;
+    };
+
     class Window
     {
       public:
         Window(std::string title, uint32_t width = 1280, uint32_t height = 720);
+        Window(WindowBuilder builder = {});
 
         Window(const Window&)            = delete;
         Window& operator=(const Window&) = delete;

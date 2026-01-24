@@ -35,6 +35,43 @@ namespace vzt
             logger::error(SDL_GetError());
     }
 
+    Window::Window(WindowBuilder builder) : m_title(builder.title), m_width(builder.width), m_height(builder.height)
+    {
+        m_instanceCount++;
+
+#ifdef __APPLE__
+        // Use trackpad as touchpad on MacOS
+        SDL_SetHint(SDL_HINT_TRACKPAD_IS_TOUCH_ONLY, "1");
+#endif // __APPLE__
+
+        if (m_instanceCount == 1 && !SDL_Init(SDL_INIT_VIDEO))
+            logger::error("[SDL] {}", SDL_GetError());
+
+        SDL_WindowFlags windowFlags = SDL_WINDOW_VULKAN | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+        if (builder.fullScreen)
+            windowFlags |= SDL_WINDOW_FULLSCREEN;
+        if (builder.resizable)
+            windowFlags |= SDL_WINDOW_RESIZABLE;
+        if (builder.borderless)
+            windowFlags |= SDL_WINDOW_BORDERLESS;
+        if (builder.hidden)
+            windowFlags |= SDL_WINDOW_HIDDEN;
+        if (builder.maximized)
+            windowFlags |= SDL_WINDOW_MAXIMIZED;
+        if (builder.mouseGrabbed)
+            windowFlags |= SDL_WINDOW_MOUSE_GRABBED;
+        if (builder.alwaysOnTop)
+            windowFlags |= SDL_WINDOW_ALWAYS_ON_TOP;
+        if (builder.keyboardGrabbed)
+            windowFlags |= SDL_WINDOW_KEYBOARD_GRABBED;
+
+        m_handle = SDL_CreateWindow( //
+            m_title.c_str(), static_cast<int>(builder.width), static_cast<int>(builder.height), windowFlags);
+
+        if (!m_handle)
+            logger::error(SDL_GetError());
+    }
+
     Window::Window(Window&& other) noexcept
     {
         std::swap(m_title, other.m_title);
