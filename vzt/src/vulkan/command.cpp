@@ -4,11 +4,9 @@
 
 #include "vzt/vulkan/acceleration_structure.hpp"
 #include "vzt/vulkan/device.hpp"
-#include "vzt/vulkan/frame_buffer.hpp"
 #include "vzt/vulkan/pipeline/compute.hpp"
 #include "vzt/vulkan/pipeline/raytracing.hpp"
 #include "vzt/vulkan/query_pool.hpp"
-#include "vzt/vulkan/render_pass.hpp"
 
 namespace vzt
 {
@@ -243,13 +241,13 @@ namespace vzt
                              dst->getHandle(), vzt::toVulkan(ImageLayout::TransferDstOptimal), 1, &imageCopyRegion);
     }
 
-    void CommandBuffer::bind(const GraphicPipeline& graphicPipeline)
+    void CommandBuffer::bind(const GraphicsPipeline& graphicPipeline)
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();
         table.vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicPipeline.getHandle());
     }
 
-    void CommandBuffer::bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set)
+    void CommandBuffer::bind(const GraphicsPipeline& graphicPipeline, const DescriptorSet& set)
     {
         bind(graphicPipeline);
         const VkDescriptorSet descriptorSet = set.getHandle();
@@ -259,13 +257,13 @@ namespace vzt
                                       &descriptorSet, 0, nullptr);
     }
 
-    void CommandBuffer::bind(const compute& computePipeline)
+    void CommandBuffer::bind(const ComputePipeline& computePipeline)
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();
         table.vkCmdBindPipeline(m_handle, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline.getHandle());
     }
 
-    void CommandBuffer::bind(const compute& computePipeline, const DescriptorSet& set)
+    void CommandBuffer::bind(const ComputePipeline& computePipeline, const DescriptorSet& set)
     {
         bind(computePipeline);
         const VkDescriptorSet descriptorSet = set.getHandle();
@@ -375,25 +373,25 @@ namespace vzt
                                 &callableShaderSbtEntry, width, height, depth);
     }
 
-    void CommandBuffer::setViewport(const Extent2D& size, float minDepth, float maxDepth)
+    void CommandBuffer::setViewport(const Viewport& view)
     {
         VkViewport viewport;
-        viewport.x        = 0.f;
-        viewport.y        = 0.f;
-        viewport.width    = static_cast<float>(size.width);
-        viewport.height   = static_cast<float>(size.height);
-        viewport.minDepth = minDepth;
-        viewport.maxDepth = maxDepth;
+        viewport.x        = view.upperLeftCorner.x;
+        viewport.y        = view.upperLeftCorner.y;
+        viewport.width    = view.size.x;
+        viewport.height   = view.size.y;
+        viewport.minDepth = view.minDepth;
+        viewport.maxDepth = view.maxDepth;
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
         table.vkCmdSetViewport(m_handle, 0, 1, &viewport);
     }
 
-    void CommandBuffer::setScissor(const Extent2D& size, Vec2i offset)
+    void CommandBuffer::setScissor(const Scissor& sci)
     {
         VkRect2D scissor;
-        scissor.extent = {size.width, size.height};
-        scissor.offset = VkOffset2D{offset.x, offset.y};
+        scissor.extent = {sci.extent.width, sci.extent.height};
+        scissor.offset = VkOffset2D{sci.offset.x, sci.offset.y};
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
         table.vkCmdSetScissor(m_handle, 0, 1, &scissor);
@@ -401,52 +399,70 @@ namespace vzt
 
     void CommandBuffer::reset(const QueryPool& pool, uint32_t firstQuery, uint32_t queryCount)
     {
-        vkCmdResetQueryPool(m_handle, pool.getHandle(), firstQuery, queryCount);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdResetQueryPool(m_handle, pool.getHandle(), firstQuery, queryCount);
     }
 
     void CommandBuffer::writeTimeStamp(const QueryPool& pool, uint32_t query, PipelineStage waitingStage)
     {
-        vkCmdWriteTimestamp(m_handle, toVulkan(waitingStage), pool.getHandle(), query);
+        const VolkDeviceTable& table = m_device->getFunctionTable();
+        table.vkCmdWriteTimestamp(m_handle, toVulkan(waitingStage), pool.getHandle(), query);
     }
 
-    void CommandBuffer::beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer)
+    void CommandBuffer::beginRendering(const RenderingInfo& info)
     {
-        VkRenderPassBeginInfo renderPassInfo{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+        VkRenderingInfo renderInfo = {};
+        renderInfo.sType           = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderInfo.pNext           = nullptr;
+        renderInfo.flags           = toVulkan(info.flags);
+        renderInfo.renderArea      = {
+            {info.renderArea.offsetX, info.renderArea.offsetY},
+            {info.renderArea.width, info.renderArea.height},
+        };
+        renderInfo.layerCount           = 1;
+        renderInfo.viewMask             = 0;
+        renderInfo.colorAttachmentCount = static_cast<uint32_t>(info.colorAttachments.size());
 
-        renderPassInfo.renderPass        = pass.getHandle();
-        renderPassInfo.framebuffer       = frameBuffer.getHandle();
-        renderPassInfo.renderArea.offset = {0, 0};
-
-        const auto size                  = frameBuffer.getSize();
-        renderPassInfo.renderArea.extent = VkExtent2D{size.width, size.height};
-
-        const auto& colorAttachments = pass.getColorAttachments();
-        const auto& depth            = pass.getDepthAttachment();
-
-        std::vector<VkClearValue> clearColors{};
-        clearColors.reserve(colorAttachments.size() + 1);
-        for (auto& attachment : colorAttachments)
+        auto colors = std::vector<VkRenderingAttachmentInfo>(info.colorAttachments.size());
+        for (uint32_t i = 0; i < info.colorAttachments.size(); i++)
         {
-            const VkClearValue color = {attachment.clearValue.r, attachment.clearValue.g, attachment.clearValue.b,
-                                        attachment.clearValue.a};
-            clearColors.emplace_back(color);
+            const auto& attachment = info.colorAttachments[i];
+            colors[i]              = {
+                             .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                             .pNext       = nullptr,
+                             .imageView   = attachment.view->getHandle(),
+                             .imageLayout = toVulkan(attachment.layout),
+                             .loadOp      = toVulkan(attachment.loadOp),
+                             .storeOp     = toVulkan(attachment.storeOp),
+                             .clearValue  = VkClearValue{attachment.clearValue.x, attachment.clearValue.y, //
+                                           attachment.clearValue.z, attachment.clearValue.w},
+            };
+        }
+        renderInfo.pColorAttachments = colors.data();
+
+        VkRenderingAttachmentInfo depthAttachment = {};
+        if (info.depthAttachment)
+        {
+            depthAttachment.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+            depthAttachment.pNext       = nullptr;
+            depthAttachment.imageView   = info.depthAttachment->view->getHandle();
+            depthAttachment.imageLayout = toVulkan(info.depthAttachment->layout);
+            depthAttachment.loadOp      = toVulkan(info.depthAttachment->loadOp);
+            depthAttachment.storeOp     = toVulkan(info.depthAttachment->storeOp);
+            depthAttachment.clearValue  = {info.depthAttachment->clearValue.x, info.depthAttachment->clearValue.y,
+                                           info.depthAttachment->clearValue.z, info.depthAttachment->clearValue.w};
+
+            renderInfo.pDepthAttachment = &depthAttachment;
         }
 
-        const VkClearValue depthClear = {depth.clearValue.r, depth.clearValue.g, depth.clearValue.b,
-                                         depth.clearValue.a};
-        clearColors.emplace_back(depthClear);
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
-        renderPassInfo.pClearValues    = clearColors.data();
-
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        table.vkCmdBeginRenderPass(m_handle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        table.vkCmdBeginRenderingKHR(m_handle, &renderInfo);
     }
 
-    void CommandBuffer::endPass()
+    void CommandBuffer::endRendering()
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        table.vkCmdEndRenderPass(m_handle);
+        table.vkCmdEndRenderingKHR(m_handle);
     }
 
     void CommandBuffer::buildAs(AccelerationStructureBuilder& builder)

@@ -78,19 +78,32 @@ namespace vzt
         View<AccelerationStructure> accelerationStructure;
     };
 
-    class pipeline;
+    class Pipeline;
     using DescriptorWrite   = std::variant<DescriptorBuffer, DescriptorImage, DescriptorAccelerationStructure>;
     using IndexedDescriptor = std::unordered_map<uint32_t, DescriptorWrite>;
+
+    struct DescriptorPoolBuilder
+    {
+        std::unordered_set<DescriptorType> descriptorTypes = {};
+        uint32_t                           maxSetNb        = 64;
+        uint32_t                           maxPerTypeNb    = 64;
+        DescriptorPoolCreateFlag           flags           = DescriptorPoolCreateFlag::None;
+
+        inline DescriptorPoolBuilder& add(DescriptorType type);
+        inline DescriptorPoolBuilder& setMaxSetNb(uint32_t mmaxSetNb);
+        inline DescriptorPoolBuilder& setMaxSetPerTypeNb(uint32_t mmaxSetPerTypeNb);
+        inline DescriptorPoolBuilder& addFlag(DescriptorPoolCreateFlag fflags);
+    };
+
     class DescriptorPool : public DeviceObject<VkDescriptorPool>
     {
       public:
         const static std::vector<DescriptorType> DefaultDescriptors;
 
         DescriptorPool() = default;
-        DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes = {},
-                       uint32_t maxSetNb = 64, uint32_t maxPerTypeNb = 64);
+        DescriptorPool(View<Device> device, DescriptorPoolBuilder builder);
         DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb = 64);
-        DescriptorPool(View<Device> device, const pipeline& descriptorLayout, uint32_t count = 64);
+        DescriptorPool(View<Device> device, const Pipeline& descriptorLayout, uint32_t count = 64);
 
         DescriptorPool(const DescriptorPool&)            = delete;
         DescriptorPool& operator=(const DescriptorPool&) = delete;

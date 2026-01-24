@@ -101,19 +101,18 @@ namespace vzt
 
     DescriptorSet::DescriptorSet(VkDescriptorSet handle) : m_handle(handle) {}
 
-    DescriptorPool::DescriptorPool(View<Device> device, std::unordered_set<DescriptorType> descriptorTypes,
-                                   uint32_t maxSetNb, uint32_t maxPerTypeNb)
-        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb)
+    DescriptorPool::DescriptorPool(View<Device> device, DescriptorPoolBuilder builder)
+        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(builder.maxSetNb)
     {
         std::vector<VkDescriptorPoolSize> sizes;
-        sizes.reserve(descriptorTypes.size());
-        for (const auto& descriptorType : descriptorTypes)
-            sizes.emplace_back(VkDescriptorPoolSize{toVulkan(descriptorType), maxPerTypeNb});
+        sizes.reserve(builder.descriptorTypes.size());
+        for (const auto& descriptorType : builder.descriptorTypes)
+            sizes.emplace_back(VkDescriptorPoolSize{toVulkan(descriptorType), builder.maxPerTypeNb});
 
         VkDescriptorPoolCreateInfo pool_info = {};
         pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags                      = 0;
-        pool_info.maxSets                    = maxSetNb;
+        pool_info.flags                      = toVulkan(builder.flags);
+        pool_info.maxSets                    = builder.maxSetNb;
         pool_info.poolSizeCount              = static_cast<uint32_t>(sizes.size());
         pool_info.pPoolSizes                 = sizes.data();
 
@@ -123,7 +122,7 @@ namespace vzt
     }
 
     DescriptorPool::DescriptorPool(View<Device> device, const DescriptorLayout& descriptorLayout, uint32_t maxSetNb)
-        : DeviceObject<VkDescriptorPool>(device), m_maxSetNb(maxSetNb), m_layout(descriptorLayout)
+        : DeviceObject(device), m_maxSetNb(maxSetNb), m_layout(descriptorLayout)
     {
         const auto& bindings = descriptorLayout.getBindings();
 
@@ -153,7 +152,7 @@ namespace vzt
                 "Failed to create descriptor pool.");
     }
 
-    DescriptorPool::DescriptorPool(View<Device> device, const pipeline& pipeline, uint32_t count)
+    DescriptorPool::DescriptorPool(View<Device> device, const Pipeline& pipeline, uint32_t count)
         : DescriptorPool(device, pipeline.getDescriptorLayout(), pipeline.getDescriptorLayout().size() * count)
     {
         allocate(count, *m_layout);

@@ -15,6 +15,14 @@
 
 namespace vzt
 {
+    struct Rect2D
+    {
+        int32_t  offsetX;
+        int32_t  offsetY;
+        uint32_t width;
+        uint32_t height;
+    };
+
     struct Extent2D
     {
         uint32_t width;

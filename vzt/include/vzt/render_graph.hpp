@@ -10,16 +10,27 @@
 #include "vzt/vulkan/buffer.hpp"
 #include "vzt/vulkan/command.hpp"
 #include "vzt/vulkan/device.hpp"
-#include "vzt/vulkan/frame_buffer.hpp"
 #include "vzt/vulkan/pipeline.hpp"
-#include "vzt/vulkan/pipeline/graphics.hpp"
 #include "vzt/vulkan/program.hpp"
-#include "vzt/vulkan/render_pass.hpp"
 
 namespace vzt
 {
     enum class QueueType : uint8_t;
     class Swapchain;
+
+    struct AttachmentUse
+    {
+        Format      format;
+        ImageLayout initialLayout;
+        ImageLayout finalLayout;
+        ImageLayout usedLayout;
+
+        LoadOp      loadOp         = LoadOp::Clear;
+        StoreOp     storeOp        = StoreOp::Store;
+        LoadOp      stencilLoapOp  = LoadOp::DontCare;
+        StoreOp     stencilStoreOp = StoreOp::DontCare;
+        SampleCount sampleCount    = SampleCount::Sample1;
+    };
 
     struct AttachmentBuilder
     {
@@ -45,6 +56,15 @@ namespace vzt
         template <class Type>
         static StorageBuilder fromType( //
             BufferUsage usage, MemoryLocation location = MemoryLocation::Device, bool mappable = false);
+    };
+
+    struct Attachment
+    {
+        View<ImageView> image;
+        ImageLayout     layout     = ImageLayout::Undefined;
+        LoadOp          loadOp     = LoadOp::Clear;
+        StoreOp         storeOp    = StoreOp::Store;
+        Vec4            clearValue = vzt::Vec4{0.f};
     };
 
     enum class HandleType
@@ -109,37 +129,31 @@ namespace vzt
 
         virtual ~Pass() = default;
 
-        void addColorInput(uint32_t binding, const Handle& attachment, std::string name = "");
-        void addDepthInput(uint32_t binding, const Handle& attachment, std::string name = "");
-        void addColorOutput(Handle& attachment, std::string attachmentName = "", const vzt::Vec4 clearColor = {});
-        void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "");
-
-        void addStorageInputIndirect(const Handle& storage, std::string storageName = "",
-                                     Optional<Range<std::size_t>> range = {});
+        void addStorageInputIndirect(const Handle& storage, std::string storageName = "", Optional<Range<>> range = {});
         void addStorageInput(uint32_t binding, const Handle& storage, std::string storageName = "",
-                             Optional<Range<std::size_t>> range = {});
+                             Optional<Range<>> range = {});
         void addStorageOutput(uint32_t binding, Handle& storage, std::string storageName = "",
-                              Optional<Range<std::size_t>> range = {});
+                              Optional<Range<>> range = {});
         void addStorageInputOutput(uint32_t binding, Handle& storage, std::string inName = "", std::string outName = "",
-                                   Optional<Range<std::size_t>> range = {});
+                                   Optional<Range<>> range = {});
+        void addColorTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
+        void addDepthTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
 
-        void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
-        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "", float clearValue = 1.f);
-
-        void link(const pipeline& pipeline);
+        void link(const Pipeline& pipeline);
 
         template <class DerivedHandler, class... Args>
         void setRecordFunction(Args&&... args);
         void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
 
-        bool isDependingOn(const Pass& other) const;
-        void record(uint32_t i, CommandBuffer& commands) const;
+        virtual bool isDependingOn(const Pass& other) const;
+        void         record(uint32_t i, CommandBuffer& commands) const;
 
         inline std::string_view getName() const;
 
-        inline const DescriptorLayout& getDescriptorLayout() const;
-        inline DescriptorPool&         getDescriptorPool();
-        inline View<RenderPass>        getRenderPass() const;
+        inline DescriptorLayout& getDescriptorLayout();
+        inline DescriptorPool&   getDescriptorPool();
+        inline CSpan<ImageView>  getColorOutputs(uint32_t b) const;
+        inline View<ImageView>   getDepth(uint32_t b) const;
 
         friend RenderGraph;
 
@@ -148,7 +162,6 @@ namespace vzt
         virtual void compile();
         virtual void resize();
 
-        void createRenderObjects();
         void createDescriptors();
 
         RenderGraph*     m_graph;
@@ -166,20 +179,22 @@ namespace vzt
 
             uint32_t binding = ~0u;
 
-            Access        waitAccess   = vzt::Access::None;
-            Access        targetAccess = vzt::Access::None;
-            PipelineStage waitStage    = vzt::PipelineStage::None;
-            PipelineStage targetStage  = vzt::PipelineStage::None;
+            Access        waitAccess   = Access::None;
+            Access        targetAccess = Access::None;
+            PipelineStage waitStage    = PipelineStage::None;
+            PipelineStage targetStage  = PipelineStage::None;
             ImageAspect   aspect       = ImageAspect::Color;
+
+            ColorBlend blend = {.blendEnable = false};
 
             bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
         };
 
         struct PassStorage
         {
-            Handle                       handle;
-            std::string                  name;
-            Optional<Range<std::size_t>> range;
+            Handle            handle;
+            std::string       name;
+            Optional<Range<>> range;
 
             Access        waitAccess;
             Access        targetAccess;
@@ -191,21 +206,28 @@ namespace vzt
             bool operator<(const PassStorage& other) const { return handle.id < other.handle.id; }
         };
 
-        std::vector<PassAttachment> m_colorInputs;
-        std::vector<PassStorage>    m_storageInputs;
-        Optional<PassAttachment>    m_depthInput;
+        // Shader read/write
+        std::vector<PassStorage> m_storageInputs;
+        std::vector<PassStorage> m_storageOutputs;
 
-        std::vector<PassAttachment> m_colorOutputs;
-        std::vector<PassStorage>    m_storageOutputs;
+        std::vector<PassAttachment> m_textureInputs;
         std::vector<PassAttachment> m_storageImageOutputs;
-        Optional<PassAttachment>    m_depthOutput;
 
-        RenderPass     m_renderPass;
-        DescriptorPool m_pool;
+        // Graphics pass read/write
+        std::vector<PassAttachment> m_colorInputs;
+        std::vector<PassAttachment> m_colorOutputs;
 
-        std::vector<FrameBuffer> m_frameBuffers; // [swapchainImageId]
-        std::vector<Texture>     m_textureSaves;
-        std::vector<ImageView>   m_imageViews;
+        Optional<PassAttachment> m_depthInput;
+        Optional<PassAttachment> m_depthOutput;
+
+        // Descriptor data
+        DescriptorPool         m_pool;
+        std::vector<Texture>   m_textureSaves;
+        std::vector<ImageView> m_storageImageViews;
+        std::vector<ImageView> m_colorOutputImageViews;
+        std::vector<ImageView> m_depthOutputImageViews;
+
+        friend class GraphicsPass;
     };
 
     class ComputePass : public Pass
@@ -217,9 +239,9 @@ namespace vzt
         ComputePass(ComputePass&&) noexcept   = default;
         ComputePass& operator=(ComputePass&&) = default;
 
-        ~ComputePass() = default;
+        ~ComputePass() override = default;
 
-        inline compute& getPipeline();
+        inline ComputePipeline& getPipeline();
 
         friend RenderGraph;
 
@@ -227,8 +249,8 @@ namespace vzt
         ComputePass(RenderGraph& graph, std::string name, Program&& program);
         void compile() override;
 
-        Program m_program;
-        compute m_pipeline;
+        Program         m_program;
+        ComputePipeline m_pipeline;
     };
 
     class GraphicsPass : public Pass
@@ -240,9 +262,19 @@ namespace vzt
         GraphicsPass(GraphicsPass&&) noexcept   = default;
         GraphicsPass& operator=(GraphicsPass&&) = default;
 
-        ~GraphicsPass() = default;
+        ~GraphicsPass() override = default;
 
-        inline GraphicPipeline& getPipeline();
+        void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
+        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "");
+        void setDepthInputOutput(Handle& depthStencil, std::string attachmentName = "");
+
+        void addColorOutput(Handle& attachment, std::string attachmentName = "",
+                            ColorBlend blend = {.blendEnable = false});
+        void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "",
+                                 ColorBlend blend = {.blendEnable = false});
+
+        inline GraphicsPipeline&        getPipeline();
+        inline GraphicsPipelineBuilder& getBuilder();
 
         friend RenderGraph;
 
@@ -251,8 +283,9 @@ namespace vzt
         void compile() override;
         void resize() override;
 
-        Program         m_program;
-        GraphicPipeline m_pipeline;
+        Program                 m_program;
+        GraphicsPipelineBuilder m_graphicsPipelineBuilder;
+        GraphicsPipeline        m_pipeline;
     };
 
     class RenderGraph
@@ -268,7 +301,6 @@ namespace vzt
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
 
-        Pass&         addPass(std::string name, PassType type = PassType::Graphics);
         ComputePass&  addCompute(std::string name, Program&& program);
         ComputePass&  addCompute(std::string name, std::vector<Shader> shaders);
         ComputePass&  addCompute(std::string name, Shader shader);

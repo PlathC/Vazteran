@@ -53,6 +53,7 @@ int main(int /* argc */, char** /* argv */)
     auto& instanceGeneration = graph.addCompute( //
         "InstanceGeneration", compiler("shaders/particles/instance_generation.slang", "main"));
     {
+        instanceGeneration.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
         instanceGeneration.addStorageOutput(1, instancesPosition);
         instanceGeneration.addStorageOutput(2, drawCommands);
 
@@ -80,24 +81,46 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/particles/circle.slang"));
     {
+        geometry.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
         geometry.addStorageInput(1, instancesPosition);
         geometry.addStorageInputIndirect(drawCommands);
-        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
+        geometry.addColorOutput(color, "", vzt::ColorBlend{.blendEnable = true, .colorBlendOp = vzt::BlendOp::Add});
         geometry.setDepthOutput(depth);
 
-        auto& geometryPipeline = geometry.getPipeline();
-        geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-        geometryPipeline.setColorBlend(1, vzt::ColorBlend{true, vzt::BlendOp::Add});
-
-        auto& geometryRasterization    = geometryPipeline.getRasterization();
-        geometryRasterization.cullMode = vzt::CullMode::None;
+        auto& builder = geometry.getBuilder();
+        builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
         geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                const vzt::View<vzt::Buffer> buffer = graph.getStorage(i, drawCommands);
+            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+                const auto extent = graph.getBackbufferExtent();
+                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+                commands.setScissor(vzt::Scissor{.extent = extent});
 
-                commands.bind(geometryPipeline, set);
+                auto colorViews = geometry.getColorOutputs(frame);
+                auto depthView  = geometry.getDepth(frame);
+                commands.beginRendering({
+                    .renderArea       = {0, 0, extent.width, extent.height},
+                    .colorAttachments = {{
+                        .view       = colorViews[0],
+                        .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                        .loadOp     = vzt::LoadOp::Clear,
+                        .storeOp    = vzt::StoreOp::Store,
+                        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                    }},
+                    .depthAttachment =
+                        vzt::RenderingInfo::RenderingAttachment{
+                            .view       = depthView,
+                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                        },
+                });
+
+                const vzt::View<vzt::Buffer> buffer = graph.getStorage(frame, drawCommands);
+
+                commands.bind(geometry.getPipeline(), set);
                 commands.drawIndirect(*buffer, 1, 0);
+
+                commands.endRendering();
             });
     }
 
@@ -214,6 +237,14 @@ int main(int /* argc */, char** /* argv */)
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         commands.begin();
 
+        {
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
+            imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
+            imageBarrier.newLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::VertexShader, imageBarrier);
+        }
+
         GenerationInput generationInput = {
             MaxInstanceCount,
             uint32_t(inputs.time),
@@ -232,6 +263,14 @@ int main(int /* argc */, char** /* argv */)
             commands.writeTimeStamp(queryPool, startId + i * 2 + 1, vzt::PipelineStage::BottomOfPipe);
         }
         commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 1, vzt::PipelineStage::BottomOfPipe);
+
+        {
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
+            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::BottomOfPipe, imageBarrier);
+        }
 
         commands.end();
 

@@ -20,33 +20,45 @@ namespace vzt
         add(VertexAttribute{offset, location, dataFormat, binding});
     }
 
-    inline void GraphicPipeline::setVertexInputDescription(VertexInputDescription vertexDescription)
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::addColor(Format format, ColorBlend blend)
     {
-        m_vertexDescription = vertexDescription;
+        colors.emplace_back(format, blend);
+        return *this;
     }
 
-    inline void GraphicPipeline::setColorBlend(uint32_t attachmentId, ColorBlend colorBlend)
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::setDepth(Format format)
     {
-        m_colorBlends[attachmentId] = colorBlend;
+        depth = std::move(format);
+        return *this;
     }
 
-    inline void            GraphicPipeline::setViewport(Viewport config) { m_viewport = std::move(config); }
-    inline const Viewport& GraphicPipeline::getViewport() const { return m_viewport; }
-    inline Viewport&       GraphicPipeline::getViewport() { return m_viewport; }
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::set(VertexInputDescription desc)
+    {
+        inputDescription = std::move(desc);
+        return *this;
+    }
 
-    inline void GraphicPipeline::setRasterization(Rasterization config) { m_rasterization = std::move(config); }
-    inline const Rasterization& GraphicPipeline::getRasterization() const { return m_rasterization; }
-    inline Rasterization&       GraphicPipeline::getRasterization() { return m_rasterization; }
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::set(Rasterization rast)
+    {
+        rasterization = std::move(rast);
+        return *this;
+    }
 
-    inline void GraphicPipeline::setMultiSampling(MultiSampling config) { m_multiSample = std::move(config); }
-    inline const MultiSampling& GraphicPipeline::getMultiSampling() const { return m_multiSample; }
-    inline MultiSampling&       GraphicPipeline::getMultiSampling() { return m_multiSample; }
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::set(MultiSampling multi)
+    {
+        multiSampling = std::move(multi);
+        return *this;
+    }
 
-    inline void GraphicPipeline::setDepthStencil(DepthStencil config) { m_depthStencil = std::move(config); }
-    inline const DepthStencil& GraphicPipeline::getDepthStencil() const { return m_depthStencil; }
-    inline DepthStencil&       GraphicPipeline::getDepthStencil() { return m_depthStencil; }
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::set(DepthStencil depthSt)
+    {
+        depthStencil = std::move(depthSt);
+        return *this;
+    }
 
-    inline void GraphicPipeline::setPrimitiveTopology(PrimitiveTopology topology) { m_primitiveTopology = topology; }
-    inline const PrimitiveTopology& GraphicPipeline::getPrimitiveTopology() const { return m_primitiveTopology; }
-    inline PrimitiveTopology&       GraphicPipeline::getPrimitiveTopology() { return m_primitiveTopology; }
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::set(PrimitiveTopology prim)
+    {
+        primitiveTopology = std::move(prim);
+        return *this;
+    }
 } // namespace vzt
