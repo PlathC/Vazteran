@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.25 FATAL_ERROR)
 project(Vazteran)
 
+set(VAZTERAN_VERSION 0.1)
+
 if (CMAKE_SOURCE_DIR STREQUAL PROJECT_SOURCE_DIR)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -20,6 +22,7 @@ endif ()
 
 include(cmake/add_dependency_folder.cmake)
 include(cmake/get_cxx_flags.cmake)
+include(cmake/slang.cmake)
 
 add_subdirectory(vzt)
 

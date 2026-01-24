@@ -1,12 +1,4 @@
-cmake_minimum_required(VERSION 3.19 FATAL_ERROR)
-project(Vazteran)
-
-set(VAZTERAN_VERSION 0.1)
-
 find_package(Vulkan REQUIRED)
-
-include(../cmake/slang.cmake)
-
 add_subdirectory(extern)
 
 set(VZT_HEADERS
