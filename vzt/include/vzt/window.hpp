@@ -30,6 +30,7 @@ namespace vzt
     class Window
     {
       public:
+        Window() = default;
         Window(std::string title, uint32_t width = 1280, uint32_t height = 720);
         Window(WindowBuilder builder = {});
 
