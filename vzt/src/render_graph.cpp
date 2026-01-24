@@ -156,8 +156,6 @@ namespace vzt
 
         attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
         attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
-        attachment.use.loadOp      = LoadOp::Load;
-        attachment.use.storeOp     = StoreOp::DontCare;
 
         attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
         attachment.targetStage  = PipelineStage::ComputeShader;
@@ -179,8 +177,6 @@ namespace vzt
 
         attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
         attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
-        attachment.use.loadOp      = LoadOp::Load;
-        attachment.use.storeOp     = StoreOp::DontCare;
 
         attachment.waitStage    = PipelineStage::LateFragmentTests | PipelineStage::ComputeShader;
         attachment.targetStage  = PipelineStage::ComputeShader;
@@ -617,13 +613,9 @@ namespace vzt
         if (attachment.name.empty())
             attachment.name = m_name + "DepthIn";
 
-        attachment.use.initialLayout  = ImageLayout::Undefined;
-        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.loadOp         = LoadOp::Load;
-        attachment.use.storeOp        = StoreOp::DontCare;
-        attachment.use.stencilLoapOp  = LoadOp::Load;
-        attachment.use.stencilStoreOp = StoreOp::DontCare;
+        attachment.use.initialLayout = ImageLayout::Undefined;
+        attachment.use.usedLayout    = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout   = ImageLayout::DepthStencilAttachmentOptimal;
 
         m_depthInput = attachment;
     }
@@ -637,12 +629,8 @@ namespace vzt
         if (attachment.name.empty())
             attachment.name = m_name + "DepthOut";
 
-        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.loadOp         = LoadOp::Clear;
-        attachment.use.storeOp        = StoreOp::Store;
-        attachment.use.stencilLoapOp  = LoadOp::Clear;
-        attachment.use.stencilStoreOp = StoreOp::Store;
+        attachment.use.usedLayout  = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout = ImageLayout::DepthStencilAttachmentOptimal;
 
         m_depthOutput = attachment;
     }
@@ -656,12 +644,8 @@ namespace vzt
         if (attachment.name.empty())
             attachment.name = m_name + "DepthInOut";
 
-        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.loadOp         = LoadOp::Load;
-        attachment.use.storeOp        = StoreOp::Store;
-        attachment.use.stencilLoapOp  = LoadOp::Load;
-        attachment.use.stencilStoreOp = StoreOp::Store;
+        attachment.use.usedLayout  = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout = ImageLayout::DepthStencilAttachmentOptimal;
 
         m_depthInput  = attachment;
         m_depthOutput = attachment;
@@ -677,21 +661,10 @@ namespace vzt
             attachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
 
         // Attachment is already used as output
-        if (handle.state > 1)
-        {
-            attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
-            attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
-            attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
-            attachment.targetAccess = Access::ShaderRead | Access::ColorAttachmentRead;
-
-            attachment.use.loadOp  = LoadOp::Load;
-            attachment.use.storeOp = StoreOp::Store;
-        }
-        else
-        {
-            attachment.use.loadOp  = LoadOp::Clear;
-            attachment.use.storeOp = StoreOp::Store;
-        }
+        attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+        attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+        attachment.targetAccess = Access::ShaderRead | Access::ColorAttachmentRead;
 
         attachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
         attachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
@@ -710,8 +683,6 @@ namespace vzt
 
         inAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
         inAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
-        inAttachment.use.loadOp      = LoadOp::Load;
-        inAttachment.use.storeOp     = StoreOp::Store;
 
         inAttachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
         inAttachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
@@ -727,8 +698,6 @@ namespace vzt
 
         outAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
         outAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
-        outAttachment.use.loadOp      = LoadOp::Load;
-        outAttachment.use.storeOp     = StoreOp::Store;
 
         outAttachment.blend = std::move(blend);
         m_colorOutputs.emplace_back(outAttachment);

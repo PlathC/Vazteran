@@ -24,12 +24,6 @@ namespace vzt
         ImageLayout initialLayout;
         ImageLayout finalLayout;
         ImageLayout usedLayout;
-
-        LoadOp      loadOp         = LoadOp::Clear;
-        StoreOp     storeOp        = StoreOp::Store;
-        LoadOp      stencilLoapOp  = LoadOp::DontCare;
-        StoreOp     stencilStoreOp = StoreOp::DontCare;
-        SampleCount sampleCount    = SampleCount::Sample1;
     };
 
     struct AttachmentBuilder
