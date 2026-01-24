@@ -185,7 +185,7 @@ int main(int /* argc */, char** /* argv */)
         if (hasBenchmark)
         {
             queryPool.getResults(startId, (graph.size() + 1) * 2,
-                                 vzt::Span<uint64_t>(times.data() + startId, (graph.size() + 1) * 2), sizeof(uint64_t),
+                                 vzt::Span(times.data() + startId, (graph.size() + 1) * 2), sizeof(uint64_t),
                                  vzt::QueryResultFlag::N64 | vzt::QueryResultFlag::Wait);
 
             for (uint32_t i = 0; i < graph.size(); i++)
@@ -257,6 +257,14 @@ int main(int /* argc */, char** /* argv */)
             commands.writeTimeStamp(queryPool, startId + i * 2 + 1, vzt::PipelineStage::BottomOfPipe);
         }
         commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 1, vzt::PipelineStage::BottomOfPipe);
+
+        {
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
+            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::BottomOfPipe, imageBarrier);
+        }
 
         commands.end();
 
