@@ -328,9 +328,6 @@ namespace vzt
     {
         for (const auto& input : m_textureInputs)
         {
-            if (input.handle.state == 0)
-                continue;
-
             ImageBarrier barrier;
             barrier.image     = m_graph->getImage(i, input.handle);
             barrier.oldLayout = input.use.initialLayout;
@@ -348,9 +345,6 @@ namespace vzt
 
         for (const auto& input : m_colorInputs)
         {
-            if (input.handle.state == 0)
-                continue;
-
             ImageBarrier barrier;
             barrier.image     = m_graph->getImage(i, input.handle);
             barrier.oldLayout = input.use.initialLayout;
@@ -368,8 +362,6 @@ namespace vzt
 
         for (const auto& input : m_storageInputs)
         {
-            if (input.handle.state == 0)
-                continue;
 
             const View<Buffer> buffer = m_graph->getStorage(i, input.handle);
 
@@ -387,9 +379,6 @@ namespace vzt
 
         for (const auto& output : m_colorOutputs)
         {
-            if (output.handle.state == 0 || output.waitAccess == vzt::Access::None)
-                continue;
-
             ImageBarrier barrier;
             barrier.image     = m_graph->getImage(i, output.handle);
             barrier.oldLayout = output.use.initialLayout;
@@ -407,9 +396,6 @@ namespace vzt
 
         for (const auto& output : m_storageImageOutputs)
         {
-            if (output.handle.state == 0 || output.waitAccess == vzt::Access::None)
-                continue;
-
             ImageBarrier barrier;
             barrier.image     = m_graph->getImage(i, output.handle);
             barrier.oldLayout = output.use.initialLayout;
