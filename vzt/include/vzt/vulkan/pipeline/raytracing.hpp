@@ -7,7 +7,7 @@
 
 namespace vzt
 {
-    class RaytracingPipeline : public pipeline
+    class RaytracingPipeline : public Pipeline
     {
       public:
         RaytracingPipeline(const ShaderGroup& shaderGroup);

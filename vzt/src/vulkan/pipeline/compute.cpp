@@ -5,30 +5,46 @@
 
 namespace vzt
 {
-    compute::compute(const Program& program) : pipeline(program.getModules()[0].getDevice()) { setProgram(program); }
+    ;
+    ComputePipeline::ComputePipeline(const Program& program)
+        : Pipeline(program.getModules()[0].getDevice()), m_program(program)
+    {
+        compile();
+    }
 
-    compute::compute(compute&& other) noexcept
-        : pipeline(std::move(other)), m_program(std::move(other.m_program)), m_compiled(std::move(other.m_compiled))
+    ComputePipeline::ComputePipeline(ComputePipeline&& other) noexcept
+        : Pipeline(std::move(other)), m_program(std::move(other.m_program)), m_compiled(std::move(other.m_compiled))
     {
     }
 
-    compute& compute::operator=(compute&& other) noexcept
+    ComputePipeline& ComputePipeline::operator=(ComputePipeline&& other) noexcept
     {
         std::swap(m_program, other.m_program);
         std::swap(m_compiled, other.m_compiled);
 
-        pipeline::operator=(std::move(other));
+        Pipeline::operator=(std::move(other));
         return *this;
     }
 
-    compute::~compute() { cleanup(); }
-
-    void compute::setProgram(const Program& program)
+    ComputePipeline::~ComputePipeline()
     {
-        m_program = program;
+        if (m_handle != VK_NULL_HANDLE)
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
+        }
 
+        if (m_pipelineLayout != VK_NULL_HANDLE)
+        {
+            const VolkDeviceTable& table = m_device->getFunctionTable();
+            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
+        }
+    }
+
+    void ComputePipeline::compile()
+    {
         m_descriptorLayout = vzt::DescriptorLayout(m_device);
-        for (const auto& module : program.getModules())
+        for (const auto& module : m_program->getModules())
         {
             const auto& shader = module.getShader();
             for (const auto [id, type] : shader.bindings)
@@ -36,10 +52,7 @@ namespace vzt
         }
 
         m_descriptorLayout.compile();
-    }
 
-    void compute::compile()
-    {
         VkDescriptorSetLayout descriptorSetLayout = m_descriptorLayout.getHandle();
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
@@ -75,23 +88,6 @@ namespace vzt
             "Failed to create compute pipeline.");
 
         m_compiled = true;
-    }
-
-    void compute::cleanup()
-    {
-        if (m_handle != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
-        }
-
-        if (m_pipelineLayout != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
-        }
-
-        m_compiled = false;
     }
 
 } // namespace vzt

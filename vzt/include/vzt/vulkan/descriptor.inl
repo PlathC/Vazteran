@@ -8,7 +8,31 @@ namespace vzt
     inline VkDescriptorSetLayout             DescriptorLayout::getHandle() const { return m_handle; }
     inline VkDescriptorSet                   DescriptorSet::getHandle() const { return m_handle; }
 
-    inline const std::vector<DescriptorType> DescriptorPool::DefaultDescriptors = {DescriptorType::UniformBuffer};
+    inline const std::vector<DescriptorType> DescriptorPool::DefaultDescriptors = {};
+
+    DescriptorPoolBuilder& DescriptorPoolBuilder::add(DescriptorType type)
+    {
+        descriptorTypes.emplace(type);
+        return *this;
+    }
+
+    DescriptorPoolBuilder& DescriptorPoolBuilder::setMaxSetNb(uint32_t mmaxSetNb)
+    {
+        maxSetNb = mmaxSetNb;
+        return *this;
+    }
+
+    DescriptorPoolBuilder& DescriptorPoolBuilder::setMaxSetPerTypeNb(uint32_t mmaxSetPerTypeNb)
+    {
+        maxPerTypeNb = mmaxSetPerTypeNb;
+        return *this;
+    }
+
+    DescriptorPoolBuilder& DescriptorPoolBuilder::addFlag(DescriptorPoolCreateFlag fflags)
+    {
+        flags |= fflags;
+        return *this;
+    }
 
     inline DescriptorSet DescriptorPool::operator[](uint32_t i) const { return m_descriptors[i]; }
     inline uint32_t      DescriptorPool::getRemaining() const

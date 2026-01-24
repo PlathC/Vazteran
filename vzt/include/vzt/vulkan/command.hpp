@@ -12,11 +12,25 @@ namespace vzt
 {
     struct AccelerationStructureBuilder;
     class CommandPool;
-    class compute;
+    class ComputePipeline;
     class Device;
-    class FrameBuffer;
     class QueryPool;
     class Queue;
+
+    struct Viewport
+    {
+        Vec2 upperLeftCorner = {0, 0};
+        Vec2 size            = {0, 0};
+
+        float minDepth = 0.f;
+        float maxDepth = 1.f;
+    };
+
+    struct Scissor
+    {
+        Extent2D extent = {0, 0};
+        Vec2i    offset = {0, 0};
+    };
 
     struct Blit
     {
@@ -62,6 +76,27 @@ namespace vzt
         Dependency                 dependency     = Dependency::None;
     };
 
+    struct RenderingInfo
+    {
+        Rect2D renderArea;
+
+        struct RenderingAttachment
+        {
+            View<ImageView> view;
+            ImageLayout     layout;
+            LoadOp          loadOp     = LoadOp::Clear;
+            StoreOp         storeOp    = StoreOp::Store;
+            Vec4            clearValue = {0.f, 0.f, 0.f, 0.f};
+        };
+
+        std::vector<RenderingAttachment>   colorAttachments;
+        std::optional<RenderingAttachment> depthAttachment;
+
+        Rendering flags      = Rendering::None;
+        uint32_t  layerCount = 1;
+        uint32_t  viewMask   = 0;
+    };
+
     class CommandBuffer : public DeviceObject<VkCommandBuffer>
     {
       public:
@@ -98,10 +133,10 @@ namespace vzt
         void copy(View<DeviceImage> src, View<DeviceImage> dst, uint32_t width, uint32_t height,
                   ImageAspect aspect = ImageAspect::Color);
 
-        void bind(const GraphicPipeline& graphicPipeline);
-        void bind(const GraphicPipeline& graphicPipeline, const DescriptorSet& set);
-        void bind(const compute& computePipeline);
-        void bind(const compute& computePipeline, const DescriptorSet& set);
+        void bind(const GraphicsPipeline& graphicPipeline);
+        void bind(const GraphicsPipeline& graphicPipeline, const DescriptorSet& set);
+        void bind(const ComputePipeline& computePipeline);
+        void bind(const ComputePipeline& computePipeline, const DescriptorSet& set);
         void bind(const RaytracingPipeline& raytracingPipeline);
         void bind(const RaytracingPipeline& raytracingPipeline, const DescriptorSet& set);
         void bindVertexBuffer(const Buffer& buffer);
@@ -120,14 +155,14 @@ namespace vzt
         void traceRays(StridedSpan<uint64_t> raygen, StridedSpan<uint64_t> miss, StridedSpan<uint64_t> hit,
                        StridedSpan<uint64_t> callable, uint32_t width, uint32_t height, uint32_t depth = 1);
 
-        void setViewport(const Extent2D& size, float minDepth = 0.f, float maxDepth = 1.f);
-        void setScissor(const Extent2D& size, Vec2i offset = {0u, 0u});
+        void setViewport(const Viewport& viewport);
+        void setScissor(const Scissor& scissor);
 
         void reset(const QueryPool& pool, uint32_t firstQuery, uint32_t queryCount);
         void writeTimeStamp(const QueryPool& pool, uint32_t query, PipelineStage waitingStage);
 
-        void beginPass(const RenderPass& pass, const FrameBuffer& frameBuffer);
-        void endPass();
+        void beginRendering(const RenderingInfo& info);
+        void endRendering();
 
         void buildAs(AccelerationStructureBuilder& builder);
 

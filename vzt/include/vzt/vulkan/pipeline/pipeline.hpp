@@ -6,22 +6,22 @@
 
 namespace vzt
 {
-    class pipeline : public DeviceObject<VkPipeline>
+    class Pipeline : public DeviceObject<VkPipeline>
     {
       public:
-        pipeline() = default;
-        inline pipeline(View<Device> device);
+        Pipeline() = default;
+        inline Pipeline(View<Device> device);
 
-        inline pipeline(pipeline&& other) noexcept;
-        inline pipeline& operator=(pipeline&& other) noexcept;
+        inline Pipeline(Pipeline&& other) noexcept;
+        inline Pipeline& operator=(Pipeline&& other) noexcept;
 
-        virtual ~pipeline() = default;
+        virtual ~Pipeline() = default;
         inline const DescriptorLayout& getDescriptorLayout() const;
         inline VkPipelineLayout        getLayout() const;
 
       protected:
         DescriptorLayout m_descriptorLayout;
-        VkPipelineLayout m_pipelineLayout;
+        VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
     };
 } // namespace vzt
 

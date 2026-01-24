@@ -40,6 +40,12 @@ namespace vzt
         features12.bufferDeviceAddress = VK_TRUE;
         features.add(features12);
 
+        // dynamicRendering.
+        VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRendering{};
+        dynamicRendering.sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+        dynamicRendering.dynamicRendering = VK_TRUE;
+        features.add(dynamicRendering);
+
         return features;
     }
 
@@ -96,12 +102,11 @@ namespace vzt
         DeviceBuilder builder{};
         builder.m_features   = DeviceFeatures::standard();
         builder.m_extensions = {
-            dext::GetMemoryRequirements2,
-            dext::DedicatedAllocation,
+            dext::GetMemoryRequirements2, dext::DedicatedAllocation,
 #ifdef __APPLE__
             dext::PortabilitySubset,
 #endif // __APPLE__
-            dext::NonSemanticInfo,
+            dext::NonSemanticInfo,        dext::DynamicRendering,
         };
         builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
 
@@ -117,7 +122,7 @@ namespace vzt
 #ifdef __APPLE__
             dext::PortabilitySubset,
 #endif // __APPLE__
-            dext::NonSemanticInfo,
+            dext::NonSemanticInfo,   dext::DynamicRendering,
         };
         builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
 
@@ -139,6 +144,7 @@ namespace vzt
             dext::DescriptorIndexing,
             dext::Spirv14,
             dext::ShaderFloatControls,
+            dext::DynamicRendering,
         };
 
         builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;

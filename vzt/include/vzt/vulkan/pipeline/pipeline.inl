@@ -2,15 +2,15 @@
 
 namespace vzt
 {
-    pipeline::pipeline(View<Device> device) : DeviceObject<VkPipeline>(device) {}
+    Pipeline::Pipeline(View<Device> device) : DeviceObject<VkPipeline>(device) {}
 
-    inline pipeline::pipeline(pipeline&& other) noexcept : DeviceObject<VkPipeline>(std::move(other))
+    inline Pipeline::Pipeline(Pipeline&& other) noexcept : DeviceObject<VkPipeline>(std::move(other))
     {
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
     }
 
-    inline pipeline& pipeline::operator=(pipeline&& other) noexcept
+    inline Pipeline& Pipeline::operator=(Pipeline&& other) noexcept
     {
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
@@ -19,6 +19,6 @@ namespace vzt
         return *this;
     }
 
-    const DescriptorLayout& pipeline::getDescriptorLayout() const { return m_descriptorLayout; }
-    inline VkPipelineLayout pipeline::getLayout() const { return m_pipelineLayout; }
+    const DescriptorLayout& Pipeline::getDescriptorLayout() const { return m_descriptorLayout; }
+    inline VkPipelineLayout Pipeline::getLayout() const { return m_pipelineLayout; }
 } // namespace vzt

@@ -6,9 +6,7 @@
 #include <vzt/core/logger.hpp>
 #include <vzt/vulkan/command.hpp>
 #include <vzt/vulkan/descriptor.hpp>
-#include <vzt/vulkan/frame_buffer.hpp>
 #include <vzt/vulkan/pipeline/graphics.hpp>
-#include <vzt/vulkan/render_pass.hpp>
 #include <vzt/vulkan/surface.hpp>
 #include <vzt/vulkan/swapchain.hpp>
 #include <vzt/vulkan/uniform.hpp>
@@ -35,66 +33,35 @@ int main(int /* argc */, char** /* argv */)
     auto hardware  = device.getHardware();
     auto swapchain = vzt::Swapchain{device, surface};
 
-    vzt::RenderPass renderPass{device};
-    {
-        renderPass.addColor(vzt::AttachmentUse{
-            .format        = vzt::Format::B8G8R8A8SRGB,
-            .initialLayout = vzt::ImageLayout::Undefined,
-            .finalLayout   = vzt::ImageLayout::ColorAttachmentOptimal,
-            .usedLayout    = vzt::ImageLayout::ColorAttachmentOptimal,
-            .clearValue    = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-        });
+    const vzt::Format depthFormat = hardware.getDepthFormat();
+    const auto        program     = vzt::Program(device, compiler("shaders/base/base.slang"));
 
-        renderPass.setDepth(vzt::AttachmentUse{
-            .format        = hardware.getDepthFormat(),
-            .initialLayout = vzt::ImageLayout::Undefined,
-            .finalLayout   = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-            .usedLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-            .clearValue    = vzt::Vec4{1.f, 0.f, 0.f, 0.f},
-        });
-    }
-    renderPass.compile();
+    vzt::VertexInputDescription vertexDescription{};
+    vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
+    vertexDescription.add(offsetof(VertexInput, inPosition), 0, vzt::Format::R32G32B32SFloat, 0);
+    vertexDescription.add(offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0);
 
-    const auto program  = vzt::Program(device, compiler("shaders/base/base.slang"));
-    auto       pipeline = vzt::GraphicPipeline(program);
-    {
-        pipeline.setProgram(program);
-        pipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-
-        vzt::VertexInputDescription vertexDescription{};
-        vertexDescription.add(vzt::VertexBinding::Typed<VertexInput>(0));
-        vertexDescription.add(offsetof(VertexInput, inPosition), 0, vzt::Format::R32G32B32SFloat, 0);
-        vertexDescription.add(offsetof(VertexInput, inNormal), 1, vzt::Format::R32G32B32SFloat, 0);
-        pipeline.setVertexInputDescription(vertexDescription);
-    }
-    pipeline.compile(renderPass);
+    const auto pipeline = vzt::GraphicsPipeline(vzt::GraphicsPipelineBuilder{program}
+                                                    .set(vertexDescription)
+                                                    .addColor(vzt::Format::B8G8R8A8SRGB)
+                                                    .setDepth(depthFormat));
 
     // Initialize descriptors
     vzt::DescriptorPool descriptorPool{device, pipeline, swapchain.getImageNb()};
     vzt::UniformBuffer  ubo = {device, sizeof(vzt::Mat4) * 3, swapchain.getImageNb(), true};
 
-    const vzt::Format depthFormat = hardware.getDepthFormat();
-    vzt::Extent2D     extent      = swapchain.getExtent();
+    vzt::Extent2D extent = swapchain.getExtent();
 
-    std::vector<vzt::DeviceImage> depthStencils;
-    std::vector<vzt::FrameBuffer> frameBuffers;
-    depthStencils.reserve(swapchain.getImageNb());
-    frameBuffers.reserve(swapchain.getImageNb());
-    const auto createRenderObject = [&](uint32_t i) {
-        const auto& image = swapchain.getImage(i);
-        frameBuffers.emplace_back(device, extent);
-        depthStencils.emplace_back(device, extent, vzt::ImageUsage::DepthStencilAttachment, depthFormat);
-
-        vzt::FrameBuffer& frameBuffer = frameBuffers.back();
-        frameBuffer.addAttachment(vzt::ImageView(device, image, vzt::ImageAspect::Color));
-        frameBuffer.addAttachment(vzt::ImageView(device, depthStencils.back(), vzt::ImageAspect::Depth));
-        frameBuffer.compile(renderPass);
-    };
+    std::vector<vzt::ImageView>   imageViews    = std::vector<vzt::ImageView>{swapchain.getImageNb()};
+    std::vector<vzt::ImageView>   depthViews    = std::vector<vzt::ImageView>{swapchain.getImageNb()};
+    std::vector<vzt::DeviceImage> depthStencils = std::vector<vzt::DeviceImage>(swapchain.getImageNb());
 
     for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
     {
         descriptorPool.update(i, {{0, ubo.getDescriptor(i)}});
-        createRenderObject(i);
+        depthStencils[i] = vzt::DeviceImage(device, extent, vzt::ImageUsage::DepthStencilAttachment, depthFormat);
+        imageViews[i]    = vzt::ImageView(device, swapchain.getImage(i), vzt::ImageAspect::Color);
+        depthViews[i]    = vzt::ImageView(device, depthStencils[i], vzt::ImageAspect::Depth);
     }
 
     // Vertex inputs
@@ -166,6 +133,8 @@ int main(int /* argc */, char** /* argv */)
         vzt::Mat4  view = camera.getViewMatrix(currentPosition, orientation);
         std::array matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
 
+        extent = swapchain.getExtent();
+
         vzt::CommandBuffer commands = commandPool[frame];
         commands.begin();
         {
@@ -173,16 +142,38 @@ int main(int /* argc */, char** /* argv */)
             commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader,
                              {ubo.getSpan(frame), vzt::Access::TransferWrite, vzt::Access::UniformRead});
 
-            commands.beginPass(renderPass, frameBuffers[frame]);
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
+            imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
+            imageBarrier.newLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::VertexShader, imageBarrier);
+
+            commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+            commands.setScissor(vzt::Scissor{.extent = extent});
+
+            commands.beginRendering({
+                .renderArea       = {0, 0, extent.width, extent.height},
+                .colorAttachments = {{
+                    .view       = imageViews[frame],
+                    .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                    .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                }},
+                .depthAttachment =
+                    vzt::RenderingInfo::RenderingAttachment{
+                        .view       = depthViews[frame],
+                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                    },
+            });
 
             commands.bind(pipeline, descriptorPool[frame]);
             commands.bindVertexBuffer(vertexBuffer);
             for (const auto& subMesh : mesh.subMeshes)
                 commands.drawIndexed(indexBuffer, subMesh.indices);
 
-            commands.endPass();
+            commands.endRendering();
 
-            vzt::ImageBarrier imageBarrier{};
+            imageBarrier           = vzt::ImageBarrier{};
             imageBarrier.image     = swapchain.getImage(submission->imageId);
             imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
             imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
@@ -200,12 +191,14 @@ int main(int /* argc */, char** /* argv */)
             extent             = swapchain.getExtent();
             camera.aspectRatio = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
-            pipeline.resize(vzt::Viewport{extent});
-
-            depthStencils.clear();
-            frameBuffers.clear();
             for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
-                createRenderObject(i);
+            {
+                descriptorPool.update(i, {{0, ubo.getDescriptor(i)}});
+                depthStencils[i] =
+                    vzt::DeviceImage(device, extent, vzt::ImageUsage::DepthStencilAttachment, depthFormat);
+                imageViews[i] = vzt::ImageView(device, swapchain.getImage(i), vzt::ImageAspect::Color);
+                depthViews[i] = vzt::ImageView(device, depthStencils[i], vzt::ImageAspect::Depth);
+            }
         }
     }
 

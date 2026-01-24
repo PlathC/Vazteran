@@ -62,16 +62,17 @@ int main(int /* argc */, char** /* argv */)
     auto graph     = vzt::RenderGraph{device};
 
     auto sdfTexture = graph.addAttachment(vzt::AttachmentBuilder{
-        .size      = vzt::Extent3D{GridWidth, GridWidth, GridWidth},
         .usage     = vzt::ImageUsage::TransferDst | vzt::ImageUsage::Storage | vzt::ImageUsage::Sampled,
+        .size      = vzt::Extent3D{GridWidth, GridWidth, GridWidth},
         .format    = vzt::Format::R16UNorm,
-        .type      = vzt::ImageType::T3D,
         .mipLevels = MipLevel,
+        .type      = vzt::ImageType::T3D,
     });
 
     // Instance generation pass
     auto& sdfGeneration = graph.addCompute("SDF generation", compiler("shaders/sdf/grid.slang", "main"));
     {
+        sdfGeneration.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
         sdfGeneration.addStorageOutput(1, sdfTexture);
         sdfGeneration.setRecordFunction<vzt::LambdaRecorder>( //
             [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
@@ -86,20 +87,42 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/sdf/raycast.slang"));
     {
-        geometry.addColorInput(1, sdfTexture);
-        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
+        geometry.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
+        geometry.addColorTextureInput(1, sdfTexture);
+        geometry.addColorOutput(color);
         geometry.setDepthOutput(depth);
 
-        auto& geometryPipeline = geometry.getPipeline();
-        geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-
-        auto& geometryRasterization    = geometryPipeline.getRasterization();
-        geometryRasterization.cullMode = vzt::CullMode::None;
+        auto& builder = geometry.getBuilder();
+        builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
         geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                commands.bind(geometryPipeline, set);
+            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+                const auto extent = graph.getBackbufferExtent();
+                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+                commands.setScissor(vzt::Scissor{.extent = extent});
+
+                auto colorViews = geometry.getColorOutputs(frame);
+                auto depthView  = geometry.getDepth(frame);
+                commands.beginRendering({
+                    .renderArea       = {0, 0, extent.width, extent.height},
+                    .colorAttachments = {{
+                        .view       = colorViews[0],
+                        .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                        .loadOp     = vzt::LoadOp::Clear,
+                        .storeOp    = vzt::StoreOp::Store,
+                        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                    }},
+                    .depthAttachment =
+                        vzt::RenderingInfo::RenderingAttachment{
+                            .view       = depthView,
+                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                        },
+                });
+                commands.bind(geometry.getPipeline(), set);
                 commands.drawIndexed(indexBuffer, {0, 3 * 6 * 2});
+
+                commands.endRendering();
             });
     }
 

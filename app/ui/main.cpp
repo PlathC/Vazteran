@@ -12,8 +12,6 @@
 //
 
 #include <vzt/vulkan/command.hpp>
-#include <vzt/vulkan/frame_buffer.hpp>
-#include <vzt/vulkan/render_pass.hpp>
 #include <vzt/vulkan/surface.hpp>
 #include <vzt/vulkan/swapchain.hpp>
 #include <vzt/window.hpp>
@@ -46,6 +44,12 @@ class Ui
         init_info.ApiVersion                = vzt::toVulkan(instance->getAPIVersion());
         init_info.PhysicalDevice            = m_device->getHardware().getHandle();
         init_info.Device                    = m_device->getHandle();
+        init_info.UseDynamicRendering       = true;
+
+        VkFormat colorAttachmentFormat        = vzt::toVulkan(swapchain->getFormat());
+        init_info.PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};
+        init_info.PipelineRenderingCreateInfo.colorAttachmentCount    = 1;
+        init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &colorAttachmentFormat;
 
         vzt::View<vzt::Queue> graphicsQueue = m_device->getQueue(vzt::QueueType::Graphics);
         init_info.QueueFamily               = graphicsQueue->getId();
@@ -66,55 +70,22 @@ class Ui
             vzt::DescriptorType::InputAttachment,
         };
 
-        m_descriptorPool = vzt::DescriptorPool(m_device, poolTypes, static_cast<uint32_t>((1000) * poolTypes.size()));
+        m_descriptorPool = {
+            m_device,
+            vzt::DescriptorPoolBuilder{.descriptorTypes = poolTypes}.addFlag(
+                vzt::DescriptorPoolCreateFlag::FreeDescriptorSet),
+        };
         init_info.DescriptorPool = m_descriptorPool.getHandle();
         init_info.Subpass        = 0;
         init_info.MinImageCount  = 2;
         init_info.ImageCount     = m_imageNb;
         init_info.MSAASamples    = VK_SAMPLE_COUNT_1_BIT;
 
-        m_renderPass = vzt::RenderPass(m_device);
-        {
-            vzt::AttachmentUse attachment{};
-            attachment.format         = swapchain->getFormat();
-            attachment.loadOp         = vzt::LoadOp::Load;
-            attachment.storeOp        = vzt::StoreOp::Store;
-            attachment.stencilLoapOp  = vzt::LoadOp::DontCare;
-            attachment.stencilStoreOp = vzt::StoreOp::DontCare;
-            attachment.initialLayout  = vzt::ImageLayout::ColorAttachmentOptimal;
-            attachment.usedLayout     = vzt::ImageLayout::ColorAttachmentOptimal;
-            attachment.finalLayout    = vzt::ImageLayout::PresentSrcKHR;
-            m_renderPass.addColor(attachment);
-
-            attachment.format         = m_device->getHardware().getDepthFormat();
-            attachment.loadOp         = vzt::LoadOp::DontCare;
-            attachment.storeOp        = vzt::StoreOp::DontCare;
-            attachment.stencilLoapOp  = vzt::LoadOp::DontCare;
-            attachment.stencilStoreOp = vzt::StoreOp::DontCare;
-            attachment.initialLayout  = vzt::ImageLayout::Undefined;
-            attachment.usedLayout     = vzt::ImageLayout::DepthStencilAttachmentOptimal;
-            attachment.finalLayout    = vzt::ImageLayout::DepthStencilAttachmentOptimal;
-            m_renderPass.setDepth(attachment);
-            m_renderPass.compile();
-        }
-        init_info.RenderPass = m_renderPass.getHandle();
-
         ImGui_ImplVulkan_Init(&init_info);
 
-        m_frameBuffers.reserve(swapchain->getImageNb());
-        for (uint32_t i = 0; i < swapchain->getImageNb(); i++)
-        {
-            m_depthStencils.emplace_back(device, swapchain->getExtent(), vzt::ImageUsage::DepthStencilAttachment,
-                                         m_device->getHardware().getDepthFormat());
-            m_frameBuffers.emplace_back(m_device, swapchain->getExtent());
-
-            vzt::FrameBuffer& frameBuffer = m_frameBuffers.back();
-            frameBuffer.addAttachment(vzt::ImageView(device, swapchain->getImage(i), vzt::ImageAspect::Color));
-            frameBuffer.addAttachment(vzt::ImageView(device, m_depthStencils.back(), vzt::ImageAspect::Depth));
-            frameBuffer.compile(m_renderPass);
-        }
-
         window.setEventCallback([](SDL_Event* windowEvent) { ImGui_ImplSDL3_ProcessEvent(windowEvent); });
+
+        resize();
     }
 
     ~Ui()
@@ -131,29 +102,38 @@ class Ui
         ImGui::NewFrame();
     }
 
-    void resize(vzt::Extent2D extent)
+    void resize()
     {
-        m_frameBuffers.clear();
-        for (uint32_t i = 0; i < m_imageNb; i++)
-        {
-            m_depthStencils.emplace_back(m_device, extent, vzt::ImageUsage::DepthStencilAttachment,
-                                         m_device->getHardware().getDepthFormat());
-            m_frameBuffers.emplace_back(m_device, extent);
-
-            vzt::FrameBuffer& frameBuffer = m_frameBuffers.back();
-            frameBuffer.addAttachment(vzt::ImageView(m_device, m_swapchain->getImage(i), vzt::ImageAspect::Color));
-            frameBuffer.addAttachment(vzt::ImageView(m_device, m_depthStencils.back(), vzt::ImageAspect::Depth));
-            frameBuffer.compile(m_renderPass);
-        }
+        m_imageViews.resize(m_swapchain->getImageNb());
+        for (uint32_t i = 0; i < m_swapchain->getImageNb(); i++)
+            m_imageViews[i] = vzt::ImageView(m_device, m_swapchain->getImage(i), vzt::ImageAspect::Color);
     }
 
     void record(uint32_t imageId, vzt::CommandBuffer& commands)
     {
         ImGui::Render();
 
-        commands.beginPass(m_renderPass, m_frameBuffers[imageId]);
+        VkRenderingAttachmentInfo colorAttachment{};
+        colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        colorAttachment.pNext = nullptr;
+
+        colorAttachment.imageView   = m_imageViews[imageId].getHandle();
+        colorAttachment.imageLayout = vzt::toVulkan(vzt::ImageLayout::ColorAttachmentOptimal);
+        colorAttachment.loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD;
+        colorAttachment.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
+
+        const vzt::Extent2D& extent = m_swapchain->getExtent();
+        commands.beginRendering({
+            .renderArea       = {0, 0, extent.width, extent.height},
+            .colorAttachments = {{
+                .view       = m_imageViews[imageId],
+                .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+            }},
+        });
+
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commands.getHandle());
-        commands.endPass();
+        commands.endRendering();
     }
 
   private:
@@ -161,10 +141,8 @@ class Ui
     vzt::View<vzt::Swapchain> m_swapchain;
     uint32_t                  m_imageNb;
 
-    vzt::DescriptorPool           m_descriptorPool;
-    vzt::RenderPass               m_renderPass;
-    std::vector<vzt::FrameBuffer> m_frameBuffers;
-    std::vector<vzt::DeviceImage> m_depthStencils;
+    vzt::DescriptorPool         m_descriptorPool;
+    std::vector<vzt::ImageView> m_imageViews;
 };
 
 int main(int /* argc */, char** /* argv */)
@@ -221,12 +199,22 @@ int main(int /* argc */, char** /* argv */)
 
             ui.record(submission->imageId, commands);
 
+            imageBarrier = {
+                .image     = image,
+                .oldLayout = vzt::ImageLayout::ColorAttachmentOptimal,
+                .newLayout = vzt::ImageLayout::PresentSrcKHR,
+            };
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::BottomOfPipe, imageBarrier);
+
             commands.end();
         }
 
         graphicsQueue->submit(commands, *submission);
         if (!swapchain.present())
+        {
             device.wait();
+            ui.resize();
+        }
     }
 
     return EXIT_SUCCESS;

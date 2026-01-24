@@ -782,6 +782,29 @@ namespace vzt
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(BorderColor, VkBorderColor)
 
+    enum class Rendering
+    {
+        None                            = 0,
+        ContextSecondaryCommandBuffers  = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT,
+        Suspending                      = VK_RENDERING_SUSPENDING_BIT,
+        Resuming                        = VK_RENDERING_RESUMING_BIT,
+        EnableLegacyDithering           = VK_RENDERING_ENABLE_LEGACY_DITHERING_BIT_EXT,
+        ContentsInline                  = VK_RENDERING_CONTENTS_INLINE_BIT_KHR,
+        ContentsSecondaryCommandBuffers = VK_RENDERING_CONTENTS_SECONDARY_COMMAND_BUFFERS_BIT_KHR,
+    };
+    VZT_DEFINE_BITWISE_FUNCTIONS(Rendering)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(Rendering, VkRenderingFlags)
+
+    enum class DescriptorPoolCreateFlag
+    {
+        None                    = 0,
+        FreeDescriptorSet       = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+        UpdateAfterBind         = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT,
+        HostOnly                = VK_DESCRIPTOR_POOL_CREATE_HOST_ONLY_BIT_EXT,
+        AllowOverAllocationSets = VK_DESCRIPTOR_POOL_CREATE_ALLOW_OVERALLOCATION_SETS_BIT_NV,
+    };
+    VZT_DEFINE_BITWISE_FUNCTIONS(DescriptorPoolCreateFlag)
+    VZT_DEFINE_TO_VULKAN_FUNCTION(DescriptorPoolCreateFlag, VkDescriptorPoolCreateFlagBits)
 } // namespace vzt
 
 #endif // VZT_VULKAN_TYPE_HPP

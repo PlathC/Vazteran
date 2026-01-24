@@ -9,25 +9,22 @@ namespace vzt
     class Device;
     class Program;
 
-    class compute : public pipeline
+    class ComputePipeline : public Pipeline
     {
       public:
-        compute() = default;
-        compute(const Program& program);
+        ComputePipeline() = default;
+        ComputePipeline(const Program& program);
 
-        compute(const compute&)            = delete;
-        compute& operator=(const compute&) = delete;
+        ComputePipeline(const ComputePipeline&)            = delete;
+        ComputePipeline& operator=(const ComputePipeline&) = delete;
 
-        compute(compute&&) noexcept;
-        compute& operator=(compute&&) noexcept;
+        ComputePipeline(ComputePipeline&&) noexcept;
+        ComputePipeline& operator=(ComputePipeline&&) noexcept;
 
-        ~compute() override;
-
-        void setProgram(const Program& program);
-        void compile();
+        ~ComputePipeline() override;
 
       private:
-        void cleanup();
+        void compile();
 
         View<Program> m_program;
         bool          m_compiled = false;

@@ -21,10 +21,10 @@ struct VertexInput
 
 int main(int /* argc */, char** /* argv */)
 {
-    const std::string ApplicationName = "Vazteran Offline";
-    const uint32_t    Width           = 2048 * 4;
-    const uint32_t    Height          = 1024 * 4;
-    const vzt::Format Format          = vzt::Format::B8G8R8A8SRGB;
+    const std::string     ApplicationName = "Vazteran Offline";
+    constexpr uint32_t    Width           = 2048;
+    constexpr uint32_t    Height          = 1024;
+    constexpr vzt::Format Format          = vzt::Format::B8G8R8A8SRGB;
 
     auto instance      = vzt::Instance{ApplicationName};
     auto deviceBuilder = vzt::DeviceBuilder::offline();
@@ -60,22 +60,47 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/offline/offline.slang"));
     {
-        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
+        geometry.addColorOutput(color, "");
         geometry.setDepthOutput(depth);
 
-        auto& geometryPipeline = geometry.getPipeline();
-        geometryPipeline.setVertexInputDescription(vertexDescription);
-        geometryPipeline.setViewport({Width, Height});
+        auto& builder = geometry.getBuilder();
+        builder.set(vertexDescription);
+        builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
-        auto& geometryRasterization    = geometryPipeline.getRasterization();
-        geometryRasterization.cullMode = vzt::CullMode::None;
+        geometry.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
 
         geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                commands.bind(geometryPipeline, set);
+            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+                const auto extent = graph.getBackbufferExtent();
+
+                auto colorViews = geometry.getColorOutputs(frame);
+                auto depthView  = geometry.getDepth(frame);
+                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+                commands.setScissor(vzt::Scissor{.extent = extent});
+
+                commands.beginRendering({
+                    .renderArea       = {0, 0, extent.width, extent.height},
+                    .colorAttachments = {{
+                        .view       = colorViews[0],
+                        .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                        .loadOp     = vzt::LoadOp::Clear,
+                        .storeOp    = vzt::StoreOp::Store,
+                        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                    }},
+                    .depthAttachment =
+                        vzt::RenderingInfo::RenderingAttachment{
+                            .view       = depthView,
+                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                        },
+                });
+
+                commands.bind(geometry.getPipeline(), set);
                 commands.bindVertexBuffer(vertexBuffer);
                 for (const auto& subMesh : mesh.subMeshes)
                     commands.drawIndexed(indexBuffer, subMesh.indices);
+
+                commands.endRendering();
             });
     }
 
@@ -110,11 +135,7 @@ int main(int /* argc */, char** /* argv */)
     const vzt::Vec3 target   = (minimum + maximum) * .5f;
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
 
-    std::vector<uint64_t> times{};
-    times.resize((graph.size() + 1) * 2);
-
     // Actual rendering
-    // Per frame update
     vzt::Quat orientation = {1.f, 0.f, 0.f, 0.f};
 
     float           t        = vzt::Tau * .75f;
@@ -143,6 +164,14 @@ int main(int /* argc */, char** /* argv */)
     ubo.write(commands, matrices, 0);
     commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader,
                      {ubo.getSpan(0), vzt::Access::TransferWrite, vzt::Access::UniformRead});
+
+    {
+        vzt::ImageBarrier transition{};
+        transition.image     = output;
+        transition.oldLayout = vzt::ImageLayout::Undefined;
+        transition.newLayout = vzt::ImageLayout::General;
+        commands.barrier(vzt::PipelineStage::BottomOfPipe, vzt::PipelineStage::TopOfPipe, transition);
+    }
 
     for (uint32_t i = 0; i < graph.size(); i++)
     {

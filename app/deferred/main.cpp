@@ -74,6 +74,7 @@ int main(int /* argc */, char** /* argv */)
     auto& instanceGeneration = graph.addCompute( //
         "InstanceGeneration", compiler("shaders/deferred/instance_generation.slang", "main"));
     {
+        instanceGeneration.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
         instanceGeneration.addStorageOutput(1, instancesPosition);
         instanceGeneration.addStorageOutput(2, drawCommands);
 
@@ -104,27 +105,57 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/deferred/triangle.slang"));
     {
+        geometry.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
         geometry.addStorageInput(1, instancesPosition);
         geometry.addStorageInputIndirect(drawCommands);
         geometry.addColorOutput(position);
         geometry.addColorOutput(normal);
         geometry.setDepthOutput(depth);
 
-        auto& geometryPipeline = geometry.getPipeline();
-        geometryPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-        geometryPipeline.setVertexInputDescription(vertexDescription);
-
-        auto& geometryRasterization    = geometryPipeline.getRasterization();
-        geometryRasterization.cullMode = vzt::CullMode::None;
+        auto& pipelineBuilder = geometry.getBuilder();
+        pipelineBuilder.set(vertexDescription);
+        pipelineBuilder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
         geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                const vzt::View<vzt::Buffer> buffer = graph.getStorage(i, drawCommands);
+            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+                const auto extent = graph.getBackbufferExtent();
+                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+                commands.setScissor(vzt::Scissor{.extent = extent});
 
-                commands.bind(geometryPipeline, set);
+                auto colorViews = geometry.getColorOutputs(frame);
+                auto depthView  = geometry.getDepth(frame);
+                commands.beginRendering({
+                    .renderArea       = {0, 0, extent.width, extent.height},
+                    .colorAttachments = {{
+                                             .view       = colorViews[0],
+                                             .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                                             .loadOp     = vzt::LoadOp::Clear,
+                                             .storeOp    = vzt::StoreOp::Store,
+                                             .clearValue = vzt::Vec4(0.f),
+                                         },
+                                         {
+                                             .view       = colorViews[1],
+                                             .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                                             .loadOp     = vzt::LoadOp::Clear,
+                                             .storeOp    = vzt::StoreOp::Store,
+                                             .clearValue = vzt::Vec4(0.f),
+                                         }},
+                    .depthAttachment =
+                        vzt::RenderingInfo::RenderingAttachment{
+                            .view       = depthView,
+                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                        },
+                });
+
+                commands.bind(geometry.getPipeline(), set);
                 commands.bindVertexBuffer(vertexBuffer);
                 commands.bindIndexBuffer(indexBuffer, 0);
+
+                const vzt::View<vzt::Buffer> buffer = graph.getStorage(frame, drawCommands);
                 commands.drawIndexedIndirect(*buffer, 1, 0);
+
+                commands.endRendering();
             });
     }
 
@@ -133,22 +164,44 @@ int main(int /* argc */, char** /* argv */)
 
     auto& shading = graph.addGraphics("Shading", compiler("shaders/deferred/deferred_blinn_phong.slang"));
     {
-        shading.addColorInput(0, position);
-        shading.addColorInput(1, normal);
-        shading.addColorOutput(composed, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
+        shading.addColorTextureInput(0, position);
+        shading.addColorTextureInput(1, normal);
+        shading.addColorOutput(composed, "");
         shading.setDepthOutput(composedDepth);
 
-        auto& shadingPipeline = shading.getPipeline();
-        shadingPipeline.setViewport(vzt::Viewport{swapchain.getExtent()});
-
-        auto& shadingRasterization     = shadingPipeline.getRasterization();
-        shadingRasterization.cullMode  = vzt::CullMode::Front;
-        shadingRasterization.frontFace = vzt::FrontFace::CounterClockwise;
+        auto& builder = shading.getBuilder();
+        builder.set(
+            vzt::Rasterization{.cullMode = vzt::CullMode::Front, .frontFace = vzt::FrontFace::CounterClockwise});
 
         shading.setRecordFunction<vzt::LambdaRecorder>(
-            [&shadingPipeline](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                commands.bind(shadingPipeline, set);
+            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
+                const auto extent = graph.getBackbufferExtent();
+                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+                commands.setScissor(vzt::Scissor{.extent = extent});
+
+                auto colorViews = shading.getColorOutputs(frame);
+                auto depthView  = shading.getDepth(frame);
+                commands.beginRendering({
+                    .renderArea       = {0, 0, extent.width, extent.height},
+                    .colorAttachments = {{
+                        .view       = colorViews[0],
+                        .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                        .loadOp     = vzt::LoadOp::Clear,
+                        .storeOp    = vzt::StoreOp::Store,
+                        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                    }},
+                    .depthAttachment =
+                        vzt::RenderingInfo::RenderingAttachment{
+                            .view       = depthView,
+                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                        },
+                });
+
+                commands.bind(shading.getPipeline(), set);
                 commands.draw(3);
+
+                commands.endRendering();
             });
     }
 
@@ -269,6 +322,14 @@ int main(int /* argc */, char** /* argv */)
         vzt::CommandBuffer commands = commandPool[submission->imageId];
         commands.begin();
 
+        {
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
+            imageBarrier.oldLayout = vzt::ImageLayout::Undefined;
+            imageBarrier.newLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::VertexShader, imageBarrier);
+        }
+
         GenerationInput generationInput = {
             MaxInstanceCount,
             uint32_t(inputs.time),
@@ -288,6 +349,13 @@ int main(int /* argc */, char** /* argv */)
         }
         commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 1, vzt::PipelineStage::BottomOfPipe);
 
+        {
+            vzt::ImageBarrier imageBarrier{};
+            imageBarrier.image     = swapchain.getImage(submission->imageId);
+            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
+            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::BottomOfPipe, imageBarrier);
+        }
         commands.end();
 
         graphicsQueue->submit(commands, *submission);

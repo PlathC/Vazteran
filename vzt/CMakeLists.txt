@@ -31,13 +31,11 @@ set(VZT_HEADERS
         include/vzt/vulkan/command.hpp
         include/vzt/vulkan/descriptor.hpp
         include/vzt/vulkan/device.hpp
-        include/vzt/vulkan/frame_buffer.hpp
         include/vzt/vulkan/image.hpp
         include/vzt/vulkan/instance.hpp
         include/vzt/vulkan/pipeline.hpp
         include/vzt/vulkan/program.hpp
         include/vzt/vulkan/query_pool.hpp
-        include/vzt/vulkan/render_pass.hpp
         include/vzt/vulkan/setup.hpp
         include/vzt/vulkan/surface.hpp
         include/vzt/vulkan/swapchain.hpp
@@ -63,12 +61,10 @@ set(VZT_SOURCES
         src/vulkan/command.cpp
         src/vulkan/descriptor.cpp
         src/vulkan/device.cpp
-        src/vulkan/frame_buffer.cpp
         src/vulkan/image.cpp
         src/vulkan/instance.cpp
         src/vulkan/program.cpp
         src/vulkan/query_pool.cpp
-        src/vulkan/render_pass.cpp
         src/vulkan/setup.cpp
         src/vulkan/surface.cpp
         src/vulkan/swapchain.cpp

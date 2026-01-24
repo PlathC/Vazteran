@@ -1,4 +1,4 @@
-#include "../include/vzt/render_graph.hpp"
+#include "vzt/render_graph.hpp"
 
 #include <bitset>
 #include <numeric>
@@ -22,121 +22,6 @@ namespace vzt
     Pass::Pass(RenderGraph& graph, std::string name, PassType type)
         : m_graph(&graph), m_name(std::move(name)), m_type(type), m_descriptorLayout(m_graph->getDevice())
     {
-    }
-
-    void Pass::addColorInput(uint32_t binding, const Handle& handle, std::string name)
-    {
-        assert(handle.type == HandleType::Attachment);
-
-        PassAttachment attachment{handle, name};
-        attachment.binding = binding;
-        if (attachment.name.empty())
-            attachment.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
-
-        attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
-        attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
-        attachment.use.loadOp      = LoadOp::Load;
-        attachment.use.storeOp     = StoreOp::DontCare;
-
-        attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
-        attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
-        attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
-        attachment.targetAccess = Access::ShaderRead;
-
-        m_colorInputs.emplace_back(attachment);
-
-        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
-    }
-
-    void Pass::addDepthInput(uint32_t binding, const Handle& handle, std::string name)
-    {
-        assert(handle.type == HandleType::Attachment);
-
-        PassAttachment attachment{handle, name};
-        attachment.binding = binding;
-        if (attachment.name.empty())
-            attachment.name = m_name + "DepthIn" + std::to_string(m_colorInputs.size());
-
-        attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
-        attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
-        attachment.use.loadOp      = LoadOp::Load;
-        attachment.use.storeOp     = StoreOp::DontCare;
-
-        attachment.waitStage    = PipelineStage::LateFragmentTests | PipelineStage::ComputeShader;
-        attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
-        attachment.waitAccess   = Access::DepthStencilAttachmentWrite | Access::ShaderWrite;
-        attachment.targetAccess = Access::ShaderRead;
-        attachment.aspect       = ImageAspect::Depth;
-
-        m_colorInputs.emplace_back(attachment);
-
-        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
-    }
-
-    void Pass::addColorOutput(Handle& handle, std::string name, vzt::Vec4 clearColor)
-    {
-        assert(handle.type == HandleType::Attachment);
-
-        handle.state++;
-        PassAttachment attachment{handle, name};
-        if (attachment.name.empty())
-            attachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
-
-        // Attachment is already used as output
-        if (handle.state > 1)
-        {
-            attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
-            attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
-            attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
-            attachment.targetAccess = Access::ShaderRead;
-
-            attachment.use.loadOp  = LoadOp::Load;
-            attachment.use.storeOp = StoreOp::Store;
-        }
-        else
-        {
-            attachment.use.loadOp     = LoadOp::Clear;
-            attachment.use.storeOp    = StoreOp::Store;
-            attachment.use.clearValue = clearColor;
-        }
-
-        attachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
-        attachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
-
-        m_colorOutputs.emplace_back(attachment);
-    }
-
-    void Pass::addColorInputOutput(Handle& handle, std::string inName, std::string outName)
-    {
-        assert(handle.type == HandleType::Attachment);
-
-        PassAttachment inAttachment{handle, inName};
-        if (inAttachment.name.empty())
-            inAttachment.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
-
-        inAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
-        inAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
-        inAttachment.use.loadOp      = LoadOp::Load;
-        inAttachment.use.storeOp     = StoreOp::Store;
-
-        inAttachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
-        inAttachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
-        inAttachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
-        inAttachment.targetAccess = Access::ShaderRead;
-
-        m_colorInputs.emplace_back(inAttachment);
-
-        handle.state++;
-        PassAttachment outAttachment{handle, outName};
-        if (outAttachment.name.empty())
-            outAttachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
-
-        outAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
-        outAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
-        outAttachment.use.loadOp      = LoadOp::Load;
-        outAttachment.use.storeOp     = StoreOp::Store;
-
-        m_colorOutputs.emplace_back(outAttachment);
     }
 
     void Pass::addStorageInput(uint32_t binding, const Handle& handle, std::string name,
@@ -260,48 +145,54 @@ namespace vzt
         }
     }
 
-    void Pass::setDepthInput(const Handle& handle, std::string name)
+    void Pass::addColorTextureInput(uint32_t binding, const Handle& handle, std::string name)
     {
         assert(handle.type == HandleType::Attachment);
 
         PassAttachment attachment{handle, name};
+        attachment.binding = binding;
         if (attachment.name.empty())
-            attachment.name = m_name + "DepthIn";
+            attachment.name = m_name + "ColorIn" + std::to_string(m_textureInputs.size());
 
-        attachment.use.initialLayout  = ImageLayout::Undefined;
-        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.loadOp         = LoadOp::Load;
-        attachment.use.storeOp        = StoreOp::DontCare;
-        attachment.use.stencilLoapOp  = LoadOp::Load;
-        attachment.use.stencilStoreOp = StoreOp::DontCare;
+        attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.loadOp      = LoadOp::Load;
+        attachment.use.storeOp     = StoreOp::DontCare;
 
-        m_depthInput = attachment;
+        attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+        attachment.targetStage  = PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::ShaderWrite;
+        attachment.targetAccess = Access::ShaderRead;
+
+        m_textureInputs.emplace_back(attachment);
+        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
     }
 
-    void Pass::setDepthOutput(Handle& handle, std::string name, float depth)
+    void Pass::addDepthTextureInput(uint32_t binding, const Handle& handle, std::string name)
     {
         assert(handle.type == HandleType::Attachment);
 
-        handle.state++;
-
         PassAttachment attachment{handle, name};
+        attachment.binding = binding;
         if (attachment.name.empty())
-            attachment.name = m_name + "DepthOut";
+            attachment.name = m_name + "DepthIn" + std::to_string(m_textureInputs.size());
 
-        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
-        attachment.use.loadOp         = LoadOp::Clear;
-        attachment.use.storeOp        = StoreOp::Store;
-        attachment.use.stencilLoapOp  = LoadOp::Clear;
-        attachment.use.stencilStoreOp = StoreOp::Store;
+        attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
+        attachment.use.loadOp      = LoadOp::Load;
+        attachment.use.storeOp     = StoreOp::DontCare;
 
-        attachment.use.clearValue = Vec4{depth, 0.f, 0.f, 0.f};
+        attachment.waitStage    = PipelineStage::LateFragmentTests | PipelineStage::ComputeShader;
+        attachment.targetStage  = PipelineStage::ComputeShader;
+        attachment.waitAccess   = Access::DepthStencilAttachmentWrite | Access::ShaderWrite;
+        attachment.targetAccess = Access::ShaderRead;
+        attachment.aspect       = ImageAspect::Depth;
 
-        m_depthOutput = attachment;
+        m_textureInputs.emplace_back(attachment);
+        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
     }
 
-    void Pass::link(const pipeline& pipeline)
+    void Pass::link(const Pipeline& pipeline)
     {
         const auto& layout = pipeline.getDescriptorLayout();
         for (const auto [id, type] : layout.getBindings())
@@ -315,6 +206,76 @@ namespace vzt
 
     bool Pass::isDependingOn(const Pass& other) const
     {
+        for (const auto& input : m_storageInputs)
+        {
+            for (const auto& output : other.m_storageOutputs)
+            {
+                if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
+                    return true;
+            }
+
+            // Note: Only SSBOs can be bound as SSBOs
+        }
+
+        for (const auto& currentOutput : m_storageOutputs)
+        {
+            for (const auto& output : other.m_storageOutputs)
+            {
+                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
+                    return true;
+            }
+
+            // Note: Only SSBOs can be bound as SSBOs
+        }
+
+        for (const auto& input : m_textureInputs)
+        {
+            for (const auto& output : other.m_storageImageOutputs)
+            {
+                if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
+                    return true;
+            }
+
+            for (const auto& output : other.m_colorOutputs)
+            {
+                if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
+                    return true;
+            }
+
+            if (other.m_depthOutput)
+            {
+                if (other.m_depthOutput->handle.id == input.handle.id &&
+                    other.m_depthOutput->handle.state == input.handle.state)
+                    return true;
+            }
+
+            // Note: Only SSBOs can be bound as SSBOs
+        }
+
+        for (const auto& imageOutput : m_storageImageOutputs)
+        {
+            for (const auto& output : other.m_storageImageOutputs)
+            {
+                if (imageOutput.handle.id == output.handle.id && imageOutput.handle.state == output.handle.state)
+                    return true;
+            }
+
+            for (const auto& output : other.m_colorOutputs)
+            {
+                if (imageOutput.handle.id == output.handle.id && imageOutput.handle.state == output.handle.state)
+                    return true;
+            }
+
+            if (other.m_depthOutput)
+            {
+                if (other.m_depthOutput->handle.id == imageOutput.handle.id &&
+                    other.m_depthOutput->handle.state == imageOutput.handle.state)
+                    return true;
+            }
+
+            // Note: Only SSBOs can be bound as SSBOs
+        }
+
         for (const auto& input : m_colorInputs)
         {
             for (const auto& output : other.m_storageImageOutputs)
@@ -335,41 +296,19 @@ namespace vzt
                     other.m_depthOutput->handle.state == input.handle.state)
                     return true;
             }
-        }
 
-        for (const auto& input : m_storageInputs)
-        {
-            for (const auto& output : other.m_storageOutputs)
-            {
-                if (output.handle.id == input.handle.id && output.handle.state == input.handle.state)
-                    return true;
-            }
-        }
-
-        for (const auto& currentOutput : m_storageOutputs)
-        {
-            for (const auto& output : other.m_storageOutputs)
-            {
-                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
-                    return true;
-            }
-
-            for (const auto& output : other.m_storageImageOutputs)
-            {
-                if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
-                    return true;
-            }
+            // Note: Only SSBOs can be bound as SSBOs
         }
 
         for (const auto& currentOutput : m_colorOutputs)
         {
-            for (const auto& output : other.m_storageOutputs)
+            for (const auto& output : other.m_storageImageOutputs)
             {
                 if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
                     return true;
             }
 
-            for (const auto& output : other.m_storageImageOutputs)
+            for (const auto& output : other.m_colorOutputs)
             {
                 if (output.handle.id == currentOutput.handle.id && output.handle.state == currentOutput.handle.state)
                     return true;
@@ -391,6 +330,26 @@ namespace vzt
 
     void Pass::record(uint32_t i, CommandBuffer& commands) const
     {
+        for (const auto& input : m_textureInputs)
+        {
+            if (input.handle.state == 0)
+                continue;
+
+            ImageBarrier barrier;
+            barrier.image     = m_graph->getImage(i, input.handle);
+            barrier.oldLayout = input.use.initialLayout;
+            barrier.newLayout = input.use.usedLayout;
+            barrier.src       = input.waitAccess;
+            barrier.dst       = input.targetAccess;
+            barrier.aspect    = input.aspect;
+
+            // TODO: Handle many queues
+            // barrier.srcQueue
+            // barrier.dstQueue
+
+            commands.barrier(input.waitStage, input.targetStage, barrier);
+        }
+
         for (const auto& input : m_colorInputs)
         {
             if (input.handle.state == 0)
@@ -470,21 +429,34 @@ namespace vzt
             commands.barrier(output.waitStage, output.targetStage, barrier);
         }
 
-        if (m_type == PassType::Graphics)
-            commands.beginPass(m_renderPass, m_frameBuffers[i]);
+        for (const auto& output : m_storageOutputs)
+        {
+            if (output.handle.state == 0)
+                continue;
+
+            const View<Buffer> buffer = m_graph->getStorage(i, output.handle);
+
+            BufferBarrier barrier;
+            barrier.buffer = {buffer, buffer->size()};
+            barrier.src    = output.waitAccess;
+            barrier.dst    = output.targetAccess;
+
+            // TODO: Handle many queues
+            // barrier.srcQueue
+            // barrier.dstQueue
+
+            commands.barrier(output.waitStage, output.targetStage, barrier);
+        }
 
         if (m_recordCallback)
             m_recordCallback->record(i, m_pool[i], commands);
-
-        if (m_type == PassType::Graphics)
-            commands.endPass();
     }
 
     void Pass::compile()
     {
         View<Device> device = m_graph->getDevice();
 
-        for (auto& input : m_colorInputs)
+        for (auto& input : m_textureInputs)
         {
             const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[input.handle];
             if (input.use.format == vzt::Format::Undefined)
@@ -500,46 +472,21 @@ namespace vzt
             output.use.format = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
         }
 
-        for (auto& output : m_colorOutputs)
+        m_colorOutputImageViews.reserve(m_colorOutputs.size() + m_graph->getBackbufferNb());
+        for (uint32_t i = 0; i < m_graph->getBackbufferNb(); i++)
         {
-            const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
-            if (output.use.format == vzt::Format::Undefined)
-                output.use.format = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
-
-            if (m_graph->isBackBuffer(output.handle))
-                output.use.finalLayout = m_graph->m_backbufferLayout;
-        }
-
-        // If the pass is working with a compute queue, it does not need a render pass
-        if (m_type == PassType::Graphics)
-        {
-            m_renderPass = RenderPass(device);
             for (const auto& output : m_colorOutputs)
-                m_renderPass.addColor(output.use);
-
-            for (const auto& output : m_storageImageOutputs)
             {
-                const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[output.handle];
-
-                AttachmentUse attachmentUse = output.use;
-                attachmentUse.format        = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
+                m_colorOutputImageViews.emplace_back(
+                    ImageView{m_graph->m_device, m_graph->getImage(i, output.handle), vzt::ImageAspect::Color});
             }
 
-            if (!m_depthOutput)
-                throw std::runtime_error("Graphics pass must have a depth output.");
-
-            const auto hardware    = device->getHardware();
-            const auto depthFormat = hardware.getDepthFormat();
-
-            AttachmentUse attachmentUse = m_depthOutput->use;
-            attachmentUse.format        = depthFormat;
-            m_renderPass.setDepth(attachmentUse);
-
-            m_renderPass.compile();
-
-            createRenderObjects();
+            if (m_depthOutput)
+            {
+                m_depthOutputImageViews.emplace_back(
+                    ImageView{m_graph->m_device, m_graph->getImage(i, m_depthOutput->handle), ImageAspect::Depth});
+            }
         }
-
         // Create descriptors for the current pass
         m_descriptorLayout.compile();
 
@@ -551,94 +498,79 @@ namespace vzt
         createDescriptors();
     }
 
-    void Pass::resize()
-    {
-        if (m_type == PassType::Graphics)
-            createRenderObjects();
-
-        createDescriptors();
-    }
-
-    void Pass::createRenderObjects()
-    {
-        // Guess render pass extent from its outputs
-        Optional<Extent2D> extent;
-        Extent2D           backbufferExtent = m_graph->getBackbufferExtent();
-        for (auto& output : m_colorOutputs)
-        {
-            const auto& builder = m_graph->m_attachmentBuilders[output.handle];
-            extent              = builder.size.value_or(backbufferExtent);
-            break;
-        }
-
-        if (m_depthOutput)
-        {
-            const auto& builder = m_graph->m_attachmentBuilders[m_depthOutput->handle];
-            if (!extent)
-                extent = builder.size.value_or(backbufferExtent);
-        }
-
-        assert(extent && "Can't guess render pass extent since it has no output.");
-
-        const uint32_t backbufferNb = m_graph->getBackbufferNb();
-        View<Device>   device       = m_graph->getDevice();
-
-        m_frameBuffers.clear();
-        m_frameBuffers.reserve(backbufferNb);
-        m_textureSaves.clear();
-        m_textureSaves.reserve(m_colorInputs.size() * backbufferNb);
-        for (uint32_t i = 0; i < backbufferNb; i++)
-        {
-            m_frameBuffers.emplace_back(device, *extent);
-            FrameBuffer& frameBuffer = m_frameBuffers.back();
-
-            // Get attachment from framebuffer
-            for (auto& output : m_colorOutputs)
-            {
-                const View<DeviceImage> image = m_graph->getImage(i, output.handle);
-                frameBuffer.addAttachment(ImageView{device, image, ImageAspect::Color});
-            }
-
-            if (m_depthOutput)
-            {
-                frameBuffer.addAttachment(
-                    ImageView{device, m_graph->getImage(i, m_depthOutput->handle), ImageAspect::Depth});
-            }
-
-            frameBuffer.compile(m_renderPass);
-        }
-    }
+    void Pass::resize() { createDescriptors(); }
 
     void Pass::createDescriptors()
     {
         const uint32_t backbufferNb = m_graph->getBackbufferNb();
         View<Device>   device       = m_graph->getDevice();
 
+        // Create views
         for (uint32_t i = 0; i < backbufferNb; i++)
         {
             IndexedDescriptor descriptors{};
-            descriptors.reserve(m_colorInputs.size() + m_storageInputs.size());
+            descriptors.reserve(m_textureInputs.size() + m_storageInputs.size());
 
             // Sampled texture
-            for (auto& input : m_colorInputs)
+            for (auto& input : m_textureInputs)
             {
                 const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[input.handle];
                 if (!attachmentBuilder.format)
                 {
-                    vzt::logger::error("Swapchain images cannot be used as inputs.");
+                    logger::error("Swapchain images cannot be used as inputs.");
                     throw std::runtime_error("Swapchain image cannot be inputs.");
                 }
 
                 if (input.use.format == vzt::Format::Undefined)
                     input.use.format = *attachmentBuilder.format;
 
-                View<DeviceImage> image = m_graph->getImage(i, input.handle);
                 m_textureSaves.emplace_back(
-                    device, image, SamplerBuilder{.filter = Filter::Linear, .mipmapMode = MipmapMode::Nearest});
-                Texture& texture = m_textureSaves.back();
+                    device, m_graph->getImage(i, input.handle),
+                    SamplerBuilder{.filter = Filter::Linear, .mipmapMode = MipmapMode::Nearest});
+            }
 
+            // Storage image
+            for (auto& output : m_storageImageOutputs)
+            {
+                View<DeviceImage> image = m_graph->getImage(i, output.handle);
+                m_storageImageViews.emplace_back(device, image, ImageAspect::Color);
+            }
+        }
+
+        for (uint32_t i = 0; i < backbufferNb; i++)
+        {
+            IndexedDescriptor descriptors{};
+            descriptors.reserve(m_textureInputs.size() + m_storageInputs.size());
+
+            // Sampled texture
+
+            for (uint32_t s = 0; s < m_textureInputs.size(); s++)
+            {
+                auto& input = m_textureInputs[s];
+
+                const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[input.handle];
+                if (!attachmentBuilder.format)
+                {
+                    logger::error("Swapchain images cannot be used as inputs.");
+                    throw std::runtime_error("Swapchain image cannot be inputs.");
+                }
+
+                if (input.use.format == vzt::Format::Undefined)
+                    input.use.format = *attachmentBuilder.format;
+
+                const auto& texture = m_textureSaves[i * m_textureInputs.size() + s];
                 descriptors[input.binding] =
                     DescriptorImage{DescriptorType::CombinedSampler, texture.getView(), texture.getSampler()};
+            }
+
+            // Storage image
+            for (uint32_t s = 0; s < m_storageImageOutputs.size(); s++)
+            {
+                auto& output = m_storageImageOutputs[s];
+
+                const auto& imageView = m_storageImageViews[i * m_storageImageOutputs.size() + s];
+                descriptors[output.binding] =
+                    DescriptorImage{DescriptorType::StorageImage, imageView, {}, output.use.usedLayout};
             }
 
             // SSBO
@@ -660,17 +592,6 @@ namespace vzt
                     DescriptorBuffer{DescriptorType::StorageBuffer, BufferCSpan{storage, storage->size()}};
             }
 
-            for (auto& output : m_storageImageOutputs)
-            {
-                View<DeviceImage> image = m_graph->getImage(i, output.handle);
-                m_imageViews.emplace_back(device, image, ImageAspect::Color);
-
-                ImageView& imageView = m_imageViews.back();
-
-                descriptors[output.binding] =
-                    DescriptorImage{DescriptorType::StorageImage, imageView, {}, output.use.usedLayout};
-            }
-
             if (!descriptors.empty())
                 m_pool.update(i, descriptors);
         }
@@ -685,11 +606,137 @@ namespace vzt
     void ComputePass::compile()
     {
         Pass::compile();
-        m_pipeline.compile();
+        m_pipeline = ComputePipeline(m_program);
+    }
+
+    void GraphicsPass::setDepthInput(const Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "DepthIn";
+
+        attachment.use.initialLayout  = ImageLayout::Undefined;
+        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.loadOp         = LoadOp::Load;
+        attachment.use.storeOp        = StoreOp::DontCare;
+        attachment.use.stencilLoapOp  = LoadOp::Load;
+        attachment.use.stencilStoreOp = StoreOp::DontCare;
+
+        m_depthInput = attachment;
+    }
+
+    void GraphicsPass::setDepthOutput(Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        handle.state++;
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "DepthOut";
+
+        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.loadOp         = LoadOp::Clear;
+        attachment.use.storeOp        = StoreOp::Store;
+        attachment.use.stencilLoapOp  = LoadOp::Clear;
+        attachment.use.stencilStoreOp = StoreOp::Store;
+
+        m_depthOutput = attachment;
+    }
+
+    void GraphicsPass::setDepthInputOutput(Handle& handle, std::string name)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        handle.state++;
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "DepthInOut";
+
+        attachment.use.usedLayout     = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.finalLayout    = ImageLayout::DepthStencilAttachmentOptimal;
+        attachment.use.loadOp         = LoadOp::Load;
+        attachment.use.storeOp        = StoreOp::Store;
+        attachment.use.stencilLoapOp  = LoadOp::Load;
+        attachment.use.stencilStoreOp = StoreOp::Store;
+
+        m_depthInput  = attachment;
+        m_depthOutput = attachment;
+    }
+
+    void GraphicsPass::addColorOutput(Handle& handle, std::string name, ColorBlend blend)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        handle.state++;
+        PassAttachment attachment{handle, name};
+        if (attachment.name.empty())
+            attachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
+
+        // Attachment is already used as output
+        if (handle.state > 1)
+        {
+            attachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+            attachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+            attachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+            attachment.targetAccess = Access::ShaderRead | Access::ColorAttachmentRead;
+
+            attachment.use.loadOp  = LoadOp::Load;
+            attachment.use.storeOp = StoreOp::Store;
+        }
+        else
+        {
+            attachment.use.loadOp  = LoadOp::Clear;
+            attachment.use.storeOp = StoreOp::Store;
+        }
+
+        attachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
+        attachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
+        attachment.blend           = std::move(blend);
+
+        m_colorOutputs.emplace_back(attachment);
+    }
+
+    void GraphicsPass::addColorInputOutput(Handle& handle, std::string inName, std::string outName, ColorBlend blend)
+    {
+        assert(handle.type == HandleType::Attachment);
+
+        PassAttachment inAttachment{handle, inName};
+        if (inAttachment.name.empty())
+            inAttachment.name = m_name + "ColorIn" + std::to_string(m_colorInputs.size());
+
+        inAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
+        inAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
+        inAttachment.use.loadOp      = LoadOp::Load;
+        inAttachment.use.storeOp     = StoreOp::Store;
+
+        inAttachment.waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader;
+        inAttachment.targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader;
+        inAttachment.waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite;
+        inAttachment.targetAccess = Access::ShaderRead;
+
+        m_colorInputs.emplace_back(inAttachment);
+
+        handle.state++;
+        PassAttachment outAttachment{handle, outName};
+        if (outAttachment.name.empty())
+            outAttachment.name = m_name + "ColorOut" + std::to_string(m_colorOutputs.size());
+
+        outAttachment.use.usedLayout  = ImageLayout::ColorAttachmentOptimal;
+        outAttachment.use.finalLayout = ImageLayout::ColorAttachmentOptimal;
+        outAttachment.use.loadOp      = LoadOp::Load;
+        outAttachment.use.storeOp     = StoreOp::Store;
+
+        outAttachment.blend = std::move(blend);
+        m_colorOutputs.emplace_back(outAttachment);
     }
 
     GraphicsPass::GraphicsPass(RenderGraph& graph, std::string name, Program&& program)
-        : Pass(graph, std::move(name), PassType::Graphics), m_program(std::move(program)), m_pipeline(m_program)
+        : Pass(graph, std::move(name), PassType::Graphics), m_program(std::move(program)),
+          m_graphicsPipelineBuilder({.program = m_program})
     {
         link(m_pipeline);
     }
@@ -697,16 +744,25 @@ namespace vzt
     void GraphicsPass::compile()
     {
         Pass::compile();
-        m_pipeline.compile(m_renderPass);
+
+        for (const auto& output : m_colorOutputs)
+        {
+            const auto format = m_graph->m_attachmentBuilders[output.handle].format;
+            m_graphicsPipelineBuilder.addColor(format.value_or(m_graph->getBackbufferFormat()), output.blend);
+        }
+
+        if (m_depthOutput)
+        {
+            auto       hardware    = m_graph->m_device->getHardware();
+            const auto depthFormat = hardware.getDepthFormat();
+
+            m_graphicsPipelineBuilder.setDepth(depthFormat);
+        }
+
+        m_pipeline = GraphicsPipeline(m_graphicsPipelineBuilder);
     }
 
-    void GraphicsPass::resize()
-    {
-        const Extent2D extent = m_graph->getBackbufferExtent();
-        m_pipeline.resize(Viewport{extent});
-
-        Pass::resize();
-    }
+    void GraphicsPass::resize() { Pass::resize(); }
 
     RenderGraph::RenderGraph(View<Device> device) : m_device(device) {}
 
@@ -747,12 +803,6 @@ namespace vzt
         m_storageBuilders[handle] = std::move(builder);
 
         return handle;
-    }
-
-    Pass& RenderGraph::addPass(std::string name, PassType type)
-    {
-        m_passes.emplace_back(new Pass(*this, name, type));
-        return *m_passes.back();
     }
 
     ComputePass& RenderGraph::addCompute(std::string name, Program&& program)

@@ -7,8 +7,6 @@
 
 namespace vzt
 {
-    class RenderPass;
-
     enum class ColorComponent
     {
         R    = VK_COLOR_COMPONENT_R_BIT,
@@ -115,22 +113,6 @@ namespace vzt
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(BlendFactor, VkBlendFactor)
 
-    struct Viewport
-    {
-        Extent2D size;
-        Vec2u    upperLeftCorner = {0, 0};
-
-        float minDepth = 0.f;
-        float maxDepth = 1.f;
-
-        struct Scissor
-        {
-            Extent2D size;
-            Vec2i    offset = {0, 0};
-        };
-        Optional<Scissor> scissor{};
-    };
-
     struct Rasterization
     {
         bool        depthClamp    = false;
@@ -195,64 +177,51 @@ namespace vzt
         ColorComponent colorWriteMask      = ColorMask::RGBA;
     };
 
-    class GraphicPipeline : public pipeline
+    struct GraphicsPipelineBuilder
+    {
+        View<Program> program;
+
+        struct ColorAttachment
+        {
+            Format     format;
+            ColorBlend blend = {.blendEnable = false};
+        };
+
+        std::vector<ColorAttachment>          colors            = {};
+        std::optional<Format>                 depth             = {};
+        std::optional<VertexInputDescription> inputDescription  = {};
+        Rasterization                         rasterization     = {};
+        MultiSampling                         multiSampling     = {};
+        DepthStencil                          depthStencil      = {};
+        PrimitiveTopology                     primitiveTopology = PrimitiveTopology::TriangleList;
+
+        inline GraphicsPipelineBuilder& addColor(Format format, ColorBlend blend = {.blendEnable = false});
+        inline GraphicsPipelineBuilder& setDepth(Format format);
+        inline GraphicsPipelineBuilder& set(VertexInputDescription desc);
+        inline GraphicsPipelineBuilder& set(Rasterization rast);
+        inline GraphicsPipelineBuilder& set(MultiSampling multi);
+        inline GraphicsPipelineBuilder& set(DepthStencil depth);
+        inline GraphicsPipelineBuilder& set(PrimitiveTopology prim);
+    };
+
+    class GraphicsPipeline : public Pipeline
     {
       public:
-        GraphicPipeline() = default;
-        GraphicPipeline(const Program& program);
+        GraphicsPipeline() = default;
+        GraphicsPipeline(GraphicsPipelineBuilder builder);
 
-        GraphicPipeline(const GraphicPipeline&)            = delete;
-        GraphicPipeline& operator=(const GraphicPipeline&) = delete;
+        GraphicsPipeline(const GraphicsPipeline&)            = delete;
+        GraphicsPipeline& operator=(const GraphicsPipeline&) = delete;
 
-        GraphicPipeline(GraphicPipeline&&) noexcept;
-        GraphicPipeline& operator=(GraphicPipeline&&) noexcept;
+        GraphicsPipeline(GraphicsPipeline&&) noexcept;
+        GraphicsPipeline& operator=(GraphicsPipeline&&) noexcept;
 
-        ~GraphicPipeline();
-
-        void setProgram(const Program& program);
-
-        inline void setVertexInputDescription(VertexInputDescription vertexDescription);
-        inline void setColorBlend(uint32_t attachmentId, ColorBlend colorBlend);
-
-        inline void            setViewport(Viewport config);
-        inline const Viewport& getViewport() const;
-        inline Viewport&       getViewport();
-
-        inline void                 setRasterization(Rasterization config);
-        inline const Rasterization& getRasterization() const;
-        inline Rasterization&       getRasterization();
-
-        inline void                 setMultiSampling(MultiSampling config);
-        inline const MultiSampling& getMultiSampling() const;
-        inline MultiSampling&       getMultiSampling();
-
-        inline void                setDepthStencil(DepthStencil config);
-        inline const DepthStencil& getDepthStencil() const;
-        inline DepthStencil&       getDepthStencil();
-
-        inline void                     setPrimitiveTopology(PrimitiveTopology topology);
-        inline const PrimitiveTopology& getPrimitiveTopology() const;
-        inline PrimitiveTopology&       getPrimitiveTopology();
-
-        void compile(View<RenderPass> renderPass);
-        void resize(Viewport viewport);
+        ~GraphicsPipeline() override;
 
       private:
-        void cleanup();
+        void compile();
 
-        View<Program> m_program;
-        Viewport      m_viewport;
-
-        std::unordered_map<uint32_t /* id */, ColorBlend> m_colorBlends;
-
-        Optional<VertexInputDescription> m_vertexDescription = {};
-        Rasterization                    m_rasterization;
-        MultiSampling                    m_multiSample;
-        DepthStencil                     m_depthStencil;
-        PrimitiveTopology                m_primitiveTopology = PrimitiveTopology::TriangleList;
-
-        View<RenderPass> m_cachedRenderPass;
-        bool             m_compiled = false;
+        GraphicsPipelineBuilder m_builder;
     };
 } // namespace vzt
 
