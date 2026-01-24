@@ -32,7 +32,7 @@ namespace vzt
       public:
         Window() = default;
         Window(std::string title, uint32_t width = 1280, uint32_t height = 720);
-        Window(WindowBuilder builder = {});
+        Window(WindowBuilder builder);
 
         Window(const Window&)            = delete;
         Window& operator=(const Window&) = delete;
