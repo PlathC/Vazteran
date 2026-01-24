@@ -67,6 +67,7 @@ namespace vzt
     class Instance
     {
       public:
+        Instance() = default;
         Instance(const std::string& name, InstanceBuilder builder = {});
 
         Instance(const Instance&)            = delete;

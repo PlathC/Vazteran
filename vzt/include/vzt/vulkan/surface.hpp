@@ -14,6 +14,7 @@ namespace vzt
     class Surface
     {
       public:
+        Surface() = default;
         Surface(const Window& window, const Instance& instance);
 
         Surface(const Surface&)            = delete;
