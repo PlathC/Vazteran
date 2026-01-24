@@ -837,7 +837,13 @@ namespace vzt
             for (auto& input : pass->m_colorInputs)
                 addAttachment(input);
 
+            for (auto& input : pass->m_textureInputs)
+                addAttachment(input);
+
             for (auto& output : pass->m_colorOutputs)
+                addAttachment(output);
+
+            for (auto& output : pass->m_storageImageOutputs)
                 addAttachment(output);
 
             if (pass->m_depthInput)
