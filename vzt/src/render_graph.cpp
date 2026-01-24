@@ -336,6 +336,10 @@ namespace vzt
             barrier.dst       = input.targetAccess;
             barrier.aspect    = input.aspect;
 
+            const uint32_t mipLevel = m_graph->getConfiguration(input.handle).mipLevels;
+            barrier.baseLevel       = 0;
+            barrier.levelCount      = mipLevel;
+
             // TODO: Handle many queues
             // barrier.srcQueue
             // barrier.dstQueue
@@ -403,6 +407,10 @@ namespace vzt
             barrier.src       = output.waitAccess;
             barrier.dst       = output.targetAccess;
             barrier.aspect    = output.aspect;
+
+            const uint32_t mipLevel = m_graph->getConfiguration(output.handle).mipLevels;
+            barrier.baseLevel       = 0;
+            barrier.levelCount      = mipLevel;
 
             // TODO: Handle many queues
             // barrier.srcQueue
