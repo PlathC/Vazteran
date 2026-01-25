@@ -325,6 +325,9 @@ namespace vzt
         inline uint32_t     getBackbufferNb() const;
         inline View<Device> getDevice() const;
 
+        inline void  setUserData(void* userData);
+        inline void* getUserData() const;
+
         friend Pass;
         friend ComputePass;
         friend GraphicsPass;
@@ -359,6 +362,8 @@ namespace vzt
         ImageLayout      m_backbufferLayout;
 
         std::vector<View<DeviceImage>> m_externalBackbuffers;
+
+        void* m_userData = nullptr;
     };
 } // namespace vzt
 

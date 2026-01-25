@@ -54,4 +54,7 @@ namespace vzt
     inline Extent2D     RenderGraph::getBackbufferExtent() const { return m_backbufferExtent; }
     inline uint32_t     RenderGraph::getBackbufferNb() const { return m_backbufferNb; }
     inline View<Device> RenderGraph::getDevice() const { return m_device; }
+
+    inline void  RenderGraph::setUserData(void* userData) { m_userData = userData; }
+    inline void* RenderGraph::getUserData() const { return m_userData; }
 } // namespace vzt
