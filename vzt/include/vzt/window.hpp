@@ -46,7 +46,7 @@ namespace vzt
         inline uint32_t         getWidth() const;
         inline uint32_t         getHeight() const;
         inline Extent2D         getExtent() const;
-        inline const input&     getInputs() const;
+        inline const Input&     getInputs() const;
         inline SDL_Window*      getHandle() const;
         InstanceBuilder         getConfiguration(InstanceBuilder configuration = {}) const;
 
@@ -67,7 +67,7 @@ namespace vzt
 
         SDL_Window* m_handle = nullptr;
 
-        input    m_inputs;
+        Input    m_inputs;
         uint64_t m_lastTimeStep = 0;
 
         EventCallback m_eventCallback = {};

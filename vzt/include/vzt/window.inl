@@ -9,5 +9,5 @@ namespace vzt
     inline SDL_Window*      Window::getHandle() const { return m_handle; }
     inline void Window::setEventCallback(EventCallback eventCallback) { m_eventCallback = std::move(eventCallback); }
 
-    inline const input& Window::getInputs() const { return m_inputs; }
+    inline const Input& Window::getInputs() const { return m_inputs; }
 } // namespace vzt

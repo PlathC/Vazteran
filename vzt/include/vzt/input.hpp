@@ -123,7 +123,7 @@ namespace vzt
         RGui,
     };
 
-    struct input
+    struct Input
     {
         Extent2D windowSize;
         bool     windowResized = false;
