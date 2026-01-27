@@ -195,6 +195,8 @@ namespace vzt
         DepthStencil                          depthStencil      = {};
         PrimitiveTopology                     primitiveTopology = PrimitiveTopology::TriangleList;
 
+        std::vector<PushConstant> pushConstants = {};
+
         inline GraphicsPipelineBuilder& addColor(Format format, ColorBlend blend = {.blendEnable = false});
         inline GraphicsPipelineBuilder& setDepth(Format format);
         inline GraphicsPipelineBuilder& set(VertexInputDescription desc);

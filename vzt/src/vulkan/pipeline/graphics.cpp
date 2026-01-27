@@ -10,6 +10,7 @@ namespace vzt
     GraphicsPipeline::GraphicsPipeline(GraphicsPipelineBuilder builder)
         : Pipeline(builder.program->getModules()[0].getDevice()), m_builder(std::move(builder))
     {
+        m_pushConstants.insert(m_pushConstants.end(), m_builder.pushConstants.begin(), m_builder.pushConstants.end());
         compile();
     }
 
@@ -64,6 +65,22 @@ namespace vzt
         pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts    = &descriptorSetLayout;
+
+        auto pushConstants = std::vector<VkPushConstantRange>();
+        if (!m_pushConstants.empty())
+        {
+            pushConstants.reserve(m_pushConstants.size());
+            for (const PushConstant& pushConstant : m_pushConstants)
+            {
+                pushConstants.emplace_back(VkPushConstantRange{
+                    .stageFlags = static_cast<VkShaderStageFlags>(pushConstant.stages),
+                    .offset     = pushConstant.offset,
+                    .size       = pushConstant.size,
+                });
+            }
+            pipelineLayoutInfo.pPushConstantRanges    = pushConstants.data();
+            pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
+        }
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
         vkCheck(table.vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
