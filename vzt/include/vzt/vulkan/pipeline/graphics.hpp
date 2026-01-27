@@ -204,6 +204,7 @@ namespace vzt
         inline GraphicsPipelineBuilder& set(MultiSampling multi);
         inline GraphicsPipelineBuilder& set(DepthStencil depth);
         inline GraphicsPipelineBuilder& set(PrimitiveTopology prim);
+        inline GraphicsPipelineBuilder& add(PushConstant constant);
     };
 
     class GraphicsPipeline : public Pipeline

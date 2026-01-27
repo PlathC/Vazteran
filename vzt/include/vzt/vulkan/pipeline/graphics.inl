@@ -61,4 +61,10 @@ namespace vzt
         primitiveTopology = std::move(prim);
         return *this;
     }
+
+    GraphicsPipelineBuilder& GraphicsPipelineBuilder::add(PushConstant constant)
+    {
+        pushConstants.push_back(std::move(constant));
+        return *this;
+    }
 } // namespace vzt
