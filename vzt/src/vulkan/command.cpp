@@ -302,7 +302,7 @@ namespace vzt
                                       const uint8_t* data)
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        vkCmdPushConstants(m_handle, pipeline.getLayout(), toVulkan(stages), offset, size, data);
+        table.vkCmdPushConstants(m_handle, pipeline.getLayout(), toVulkan(stages), offset, size, data);
     }
 
     void CommandBuffer::bindIndexBuffer(const Buffer& buffer, std::size_t index)
