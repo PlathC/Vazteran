@@ -2,6 +2,12 @@
 
 namespace vzt
 {
+    template <class Type>
+    PushConstant PushConstant::Typed(ShaderStage stages)
+    {
+        return {stages, 0, sizeof(Type)};
+    }
+
     Pipeline::Pipeline(View<Device> device) : DeviceObject<VkPipeline>(device) {}
 
     inline Pipeline::Pipeline(Pipeline&& other) noexcept : DeviceObject<VkPipeline>(std::move(other))
@@ -19,6 +25,7 @@ namespace vzt
         return *this;
     }
 
+    inline void             Pipeline::add(PushConstant constant) { m_pushConstants.emplace_back(std::move(constant)); }
     const DescriptorLayout& Pipeline::getDescriptorLayout() const { return m_descriptorLayout; }
     inline VkPipelineLayout Pipeline::getLayout() const { return m_pipelineLayout; }
 } // namespace vzt

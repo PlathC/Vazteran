@@ -142,6 +142,12 @@ namespace vzt
         void bindVertexBuffer(const Buffer& buffer);
         void bindIndexBuffer(const Buffer& buffer, std::size_t index);
 
+        void pushConstants(const Pipeline& pipeline, ShaderStage stages, uint32_t offset, uint32_t size,
+                           const uint8_t* data);
+
+        template <class Type>
+        void pushConstants(const Pipeline& pipeline, ShaderStage stages, const Type* data);
+
         void dispatch(uint32_t x, uint32_t y = 1, uint32_t z = 1);
         void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t vertexOffset = 0,
                   uint32_t instanceOffset = 0);
@@ -192,5 +198,7 @@ namespace vzt
         std::vector<VkCommandBuffer> m_commandBuffers;
     };
 } // namespace vzt
+
+#include "vzt/vulkan/command.inl"
 
 #endif // VZT_VULKAN_COMMAND_HPP
