@@ -538,6 +538,7 @@ namespace vzt
         Task                   = VK_SHADER_STAGE_TASK_BIT_NV,
         Mesh                   = VK_SHADER_STAGE_MESH_BIT_NV
     };
+    VZT_DEFINE_BITWISE_FUNCTIONS(ShaderStage)
     VZT_DEFINE_TO_VULKAN_FUNCTION(ShaderStage, VkShaderStageFlagBits);
 
     enum class ShaderGroupType : uint8_t
