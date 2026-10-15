@@ -67,8 +67,10 @@ namespace vzt
         template <class Type>
         Type& get();
 
-        // Returns true if every enabled feature is also enabled in supported
-        bool isSupportedBy(const DeviceFeatures& supported) const;
+        static constexpr uint32_t NoField = 0xffffffff;
+
+        // Returns the first feature enabled but not in supported, or an empty string if there is none
+        std::string findMissing(const DeviceFeatures& supported) const;
 
         // Links every structure and returns the head of the chain, to be given to Vulkan
         VkPhysicalDeviceFeatures2& chain();
@@ -137,6 +139,7 @@ namespace vzt
         // Returns the support of every structure present in features
         DeviceFeatures                       getFeatures(DeviceFeatures features = {}) const;
         bool                                 hasExtensions(const std::vector<const char*>& extensions) const;
+        std::set<std::string>                getMissingExtensions(const std::vector<const char*>& extensions) const;
         bool                                 supports(const Capability& capability) const;
         std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
         bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;

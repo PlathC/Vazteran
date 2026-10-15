@@ -10,7 +10,9 @@
 #include <stdexcept>
 
 #include <volk.h>
+#include <vulkan/vk_enum_string_helper.h>
 
+#include "vzt/core/logger.hpp"
 #include "vzt/vulkan/command.hpp"
 #include "vzt/vulkan/instance.hpp"
 #include "vzt/vulkan/surface.hpp"
@@ -42,34 +44,40 @@ namespace vzt
         return features;
     }
 
-    // Returns true if every  requested field is supported
-    static bool covers(const VkBool32* requested, const VkBool32* supported, std::size_t count)
+    // Returns the index of the first requested field which is not supported, or DeviceFeatures::NoField
+    static uint32_t firstMissing(const VkBool32* requested, const VkBool32* supported, std::size_t count)
     {
-        for (std::size_t i = 0; i < count; i++)
+        for (uint32_t i = 0; i < count; i++)
         {
             if (requested[i] && !supported[i])
-                return false;
+                return i;
         }
 
-        return true;
+        return DeviceFeatures::NoField;
     }
 
     // Compares the VkBool32 fields following the header (sType, pNext) of two structures of the same type
-    static bool covers(const void* requested, const void* supported, std::size_t size)
+    static uint32_t firstMissing(const void* requested, const void* supported, std::size_t size)
     {
         constexpr std::size_t Header = sizeof(VkBaseOutStructure);
         const auto            fields = [](const void* s) {
             return reinterpret_cast<const VkBool32*>(static_cast<const std::byte*>(s) + Header);
         };
-        return covers(fields(requested), fields(supported), (size - Header) / sizeof(VkBool32));
+        return firstMissing(fields(requested), fields(supported), (size - Header) / sizeof(VkBool32));
     }
 
-    bool DeviceFeatures::isSupportedBy(const DeviceFeatures& supported) const
+    std::string DeviceFeatures::findMissing(const DeviceFeatures& supported) const
     {
-        bool isSupported = covers(&core.robustBufferAccess, &supported.core.robustBufferAccess,
-                                  sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32));
-        isSupported &= covers(&v11, &supported.v11, sizeof(v11));
-        isSupported &= covers(&v12, &supported.v12, sizeof(v12));
+        std::string missing;
+        const auto  check = [&](std::string_view structure, uint32_t field) {
+            if (missing.empty() && field != NoField)
+                missing = fmt::format("field {} of {}", field, structure);
+        };
+
+        check("core", firstMissing(&core.robustBufferAccess, &supported.core.robustBufferAccess,
+                                   sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32)));
+        check(string_VkStructureType(v11.sType), firstMissing(&v11, &supported.v11, sizeof(v11)));
+        check(string_VkStructureType(v12.sType), firstMissing(&v12, &supported.v12, sizeof(v12)));
 
         for (const std::vector<std::byte>& other : m_others)
         {
@@ -77,11 +85,12 @@ namespace vzt
             const auto counterpart     = std::ranges::find_if(supported.m_others, [&](const std::vector<std::byte>& s) {
                 return reinterpret_cast<const VkBaseOutStructure*>(s.data())->sType == type;
             });
-            isSupported &=
-                counterpart != supported.m_others.end() && covers(other.data(), counterpart->data(), other.size());
+            check(string_VkStructureType(type), counterpart != supported.m_others.end()
+                                                    ? firstMissing(other.data(), counterpart->data(), other.size())
+                                                    : 0);
         }
 
-        return isSupported;
+        return missing;
     }
 
     VkPhysicalDeviceFeatures2& DeviceFeatures::chain()
@@ -212,17 +221,31 @@ namespace vzt
             vkGetPhysicalDeviceSurfaceSupportKHR(m_handle, i, surface->getHandle(), &presentSupport);
         }
 
-        bool isSuitable = !any(requestedTypes) && hasExtensions(configuration.getExtensions());
-        if (surface)
-            isSuitable &= hasSwapchain(m_handle, surface->getHandle());
+        const auto reject = [&](std::string_view reason) {
+            logger::warn("[{}] Unsuitable device: {}", m_properties.deviceName, reason);
+            return false;
+        };
+
+        if (any(requestedTypes))
+            return reject("missing queue types");
+
+        if (surface && (!presentSupport || !hasSwapchain(m_handle, surface->getHandle())))
+            return reject("can't present to the surface");
+
+        if (const auto missing = getMissingExtensions(configuration.getExtensions()); !missing.empty())
+            return reject(fmt::format("missing extension {}", *missing.begin()));
 
         const DeviceFeatures& requested = configuration.getDeviceFeatures();
-        isSuitable &= requested.isSupportedBy(getFeatures(requested));
+        if (const std::string missing = requested.findMissing(getFeatures(requested)); !missing.empty())
+            return reject(fmt::format("unsupported feature ({})", missing));
 
         for (const Capability& capability : configuration.getRequiredCapabilities())
-            isSuitable &= supports(capability);
+        {
+            if (!supports(capability))
+                return reject(fmt::format("missing capability {}", capability.name));
+        }
 
-        return isSuitable;
+        return true;
     }
 
     bool PhysicalDevice::supports(const Capability& capability) const
@@ -231,7 +254,7 @@ namespace vzt
         if (capability.enable)
             capability.enable(features);
 
-        return hasExtensions(capability.extensions) && features.isSupportedBy(getFeatures(features));
+        return hasExtensions(capability.extensions) && features.findMissing(getFeatures(features)).empty();
     }
 
     DeviceFeatures PhysicalDevice::getFeatures(DeviceFeatures features) const
@@ -244,7 +267,10 @@ namespace vzt
         return features;
     }
 
-    bool PhysicalDevice::hasExtensions(const std::vector<const char*>& deviceExtensions) const
+    bool PhysicalDevice::hasExtensions(const std::vector<const char*>& extensions) const
+    { return getMissingExtensions(extensions).empty(); }
+
+    std::set<std::string> PhysicalDevice::getMissingExtensions(const std::vector<const char*>& extensions) const
     {
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(m_handle, nullptr, &extensionCount, nullptr);
@@ -252,11 +278,11 @@ namespace vzt
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateDeviceExtensionProperties(m_handle, nullptr, &extensionCount, availableExtensions.data());
 
-        std::set<std::string> requiredExtensions{deviceExtensions.begin(), deviceExtensions.end()};
+        std::set<std::string> missingExtensions{extensions.begin(), extensions.end()};
         for (const auto& extension : availableExtensions)
-            requiredExtensions.erase(extension.extensionName);
+            missingExtensions.erase(extension.extensionName);
 
-        return requiredExtensions.empty();
+        return missingExtensions;
     }
 
     std::vector<VkQueueFamilyProperties> PhysicalDevice::getQueueFamiliesProperties() const
