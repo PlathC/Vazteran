@@ -111,6 +111,7 @@ namespace vzt
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_debugMessenger, other.m_debugMessenger);
+        std::swap(m_version, other.m_version);
         std::swap(m_enableValidation, other.m_enableValidation);
         std::swap(m_validationLayers, other.m_validationLayers);
         std::swap(m_extensions, other.m_extensions);
@@ -120,6 +121,7 @@ namespace vzt
     {
         std::swap(m_handle, other.m_handle);
         std::swap(m_debugMessenger, other.m_debugMessenger);
+        std::swap(m_version, other.m_version);
         std::swap(m_enableValidation, other.m_enableValidation);
         std::swap(m_validationLayers, other.m_validationLayers);
         std::swap(m_extensions, other.m_extensions);
