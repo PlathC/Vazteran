@@ -40,16 +40,12 @@ namespace vzt
                                                         void*)
     {
 
-        // TODO: Handle this in a real logger
-        std::string severityDisplay;
-        if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
-            logger::info("[VULKAN] {}", pCallbackData->pMessage);
-        else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
-            logger::info("[VULKAN] {}", pCallbackData->pMessage);
-        else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+            logger::error("[VULKAN] {}", pCallbackData->pMessage);
+        else if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
             logger::warn("[VULKAN] {}", pCallbackData->pMessage);
-        else if (messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-            logger::debug("[VULKAN] {}", pCallbackData->pMessage);
+        else
+            logger::info("[VULKAN] {}", pCallbackData->pMessage);
 
         return VK_FALSE;
     }
