@@ -42,6 +42,7 @@ namespace vzt
         constexpr Extension DedicatedAllocation     = VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME;
         constexpr Extension AccelerationStructure   = VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME;
         constexpr Extension RaytracingPipeline      = VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME;
+        constexpr Extension RayQuery                = VK_KHR_RAY_QUERY_EXTENSION_NAME;
         constexpr Extension BufferDeviceAddress     = VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME;
         constexpr Extension DeferredHostOperations  = VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME;
         constexpr Extension DescriptorIndexing      = VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME;
@@ -56,9 +57,6 @@ namespace vzt
 
     struct DeviceFeatures
     {
-        static DeviceFeatures standard();
-        static DeviceFeatures rt();
-
         VkPhysicalDeviceFeatures         core{};
         VkPhysicalDeviceVulkan11Features v11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
         VkPhysicalDeviceVulkan12Features v12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
@@ -89,10 +87,46 @@ namespace vzt
 
     namespace cap
     {
-        inline const Capability MemoryBudget        = {.name = "MemoryBudget", .extensions = {dext::MemoryBudget}};
+        inline const Capability Swapchain         = {.name = "Swapchain", .extensions = {dext::Swapchain}};
+        inline const Capability MemoryBudget      = {.name = "MemoryBudget", .extensions = {dext::MemoryBudget}};
+        inline const Capability ShaderDebugInfo   = {.name = "ShaderDebugInfo", .extensions = {dext::NonSemanticInfo}};
+        inline const Capability PortabilitySubset = {.name       = "PortabilitySubset",
+                                                     .extensions = {dext::PortabilitySubset}};
+
         inline const Capability BufferDeviceAddress = {
             .name   = "BufferDeviceAddress",
             .enable = [](DeviceFeatures& features) { features.v12.bufferDeviceAddress = VK_TRUE; },
+        };
+
+        inline const Capability DynamicRendering = {
+            .name       = "DynamicRendering",
+            .extensions = {dext::DynamicRendering},
+            .enable =
+                [](DeviceFeatures& features) {
+                    features.get<VkPhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering = VK_TRUE;
+                },
+        };
+
+        inline const Capability RayQuery = {
+            .name       = "RayQuery",
+            .extensions = {dext::AccelerationStructure, dext::RayQuery, dext::DeferredHostOperations},
+            .enable =
+                [](DeviceFeatures& features) {
+                    features.v12.bufferDeviceAddress                                                       = VK_TRUE;
+                    features.get<VkPhysicalDeviceRayQueryFeaturesKHR>().rayQuery                           = VK_TRUE;
+                    features.get<VkPhysicalDeviceAccelerationStructureFeaturesKHR>().accelerationStructure = VK_TRUE;
+                },
+        };
+
+        inline const Capability RayTracing = {
+            .name       = "RayTracing",
+            .extensions = {dext::AccelerationStructure, dext::RaytracingPipeline, dext::DeferredHostOperations},
+            .enable =
+                [](DeviceFeatures& features) {
+                    features.v12.bufferDeviceAddress                                                       = VK_TRUE;
+                    features.get<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>().rayTracingPipeline       = VK_TRUE;
+                    features.get<VkPhysicalDeviceAccelerationStructureFeaturesKHR>().accelerationStructure = VK_TRUE;
+                },
         };
     } // namespace cap
 

@@ -20,30 +20,6 @@
 
 namespace vzt
 {
-    DeviceFeatures DeviceFeatures::standard()
-    {
-        DeviceFeatures features;
-        features.core.samplerAnisotropy                                              = VK_TRUE;
-        features.core.shaderResourceMinLod                                           = VK_TRUE;
-        features.v12.bufferDeviceAddress                                             = VK_TRUE;
-        features.get<VkPhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering = VK_TRUE;
-
-        return features;
-    }
-
-    DeviceFeatures DeviceFeatures::rt()
-    {
-        DeviceFeatures features;
-        features.core.samplerAnisotropy                                                        = VK_TRUE;
-        features.v12.bufferDeviceAddress                                                       = VK_TRUE;
-        features.v12.descriptorIndexing                                                        = VK_TRUE;
-        features.get<VkPhysicalDeviceRayQueryFeaturesKHR>().rayQuery                           = VK_TRUE;
-        features.get<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>().rayTracingPipeline       = VK_TRUE;
-        features.get<VkPhysicalDeviceAccelerationStructureFeaturesKHR>().accelerationStructure = VK_TRUE;
-
-        return features;
-    }
-
     // Returns the index of the first requested field which is not supported, or DeviceFeatures::NoField
     static uint32_t firstMissing(const VkBool32* requested, const VkBool32* supported, std::size_t count)
     {
@@ -113,54 +89,23 @@ namespace vzt
     DeviceBuilder DeviceBuilder::offline()
     {
         DeviceBuilder builder{};
-        builder.m_features   = DeviceFeatures::standard();
-        builder.m_extensions = {
-            dext::GetMemoryRequirements2, dext::DedicatedAllocation,
-#ifdef __APPLE__
-            dext::PortabilitySubset,
-#endif // __APPLE__
-            dext::NonSemanticInfo,        dext::DynamicRendering,
-        };
-        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
+        builder.m_queueTypes                         = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
+        builder.m_features.core.samplerAnisotropy    = VK_TRUE;
+        builder.m_features.core.shaderResourceMinLod = VK_TRUE;
+
+        builder.require(cap::DynamicRendering).require(cap::BufferDeviceAddress).require(cap::ShaderDebugInfo);
+        builder.request(cap::PortabilitySubset);
 
         return builder;
     }
 
-    DeviceBuilder DeviceBuilder::standard()
-    {
-        DeviceBuilder builder{};
-        builder.m_features   = DeviceFeatures::standard();
-        builder.m_extensions = {
-            dext::Swapchain,         dext::GetMemoryRequirements2, dext::DedicatedAllocation,
-#ifdef __APPLE__
-            dext::PortabilitySubset,
-#endif // __APPLE__
-            dext::NonSemanticInfo,   dext::DynamicRendering,
-        };
-        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
-
-        return builder;
-    }
+    DeviceBuilder DeviceBuilder::standard() { return offline().require(cap::Swapchain); }
 
     DeviceBuilder DeviceBuilder::rt()
     {
-        DeviceBuilder builder{};
-        builder.m_features   = DeviceFeatures::rt();
-        builder.m_extensions = {
-            dext::Swapchain,
-            dext::GetMemoryRequirements2,
-            dext::DedicatedAllocation,
-            dext::AccelerationStructure,
-            dext::RaytracingPipeline,
-            dext::BufferDeviceAddress,
-            dext::DeferredHostOperations,
-            dext::DescriptorIndexing,
-            dext::Spirv14,
-            dext::ShaderFloatControls,
-            dext::DynamicRendering,
-        };
+        DeviceBuilder builder                     = standard().require(cap::RayQuery).require(cap::RayTracing);
+        builder.m_features.v12.descriptorIndexing = VK_TRUE;
 
-        builder.m_queueTypes = QueueType::Graphics | QueueType::Compute | QueueType::Transfer;
         return builder;
     }
 
