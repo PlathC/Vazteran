@@ -13,7 +13,7 @@ namespace vzt
     {
       public:
         ComputePipeline() = default;
-        ComputePipeline(const Program& program);
+        ComputePipeline(const Program& program, std::vector<PushConstant> pushConstants = {});
 
         ComputePipeline(const ComputePipeline&)            = delete;
         ComputePipeline& operator=(const ComputePipeline&) = delete;
