@@ -14,12 +14,14 @@ namespace vzt
     {
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
+        std::swap(m_pushConstants, other.m_pushConstants);
     }
 
     inline Pipeline& Pipeline::operator=(Pipeline&& other) noexcept
     {
         std::swap(m_descriptorLayout, other.m_descriptorLayout);
         std::swap(m_pipelineLayout, other.m_pipelineLayout);
+        std::swap(m_pushConstants, other.m_pushConstants);
 
         DeviceObject<VkPipeline>::operator=(std::move(other));
         return *this;
