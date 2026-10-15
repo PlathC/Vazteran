@@ -462,21 +462,6 @@ namespace vzt
             output.use.format = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
         }
 
-        m_colorOutputImageViews.reserve(m_colorOutputs.size() + m_graph->getBackbufferNb());
-        for (uint32_t i = 0; i < m_graph->getBackbufferNb(); i++)
-        {
-            for (const auto& output : m_colorOutputs)
-            {
-                m_colorOutputImageViews.emplace_back(
-                    ImageView{m_graph->m_device, m_graph->getImage(i, output.handle), vzt::ImageAspect::Color});
-            }
-
-            if (m_depthOutput)
-            {
-                m_depthOutputImageViews.emplace_back(
-                    ImageView{m_graph->m_device, m_graph->getImage(i, m_depthOutput->handle), ImageAspect::Depth});
-            }
-        }
         // Create descriptors for the current pass
         m_descriptorLayout.compile();
 
@@ -495,9 +480,22 @@ namespace vzt
         const uint32_t backbufferNb = m_graph->getBackbufferNb();
         View<Device>   device       = m_graph->getDevice();
 
+        // Views refer to the graph's images, which are recreated on resize
+        m_textureSaves.clear();
+        m_storageImageViews.clear();
+        m_colorOutputImageViews.clear();
+        m_depthOutputImageViews.clear();
+
         // Create views
         for (uint32_t i = 0; i < backbufferNb; i++)
         {
+            for (const auto& output : m_colorOutputs)
+                m_colorOutputImageViews.emplace_back(device, m_graph->getImage(i, output.handle), ImageAspect::Color);
+
+            if (m_depthOutput)
+                m_depthOutputImageViews.emplace_back(device, m_graph->getImage(i, m_depthOutput->handle),
+                                                     ImageAspect::Depth);
+
             IndexedDescriptor descriptors{};
             descriptors.reserve(m_textureInputs.size() + m_storageInputs.size());
 
