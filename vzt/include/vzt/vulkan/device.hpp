@@ -1,9 +1,12 @@
 #ifndef VZT_VULKAN_DEVICE_HPP
 #define VZT_VULKAN_DEVICE_HPP
 
+#include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <set>
+#include <string>
+#include <string_view>
 #include <vector>
 
 #include "vzt/core/type.hpp"
@@ -48,6 +51,7 @@ namespace vzt
         constexpr Extension PortabilitySubset       = "VK_KHR_portability_subset";
         constexpr Extension NonSemanticInfo         = VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME;
         constexpr Extension DynamicRendering        = VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME;
+        constexpr Extension MemoryBudget            = VK_EXT_MEMORY_BUDGET_EXTENSION_NAME;
     } // namespace dext
 
     struct DeviceFeatures
@@ -74,6 +78,22 @@ namespace vzt
         std::vector<std::vector<std::byte>> m_others; // Zero-initialized storage of each structure added by get()
     };
 
+    struct Capability
+    {
+        std::string                          name;
+        std::vector<dext::Extension>         extensions = {};
+        std::function<void(DeviceFeatures&)> enable     = {};
+    };
+
+    namespace cap
+    {
+        inline const Capability MemoryBudget        = {.name = "MemoryBudget", .extensions = {dext::MemoryBudget}};
+        inline const Capability BufferDeviceAddress = {
+            .name   = "BufferDeviceAddress",
+            .enable = [](DeviceFeatures& features) { features.v12.bufferDeviceAddress = VK_TRUE; },
+        };
+    } // namespace cap
+
     class DeviceBuilder
     {
       public:
@@ -88,16 +108,23 @@ namespace vzt
         inline void add(QueueType queueType);
         inline void add(dext::Extension extension);
 
+        inline DeviceBuilder& require(Capability capability); // A device without it is not suitable
+        inline DeviceBuilder& request(Capability capability); // Enabled only if the device supports it
+
         inline const DeviceFeatures&               getDeviceFeatures() const;
         inline DeviceFeatures&                     getDeviceFeatures();
         inline QueueType                           getQueueTypes() const;
         inline const std::vector<dext::Extension>& getExtensions() const;
+        inline const std::vector<Capability>&      getRequiredCapabilities() const;
+        inline const std::vector<Capability>&      getRequestedCapabilities() const;
 
       private:
         DeviceFeatures m_features;
-        QueueType      m_queueTypes;
+        QueueType      m_queueTypes = QueueType::None;
 
         std::vector<dext::Extension> m_extensions;
+        std::vector<Capability>      m_required;
+        std::vector<Capability>      m_requested;
     };
 
     class PhysicalDevice
@@ -110,6 +137,7 @@ namespace vzt
         // Returns the support of every structure present in features
         DeviceFeatures                       getFeatures(DeviceFeatures features = {}) const;
         bool                                 hasExtensions(const std::vector<const char*>& extensions) const;
+        bool                                 supports(const Capability& capability) const;
         std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
         bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;
         Format                               getDepthFormat() const;
@@ -148,6 +176,9 @@ namespace vzt
         View<Queue>              getQueue(QueueType type) const;
         View<Queue>              getPresentQueue() const;
 
+        // Returns true if the capability has been enabled on this device
+        bool has(const Capability& capability) const;
+
         inline VkDevice               getHandle() const;
         inline const VolkDeviceTable& getFunctionTable() const;
         inline VmaAllocator           getAllocator() const;
@@ -158,9 +189,10 @@ namespace vzt
         PhysicalDevice  m_device;
         VolkDeviceTable m_table;
 
-        VkDevice      m_handle    = VK_NULL_HANDLE;
-        VmaAllocator  m_allocator = VK_NULL_HANDLE;
-        DeviceBuilder m_configuration;
+        VkDevice                 m_handle    = VK_NULL_HANDLE;
+        VmaAllocator             m_allocator = VK_NULL_HANDLE;
+        DeviceBuilder            m_configuration;
+        std::vector<std::string> m_capabilities;
 
         static inline bool                      isSameQueue(const Queue& q1, const Queue& q2);
         std::set<Queue, decltype(&isSameQueue)> m_queues{&isSameQueue};

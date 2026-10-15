@@ -19,12 +19,30 @@ namespace vzt
 
     inline void DeviceBuilder::set(DeviceFeatures features) { m_features = std::move(features); }
     inline void DeviceBuilder::add(QueueType queueType) { m_queueTypes |= queueType; }
-    inline void DeviceBuilder::add(dext::Extension extension) { m_extensions.emplace_back(std::move(extension)); }
+    inline void DeviceBuilder::add(dext::Extension extension)
+    {
+        if (std::ranges::find(m_extensions, std::string_view(extension)) == m_extensions.end())
+            m_extensions.emplace_back(extension);
+    }
+
+    inline DeviceBuilder& DeviceBuilder::require(Capability capability)
+    {
+        m_required.emplace_back(std::move(capability));
+        return *this;
+    }
+
+    inline DeviceBuilder& DeviceBuilder::request(Capability capability)
+    {
+        m_requested.emplace_back(std::move(capability));
+        return *this;
+    }
 
     inline const DeviceFeatures&               DeviceBuilder::getDeviceFeatures() const { return m_features; }
     inline DeviceFeatures&                     DeviceBuilder::getDeviceFeatures() { return m_features; }
     inline QueueType                           DeviceBuilder::getQueueTypes() const { return m_queueTypes; }
     inline const std::vector<dext::Extension>& DeviceBuilder::getExtensions() const { return m_extensions; }
+    inline const std::vector<Capability>&      DeviceBuilder::getRequiredCapabilities() const { return m_required; }
+    inline const std::vector<Capability>&      DeviceBuilder::getRequestedCapabilities() const { return m_requested; }
 
     template <class Type>
     std::size_t PhysicalDevice::getUniformAlignment() const

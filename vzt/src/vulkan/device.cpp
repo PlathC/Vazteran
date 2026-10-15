@@ -219,7 +219,19 @@ namespace vzt
         const DeviceFeatures& requested = configuration.getDeviceFeatures();
         isSuitable &= requested.isSupportedBy(getFeatures(requested));
 
+        for (const Capability& capability : configuration.getRequiredCapabilities())
+            isSuitable &= supports(capability);
+
         return isSuitable;
+    }
+
+    bool PhysicalDevice::supports(const Capability& capability) const
+    {
+        DeviceFeatures features;
+        if (capability.enable)
+            capability.enable(features);
+
+        return hasExtensions(capability.extensions) && features.isSupportedBy(getFeatures(features));
     }
 
     DeviceFeatures PhysicalDevice::getFeatures(DeviceFeatures features) const
@@ -302,8 +314,28 @@ namespace vzt
     }
 
     Device::Device(View<Instance> instance, PhysicalDevice device, DeviceBuilder configuration, View<Surface> surface)
-        : m_instance(instance), m_device(device), m_configuration(configuration)
+        : m_instance(instance), m_device(device)
     {
+        const auto enable = [&](const Capability& capability) {
+            for (dext::Extension extension : capability.extensions)
+                configuration.add(extension);
+
+            if (capability.enable)
+                capability.enable(configuration.getDeviceFeatures());
+
+            m_capabilities.emplace_back(capability.name);
+        };
+
+        for (const Capability& capability : configuration.getRequiredCapabilities())
+            enable(capability);
+
+        for (const Capability& capability : configuration.getRequestedCapabilities())
+        {
+            if (m_device.supports(capability))
+                enable(capability);
+        }
+        m_configuration = configuration;
+
         std::vector<VkDeviceQueueCreateInfo>    queueCreateInfos{};
         std::unordered_map<QueueType, uint32_t> queueIds{};
 
@@ -418,6 +450,7 @@ namespace vzt
         std::swap(m_handle, other.m_handle);
         std::swap(m_allocator, other.m_allocator);
         std::swap(m_configuration, other.m_configuration);
+        std::swap(m_capabilities, other.m_capabilities);
 
         for (auto& queue : other.m_queues)
             m_queues.emplace(this, queue.getType(), queue.getId(), queue.canPresent());
@@ -432,6 +465,7 @@ namespace vzt
         std::swap(m_handle, other.m_handle);
         std::swap(m_allocator, other.m_allocator);
         std::swap(m_configuration, other.m_configuration);
+        std::swap(m_capabilities, other.m_capabilities);
 
         for (auto& queue : other.m_queues)
             m_queues.emplace(this, queue.getType(), queue.getId(), queue.canPresent());
@@ -473,6 +507,11 @@ namespace vzt
         }
 
         return {};
+    }
+
+    bool Device::has(const Capability& capability) const
+    {
+        return std::ranges::find(m_capabilities, capability.name) != m_capabilities.end(); //
     }
 
     View<Queue> Device::getPresentQueue() const
