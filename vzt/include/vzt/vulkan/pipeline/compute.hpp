@@ -28,8 +28,6 @@ namespace vzt
         ComputePipeline(ComputePipeline&&) noexcept;
         ComputePipeline& operator=(ComputePipeline&&) noexcept;
 
-        ~ComputePipeline() override;
-
       private:
         void compile();
 

@@ -37,13 +37,15 @@ namespace vzt
         inline Pipeline(Pipeline&& other) noexcept;
         inline Pipeline& operator=(Pipeline&& other) noexcept;
 
-        virtual ~Pipeline() = default;
+        ~Pipeline() override;
         inline void                    add(PushConstant constant);
         inline const DescriptorLayout& getDescriptorLayout() const;
         inline VkPipelineLayout        getLayout() const;
 
       protected:
         void createLayout();
+        // Destroys the pipeline and its layout
+        void destroy();
 
         DescriptorLayout m_descriptorLayout;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;

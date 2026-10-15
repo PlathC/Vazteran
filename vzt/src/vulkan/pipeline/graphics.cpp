@@ -27,21 +27,6 @@ namespace vzt
         return *this;
     }
 
-    GraphicsPipeline::~GraphicsPipeline()
-    {
-        if (m_handle != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
-        }
-
-        if (m_pipelineLayout != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
-        }
-    }
-
     VkViewport                                     toVulkan(const Viewport& viewport);
     VkPipelineRasterizationStateCreateInfo         toVulkan(const Rasterization& config);
     VkPipelineMultisampleStateCreateInfo           toVulkan(const MultiSampling& config);

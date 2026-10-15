@@ -26,21 +26,6 @@ namespace vzt
         return *this;
     }
 
-    ComputePipeline::~ComputePipeline()
-    {
-        if (m_handle != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
-        }
-
-        if (m_pipelineLayout != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
-        }
-    }
-
     void ComputePipeline::compile()
     {
         m_descriptorLayout = vzt::DescriptorLayout(m_device);

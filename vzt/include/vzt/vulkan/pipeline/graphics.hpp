@@ -218,8 +218,6 @@ namespace vzt
         GraphicsPipeline(GraphicsPipeline&&) noexcept;
         GraphicsPipeline& operator=(GraphicsPipeline&&) noexcept;
 
-        ~GraphicsPipeline() override;
-
       private:
         void compile();
 

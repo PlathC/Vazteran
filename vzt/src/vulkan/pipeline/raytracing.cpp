@@ -38,21 +38,6 @@ namespace vzt
         return *this;
     }
 
-    RaytracingPipeline::~RaytracingPipeline()
-    {
-        if (m_handle != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
-        }
-
-        if (m_pipelineLayout != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
-        }
-    }
-
     void RaytracingPipeline::setShaderGroup(const ShaderGroup& shaderGroup)
     {
         m_shaderGroup = shaderGroup;
@@ -187,18 +172,7 @@ namespace vzt
 
     void RaytracingPipeline::cleanup()
     {
-        if (m_handle != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipeline(m_device->getHandle(), m_handle, nullptr);
-        }
-
-        if (m_pipelineLayout != VK_NULL_HANDLE)
-        {
-            const VolkDeviceTable& table = m_device->getFunctionTable();
-            table.vkDestroyPipelineLayout(m_device->getHandle(), m_pipelineLayout, nullptr);
-        }
-
+        destroy();
         m_compiled = false;
     }
 } // namespace vzt
