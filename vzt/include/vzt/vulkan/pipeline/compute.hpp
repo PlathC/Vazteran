@@ -9,11 +9,18 @@ namespace vzt
     class Device;
     class Program;
 
+    struct ComputePipelineBuilder : PipelineBuilder<ComputePipelineBuilder>
+    {
+        ComputePipelineBuilder(View<Program> program = {}) : program(program) {}
+
+        View<Program> program;
+    };
+
     class ComputePipeline : public Pipeline
     {
       public:
         ComputePipeline() = default;
-        ComputePipeline(const Program& program, std::vector<PushConstant> pushConstants = {});
+        ComputePipeline(ComputePipelineBuilder builder);
 
         ComputePipeline(const ComputePipeline&)            = delete;
         ComputePipeline& operator=(const ComputePipeline&) = delete;

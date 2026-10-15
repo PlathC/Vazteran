@@ -588,7 +588,7 @@ namespace vzt
     }
 
     ComputePass::ComputePass(RenderGraph& graph, std::string name, Program&& program)
-        : Pass(graph, std::move(name), PassType::Compute), m_program(std::move(program)), m_pipeline(m_program)
+        : Pass(graph, std::move(name), PassType::Compute), m_program(std::move(program)), m_pipeline({m_program})
     {
         link(m_pipeline);
     }
@@ -596,7 +596,7 @@ namespace vzt
     void ComputePass::compile()
     {
         Pass::compile();
-        m_pipeline = ComputePipeline(m_program);
+        m_pipeline = ComputePipeline({m_program});
     }
 
     void GraphicsPass::setDepthInput(const Handle& handle, std::string name)
@@ -699,7 +699,7 @@ namespace vzt
 
     GraphicsPass::GraphicsPass(RenderGraph& graph, std::string name, Program&& program)
         : Pass(graph, std::move(name), PassType::Graphics), m_program(std::move(program)),
-          m_graphicsPipelineBuilder({.program = m_program})
+          m_graphicsPipelineBuilder(m_program)
     {
         link(m_pipeline);
     }

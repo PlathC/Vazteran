@@ -16,6 +16,18 @@ namespace vzt
         uint32_t    size;
     };
 
+    template <class Derived>
+    struct PipelineBuilder
+    {
+        std::vector<PushConstant> pushConstants = {};
+
+        Derived& add(PushConstant constant)
+        {
+            pushConstants.emplace_back(constant);
+            return static_cast<Derived&>(*this);
+        }
+    };
+
     class Pipeline : public DeviceObject<VkPipeline>
     {
       public:

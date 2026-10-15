@@ -177,8 +177,10 @@ namespace vzt
         ColorComponent colorWriteMask      = ColorMask::RGBA;
     };
 
-    struct GraphicsPipelineBuilder
+    struct GraphicsPipelineBuilder : PipelineBuilder<GraphicsPipelineBuilder>
     {
+        inline GraphicsPipelineBuilder(View<Program> program = {});
+
         View<Program> program;
 
         struct ColorAttachment
@@ -195,8 +197,6 @@ namespace vzt
         DepthStencil                          depthStencil      = {};
         PrimitiveTopology                     primitiveTopology = PrimitiveTopology::TriangleList;
 
-        std::vector<PushConstant> pushConstants = {};
-
         inline GraphicsPipelineBuilder& addColor(Format format, ColorBlend blend = {.blendEnable = false});
         inline GraphicsPipelineBuilder& setDepth(Format format);
         inline GraphicsPipelineBuilder& set(VertexInputDescription desc);
@@ -204,7 +204,6 @@ namespace vzt
         inline GraphicsPipelineBuilder& set(MultiSampling multi);
         inline GraphicsPipelineBuilder& set(DepthStencil depth);
         inline GraphicsPipelineBuilder& set(PrimitiveTopology prim);
-        inline GraphicsPipelineBuilder& add(PushConstant constant);
     };
 
     class GraphicsPipeline : public Pipeline

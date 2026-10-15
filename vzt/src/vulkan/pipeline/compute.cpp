@@ -5,10 +5,10 @@
 
 namespace vzt
 {
-    ComputePipeline::ComputePipeline(const Program& program, std::vector<PushConstant> pushConstants)
-        : Pipeline(program.getModules()[0].getDevice()), m_program(program)
+    ComputePipeline::ComputePipeline(ComputePipelineBuilder builder)
+        : Pipeline(builder.program->getModules()[0].getDevice()), m_program(builder.program)
     {
-        m_pushConstants = std::move(pushConstants);
+        m_pushConstants = std::move(builder.pushConstants);
         compile();
     }
 

@@ -126,7 +126,7 @@ int main(int /* argc */, char** /* argv */)
     layout.addBinding(2, vzt::DescriptorType::UniformBuffer);
     layout.compile();
 
-    vzt::RaytracingPipeline pipeline{shaderGroup};
+    vzt::RaytracingPipeline pipeline({shaderGroup});
     pipeline.compile();
 
     vzt::DescriptorPool descriptorPool{device, layout};

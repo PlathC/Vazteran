@@ -7,10 +7,18 @@
 
 namespace vzt
 {
+    struct RaytracingPipelineBuilder : PipelineBuilder<RaytracingPipelineBuilder>
+    {
+        RaytracingPipelineBuilder(View<ShaderGroup> shaderGroup = {}) : shaderGroup(shaderGroup) {}
+
+        View<ShaderGroup> shaderGroup;
+        uint32_t          maxRecursionDepth = 1;
+    };
+
     class RaytracingPipeline : public Pipeline
     {
       public:
-        RaytracingPipeline(const ShaderGroup& shaderGroup, std::vector<PushConstant> pushConstants = {});
+        RaytracingPipeline(RaytracingPipelineBuilder builder);
 
         RaytracingPipeline(const RaytracingPipeline&)            = delete;
         RaytracingPipeline& operator=(const RaytracingPipeline&) = delete;
@@ -31,6 +39,7 @@ namespace vzt
         void cleanup();
 
         View<ShaderGroup> m_shaderGroup;
+        uint32_t          m_maxRecursionDepth = 1;
 
         uint32_t             m_handleSize          = {};
         uint32_t             m_handleSizeAligned   = {};

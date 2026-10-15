@@ -20,6 +20,8 @@ namespace vzt
         add(VertexAttribute{offset, location, dataFormat, binding});
     }
 
+    GraphicsPipelineBuilder::GraphicsPipelineBuilder(View<Program> program) : program(program) {}
+
     GraphicsPipelineBuilder& GraphicsPipelineBuilder::addColor(Format format, ColorBlend blend)
     {
         colors.emplace_back(format, blend);
@@ -59,12 +61,6 @@ namespace vzt
     GraphicsPipelineBuilder& GraphicsPipelineBuilder::set(PrimitiveTopology prim)
     {
         primitiveTopology = std::move(prim);
-        return *this;
-    }
-
-    GraphicsPipelineBuilder& GraphicsPipelineBuilder::add(PushConstant constant)
-    {
-        pushConstants.push_back(std::move(constant));
         return *this;
     }
 } // namespace vzt

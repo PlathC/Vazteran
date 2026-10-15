@@ -7,11 +7,12 @@
 
 namespace vzt
 {
-    RaytracingPipeline::RaytracingPipeline(const ShaderGroup& shaderGroup, std::vector<PushConstant> pushConstants)
-        : Pipeline(shaderGroup.getShaders()[0].shaderModule.getDevice())
+    RaytracingPipeline::RaytracingPipeline(RaytracingPipelineBuilder builder)
+        : Pipeline(builder.shaderGroup->getShaders()[0].shaderModule.getDevice()),
+          m_maxRecursionDepth(builder.maxRecursionDepth)
     {
-        m_pushConstants = std::move(pushConstants);
-        setShaderGroup(shaderGroup);
+        m_pushConstants = std::move(builder.pushConstants);
+        setShaderGroup(*builder.shaderGroup);
     }
 
     RaytracingPipeline::RaytracingPipeline(RaytracingPipeline&& other) noexcept : Pipeline(std::move(other))
@@ -21,6 +22,7 @@ namespace vzt
         std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
         std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
         std::swap(m_shaderGroup, other.m_shaderGroup);
+        std::swap(m_maxRecursionDepth, other.m_maxRecursionDepth);
     }
 
     RaytracingPipeline& RaytracingPipeline::operator=(RaytracingPipeline&& other) noexcept
@@ -30,6 +32,7 @@ namespace vzt
         std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
         std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
         std::swap(m_shaderGroup, other.m_shaderGroup);
+        std::swap(m_maxRecursionDepth, other.m_maxRecursionDepth);
 
         Pipeline::operator=(std::move(other));
         return *this;
@@ -151,7 +154,7 @@ namespace vzt
         rayTracingPipelineCI.pStages                      = shaderStages.data();
         rayTracingPipelineCI.groupCount                   = static_cast<uint32_t>(shaderGroups.size());
         rayTracingPipelineCI.pGroups                      = shaderGroups.data();
-        rayTracingPipelineCI.maxPipelineRayRecursionDepth = 1;
+        rayTracingPipelineCI.maxPipelineRayRecursionDepth = m_maxRecursionDepth;
         rayTracingPipelineCI.layout                       = m_pipelineLayout;
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
