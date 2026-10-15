@@ -26,15 +26,12 @@ namespace vzt
         RaytracingPipeline(RaytracingPipeline&& other) noexcept;
         RaytracingPipeline& operator=(RaytracingPipeline&& other) noexcept;
 
-        inline void setShaderGroup(const ShaderGroup& shaderGroup);
-
-        void                  compile();
         inline CSpan<uint8_t> getShaderHandleStorage() const;
         inline uint32_t       getShaderHandleSize() const;
         inline uint32_t       getShaderHandleSizeAligned() const;
 
       private:
-        void cleanup();
+        void compile();
 
         View<ShaderGroup> m_shaderGroup;
         uint32_t          m_maxRecursionDepth = 1;
@@ -42,8 +39,6 @@ namespace vzt
         uint32_t             m_handleSize          = {};
         uint32_t             m_handleSizeAligned   = {};
         std::vector<uint8_t> m_shaderHandleStorage = {};
-
-        bool m_compiled = false;
     };
 } // namespace vzt
 

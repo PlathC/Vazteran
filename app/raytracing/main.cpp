@@ -127,7 +127,6 @@ int main(int /* argc */, char** /* argv */)
     layout.compile();
 
     vzt::RaytracingPipeline pipeline({shaderGroup});
-    pipeline.compile();
 
     vzt::DescriptorPool descriptorPool{device, layout};
     descriptorPool.allocate(swapchain.getImageNb(), layout);

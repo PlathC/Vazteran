@@ -8,16 +8,15 @@
 namespace vzt
 {
     RaytracingPipeline::RaytracingPipeline(RaytracingPipelineBuilder builder)
-        : Pipeline(builder.shaderGroup->getShaders()[0].shaderModule.getDevice()),
+        : Pipeline(builder.shaderGroup->getShaders()[0].shaderModule.getDevice()), m_shaderGroup(builder.shaderGroup),
           m_maxRecursionDepth(builder.maxRecursionDepth)
     {
         m_pushConstants = std::move(builder.pushConstants);
-        setShaderGroup(*builder.shaderGroup);
+        compile();
     }
 
     RaytracingPipeline::RaytracingPipeline(RaytracingPipeline&& other) noexcept : Pipeline(std::move(other))
     {
-        std::swap(m_compiled, other.m_compiled);
         std::swap(m_handleSize, other.m_handleSize);
         std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
         std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
@@ -27,7 +26,6 @@ namespace vzt
 
     RaytracingPipeline& RaytracingPipeline::operator=(RaytracingPipeline&& other) noexcept
     {
-        std::swap(m_compiled, other.m_compiled);
         std::swap(m_handleSize, other.m_handleSize);
         std::swap(m_handleSizeAligned, other.m_handleSizeAligned);
         std::swap(m_shaderHandleStorage, other.m_shaderHandleStorage);
@@ -38,12 +36,10 @@ namespace vzt
         return *this;
     }
 
-    void RaytracingPipeline::setShaderGroup(const ShaderGroup& shaderGroup)
+    void RaytracingPipeline::compile()
     {
-        m_shaderGroup = shaderGroup;
-
         m_descriptorLayout = vzt::DescriptorLayout(m_device);
-        for (const auto& group : shaderGroup.getShaders())
+        for (const auto& group : m_shaderGroup->getShaders())
         {
             const Shader& shader = group.shaderModule.getShader();
             for (const auto [id, type] : shader.bindings)
@@ -51,15 +47,6 @@ namespace vzt
         }
 
         m_descriptorLayout.compile();
-    }
-
-    void RaytracingPipeline::compile()
-    {
-        assert(m_shaderGroup && "You must provide a program before compiling pipeline.");
-
-        if (m_compiled)
-            cleanup();
-
         createLayout();
 
         CSpan<ShaderGroupShader> shaders = m_shaderGroup->getShaders();
@@ -166,13 +153,5 @@ namespace vzt
         vkCheck(vkGetRayTracingShaderGroupHandlesKHR( //
                     m_device->getHandle(), m_handle, 0, groupCount, sbtSize, m_shaderHandleStorage.data()),
                 "Can't get shader group handles.");
-
-        m_compiled = true;
-    }
-
-    void RaytracingPipeline::cleanup()
-    {
-        destroy();
-        m_compiled = false;
     }
 } // namespace vzt
