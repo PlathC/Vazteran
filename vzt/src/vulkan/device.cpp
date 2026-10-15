@@ -1,5 +1,6 @@
 #include "vzt/vulkan/device.hpp"
 
+#include <algorithm>
 #include <unordered_map>
 
 #define VMA_IMPLEMENTATION
@@ -391,9 +392,11 @@ namespace vzt
         allocatorInfo.device                 = m_handle;
         allocatorInfo.instance               = instance->getHandle();
         allocatorInfo.vulkanApiVersion       = toVulkan(instance->getAPIVersion());
-        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
-        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-        allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+        if (configuration.getDeviceFeatures().v12.bufferDeviceAddress)
+            allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+        if (std::ranges::find(extensions, std::string_view(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME)) != extensions.end())
+            allocatorInfo.flags |= VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 
         // To use VMA_DYNAMIC_VULKAN_FUNCTIONS in new versions of VMA you now have to pass
         // VmaVulkanFunctions::vkGetInstanceProcAddr and vkGetDeviceProcAddr as
