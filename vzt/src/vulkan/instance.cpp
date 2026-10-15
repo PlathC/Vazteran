@@ -156,28 +156,28 @@ namespace vzt
     {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, nullptr);
-        if (deviceCount == 0)
-            logger::error("Failed to find GPUs with Vulkan support!");
 
         auto devices = std::vector<VkPhysicalDevice>(deviceCount);
         vkEnumeratePhysicalDevices(m_handle, &deviceCount, devices.data());
 
-        uint32_t selectedDevice = 0;
-        bool     isDiscrete     = false;
-        for (uint32_t i = 0; i < deviceCount; i++)
-        {
-            const auto device = PhysicalDevice(devices[i]);
-            if (device.isSuitable(configuration, surface))
-                selectedDevice = i;
+        // Select the first suitable device, preferring discrete GPUs
+        const auto isDiscrete = [](const PhysicalDevice& device) {
+            return device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+        };
 
-            if (!isDiscrete && device.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-            {
-                selectedDevice = i;
-                isDiscrete     = true;
-            }
+        Optional<PhysicalDevice> selected;
+        for (VkPhysicalDevice handle : devices)
+        {
+            const auto device = PhysicalDevice(handle);
+            if (device.isSuitable(configuration, surface) &&
+                (!selected || (isDiscrete(device) && !isDiscrete(*selected))))
+                selected = device;
         }
 
-        return {this, PhysicalDevice(devices[selectedDevice]), configuration, surface};
+        if (!selected)
+            throw std::runtime_error("Failed to find a GPU matching the device configuration.");
+
+        return {this, *selected, configuration, surface};
     }
 
 } // namespace vzt
