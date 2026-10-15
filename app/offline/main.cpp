@@ -200,7 +200,7 @@ int main(int /* argc */, char** /* argv */)
 
         vzt::ImageBarrier transition{};
         transition.image     = output;
-        transition.oldLayout = vzt::ImageLayout::General;
+        transition.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
         transition.newLayout = vzt::ImageLayout::TransferSrcOptimal;
         commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::Transfer, transition);
 
