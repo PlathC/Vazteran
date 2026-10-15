@@ -10,7 +10,7 @@ namespace vzt
     class RaytracingPipeline : public Pipeline
     {
       public:
-        RaytracingPipeline(const ShaderGroup& shaderGroup);
+        RaytracingPipeline(const ShaderGroup& shaderGroup, std::vector<PushConstant> pushConstants = {});
 
         RaytracingPipeline(const RaytracingPipeline&)            = delete;
         RaytracingPipeline& operator=(const RaytracingPipeline&) = delete;

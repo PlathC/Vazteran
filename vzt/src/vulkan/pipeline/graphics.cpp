@@ -60,31 +60,7 @@ namespace vzt
         }
 
         m_descriptorLayout.compile();
-        VkDescriptorSetLayout      descriptorSetLayout = m_descriptorLayout.getHandle();
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts    = &descriptorSetLayout;
-
-        auto pushConstants = std::vector<VkPushConstantRange>();
-        if (!m_pushConstants.empty())
-        {
-            pushConstants.reserve(m_pushConstants.size());
-            for (const PushConstant& pushConstant : m_pushConstants)
-            {
-                pushConstants.emplace_back(VkPushConstantRange{
-                    .stageFlags = static_cast<VkShaderStageFlags>(pushConstant.stages),
-                    .offset     = pushConstant.offset,
-                    .size       = pushConstant.size,
-                });
-            }
-            pipelineLayoutInfo.pPushConstantRanges    = pushConstants.data();
-            pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
-        }
-
-        const VolkDeviceTable& table = m_device->getFunctionTable();
-        vkCheck(table.vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
-                "failed to create pipeline layout!");
+        createLayout();
 
         // Create pipeline
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -236,6 +212,7 @@ namespace vzt
         pipelineInfo.basePipelineHandle = nullptr;
         pipelineInfo.basePipelineIndex  = 0;
 
+        const VolkDeviceTable& table = m_device->getFunctionTable();
         vkCheck(table.vkCreateGraphicsPipelines(m_device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
                                                 &m_handle),
                 "Failed to create graphics pipeline.");

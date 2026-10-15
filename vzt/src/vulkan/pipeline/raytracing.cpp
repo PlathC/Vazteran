@@ -7,9 +7,10 @@
 
 namespace vzt
 {
-    RaytracingPipeline::RaytracingPipeline(const ShaderGroup& shaderGroup)
+    RaytracingPipeline::RaytracingPipeline(const ShaderGroup& shaderGroup, std::vector<PushConstant> pushConstants)
         : Pipeline(shaderGroup.getShaders()[0].shaderModule.getDevice())
     {
+        m_pushConstants = std::move(pushConstants);
         setShaderGroup(shaderGroup);
     }
 
@@ -71,16 +72,7 @@ namespace vzt
         if (m_compiled)
             cleanup();
 
-        VkPipelineLayoutCreateInfo pipelineLayoutCI{};
-        pipelineLayoutCI.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutCI.setLayoutCount = 1;
-
-        const VkDescriptorSetLayout layout = m_descriptorLayout.getHandle();
-        pipelineLayoutCI.pSetLayouts       = &layout;
-
-        const VolkDeviceTable& table = m_device->getFunctionTable();
-        vkCheck(table.vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutCI, nullptr, &m_pipelineLayout),
-                "Can't create pipeline layout");
+        createLayout();
 
         CSpan<ShaderGroupShader> shaders = m_shaderGroup->getShaders();
 
@@ -162,6 +154,7 @@ namespace vzt
         rayTracingPipelineCI.maxPipelineRayRecursionDepth = 1;
         rayTracingPipelineCI.layout                       = m_pipelineLayout;
 
+        const VolkDeviceTable& table = m_device->getFunctionTable();
         vkCheck(
             table.vkCreateRayTracingPipelinesKHR( //
                 m_device->getHandle(), VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rayTracingPipelineCI, nullptr, &m_handle),

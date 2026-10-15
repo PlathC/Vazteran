@@ -64,6 +64,7 @@ set(VZT_SOURCES
 
         src/vulkan/pipeline/compute.cpp
         src/vulkan/pipeline/graphics.cpp
+        src/vulkan/pipeline/pipeline.cpp
         src/vulkan/pipeline/raytracing.cpp
 )
 

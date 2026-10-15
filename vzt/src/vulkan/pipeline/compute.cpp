@@ -5,7 +5,6 @@
 
 namespace vzt
 {
-    ;
     ComputePipeline::ComputePipeline(const Program& program, std::vector<PushConstant> pushConstants)
         : Pipeline(program.getModules()[0].getDevice()), m_program(program)
     {
@@ -53,23 +52,7 @@ namespace vzt
         }
 
         m_descriptorLayout.compile();
-
-        VkDescriptorSetLayout descriptorSetLayout = m_descriptorLayout.getHandle();
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts    = &descriptorSetLayout;
-
-        std::vector<VkPushConstantRange> pushConstants{};
-        for (const auto [stages, offset, size] : m_pushConstants)
-            pushConstants.push_back({static_cast<VkShaderStageFlags>(stages), offset, size});
-        pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
-        pipelineLayoutInfo.pPushConstantRanges    = pushConstants.data();
-
-        const VolkDeviceTable& table = m_device->getFunctionTable();
-        vkCheck(table.vkCreatePipelineLayout(m_device->getHandle(), &pipelineLayoutInfo, nullptr, &m_pipelineLayout),
-                "failed to create pipeline layout!");
+        createLayout();
 
         VkComputePipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType  = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -90,6 +73,7 @@ namespace vzt
 
         pipelineInfo.stage = createInfo;
 
+        const VolkDeviceTable& table = m_device->getFunctionTable();
         vkCheck(
             table.vkCreateComputePipelines(m_device->getHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_handle),
             "Failed to create compute pipeline.");

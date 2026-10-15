@@ -31,6 +31,8 @@ namespace vzt
         inline VkPipelineLayout        getLayout() const;
 
       protected:
+        void createLayout();
+
         DescriptorLayout m_descriptorLayout;
         VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 
