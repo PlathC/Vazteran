@@ -17,84 +17,87 @@
 
 namespace vzt
 {
-    bool GenericDeviceFeature::match(const GenericDeviceFeature& requested, const GenericDeviceFeature& supported)
-    {
-        for (std::size_t i = 0; i < MaximumFieldCount; i++)
-        {
-            if (requested.fields[i] && !supported.fields[i])
-                return false;
-        }
-
-        return true;
-    }
-
     DeviceFeatures DeviceFeatures::standard()
     {
-        DeviceFeatures             features;
-        VkPhysicalDeviceFeatures2& vkFeatures2    = features.getPhysicalFeatures();
-        vkFeatures2.features.samplerAnisotropy    = true;
-        vkFeatures2.features.shaderResourceMinLod = true;
-
-        VkPhysicalDeviceVulkan12Features features12{};
-        features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-        features12.bufferDeviceAddress = VK_TRUE;
-        features.add(features12);
-
-        // dynamicRendering.
-        VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRendering{};
-        dynamicRendering.sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-        dynamicRendering.dynamicRendering = VK_TRUE;
-        features.add(dynamicRendering);
+        DeviceFeatures features;
+        features.core.samplerAnisotropy                                              = VK_TRUE;
+        features.core.shaderResourceMinLod                                           = VK_TRUE;
+        features.v12.bufferDeviceAddress                                             = VK_TRUE;
+        features.get<VkPhysicalDeviceDynamicRenderingFeaturesKHR>().dynamicRendering = VK_TRUE;
 
         return features;
     }
 
     DeviceFeatures DeviceFeatures::rt()
     {
-        DeviceFeatures             features;
-        VkPhysicalDeviceFeatures2& vkFeatures2 = features.getPhysicalFeatures();
-        vkFeatures2.features.samplerAnisotropy = true;
-
-        VkPhysicalDeviceVulkan12Features features12{};
-        features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-        features12.bufferDeviceAddress = VK_TRUE;
-        features12.descriptorIndexing  = VK_TRUE;
-        features.add(features12);
-
-        VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
-        rayQueryFeatures.sType    = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
-        rayQueryFeatures.rayQuery = VK_TRUE;
-        features.add(rayQueryFeatures);
-
-        VkPhysicalDeviceRayTracingPipelineFeaturesKHR raytracingPipelineFeatures{};
-        raytracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-        raytracingPipelineFeatures.rayTracingPipeline = VK_TRUE;
-        features.add(raytracingPipelineFeatures);
-
-        VkPhysicalDeviceAccelerationStructureFeaturesKHR asFeatures{};
-        asFeatures.sType                 = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-        asFeatures.accelerationStructure = VK_TRUE;
-        features.add(asFeatures);
+        DeviceFeatures features;
+        features.core.samplerAnisotropy                                                        = VK_TRUE;
+        features.v12.bufferDeviceAddress                                                       = VK_TRUE;
+        features.v12.descriptorIndexing                                                        = VK_TRUE;
+        features.get<VkPhysicalDeviceRayQueryFeaturesKHR>().rayQuery                           = VK_TRUE;
+        features.get<VkPhysicalDeviceRayTracingPipelineFeaturesKHR>().rayTracingPipeline       = VK_TRUE;
+        features.get<VkPhysicalDeviceAccelerationStructureFeaturesKHR>().accelerationStructure = VK_TRUE;
 
         return features;
     }
 
-    void DeviceFeatures::add(GenericDeviceFeature feature) { m_features.emplace_back(std::move(feature)); }
-    const VkPhysicalDeviceFeatures2& DeviceFeatures::getAllFeatures() const
+    // Returns true if every  requested field is supported
+    static bool covers(const VkBool32* requested, const VkBool32* supported, std::size_t count)
     {
-        if (m_features.empty())
-            return m_physicalFeatures;
-
-        m_physicalFeatures.pNext          = &m_features[0];
-        GenericDeviceFeature* lastFeature = &m_features[0];
-        for (std::size_t i = 1; i < m_features.size(); i++)
+        for (std::size_t i = 0; i < count; i++)
         {
-            GenericDeviceFeature* next = &m_features[i];
-            lastFeature->pNext         = next;
-            lastFeature                = next;
+            if (requested[i] && !supported[i])
+                return false;
         }
 
-        return m_physicalFeatures;
+        return true;
+    }
+
+    // Compares the VkBool32 fields following the header (sType, pNext) of two structures of the same type
+    static bool covers(const void* requested, const void* supported, std::size_t size)
+    {
+        constexpr std::size_t Header = sizeof(VkBaseOutStructure);
+        const auto            fields = [](const void* s) {
+            return reinterpret_cast<const VkBool32*>(static_cast<const std::byte*>(s) + Header);
+        };
+        return covers(fields(requested), fields(supported), (size - Header) / sizeof(VkBool32));
+    }
+
+    bool DeviceFeatures::isSupportedBy(const DeviceFeatures& supported) const
+    {
+        bool isSupported = covers(&core.robustBufferAccess, &supported.core.robustBufferAccess,
+                                  sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32));
+        isSupported &= covers(&v11, &supported.v11, sizeof(v11));
+        isSupported &= covers(&v12, &supported.v12, sizeof(v12));
+
+        for (const std::vector<std::byte>& other : m_others)
+        {
+            const VkStructureType type = reinterpret_cast<const VkBaseOutStructure*>(other.data())->sType;
+            const auto counterpart     = std::ranges::find_if(supported.m_others, [&](const std::vector<std::byte>& s) {
+                return reinterpret_cast<const VkBaseOutStructure*>(s.data())->sType == type;
+            });
+            isSupported &=
+                counterpart != supported.m_others.end() && covers(other.data(), counterpart->data(), other.size());
+        }
+
+        return isSupported;
+    }
+
+    VkPhysicalDeviceFeatures2& DeviceFeatures::chain()
+    {
+        m_head.features = core;
+        m_head.pNext    = &v11;
+        v11.pNext       = &v12;
+
+        auto* last = reinterpret_cast<VkBaseOutStructure*>(&v12);
+        for (std::vector<std::byte>& other : m_others)
+        {
+            last->pNext = reinterpret_cast<VkBaseOutStructure*>(other.data());
+            last        = last->pNext;
+        }
+        last->pNext = nullptr;
+
+        return m_head;
     }
 
     DeviceBuilder DeviceBuilder::offline()
@@ -180,9 +183,7 @@ namespace vzt
     }
 
     PhysicalDevice::PhysicalDevice(VkPhysicalDevice handle) : m_handle(handle)
-    {
-        vkGetPhysicalDeviceProperties(m_handle, &m_properties);
-    }
+    { vkGetPhysicalDeviceProperties(m_handle, &m_properties); }
 
     bool PhysicalDevice::isSuitable(DeviceBuilder configuration, View<Surface> surface) const
     {
@@ -214,14 +215,20 @@ namespace vzt
         if (surface)
             isSuitable &= hasSwapchain(m_handle, surface->getHandle());
 
-        const auto& requestedDeviceFeatures   = configuration.getDeviceFeatures();
-        const auto  requestedPhysicalFeatures = requestedDeviceFeatures.getPhysicalFeatures();
-
-        VkPhysicalDeviceFeatures supportedFeatures;
-        vkGetPhysicalDeviceFeatures(m_handle, &supportedFeatures);
-        isSuitable &= GenericDeviceFeature::match(requestedPhysicalFeatures, GenericDeviceFeature(supportedFeatures));
+        const DeviceFeatures& requested = configuration.getDeviceFeatures();
+        isSuitable &= requested.isSupportedBy(getFeatures(requested));
 
         return isSuitable;
+    }
+
+    DeviceFeatures PhysicalDevice::getFeatures(DeviceFeatures features) const
+    {
+        // The driver overwrites every field of the structures it knows
+        VkPhysicalDeviceFeatures2& head = features.chain();
+        vkGetPhysicalDeviceFeatures2(m_handle, &head);
+        features.core = head.features;
+
+        return features;
     }
 
     bool PhysicalDevice::hasExtensions(const std::vector<const char*>& deviceExtensions) const
@@ -350,7 +357,7 @@ namespace vzt
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos    = queueCreateInfos.data();
         createInfo.pEnabledFeatures     = nullptr;
-        createInfo.pNext                = &configuration.getDeviceFeatures().getAllFeatures();
+        createInfo.pNext                = &configuration.getDeviceFeatures().chain();
 
         const auto& extensions             = configuration.getExtensions();
         createInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());

@@ -12,6 +12,7 @@
 
 #include <vk_mem_alloc.h>
 #include <volk.h>
+#include <vulkan/utility/vk_struct_helper.hpp>
 
 #define VZT_DEFINE_TO_VULKAN_FUNCTION(BaseType, VulkanType) \
     inline constexpr VulkanType toVulkan(const BaseType l) { return static_cast<VulkanType>(l); }

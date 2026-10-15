@@ -2,9 +2,20 @@
 
 namespace vzt
 {
-    inline const std::vector<GenericDeviceFeature>& DeviceFeatures::getFeatures() const { return m_features; }
-    inline const VkPhysicalDeviceFeatures2& DeviceFeatures::getPhysicalFeatures() const { return m_physicalFeatures; }
-    inline VkPhysicalDeviceFeatures2&       DeviceFeatures::getPhysicalFeatures() { return m_physicalFeatures; }
+    template <class Type>
+    Type& DeviceFeatures::get()
+    {
+        const VkStructureType type = vku::GetSType<Type>();
+        for (std::vector<std::byte>& other : m_others)
+        {
+            if (reinterpret_cast<VkBaseOutStructure*>(other.data())->sType == type)
+                return *reinterpret_cast<Type*>(other.data());
+        }
+
+        Type& structure = *reinterpret_cast<Type*>(m_others.emplace_back(sizeof(Type)).data());
+        structure.sType = type;
+        return structure;
+    }
 
     inline void DeviceBuilder::set(DeviceFeatures features) { m_features = std::move(features); }
     inline void DeviceBuilder::add(QueueType queueType) { m_queueTypes |= queueType; }

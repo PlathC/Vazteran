@@ -1,6 +1,7 @@
 #ifndef VZT_VULKAN_DEVICE_HPP
 #define VZT_VULKAN_DEVICE_HPP
 
+#include <cstddef>
 #include <functional>
 #include <set>
 #include <vector>
@@ -49,52 +50,28 @@ namespace vzt
         constexpr Extension DynamicRendering        = VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME;
     } // namespace dext
 
-    // Based on https://github.com/charles-lunarg/vk-bootstrap/blob/master/src/VkBootstrap.h#L161
-    // Copyright � 2020 Charles Giessen (charles@lunarg.com)
-    // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-    // documentation files (the �Software�), to deal in the Software without restriction, including without limitation
-    // the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
-    // to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above
-    // copyright notice and this permission notice shall be included in all copies or substantial portions of the
-    // Software. THE SOFTWARE IS PROVIDED �AS IS�, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
-    // LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
-    // SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-    // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-    // DEALINGS IN THE SOFTWARE.
-    struct GenericDeviceFeature
+    struct DeviceFeatures
     {
-        static const uint32_t MaximumFieldCount = 256;
-
-        template <class GenericDeviceFeatureT>
-        GenericDeviceFeature(const GenericDeviceFeatureT& features)
-        {
-            std::memset(fields, 0xff, sizeof(VkBool32) * MaximumFieldCount);
-            std::memcpy(this, &features, sizeof(GenericDeviceFeatureT));
-        }
-
-        static bool match(const GenericDeviceFeature& requested, const GenericDeviceFeature& supported);
-
-        VkStructureType sType = static_cast<VkStructureType>(0);
-        void*           pNext = nullptr;
-        VkBool32        fields[MaximumFieldCount];
-    };
-
-    class DeviceFeatures
-    {
-      public:
         static DeviceFeatures standard();
         static DeviceFeatures rt();
 
-        void                                            add(GenericDeviceFeature feature);
-        inline const std::vector<GenericDeviceFeature>& getFeatures() const;
-        inline const VkPhysicalDeviceFeatures2&         getPhysicalFeatures() const;
-        inline VkPhysicalDeviceFeatures2&               getPhysicalFeatures();
-        const VkPhysicalDeviceFeatures2&                getAllFeatures() const;
+        VkPhysicalDeviceFeatures         core{};
+        VkPhysicalDeviceVulkan11Features v11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
+        VkPhysicalDeviceVulkan12Features v12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
+
+        // Returns the structure of the requested type, adding it to the chain if needed
+        template <class Type>
+        Type& get();
+
+        // Returns true if every enabled feature is also enabled in supported
+        bool isSupportedBy(const DeviceFeatures& supported) const;
+
+        // Links every structure and returns the head of the chain, to be given to Vulkan
+        VkPhysicalDeviceFeatures2& chain();
 
       private:
-        // Mutable to allow dynamic chain creation
-        mutable VkPhysicalDeviceFeatures2 m_physicalFeatures{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr, {}};
-        mutable std::vector<GenericDeviceFeature> m_features;
+        VkPhysicalDeviceFeatures2           m_head{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
+        std::vector<std::vector<std::byte>> m_others; // Zero-initialized storage of each structure added by get()
     };
 
     class DeviceBuilder
@@ -129,7 +106,9 @@ namespace vzt
         PhysicalDevice() = default;
         PhysicalDevice(VkPhysicalDevice handle);
 
-        bool                                 isSuitable(DeviceBuilder configuration, View<Surface> surface = {}) const;
+        bool isSuitable(DeviceBuilder configuration, View<Surface> surface = {}) const;
+        // Returns the support of every structure present in features
+        DeviceFeatures                       getFeatures(DeviceFeatures features = {}) const;
         bool                                 hasExtensions(const std::vector<const char*>& extensions) const;
         std::vector<VkQueueFamilyProperties> getQueueFamiliesProperties() const;
         bool                                 canQueueFamilyPresent(uint32_t id, View<Surface> surface) const;
