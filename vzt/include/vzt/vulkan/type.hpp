@@ -294,6 +294,12 @@ namespace vzt
     };
     VZT_DEFINE_TO_VULKAN_FUNCTION(Format, VkFormat)
 
+    inline constexpr bool hasStencil(Format format)
+    {
+        return format == Format::S8UInt || format == Format::D16UNormS8UInt || format == Format::D24UNormS8UInt ||
+               format == Format::D32SFloatS8UInt;
+    }
+
     enum class FormatFeature
     {
         SampledImage             = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT,

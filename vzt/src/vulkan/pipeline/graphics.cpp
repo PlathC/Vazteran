@@ -223,7 +223,7 @@ namespace vzt
             pipelineRenderingCreateInfo.depthAttachmentFormat =
                 m_builder.depth ? toVulkan(*m_builder.depth) : VK_FORMAT_UNDEFINED;
             pipelineRenderingCreateInfo.stencilAttachmentFormat =
-                m_builder.depth ? toVulkan(*m_builder.depth) : VK_FORMAT_UNDEFINED;
+                m_builder.depth && hasStencil(*m_builder.depth) ? toVulkan(*m_builder.depth) : VK_FORMAT_UNDEFINED;
 
             pipelineInfo.pNext = &pipelineRenderingCreateInfo;
         }
