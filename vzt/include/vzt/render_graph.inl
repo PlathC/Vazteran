@@ -23,7 +23,7 @@ namespace vzt
     {
         assert(b < m_graph->getBackbufferNb());
 
-        const uint32_t outputNb = static_cast<uint32_t>(m_colorOutputs.size());
+        const uint32_t outputNb = static_cast<uint32_t>(m_colorOutputImageViews.size() / m_graph->getBackbufferNb());
         assert(outputNb > 0);
 
         return {m_colorOutputImageViews.data() + outputNb * b, outputNb};
@@ -32,7 +32,7 @@ namespace vzt
     inline View<ImageView> Pass::getDepth(uint32_t b) const
     {
         assert(b < m_graph->getBackbufferNb());
-        assert(m_depthOutput);
+        assert(!m_depthOutputImageViews.empty());
 
         return m_depthOutputImageViews[b];
     }

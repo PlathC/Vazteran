@@ -19,14 +19,6 @@ namespace vzt
     class Swapchain;
     class UniformBuffer;
 
-    struct AttachmentUse
-    {
-        Format      format;
-        ImageLayout initialLayout;
-        ImageLayout finalLayout;
-        ImageLayout usedLayout;
-    };
-
     struct AttachmentBuilder
     {
         ImageUsage         usage;
@@ -112,6 +104,17 @@ namespace vzt
         Compute  = toUnderlying(QueueType::Compute)
     };
 
+    // How a pass uses a resource
+    enum class Use
+    {
+        ColorAttachment,
+        DepthAttachment,
+        Sampled,
+        StorageImage,
+        StorageBuffer,
+        Indirect,
+    };
+
     class RenderGraph;
     class Pass
     {
@@ -172,54 +175,27 @@ namespace vzt
         };
         std::vector<PassUniform> m_uniforms;
 
-        struct PassAttachment
+        struct ResourceUse
         {
-            Handle        handle;
-            std::string   name; // Shader parameter when bound to the shader, debug label otherwise
-            AttachmentUse use;
+            Handle            handle; // Version written by this use, or read when it only reads
+            Use               use;
+            bool              read      = false;
+            bool              write     = false;
+            std::string       parameter = {}; // Shader parameter, empty when not bound to the shader
+            uint32_t          binding   = ~0u;
+            Optional<Range<>> range     = {};
+            ColorBlend        blend     = {.blendEnable = false};
+            ImageAspect       aspect    = ImageAspect::Color;
 
-            uint32_t binding = ~0u;
-
-            Access        waitAccess   = Access::None;
-            Access        targetAccess = Access::None;
-            PipelineStage waitStage    = PipelineStage::None;
-            PipelineStage targetStage  = PipelineStage::None;
-            ImageAspect   aspect       = ImageAspect::Color;
-
-            ColorBlend blend = {.blendEnable = false};
-
-            bool operator<(const PassAttachment& other) const { return handle.id < other.handle.id; }
+            // Barrier, set by the add functions
+            ImageLayout   initialLayout = ImageLayout::Undefined;
+            ImageLayout   layout        = ImageLayout::Undefined;
+            PipelineStage waitStage     = PipelineStage::None;
+            PipelineStage targetStage   = PipelineStage::None;
+            Access        waitAccess    = Access::None;
+            Access        targetAccess  = Access::None;
         };
-
-        struct PassStorage
-        {
-            Handle            handle;
-            std::string       name; // Shader parameter, empty when not bound to the shader
-            Optional<Range<>> range;
-
-            Access        waitAccess;
-            Access        targetAccess;
-            PipelineStage waitStage;
-            PipelineStage targetStage;
-
-            uint32_t binding = ~0u;
-
-            bool operator<(const PassStorage& other) const { return handle.id < other.handle.id; }
-        };
-
-        // Shader read/write
-        std::vector<PassStorage> m_storageInputs;
-        std::vector<PassStorage> m_storageOutputs;
-
-        std::vector<PassAttachment> m_textureInputs;
-        std::vector<PassAttachment> m_storageImageOutputs;
-
-        // Graphics pass read/write
-        std::vector<PassAttachment> m_colorInputs;
-        std::vector<PassAttachment> m_colorOutputs;
-
-        Optional<PassAttachment> m_depthInput;
-        Optional<PassAttachment> m_depthOutput;
+        std::vector<ResourceUse> m_uses;
 
         // Descriptor data
         DescriptorPool         m_pool;
