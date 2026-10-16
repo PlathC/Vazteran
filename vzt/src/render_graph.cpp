@@ -506,12 +506,12 @@ namespace vzt
             HandleMap<ImageLayout> passLayouts{};
             for (Pass::ResourceUse& use : pass->m_uses)
             {
-                const bool               isImage = use.use != Use::StorageBuffer && use.use != Use::Indirect;
-                const AttachmentBuilder& builder = m_attachmentBuilders[use.handle];
-                if (isImage && any(builder.usage & ImageUsage::DepthStencilAttachment))
+                const bool isImage = use.use != Use::StorageBuffer && use.use != Use::Indirect;
+                if (isImage && any(m_attachmentBuilders[use.handle].usage & ImageUsage::DepthStencilAttachment))
                 {
-                    const bool hasStencilAspect = builder.format && hasStencil(*builder.format);
-                    use.aspect = hasStencilAspect ? ImageAspect::Depth | ImageAspect::Stencil : ImageAspect::Depth;
+                    const auto& format = m_attachmentBuilders[use.handle].format;
+                    use.aspect =
+                        format && hasStencil(*format) ? ImageAspect::Depth | ImageAspect::Stencil : ImageAspect::Depth;
                 }
 
                 const Pass::ResourceState state = getState(use, pass->m_type);
@@ -536,8 +536,9 @@ namespace vzt
                 if (previous == tracked.end())
                 {
                     // First use of the frame: image contents are discarded
+                    // Buffers shared by every frame must also wait for the previous execution
                     Tracked first{state, use.write};
-                    if (isImage)
+                    if (isImage || !m_storageBuilders.at(use.handle).perFrame)
                     {
                         pass->m_barriers.push_back({use.handle, use.use, use.aspect, {}, state});
                         first.firstPass    = pass.get();
@@ -566,7 +567,7 @@ namespace vzt
             }
         }
 
-        // Targets are shared by every frame: the first use waits for the last use of the previous execution
+        // Resources shared by every frame: the first use waits for the last use of the previous execution
         for (const auto& [handle, last] : tracked)
         {
             if (!last.firstPass || isBackBuffer(handle))
@@ -735,8 +736,8 @@ namespace vzt
 
     View<Buffer> TaskGraph::getStorage(uint32_t backbufferId, Handle handle) const
     {
-        const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
-        return m_storages[handlePhysicalId * m_frameNb + backbufferId];
+        const std::vector<Buffer>& copies = m_storages[m_handleToPhysical.find(handle)->second];
+        return copies[copies.size() == 1 ? 0 : backbufferId];
     }
 
     const AttachmentBuilder& TaskGraph::getConfiguration(Handle handle) { return m_attachmentBuilders[handle]; }
@@ -897,8 +898,9 @@ namespace vzt
             storageId++;
 
             const StorageBuilder& storageBuilder = m_storageBuilders[handle];
-            for (uint32_t i = 0; i < m_frameNb; i++)
-                m_storages.emplace_back(Buffer{
+            auto&                 copies         = m_storages.emplace_back();
+            for (uint32_t i = 0; i < (storageBuilder.perFrame ? m_frameNb : 1); i++)
+                copies.emplace_back(Buffer{
                     m_device,
                     storageBuilder.size,
                     storageBuilder.usage,

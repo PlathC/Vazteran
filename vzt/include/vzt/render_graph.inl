@@ -3,9 +3,9 @@
 namespace vzt
 {
     template <class Type>
-    StorageBuilder StorageBuilder::fromType(BufferUsage usage, MemoryLocation location, bool mappable)
+    StorageBuilder StorageBuilder::fromType(BufferUsage usage, MemoryLocation location, bool mappable, bool perFrame)
     {
-        return StorageBuilder(sizeof(Type), usage, location, mappable);
+        return StorageBuilder(sizeof(Type), usage, location, mappable, perFrame);
     }
 
     inline View<Buffer> PassContext::buffer(Handle storage) const { return graph.getStorage(frame, storage); }

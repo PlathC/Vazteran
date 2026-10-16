@@ -39,10 +39,12 @@ namespace vzt
         BufferUsage    usage;
         MemoryLocation location = MemoryLocation::Device;
         bool           mappable = false;
+        bool           perFrame = false; // Duplicate the storage once per frame
 
         template <class Type>
         static StorageBuilder fromType( //
-            BufferUsage usage, MemoryLocation location = MemoryLocation::Device, bool mappable = false);
+            BufferUsage usage, MemoryLocation location = MemoryLocation::Device, bool mappable = false,
+            bool perFrame = false);
     };
 
     struct Attachment
@@ -383,8 +385,8 @@ namespace vzt
         std::vector<std::unique_ptr<Pass>>           m_passes;
         std::unordered_map<std::size_t, std::size_t> m_versions; // [handle id]
 
-        std::vector<DeviceImage> m_images;   // [imageId]
-        std::vector<Buffer>      m_storages; // [storageId]
+        std::vector<DeviceImage>         m_images;   // [imageId]
+        std::vector<std::vector<Buffer>> m_storages; // [storageId][copy]
 
         Optional<Handle>      m_backbuffer;
         uint32_t              m_frameNb = 1;

@@ -68,7 +68,7 @@ int main(int /* argc */, char** /* argv */)
     auto instancesPosition = graph.addStorage( //
         vzt::StorageBuilder{sizeof(vzt::Vec4f) * MaxInstanceCount, vzt::BufferUsage::StorageBuffer});
     auto drawCommands      = graph.addStorage(vzt::StorageBuilder::fromType<VkDrawIndexedIndirectCommand>(
-        vzt::BufferUsage::StorageBuffer | vzt::BufferUsage::IndirectBuffer, vzt::MemoryLocation::Device, true));
+        vzt::BufferUsage::StorageBuffer | vzt::BufferUsage::IndirectBuffer, vzt::MemoryLocation::Device, true, true));
 
     // Instance generation pass
     auto& instanceGeneration = graph.addCompute( //
