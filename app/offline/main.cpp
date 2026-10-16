@@ -132,14 +132,6 @@ int main(int /* argc */, char** /* argv */)
     commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader,
                      {ubo.getSpan(0), vzt::Access::TransferWrite, vzt::Access::UniformRead});
 
-    {
-        vzt::ImageBarrier transition{};
-        transition.image     = output;
-        transition.oldLayout = vzt::ImageLayout::Undefined;
-        transition.newLayout = vzt::ImageLayout::General;
-        commands.barrier(vzt::PipelineStage::BottomOfPipe, vzt::PipelineStage::TopOfPipe, transition);
-    }
-
     for (uint32_t i = 0; i < graph.size(); i++)
     {
         auto& pass = graph[i];
@@ -167,7 +159,7 @@ int main(int /* argc */, char** /* argv */)
 
         vzt::ImageBarrier transition{};
         transition.image     = output;
-        transition.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
+        transition.oldLayout = vzt::ImageLayout::General; // Final layout of the graph
         transition.newLayout = vzt::ImageLayout::TransferSrcOptimal;
         commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::Transfer, transition);
 
