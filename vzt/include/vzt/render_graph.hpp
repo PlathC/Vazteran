@@ -133,15 +133,13 @@ namespace vzt
 
         virtual ~Pass() = default;
 
-        // `parameter` is the name of the shader parameter the resource is bound to
-        void addStorageInputIndirect(const Handle& storage, Optional<Range<>> range = {});
-        void addStorageInput(std::string parameter, const Handle& storage, Optional<Range<>> range = {});
-        void addStorageOutput(std::string parameter, const Handle& storage, Optional<Range<>> range = {});
-        void addStorageInputOutput(std::string parameter, const Handle& storage, Optional<Range<>> range = {});
-        void addColorTextureInput(std::string parameter, const Handle& handle);
-        void addDepthTextureInput(std::string parameter, const Handle& handle);
+        // `parameter` is the name of the resource in the shader, empty when the shader does not see it (Indirect).
+        // `use` must match the handle: Sampled / StorageImage for images, StorageBuffer / Indirect for buffers.
+        void read(const Handle& handle, Use use, std::string parameter = "", Optional<Range<>> range = {});
+        void write(const Handle& handle, Use use, std::string parameter = "", Optional<Range<>> range = {});
+        void readWrite(const Handle& handle, Use use, std::string parameter = "", Optional<Range<>> range = {});
 
-        void bind(std::string name, const UniformBuffer& buffer);
+        void bind(const UniformBuffer& buffer, std::string name);
 
         virtual bool isDependingOn(const Pass& other) const;
         void         record(uint32_t i, CommandBuffer& commands) const;
@@ -160,6 +158,8 @@ namespace vzt
         virtual void resize();
 
         void bindBackbuffer(uint32_t frame, uint32_t image);
+        void declare(const Handle& handle, Use use, bool read, bool write, std::string parameter,
+                     Optional<Range<>> range);
 
         // Creates the descriptor sets of the pass from its pipeline's layout
         void compileDescriptors(const Program& program, const DescriptorLayout& layout);
@@ -251,6 +251,20 @@ namespace vzt
         ComputePipeline m_pipeline;
     };
 
+    struct ColorOptions
+    {
+        Optional<Vec4> clear = Vec4(0.f); // Contents are discarded when empty
+        ColorBlend     blend = {.blendEnable = false};
+        bool           load  = false; // Keep the previous contents (read-write)
+    };
+
+    struct DepthOptions
+    {
+        Optional<float> clear    = 1.f;
+        bool            load     = false; // Keep the previous contents (read-write)
+        bool            readOnly = false;
+    };
+
     class GraphicsPass : public Pass
     {
       public:
@@ -262,14 +276,8 @@ namespace vzt
 
         ~GraphicsPass() override = default;
 
-        void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
-        void setDepthOutput(const Handle& depthStencil, std::string attachmentName = "", Optional<float> clear = 1.f);
-        void setDepthInputOutput(const Handle& depthStencil, std::string attachmentName = "");
-
-        void addColorOutput(const Handle& attachment, std::string attachmentName = "", Optional<Vec4> clear = Vec4(0.f),
-                            ColorBlend blend = {.blendEnable = false});
-        void addColorInputOutput(const Handle& attachment, std::string inName = "", std::string outName = "",
-                                 ColorBlend blend = {.blendEnable = false});
+        void color(const Handle& attachment, ColorOptions options = {});
+        void depth(const Handle& attachment, DepthOptions options = {});
 
         // The pass begins and ends rendering around the record function, unless it is manual (see GraphicsContext)
         void setRecordFunction(std::function<void(GraphicsContext&)> record);
