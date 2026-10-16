@@ -64,7 +64,7 @@ namespace vzt
     {
         std::size_t id;
         HandleType  type;
-        std::size_t state = 0; // Allows to differentiate version of handle
+        std::size_t state = 0; // Version, tracked by the graph
 
         struct hash
         {
@@ -99,7 +99,8 @@ namespace vzt
     {
         const GraphicsPass& pass;
 
-        // Begins rendering on the attachments of the pass. The viewport and scissor cover `area` (full extent by default)
+        // Begins rendering on the attachments of the pass. The viewport and scissor cover `area` (full extent by
+        // default)
         void begin(Optional<Rect2D> area = {}) const;
         void end() const { commands.endRendering(); }
     };
@@ -135,8 +136,8 @@ namespace vzt
         // `parameter` is the name of the shader parameter the resource is bound to
         void addStorageInputIndirect(const Handle& storage, Optional<Range<>> range = {});
         void addStorageInput(std::string parameter, const Handle& storage, Optional<Range<>> range = {});
-        void addStorageOutput(std::string parameter, Handle& storage, Optional<Range<>> range = {});
-        void addStorageInputOutput(std::string parameter, Handle& storage, Optional<Range<>> range = {});
+        void addStorageOutput(std::string parameter, const Handle& storage, Optional<Range<>> range = {});
+        void addStorageInputOutput(std::string parameter, const Handle& storage, Optional<Range<>> range = {});
         void addColorTextureInput(std::string parameter, const Handle& handle);
         void addDepthTextureInput(std::string parameter, const Handle& handle);
 
@@ -188,8 +189,8 @@ namespace vzt
             uint32_t          binding   = ~0u;
             Optional<Range<>> range     = {};
             ColorBlend        blend     = {.blendEnable = false};
-            Optional<Vec4>    clear     = {}; // Attachments only, loaded when read, cleared with this value or discarded
-            ImageAspect       aspect    = ImageAspect::Color; // Resolved at compile for images
+            Optional<Vec4>    clear  = {}; // Attachments only, loaded when read, cleared with this value or discarded
+            ImageAspect       aspect = ImageAspect::Color; // Resolved at compile for images
         };
         std::vector<ResourceUse> m_uses;
 
@@ -262,12 +263,12 @@ namespace vzt
         ~GraphicsPass() override = default;
 
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
-        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "", Optional<float> clear = 1.f);
-        void setDepthInputOutput(Handle& depthStencil, std::string attachmentName = "");
+        void setDepthOutput(const Handle& depthStencil, std::string attachmentName = "", Optional<float> clear = 1.f);
+        void setDepthInputOutput(const Handle& depthStencil, std::string attachmentName = "");
 
-        void addColorOutput(Handle& attachment, std::string attachmentName = "", Optional<Vec4> clear = Vec4(0.f),
+        void addColorOutput(const Handle& attachment, std::string attachmentName = "", Optional<Vec4> clear = Vec4(0.f),
                             ColorBlend blend = {.blendEnable = false});
-        void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "",
+        void addColorInputOutput(const Handle& attachment, std::string inName = "", std::string outName = "",
                                  ColorBlend blend = {.blendEnable = false});
 
         // The pass begins and ends rendering around the record function, unless it is manual (see GraphicsContext)
@@ -351,6 +352,10 @@ namespace vzt
 
         const AttachmentBuilder& getConfiguration(Handle handle);
 
+        // Version of a resource read by a pass / produced by a write: dependencies follow declaration order
+        Handle readVersion(const Handle& handle) const;
+        Handle writeVersion(const Handle& handle);
+
         std::vector<std::size_t> sort();
         void                     computeBarriers();
 
@@ -365,9 +370,10 @@ namespace vzt
         HandleMap<AttachmentBuilder> m_attachmentBuilders;
         HandleMap<StorageBuilder>    m_storageBuilders;
 
-        std::hash<std::size_t>             m_hash{};
-        HandleMap<std::size_t>             m_handleToPhysical;
-        std::vector<std::unique_ptr<Pass>> m_passes;
+        std::hash<std::size_t>                       m_hash{};
+        HandleMap<std::size_t>                       m_handleToPhysical;
+        std::vector<std::unique_ptr<Pass>>           m_passes;
+        std::unordered_map<std::size_t, std::size_t> m_versions; // [handle id]
 
         std::vector<DeviceImage> m_images;   // [imageId]
         std::vector<Buffer>      m_storages; // [storageId]

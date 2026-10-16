@@ -23,7 +23,7 @@ namespace vzt
     {
         VZT_ASSERT(handle.type == HandleType::Storage);
         m_uses.push_back({
-            .handle    = handle,
+            .handle    = m_graph->readVersion(handle),
             .use       = Use::StorageBuffer,
             .read      = true,
             .parameter = std::move(parameter),
@@ -35,20 +35,18 @@ namespace vzt
     {
         VZT_ASSERT(handle.type == HandleType::Storage);
         m_uses.push_back({
-            .handle = handle,
+            .handle = m_graph->readVersion(handle),
             .use    = Use::Indirect,
             .read   = true,
             .range  = range,
         });
     }
 
-    void Pass::addStorageOutput(std::string parameter, Handle& handle, Optional<Range<std::size_t>> range)
+    void Pass::addStorageOutput(std::string parameter, const Handle& handle, Optional<Range<std::size_t>> range)
     {
-        handle.state++;
-
         const bool isImage = handle.type == HandleType::Attachment;
         m_uses.push_back({
-            .handle    = handle,
+            .handle    = m_graph->writeVersion(handle),
             .use       = isImage ? Use::StorageImage : Use::StorageBuffer,
             .write     = true,
             .parameter = std::move(parameter),
@@ -56,13 +54,11 @@ namespace vzt
         });
     }
 
-    void Pass::addStorageInputOutput(std::string parameter, Handle& handle, Optional<Range<std::size_t>> range)
+    void Pass::addStorageInputOutput(std::string parameter, const Handle& handle, Optional<Range<std::size_t>> range)
     {
-        handle.state++;
-
         const bool isImage = handle.type == HandleType::Attachment;
         m_uses.push_back({
-            .handle    = handle,
+            .handle    = m_graph->writeVersion(handle),
             .use       = isImage ? Use::StorageImage : Use::StorageBuffer,
             .read      = true,
             .write     = true,
@@ -75,7 +71,7 @@ namespace vzt
     {
         assert(handle.type == HandleType::Attachment);
         m_uses.push_back({
-            .handle    = handle,
+            .handle    = m_graph->readVersion(handle),
             .use       = Use::Sampled,
             .read      = true,
             .parameter = std::move(parameter),
@@ -86,7 +82,7 @@ namespace vzt
     {
         assert(handle.type == HandleType::Attachment);
         m_uses.push_back({
-            .handle    = handle,
+            .handle    = m_graph->readVersion(handle),
             .use       = Use::Sampled,
             .read      = true,
             .parameter = std::move(parameter),
@@ -123,7 +119,8 @@ namespace vzt
             if (use.use != Use::ColorAttachment && use.use != Use::DepthAttachment)
                 continue;
 
-            const Extent3D size = m_graph->m_attachmentBuilders[use.handle].size.value_or(m_graph->getBackbufferExtent());
+            const Extent3D size =
+                m_graph->m_attachmentBuilders[use.handle].size.value_or(m_graph->getBackbufferExtent());
             return {size.width, size.height};
         }
 
@@ -149,7 +146,9 @@ namespace vzt
             const RenderingInfo::RenderingAttachment attachment{
                 .view       = isColor ? colors[color++] : getDepth(frame),
                 .layout     = layout,
-                .loadOp     = use.read ? LoadOp::Load : use.clear ? LoadOp::Clear : LoadOp::DontCare,
+                .loadOp     = use.read    ? LoadOp::Load
+                              : use.clear ? LoadOp::Clear
+                                          : LoadOp::DontCare,
                 .clearValue = use.clear.value_or(Vec4(0.f)),
             };
 
@@ -435,20 +434,19 @@ namespace vzt
     {
         assert(handle.type == HandleType::Attachment);
         m_uses.push_back({
-            .handle = handle,
+            .handle = m_graph->readVersion(handle),
             .use    = Use::DepthAttachment,
             .read   = true,
             .aspect = ImageAspect::Depth,
         });
     }
 
-    void GraphicsPass::setDepthOutput(Handle& handle, std::string, Optional<float> clear)
+    void GraphicsPass::setDepthOutput(const Handle& handle, std::string, Optional<float> clear)
     {
         assert(handle.type == HandleType::Attachment);
 
-        handle.state++;
         m_uses.push_back({
-            .handle = handle,
+            .handle = m_graph->writeVersion(handle),
             .use    = Use::DepthAttachment,
             .write  = true,
             .clear  = clear ? Optional<Vec4>{Vec4(*clear, 0.f, 0.f, 0.f)} : Optional<Vec4>{},
@@ -456,13 +454,12 @@ namespace vzt
         });
     }
 
-    void GraphicsPass::setDepthInputOutput(Handle& handle, std::string)
+    void GraphicsPass::setDepthInputOutput(const Handle& handle, std::string)
     {
         assert(handle.type == HandleType::Attachment);
 
-        handle.state++;
         m_uses.push_back({
-            .handle = handle,
+            .handle = m_graph->writeVersion(handle),
             .use    = Use::DepthAttachment,
             .read   = true,
             .write  = true,
@@ -470,13 +467,12 @@ namespace vzt
         });
     }
 
-    void GraphicsPass::addColorOutput(Handle& handle, std::string, Optional<Vec4> clear, ColorBlend blend)
+    void GraphicsPass::addColorOutput(const Handle& handle, std::string, Optional<Vec4> clear, ColorBlend blend)
     {
         assert(handle.type == HandleType::Attachment);
 
-        handle.state++;
         m_uses.push_back({
-            .handle = handle,
+            .handle = m_graph->writeVersion(handle),
             .use    = Use::ColorAttachment,
             .write  = true,
             .blend  = blend,
@@ -484,13 +480,12 @@ namespace vzt
         });
     }
 
-    void GraphicsPass::addColorInputOutput(Handle& handle, std::string, std::string, ColorBlend blend)
+    void GraphicsPass::addColorInputOutput(const Handle& handle, std::string, std::string, ColorBlend blend)
     {
         assert(handle.type == HandleType::Attachment);
 
-        handle.state++;
         m_uses.push_back({
-            .handle = handle,
+            .handle = m_graph->writeVersion(handle),
             .use    = Use::ColorAttachment,
             .read   = true,
             .write  = true,
@@ -703,6 +698,14 @@ namespace vzt
 
         setBackbuffer(images, swapchain->getFrameNb(), ImageLayout::PresentSrcKHR, handle);
     }
+
+    Handle TaskGraph::readVersion(const Handle& handle) const
+    {
+        const auto it = m_versions.find(handle.id);
+        return {handle.id, handle.type, it == m_versions.end() ? 0 : it->second};
+    }
+
+    Handle TaskGraph::writeVersion(const Handle& handle) { return {handle.id, handle.type, ++m_versions[handle.id]}; }
 
     Handle TaskGraph::addAttachment(AttachmentBuilder builder)
     {
