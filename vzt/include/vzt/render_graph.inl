@@ -19,22 +19,22 @@ namespace vzt
     inline std::string_view Pass::getName() const { return m_name; }
     inline DescriptorPool&  Pass::getDescriptorPool() { return m_pool; }
 
-    inline CSpan<ImageView> Pass::getColorOutputs(uint32_t b) const
+    inline CSpan<View<ImageView>> Pass::getColorOutputs(uint32_t frame) const
     {
-        assert(b < m_graph->getBackbufferNb());
+        assert(frame < m_graph->getFrameNb());
 
-        const uint32_t outputNb = static_cast<uint32_t>(m_colorOutputImageViews.size() / m_graph->getBackbufferNb());
+        const uint32_t outputNb = static_cast<uint32_t>(m_colorOutputs.size() / m_graph->getFrameNb());
         assert(outputNb > 0);
 
-        return {m_colorOutputImageViews.data() + outputNb * b, outputNb};
+        return {m_colorOutputs.data() + outputNb * frame, outputNb};
     }
 
-    inline View<ImageView> Pass::getDepth(uint32_t b) const
+    inline View<ImageView> Pass::getDepth(uint32_t frame) const
     {
-        assert(b < m_graph->getBackbufferNb());
+        assert(frame < m_graph->getFrameNb());
         assert(!m_depthOutputImageViews.empty());
 
-        return m_depthOutputImageViews[b];
+        return m_depthOutputImageViews[frame];
     }
 
     inline ComputePipeline&         ComputePass::getPipeline() { return m_pipeline; }
@@ -51,7 +51,8 @@ namespace vzt
 
     inline Format       RenderGraph::getBackbufferFormat() const { return m_backbufferFormat; }
     inline Extent2D     RenderGraph::getBackbufferExtent() const { return m_backbufferExtent; }
-    inline uint32_t     RenderGraph::getBackbufferNb() const { return m_backbufferNb; }
+    inline uint32_t     RenderGraph::getFrameNb() const { return m_frameNb; }
+    inline uint32_t     RenderGraph::getBackbufferImageNb() const { return uint32_t(m_externalBackbuffers.size()); }
     inline View<Device> RenderGraph::getDevice() const { return m_device; }
 
     inline void  RenderGraph::setUserData(void* userData) { m_userData = userData; }

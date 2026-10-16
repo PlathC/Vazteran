@@ -21,6 +21,7 @@ namespace vzt
     struct SwapchainSubmission
     {
         uint32_t    imageId;
+        uint32_t    frameId;
         VkSemaphore imageAvailable;
         VkSemaphore renderComplete;
         VkFence     frameComplete;
@@ -48,6 +49,7 @@ namespace vzt
         inline Extent2D          getExtent() const;
         inline View<DeviceImage> getImage(std::size_t i) const;
         inline uint32_t          getImageNb() const;
+        inline uint32_t          getFrameNb() const;
         inline Format            getFormat() const;
 
       private:

@@ -146,9 +146,9 @@ namespace vzt
 
         inline std::string_view getName() const;
 
-        inline DescriptorPool&  getDescriptorPool();
-        inline CSpan<ImageView> getColorOutputs(uint32_t b) const;
-        inline View<ImageView>  getDepth(uint32_t b) const;
+        inline DescriptorPool&        getDescriptorPool();
+        inline CSpan<View<ImageView>> getColorOutputs(uint32_t frame) const;
+        inline View<ImageView>        getDepth(uint32_t b) const;
 
         friend RenderGraph;
 
@@ -156,6 +156,8 @@ namespace vzt
         Pass(RenderGraph& graph, std::string name, PassType type);
         virtual void compile() = 0;
         virtual void resize();
+
+        void bindBackbuffer(uint32_t frame, uint32_t image);
 
         // Creates the descriptor sets of the pass from its pipeline's layout
         void compileDescriptors(const Program& program, const DescriptorLayout& layout);
@@ -210,11 +212,13 @@ namespace vzt
         Optional<PassBarrier>    m_finalBarrier; // Backbuffer to its final layout, after the last pass using it
 
         // Descriptor data
-        DescriptorPool         m_pool;
-        std::vector<Texture>   m_textureSaves;
-        std::vector<ImageView> m_storageImageViews;
-        std::vector<ImageView> m_colorOutputImageViews;
-        std::vector<ImageView> m_depthOutputImageViews;
+        DescriptorPool               m_pool;
+        std::vector<Texture>         m_textureSaves;
+        std::vector<ImageView>       m_storageImageViews;
+        std::vector<ImageView>       m_colorOutputImageViews;
+        std::vector<ImageView>       m_backbufferViews; // [use][image]
+        std::vector<View<ImageView>> m_colorOutputs;    // [frame][color use]
+        std::vector<ImageView>       m_depthOutputImageViews;
 
         friend class GraphicsPass;
     };
@@ -286,6 +290,8 @@ namespace vzt
         // User configuration
         void setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle);
         void setBackbuffer(View<Swapchain> swapchain, Handle handle);
+        // The swapchain image the given frame renders to
+        void setBackbufferImage(uint32_t frame, uint32_t image);
 
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
@@ -317,7 +323,8 @@ namespace vzt
 
         inline Format       getBackbufferFormat() const;
         inline Extent2D     getBackbufferExtent() const;
-        inline uint32_t     getBackbufferNb() const;
+        inline uint32_t     getFrameNb() const;
+        inline uint32_t     getBackbufferImageNb() const;
         inline View<Device> getDevice() const;
 
         inline void  setUserData(void* userData);
@@ -354,11 +361,12 @@ namespace vzt
         std::vector<DeviceImage> m_images;   // [imageId  ]
         std::vector<Buffer>      m_storages; // [storageId]
 
-        Optional<Handle> m_backbuffer;
-        uint32_t         m_backbufferNb = 1;
-        Format           m_backbufferFormat;
-        Extent2D         m_backbufferExtent;
-        ImageLayout      m_backbufferLayout;
+        Optional<Handle>      m_backbuffer;
+        uint32_t              m_frameNb = 1;
+        std::vector<uint32_t> m_frameImages{0}; // [frame] -> index in m_externalBackbuffers
+        Format                m_backbufferFormat;
+        Extent2D              m_backbufferExtent;
+        ImageLayout           m_backbufferLayout;
 
         std::vector<View<DeviceImage>> m_externalBackbuffers;
 

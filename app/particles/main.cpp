@@ -123,7 +123,7 @@ int main(int /* argc */, char** /* argv */)
     }
 
     // Initialize buffer with default values
-    const uint32_t     frameNb       = swapchain.getImageNb();
+    const uint32_t     frameNb       = swapchain.getFrameNb();
     vzt::UniformBuffer modelsUbo     = vzt::UniformBuffer(device, sizeof(vzt::Mat4) * 3, frameNb, true);
     vzt::UniformBuffer generationUbo = vzt::UniformBuffer(device, sizeof(GenerationInput), frameNb, true);
     instanceGeneration.bind("uniforms", generationUbo);
@@ -135,11 +135,11 @@ int main(int /* argc */, char** /* argv */)
     const vzt::QueryPool queryPool = {
         device,
         vzt::QueryType::Timestamp,
-        swapchain.getImageNb() * (graph.size() + 1) * 2,
+        swapchain.getFrameNb() * (graph.size() + 1) * 2,
     };
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
-    auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
+    auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getFrameNb());
 
     // Compute AABB to place camera in front of the model
     vzt::Vec3 minimum{-1.f, -1.f, -1.f};
@@ -156,7 +156,7 @@ int main(int /* argc */, char** /* argv */)
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
 
     std::vector<uint64_t> times{};
-    times.resize((graph.size() + 1) * swapchain.getImageNb() * 2);
+    times.resize((graph.size() + 1) * swapchain.getFrameNb() * 2);
     bool hasBenchmark = false;
 
     // Actual rendering
@@ -170,7 +170,7 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        const uint32_t startId = submission->imageId * (graph.size() + 1) * 2;
+        const uint32_t startId = submission->frameId * (graph.size() + 1) * 2;
         if (hasBenchmark)
         {
             queryPool.getResults(startId, (graph.size() + 1) * 2,
@@ -193,7 +193,7 @@ int main(int /* argc */, char** /* argv */)
                 1000000.f;
             vzt::logger::info("Total: {}ms", ms);
         }
-        hasBenchmark |= submission->imageId == (swapchain.getImageNb() - 1);
+        hasBenchmark |= submission->frameId == (swapchain.getFrameNb() - 1);
 
         // Per frame update
         vzt::Quat orientation = {1.f, 0.f, 0.f, 0.f};
@@ -225,7 +225,7 @@ int main(int /* argc */, char** /* argv */)
         vzt::Mat4  view = camera.getViewMatrix(currentPosition, orientation);
         std::array matrices{view, camera.getProjectionMatrix(), glm::transpose(glm::inverse(view))};
 
-        vzt::CommandBuffer commands = commandPool[submission->imageId];
+        vzt::CommandBuffer commands = commandPool[submission->frameId];
         commands.begin();
 
         GenerationInput generationInput = {
@@ -233,16 +233,17 @@ int main(int /* argc */, char** /* argv */)
             uint32_t(inputs.time),
         };
 
-        generationUbo.write(commands, generationInput, submission->imageId);
-        modelsUbo.write(commands, matrices, submission->imageId);
+        generationUbo.write(commands, generationInput, submission->frameId);
+        modelsUbo.write(commands, matrices, submission->frameId);
 
-        commands.reset(queryPool, submission->imageId * (graph.size() + 1) * 2, (graph.size() + 1) * 2);
+        graph.setBackbufferImage(submission->frameId, submission->imageId);
+        commands.reset(queryPool, submission->frameId * (graph.size() + 1) * 2, (graph.size() + 1) * 2);
         commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 0, vzt::PipelineStage::BottomOfPipe);
         for (uint32_t i = 0; i < graph.size(); i++)
         {
             auto& pass = graph[i];
             commands.writeTimeStamp(queryPool, startId + i * 2 + 0, vzt::PipelineStage::BottomOfPipe);
-            pass->record(submission->imageId, commands);
+            pass->record(submission->frameId, commands);
             commands.writeTimeStamp(queryPool, startId + i * 2 + 1, vzt::PipelineStage::BottomOfPipe);
         }
         commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 1, vzt::PipelineStage::BottomOfPipe);

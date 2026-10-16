@@ -197,10 +197,10 @@ namespace vzt
 
         for (PassUniform& uniform : m_uniforms)
         {
-            if (uniform.buffer->getFrameNb() != m_graph->getBackbufferNb())
+            if (uniform.buffer->getFrameNb() != m_graph->getFrameNb())
                 throw std::runtime_error(
                     fmt::format("Pass \"{}\": uniform buffer \"{}\" has {} regions, the graph has {} frames.", m_name,
-                                uniform.name, uniform.buffer->getFrameNb(), m_graph->getBackbufferNb()));
+                                uniform.name, uniform.buffer->getFrameNb(), m_graph->getFrameNb()));
             uniform.binding = findBinding(uniform.name);
         }
         for (ResourceUse& use : m_uses)
@@ -238,7 +238,7 @@ namespace vzt
                 throw std::runtime_error(fmt::format("Pass \"{}\": swapchain images cannot be sampled.", m_name));
         }
 
-        const uint32_t backbufferNb = m_graph->getBackbufferNb();
+        const uint32_t backbufferNb = m_graph->getFrameNb();
 
         m_pool = DescriptorPool{device, layout, backbufferNb};
         m_pool.allocate(backbufferNb, layout);
@@ -248,9 +248,29 @@ namespace vzt
 
     void Pass::resize() { createDescriptors(); }
 
+    void Pass::bindBackbuffer(uint32_t frame, uint32_t image)
+    {
+        if (m_colorOutputs.empty())
+            return;
+
+        const uint32_t outputNb = static_cast<uint32_t>(m_colorOutputs.size() / m_graph->getFrameNb());
+        const uint32_t imageNb  = m_graph->getBackbufferImageNb();
+
+        uint32_t output = 0, backbufferUse = 0;
+        for (const ResourceUse& use : m_uses)
+        {
+            if (use.use != Use::ColorAttachment)
+                continue;
+
+            if (m_graph->isBackBuffer(use.handle))
+                m_colorOutputs[frame * outputNb + output] = m_backbufferViews[backbufferUse++ * imageNb + image];
+            output++;
+        }
+    }
+
     void Pass::createDescriptors()
     {
-        const uint32_t backbufferNb = m_graph->getBackbufferNb();
+        const uint32_t backbufferNb = m_graph->getFrameNb();
         View<Device>   device       = m_graph->getDevice();
 
         // Views refer to the graph's images, which are recreated on resize.
@@ -259,6 +279,21 @@ namespace vzt
         m_storageImageViews.clear();
         m_colorOutputImageViews.clear();
         m_depthOutputImageViews.clear();
+        m_backbufferViews.clear();
+        m_colorOutputs.clear();
+
+        // The backbuffer image of a frame changes at each acquisition: one view per swapchain image
+        const uint32_t imageNb = m_graph->getBackbufferImageNb();
+        m_backbufferViews.reserve(imageNb * m_uses.size());
+        for (const ResourceUse& use : m_uses)
+        {
+            if (use.use == Use::ColorAttachment && m_graph->isBackBuffer(use.handle))
+            {
+                for (uint32_t i = 0; i < imageNb; i++)
+                    m_backbufferViews.emplace_back(device, m_graph->m_externalBackbuffers[i], ImageAspect::Color);
+            }
+        }
+        m_colorOutputs.reserve(backbufferNb * m_uses.size());
 
         m_textureSaves.reserve(backbufferNb * m_uses.size());
         m_storageImageViews.reserve(backbufferNb * m_uses.size());
@@ -267,6 +302,7 @@ namespace vzt
 
         for (uint32_t i = 0; i < backbufferNb; i++)
         {
+            uint32_t          backbufferUse = 0;
             IndexedDescriptor descriptors{};
             for (const PassUniform& uniform : m_uniforms)
                 descriptors[uniform.binding] = uniform.buffer->getDescriptor(i);
@@ -276,7 +312,11 @@ namespace vzt
                 switch (use.use)
                 {
                 case Use::ColorAttachment:
-                    m_colorOutputImageViews.emplace_back(device, m_graph->getImage(i, use.handle), ImageAspect::Color);
+                    if (m_graph->isBackBuffer(use.handle))
+                        m_colorOutputs.emplace_back(m_backbufferViews[backbufferUse++ * imageNb]);
+                    else
+                        m_colorOutputs.emplace_back(m_colorOutputImageViews.emplace_back(
+                            device, m_graph->getImage(i, use.handle), ImageAspect::Color));
                     break;
                 case Use::DepthAttachment:
                     m_depthOutputImageViews.emplace_back(device, m_graph->getImage(i, use.handle), ImageAspect::Depth);
@@ -537,9 +577,16 @@ namespace vzt
         }
     }
 
+    void RenderGraph::setBackbufferImage(uint32_t frame, uint32_t image)
+    {
+        m_frameImages[frame] = image;
+        for (auto& pass : m_passes)
+            pass->bindBackbuffer(frame, image);
+    }
+
     void RenderGraph::setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle)
     {
-        m_backbufferNb     = 1;
+        m_frameNb     = 1;
         m_backbufferFormat = image->getFormat();
         m_backbufferExtent = image->getSize();
         m_backbufferLayout = finalLayout;
@@ -550,13 +597,14 @@ namespace vzt
 
     void RenderGraph::setBackbuffer(View<Swapchain> swapchain, const Handle handle)
     {
-        m_backbufferNb     = swapchain->getImageNb();
+        m_frameNb     = swapchain->getFrameNb();
         m_backbufferFormat = swapchain->getFormat();
         m_backbufferExtent = swapchain->getExtent();
         m_backbufferLayout = ImageLayout::PresentSrcKHR;
         m_backbuffer       = handle;
 
-        for (uint32_t i = 0; i < m_backbufferNb; ++i)
+        m_frameImages.assign(m_frameNb, 0);
+        for (uint32_t i = 0; i < swapchain->getImageNb(); ++i)
             m_externalBackbuffers.emplace_back(swapchain->getImage(i));
     }
 
@@ -659,16 +707,16 @@ namespace vzt
     View<DeviceImage> RenderGraph::getImage(uint32_t backbufferId, Handle handle) const
     {
         if (isBackBuffer(handle))
-            return m_externalBackbuffers[backbufferId];
+            return m_externalBackbuffers[m_frameImages[backbufferId]];
 
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
-        return m_images[handlePhysicalId * m_backbufferNb + backbufferId];
+        return m_images[handlePhysicalId * m_frameNb + backbufferId];
     }
 
     View<Buffer> RenderGraph::getStorage(uint32_t backbufferId, Handle handle) const
     {
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
-        return m_storages[handlePhysicalId * m_backbufferNb + backbufferId];
+        return m_storages[handlePhysicalId * m_frameNb + backbufferId];
     }
 
     const AttachmentBuilder& RenderGraph::getConfiguration(Handle handle) { return m_attachmentBuilders[handle]; }
@@ -818,7 +866,7 @@ namespace vzt
                 imageBuilder.sampleCount = attachmentBuilder.sampleCount;
                 imageBuilder.sharingMode = SharingMode::Exclusive;
 
-                for (uint32_t i = 0; i < m_backbufferNb; i++)
+                for (uint32_t i = 0; i < m_frameNb; i++)
                     m_images.emplace_back(m_device, imageBuilder);
             }
         }
@@ -830,7 +878,7 @@ namespace vzt
             storageId++;
 
             const StorageBuilder& storageBuilder = m_storageBuilders[handle];
-            for (uint32_t i = 0; i < m_backbufferNb; i++)
+            for (uint32_t i = 0; i < m_frameNb; i++)
                 m_storages.emplace_back(Buffer{
                     m_device,
                     storageBuilder.size,

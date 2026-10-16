@@ -39,7 +39,6 @@ namespace vzt
         m_imageAvailableSemaphores.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
         m_renderFinishedSemaphores.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
         m_inFlightFences.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
-        m_imagesInFlight.resize(m_configuration.maxFramesInFlight, VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -146,6 +145,7 @@ namespace vzt
 
         SwapchainSubmission submission;
         submission.imageId        = m_currentImage;
+        submission.frameId        = m_currentFrame;
         submission.imageAvailable = m_imageAvailableSemaphores[m_currentFrame];
         submission.renderComplete = m_renderFinishedSemaphores[m_currentFrame];
         submission.frameComplete  = m_inFlightFences[m_currentFrame];
@@ -198,7 +198,6 @@ namespace vzt
         m_imageNb = capabilities.minImageCount + 1;
         if (capabilities.maxImageCount > 0 && m_imageNb > capabilities.maxImageCount)
             m_imageNb = capabilities.maxImageCount;
-        m_imageNb = std::min(m_configuration.maxFramesInFlight, m_imageNb);
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -256,6 +255,7 @@ namespace vzt
 
         m_images.resize(m_imageNb);
         vkGetSwapchainImagesKHR(m_device->getHandle(), m_handle, &m_imageNb, m_images.data());
+        m_imagesInFlight.assign(m_imageNb, VK_NULL_HANDLE);
 
         m_userImages.clear();
         m_userImages.reserve(m_imageNb);
