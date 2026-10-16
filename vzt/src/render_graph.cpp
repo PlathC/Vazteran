@@ -491,7 +491,10 @@ namespace vzt
         return {};
     }
 
-    TaskGraph::TaskGraph(View<Device> device) : m_device(device) {}
+    TaskGraph::TaskGraph(View<Device> device, uint32_t frameNb)
+        : m_device(device), m_frameNb(frameNb), m_frameImages(frameNb, 0)
+    {
+    }
 
     void TaskGraph::computeBarriers()
     {
@@ -729,9 +732,6 @@ namespace vzt
 
     void TaskGraph::compile()
     {
-        // Back buffer must be set before compiling render graph
-        VZT_ASSERT(m_backbuffer);
-
         const std::vector<std::size_t>     executionOrder = sort();
         std::vector<std::unique_ptr<Pass>> sortedPasses{};
         sortedPasses.reserve(m_passes.size());
@@ -749,10 +749,27 @@ namespace vzt
             pass->compile();
     }
 
-    void TaskGraph::record(uint32_t i, CommandBuffer& commands)
+    void TaskGraph::record(uint32_t frame, CommandBuffer& commands)
     {
         for (auto& pass : m_passes)
-            pass->record(i, commands);
+            pass->record(frame, commands);
+    }
+
+    void TaskGraph::execute(View<Queue> queue, uint32_t frame)
+    {
+        if (!m_queue)
+        {
+            m_queue       = queue;
+            m_commandPool = CommandPool(m_device, queue, m_frameNb);
+        }
+        VZT_ASSERT(m_queue.get() == queue.get());
+
+        CommandBuffer commands = m_commandPool[frame];
+        commands.begin();
+        record(frame, commands);
+        commands.end();
+
+        queue->submit(commands);
     }
 
     void TaskGraph::resize(const Extent2D&)

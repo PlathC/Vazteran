@@ -308,7 +308,7 @@ namespace vzt
     {
       public:
         TaskGraph() = default;
-        TaskGraph(View<Device> device);
+        TaskGraph(View<Device> device, uint32_t frameNb = 1);
 
         // User configuration
         void setBackbuffer(CSpan<View<DeviceImage>> images, uint32_t frameNb, ImageLayout finalLayout, Handle handle);
@@ -336,7 +336,11 @@ namespace vzt
 
         // User information check
         void compile();
-        void record(uint32_t i, CommandBuffer& commands);
+        void record(uint32_t frame, CommandBuffer& commands);
+
+        // Records every pass in a command buffer owned by the graph and submits it. The previous execution of
+        // `frame` must be over: completion is not tracked, the caller waits (device.wait()).
+        void execute(View<Queue> queue, uint32_t frame = 0);
         void resize(const Extent2D& extent);
 
         inline std::unique_ptr<Pass>&       operator[](uint32_t passId);
@@ -409,6 +413,9 @@ namespace vzt
         ImageLayout           m_backbufferLayout;
 
         std::vector<View<DeviceImage>> m_externalBackbuffers;
+
+        View<Queue> m_queue;
+        CommandPool m_commandPool; // One buffer per frame, created by the first execute
 
         void* m_userData = nullptr;
     };
