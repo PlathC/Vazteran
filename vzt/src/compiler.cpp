@@ -258,6 +258,8 @@ namespace vzt
                 continue;
 
             shader.bindings[bindingId] = type;
+            if (const char* name = variableLayout->getName())
+                shader.bindingNames[name] = bindingId;
         }
 
         return shader;
@@ -336,6 +338,8 @@ namespace vzt
                     continue;
 
                 shader.bindings[bindingId] = type;
+                if (const char* name = variableLayout->getName())
+                    shader.bindingNames[name] = bindingId;
             }
 
             shaders.emplace_back(std::move(shader));

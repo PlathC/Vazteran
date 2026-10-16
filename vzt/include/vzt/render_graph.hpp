@@ -133,8 +133,6 @@ namespace vzt
         void addColorTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
         void addDepthTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
 
-        void link(const Pipeline& pipeline);
-
         template <class DerivedHandler, class... Args>
         void setRecordFunction(Args&&... args);
         void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
@@ -144,24 +142,24 @@ namespace vzt
 
         inline std::string_view getName() const;
 
-        inline DescriptorLayout& getDescriptorLayout();
-        inline DescriptorPool&   getDescriptorPool();
-        inline CSpan<ImageView>  getColorOutputs(uint32_t b) const;
-        inline View<ImageView>   getDepth(uint32_t b) const;
+        inline DescriptorPool&  getDescriptorPool();
+        inline CSpan<ImageView> getColorOutputs(uint32_t b) const;
+        inline View<ImageView>  getDepth(uint32_t b) const;
 
         friend RenderGraph;
 
       protected:
         Pass(RenderGraph& graph, std::string name, PassType type);
-        virtual void compile();
+        virtual void compile() = 0;
         virtual void resize();
 
+        // Creates the descriptor sets of the pass from its pipeline's layout
+        void compileDescriptors(const DescriptorLayout& layout);
         void createDescriptors();
 
-        RenderGraph*     m_graph;
-        std::string      m_name;
-        PassType         m_type;
-        DescriptorLayout m_descriptorLayout;
+        RenderGraph* m_graph;
+        std::string  m_name;
+        PassType     m_type;
 
         std::unique_ptr<RecordHandler> m_recordCallback;
 

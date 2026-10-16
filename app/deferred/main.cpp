@@ -74,7 +74,6 @@ int main(int /* argc */, char** /* argv */)
     auto& instanceGeneration = graph.addCompute( //
         "InstanceGeneration", compiler("shaders/deferred/instance_generation.slang", "main"));
     {
-        instanceGeneration.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
         instanceGeneration.addStorageOutput(1, instancesPosition);
         instanceGeneration.addStorageOutput(2, drawCommands);
 
@@ -105,7 +104,6 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/deferred/triangle.slang"));
     {
-        geometry.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
         geometry.addStorageInput(1, instancesPosition);
         geometry.addStorageInputIndirect(drawCommands);
         geometry.addColorOutput(position);

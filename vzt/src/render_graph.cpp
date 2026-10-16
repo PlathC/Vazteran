@@ -20,7 +20,7 @@ namespace vzt
     }
 
     Pass::Pass(RenderGraph& graph, std::string name, PassType type)
-        : m_graph(&graph), m_name(std::move(name)), m_type(type), m_descriptorLayout(m_graph->getDevice())
+        : m_graph(&graph), m_name(std::move(name)), m_type(type)
     {
     }
 
@@ -40,7 +40,6 @@ namespace vzt
 
         storage.binding = binding;
         m_storageInputs.emplace_back(storage);
-        m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
     }
 
     void Pass::addStorageInputIndirect(const Handle& handle, std::string name, Optional<Range<std::size_t>> range)
@@ -74,7 +73,6 @@ namespace vzt
 
             storage.binding = binding;
             m_storageOutputs.emplace_back(storage);
-            m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
         }
         else if (handle.type == HandleType::Attachment)
         {
@@ -93,7 +91,6 @@ namespace vzt
 
             storage.binding = binding;
             m_storageImageOutputs.emplace_back(storage);
-            m_descriptorLayout.addBinding(binding, DescriptorType::StorageImage);
         }
     }
 
@@ -121,8 +118,6 @@ namespace vzt
 
             outStorage.binding = binding;
             m_storageOutputs.emplace_back(outStorage);
-
-            m_descriptorLayout.addBinding(binding, DescriptorType::StorageBuffer);
         }
         else if (handle.type == HandleType::Attachment)
         {
@@ -141,7 +136,6 @@ namespace vzt
 
             storage.binding = binding;
             m_storageImageOutputs.emplace_back(storage);
-            m_descriptorLayout.addBinding(binding, DescriptorType::StorageImage);
         }
     }
 
@@ -163,7 +157,6 @@ namespace vzt
         attachment.targetAccess = Access::ShaderRead;
 
         m_textureInputs.emplace_back(attachment);
-        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
     }
 
     void Pass::addDepthTextureInput(uint32_t binding, const Handle& handle, std::string name)
@@ -185,14 +178,6 @@ namespace vzt
         attachment.aspect       = ImageAspect::Depth;
 
         m_textureInputs.emplace_back(attachment);
-        m_descriptorLayout.addBinding(binding, DescriptorType::CombinedSampler);
-    }
-
-    void Pass::link(const Pipeline& pipeline)
-    {
-        const auto& layout = pipeline.getDescriptorLayout();
-        for (const auto [id, type] : layout.getBindings())
-            m_descriptorLayout.addBinding(id, type);
     }
 
     void Pass::setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback)
@@ -442,7 +427,7 @@ namespace vzt
             m_recordCallback->record(i, m_pool[i], commands);
     }
 
-    void Pass::compile()
+    void Pass::compileDescriptors(const DescriptorLayout& layout)
     {
         View<Device> device = m_graph->getDevice();
 
@@ -462,13 +447,10 @@ namespace vzt
             output.use.format = attachmentBuilder.format.value_or(m_graph->getBackbufferFormat());
         }
 
-        // Create descriptors for the current pass
-        m_descriptorLayout.compile();
-
         const uint32_t backbufferNb = m_graph->getBackbufferNb();
 
-        m_pool = DescriptorPool{device, m_descriptorLayout, backbufferNb};
-        m_pool.allocate(backbufferNb, m_descriptorLayout);
+        m_pool = DescriptorPool{device, layout, backbufferNb};
+        m_pool.allocate(backbufferNb, layout);
 
         createDescriptors();
     }
@@ -586,15 +568,14 @@ namespace vzt
     }
 
     ComputePass::ComputePass(RenderGraph& graph, std::string name, Program&& program)
-        : Pass(graph, std::move(name), PassType::Compute), m_program(std::move(program)), m_pipeline({m_program})
+        : Pass(graph, std::move(name), PassType::Compute), m_program(std::move(program))
     {
-        link(m_pipeline);
     }
 
     void ComputePass::compile()
     {
-        Pass::compile();
         m_pipeline = ComputePipeline({m_program});
+        compileDescriptors(m_pipeline.getDescriptorLayout());
     }
 
     void GraphicsPass::setDepthInput(const Handle& handle, std::string name)
@@ -699,13 +680,10 @@ namespace vzt
         : Pass(graph, std::move(name), PassType::Graphics), m_program(std::move(program)),
           m_graphicsPipelineBuilder(m_program)
     {
-        link(m_pipeline);
     }
 
     void GraphicsPass::compile()
     {
-        Pass::compile();
-
         for (const auto& output : m_colorOutputs)
         {
             const auto format = m_graph->m_attachmentBuilders[output.handle].format;
@@ -721,6 +699,7 @@ namespace vzt
         }
 
         m_pipeline = GraphicsPipeline(m_graphicsPipelineBuilder);
+        compileDescriptors(m_pipeline.getDescriptorLayout());
     }
 
     void GraphicsPass::resize() { Pass::resize(); }

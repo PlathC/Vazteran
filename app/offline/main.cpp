@@ -67,8 +67,6 @@ int main(int /* argc */, char** /* argv */)
         builder.set(vertexDescription);
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
-        geometry.getDescriptorLayout().addBinding(0, vzt::DescriptorType::UniformBuffer);
-
         geometry.setRecordFunction<vzt::LambdaRecorder>(
             [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
                 const auto extent = graph.getBackbufferExtent();

@@ -16,9 +16,8 @@ namespace vzt
         m_recordCallback = std::make_unique<DerivedHandler>(std::forward<Args>(args)...);
     }
 
-    inline std::string_view  Pass::getName() const { return m_name; }
-    inline DescriptorLayout& Pass::getDescriptorLayout() { return m_descriptorLayout; }
-    inline DescriptorPool&   Pass::getDescriptorPool() { return m_pool; }
+    inline std::string_view Pass::getName() const { return m_name; }
+    inline DescriptorPool&  Pass::getDescriptorPool() { return m_pool; }
 
     inline CSpan<ImageView> Pass::getColorOutputs(uint32_t b) const
     {

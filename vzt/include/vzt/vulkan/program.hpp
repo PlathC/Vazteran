@@ -2,6 +2,7 @@
 #define VZT_VULKAN_PROGRAM_HPP
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "vzt/core/type.hpp"
@@ -12,10 +13,11 @@ namespace vzt
 {
     struct Shader
     {
-        std::string                name;
-        ShaderStage                stage;
-        std::vector<uint32_t>      compiledSource;
-        DescriptorLayout::Bindings bindings;
+        std::string                               name;
+        ShaderStage                               stage;
+        std::vector<uint32_t>                     compiledSource;
+        DescriptorLayout::Bindings                bindings;
+        std::unordered_map<std::string, uint32_t> bindingNames; // Shader parameter name -> binding
 
         struct hash
         {
