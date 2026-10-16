@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <vulkan/vk_enum_string_helper.h>
+
 #include "vzt/core/assert.hpp"
 #include "vzt/core/logger.hpp"
 #include "vzt/vulkan/swapchain.hpp"
@@ -447,6 +449,38 @@ namespace vzt
             if (uniform.binding == ~0u)
                 throw std::runtime_error(
                     fmt::format("Pass \"{}\": the shader has no parameter \"{}\".", m_name, uniform.name));
+        }
+
+        // Every binding of the pipeline layout must be provided by the graph or by a bind()
+        std::unordered_set<uint32_t> provided;
+        for (const PassUniform& uniform : m_uniforms)
+            provided.insert(uniform.binding);
+        for (const auto& storage : m_storageInputs)
+            provided.insert(storage.binding);
+        for (const auto& storage : m_storageOutputs)
+            provided.insert(storage.binding);
+        for (const auto& attachment : m_textureInputs)
+            provided.insert(attachment.binding);
+        for (const auto& attachment : m_storageImageOutputs)
+            provided.insert(attachment.binding);
+
+        for (const auto [binding, type] : layout.getBindings())
+        {
+            if (provided.contains(binding))
+                continue;
+
+            std::string name = "?";
+            for (const ShaderModule& module : program.getModules())
+            {
+                for (const auto& [parameter, id] : module.getShader().bindingNames)
+                {
+                    if (id == binding)
+                        name = parameter;
+                }
+            }
+
+            throw std::runtime_error(fmt::format("Pass \"{}\": shader parameter \"{}\" (binding {}, {}) is not bound.",
+                                                 m_name, name, binding, string_VkDescriptorType(toVulkan(type))));
         }
 
         for (auto& input : m_textureInputs)
