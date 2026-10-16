@@ -35,6 +35,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto deviceBuilder = vzt::DeviceBuilder::standard();
     deviceBuilder.add(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+    deviceBuilder.getDeviceFeatures().v11.shaderDrawParameters = VK_TRUE;
     auto device = instance.getDevice(deviceBuilder, surface);
 
     auto        hardware = device.getHardware();
