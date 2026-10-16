@@ -502,6 +502,8 @@ namespace vzt
         {
             Pass::ResourceState state;
             bool                written;
+            Pass*               firstPass    = nullptr; // Barrier of the first use of an image
+            std::size_t         firstBarrier = 0;
         };
         HandleMap<Tracked> tracked{};
         Pass*              lastBackbufferPass = nullptr;
@@ -537,17 +539,22 @@ namespace vzt
                     }
                 }
 
-                if (m_backbuffer && use.handle.id == m_backbuffer->id)
+                if (isBackBuffer(use.handle))
                     lastBackbufferPass = pass.get();
 
                 const auto previous = tracked.find(use.handle);
                 if (previous == tracked.end())
                 {
                     // First use of the frame: image contents are discarded
+                    Tracked first{state, use.write};
                     if (isImage)
+                    {
                         pass->m_barriers.push_back({use.handle, use.use, use.aspect, {}, state});
+                        first.firstPass    = pass.get();
+                        first.firstBarrier = pass->m_barriers.size() - 1;
+                    }
 
-                    tracked[use.handle] = {state, use.write};
+                    tracked[use.handle] = first;
                     continue;
                 }
 
@@ -564,8 +571,20 @@ namespace vzt
                     src.access = Access::None; // Write after read only needs an execution dependency
 
                 pass->m_barriers.push_back({use.handle, use.use, use.aspect, src, state});
-                last = {state, use.write};
+                last.state   = state;
+                last.written = use.write;
             }
+        }
+
+        // Targets are shared by every frame: the first use waits for the last use of the previous execution
+        for (const auto& [handle, last] : tracked)
+        {
+            if (!last.firstPass || isBackBuffer(handle))
+                continue;
+
+            Pass::ResourceState& src = last.firstPass->m_barriers[last.firstBarrier].src;
+            src.stages               = last.state.stages;
+            src.access               = last.written ? last.state.access : Access::None;
         }
 
         if (lastBackbufferPass)
@@ -655,13 +674,8 @@ namespace vzt
         return *pass;
     }
 
-    bool RenderGraph::isBackBuffer(const Handle backbufferHandle) const
-    {
-        if (m_backbuffer)
-            return m_backbuffer->id == backbufferHandle.id && m_backbuffer->state == backbufferHandle.state;
-
-        return false;
-    }
+    // Versions of a handle all refer to the same resource
+    bool RenderGraph::isBackBuffer(const Handle handle) const { return m_backbuffer && m_backbuffer->id == handle.id; }
 
     void RenderGraph::compile()
     {
@@ -710,7 +724,7 @@ namespace vzt
             return m_externalBackbuffers[m_frameImages[backbufferId]];
 
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
-        return m_images[handlePhysicalId * m_frameNb + backbufferId];
+        return m_images[handlePhysicalId];
     }
 
     View<Buffer> RenderGraph::getStorage(uint32_t backbufferId, Handle handle) const
@@ -866,8 +880,7 @@ namespace vzt
                 imageBuilder.sampleCount = attachmentBuilder.sampleCount;
                 imageBuilder.sharingMode = SharingMode::Exclusive;
 
-                for (uint32_t i = 0; i < m_frameNb; i++)
-                    m_images.emplace_back(m_device, imageBuilder);
+                m_images.emplace_back(m_device, imageBuilder);
             }
         }
 

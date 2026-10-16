@@ -358,7 +358,7 @@ namespace vzt
         HandleMap<std::size_t>             m_handleToPhysical;
         std::vector<std::unique_ptr<Pass>> m_passes;
 
-        std::vector<DeviceImage> m_images;   // [imageId  ]
+        std::vector<DeviceImage> m_images;   // [imageId]
         std::vector<Buffer>      m_storages; // [storageId]
 
         Optional<Handle>      m_backbuffer;
