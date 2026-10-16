@@ -124,15 +124,13 @@ namespace vzt
 
         virtual ~Pass() = default;
 
-        void addStorageInputIndirect(const Handle& storage, std::string storageName = "", Optional<Range<>> range = {});
-        void addStorageInput(uint32_t binding, const Handle& storage, std::string storageName = "",
-                             Optional<Range<>> range = {});
-        void addStorageOutput(uint32_t binding, Handle& storage, std::string storageName = "",
-                              Optional<Range<>> range = {});
-        void addStorageInputOutput(uint32_t binding, Handle& storage, std::string inName = "", std::string outName = "",
-                                   Optional<Range<>> range = {});
-        void addColorTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
-        void addDepthTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
+        // `parameter` is the name of the shader parameter the resource is bound to
+        void addStorageInputIndirect(const Handle& storage, Optional<Range<>> range = {});
+        void addStorageInput(std::string parameter, const Handle& storage, Optional<Range<>> range = {});
+        void addStorageOutput(std::string parameter, Handle& storage, Optional<Range<>> range = {});
+        void addStorageInputOutput(std::string parameter, Handle& storage, Optional<Range<>> range = {});
+        void addColorTextureInput(std::string parameter, const Handle& handle);
+        void addDepthTextureInput(std::string parameter, const Handle& handle);
 
         void bind(std::string name, const UniformBuffer& buffer);
 
@@ -177,7 +175,7 @@ namespace vzt
         struct PassAttachment
         {
             Handle        handle;
-            std::string   name;
+            std::string   name; // Shader parameter when bound to the shader, debug label otherwise
             AttachmentUse use;
 
             uint32_t binding = ~0u;
@@ -196,7 +194,7 @@ namespace vzt
         struct PassStorage
         {
             Handle            handle;
-            std::string       name;
+            std::string       name; // Shader parameter, empty when not bound to the shader
             Optional<Range<>> range;
 
             Access        waitAccess;

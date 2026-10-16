@@ -74,8 +74,8 @@ int main(int /* argc */, char** /* argv */)
     auto& instanceGeneration = graph.addCompute( //
         "InstanceGeneration", compiler("shaders/deferred/instance_generation.slang", "main"));
     {
-        instanceGeneration.addStorageOutput(1, instancesPosition);
-        instanceGeneration.addStorageOutput(2, drawCommands);
+        instanceGeneration.addStorageOutput("instances", instancesPosition);
+        instanceGeneration.addStorageOutput("draw", drawCommands);
 
         instanceGeneration.setRecordFunction<vzt::LambdaRecorder>( //
             [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
@@ -104,7 +104,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/deferred/triangle.slang"));
     {
-        geometry.addStorageInput(1, instancesPosition);
+        geometry.addStorageInput("instances", instancesPosition);
         geometry.addStorageInputIndirect(drawCommands);
         geometry.addColorOutput(position);
         geometry.addColorOutput(normal);
@@ -162,8 +162,8 @@ int main(int /* argc */, char** /* argv */)
 
     auto& shading = graph.addGraphics("Shading", compiler("shaders/deferred/deferred_blinn_phong.slang"));
     {
-        shading.addColorTextureInput(0, position);
-        shading.addColorTextureInput(1, normal);
+        shading.addColorTextureInput("texturePosition", position);
+        shading.addColorTextureInput("textureNormal", normal);
         shading.addColorOutput(composed, "");
         shading.setDepthOutput(composedDepth);
 

@@ -53,8 +53,8 @@ int main(int /* argc */, char** /* argv */)
     auto& instanceGeneration = graph.addCompute( //
         "InstanceGeneration", compiler("shaders/particles/instance_generation.slang", "main"));
     {
-        instanceGeneration.addStorageOutput(1, instancesPosition);
-        instanceGeneration.addStorageOutput(2, drawCommands);
+        instanceGeneration.addStorageOutput("instances", instancesPosition);
+        instanceGeneration.addStorageOutput("draw", drawCommands);
 
         instanceGeneration.setRecordFunction<vzt::LambdaRecorder>( //
             [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
@@ -80,7 +80,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/particles/circle.slang"));
     {
-        geometry.addStorageInput(1, instancesPosition);
+        geometry.addStorageInput("instances", instancesPosition);
         geometry.addStorageInputIndirect(drawCommands);
         geometry.addColorOutput(color, "", vzt::ColorBlend{.blendEnable = true, .colorBlendOp = vzt::BlendOp::Add});
         geometry.setDepthOutput(depth);

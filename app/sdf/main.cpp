@@ -70,7 +70,7 @@ int main(int /* argc */, char** /* argv */)
     // Instance generation pass
     auto& sdfGeneration = graph.addCompute("SDF generation", compiler("shaders/sdf/grid.slang", "main"));
     {
-        sdfGeneration.addStorageOutput(1, sdfTexture);
+        sdfGeneration.addStorageOutput("sdf", sdfTexture);
         sdfGeneration.setRecordFunction<vzt::LambdaRecorder>( //
             [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
                 commands.bind(sdfGeneration.getPipeline(), set);
@@ -84,7 +84,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/sdf/raycast.slang"));
     {
-        geometry.addColorTextureInput(1, sdfTexture);
+        geometry.addColorTextureInput("sdf", sdfTexture);
         geometry.addColorOutput(color);
         geometry.setDepthOutput(depth);
 

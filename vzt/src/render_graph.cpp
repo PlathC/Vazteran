@@ -27,129 +27,103 @@ namespace vzt
     {
     }
 
-    void Pass::addStorageInput(uint32_t binding, const Handle& handle, std::string name,
-                               Optional<Range<std::size_t>> range)
+    void Pass::addStorageInput(std::string parameter, const Handle& handle, Optional<Range<std::size_t>> range)
     {
         VZT_ASSERT(handle.type == HandleType::Storage);
 
-        PassStorage storage{handle, name, range};
+        PassStorage storage{handle, parameter, range};
         storage.waitAccess   = Access::ShaderWrite;
         storage.waitStage    = PipelineStage::ComputeShader;
         storage.targetAccess = Access::ShaderRead;
         storage.targetStage  = PipelineStage::VertexShader;
-        storage.binding      = binding;
-        if (storage.name.empty())
-            storage.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 
-        storage.binding = binding;
         m_storageInputs.emplace_back(storage);
     }
 
-    void Pass::addStorageInputIndirect(const Handle& handle, std::string name, Optional<Range<std::size_t>> range)
+    void Pass::addStorageInputIndirect(const Handle& handle, Optional<Range<std::size_t>> range)
     {
         VZT_ASSERT(handle.type == HandleType::Storage);
 
-        PassStorage storage{handle, name, range};
+        PassStorage storage{handle, "", range};
         storage.waitAccess   = Access::ShaderWrite;
         storage.waitStage    = PipelineStage::ComputeShader;
         storage.targetAccess = Access::IndirectCommandRead;
         storage.targetStage  = PipelineStage::DrawIndirect;
-        if (storage.name.empty())
-            storage.name = m_name + "StorageInIndirect" + std::to_string(m_storageInputs.size());
 
         m_storageInputs.emplace_back(storage);
     }
 
-    void Pass::addStorageOutput(uint32_t binding, Handle& handle, std::string name, Optional<Range<std::size_t>> range)
+    void Pass::addStorageOutput(std::string parameter, Handle& handle, Optional<Range<std::size_t>> range)
     {
         handle.state++;
 
         if (handle.type == HandleType::Storage)
         {
-            PassStorage storage{handle, name, range};
+            PassStorage storage{handle, parameter, range};
             storage.targetAccess = Access::ShaderWrite;
             storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
             storage.waitAccess   = Access::ShaderRead;
             storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
-            if (storage.name.empty())
-                storage.name = m_name + "StorageOut" + std::to_string(m_storageInputs.size());
 
-            storage.binding = binding;
             m_storageOutputs.emplace_back(storage);
         }
         else if (handle.type == HandleType::Attachment)
         {
-            PassAttachment storage{handle, name};
+            PassAttachment storage{handle, parameter};
             storage.targetAccess = Access::ShaderWrite;
             storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
             storage.waitAccess   = Access::ShaderRead;
             storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
-            if (storage.name.empty())
-                storage.name = m_name + "StorageImageOut" + std::to_string(m_storageImageOutputs.size());
 
             storage.use.finalLayout = ImageLayout::General;
             storage.use.usedLayout  = ImageLayout::General;
             // storage.use.loadOp      = LoadOp::Load;
             // storage.use.storeOp     = StoreOp::DontCare;
 
-            storage.binding = binding;
             m_storageImageOutputs.emplace_back(storage);
         }
     }
 
-    void Pass::addStorageInputOutput(uint32_t binding, Handle& handle, std::string inName, std::string outName,
-                                     Optional<Range<std::size_t>> range)
+    void Pass::addStorageInputOutput(std::string parameter, Handle& handle, Optional<Range<std::size_t>> range)
     {
         handle.state++;
 
         if (handle.type == HandleType::Storage)
         {
-            PassStorage inStorage{handle, inName, range};
+            PassStorage inStorage{handle, parameter, range};
             inStorage.targetAccess = Access::ShaderRead | Access::ShaderWrite;
             inStorage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
             inStorage.waitAccess   = Access::ShaderRead | Access::ShaderWrite;
             inStorage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
-            if (inStorage.name.empty())
-                inStorage.name = m_name + "StorageIn" + std::to_string(m_storageInputs.size());
 
-            inStorage.binding = binding;
             m_storageInputs.emplace_back(inStorage);
 
-            PassStorage outStorage{handle, outName, range};
-            if (outStorage.name.empty())
-                outStorage.name = m_name + "StorageOut" + std::to_string(m_storageOutputs.size());
+            PassStorage outStorage{handle, parameter, range};
 
-            outStorage.binding = binding;
             m_storageOutputs.emplace_back(outStorage);
         }
         else if (handle.type == HandleType::Attachment)
         {
-            PassAttachment storage{handle, inName};
+            PassAttachment storage{handle, parameter};
             storage.targetAccess = Access::ShaderWrite;
             storage.targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader;
             storage.waitAccess   = Access::ShaderRead;
             storage.waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader;
-            if (storage.name.empty())
-                storage.name = m_name + "StorageImageOut" + std::to_string(m_storageImageOutputs.size());
 
             storage.use.finalLayout = ImageLayout::General;
             storage.use.usedLayout  = ImageLayout::General;
             // storage.use.loadOp      = LoadOp::Load;
             // storage.use.storeOp     = StoreOp::DontCare;
 
-            storage.binding = binding;
             m_storageImageOutputs.emplace_back(storage);
         }
     }
 
-    void Pass::addColorTextureInput(uint32_t binding, const Handle& handle, std::string name)
+    void Pass::addColorTextureInput(std::string parameter, const Handle& handle)
     {
         assert(handle.type == HandleType::Attachment);
 
-        PassAttachment attachment{handle, name};
-        attachment.binding = binding;
-        if (attachment.name.empty())
-            attachment.name = m_name + "ColorIn" + std::to_string(m_textureInputs.size());
+        PassAttachment attachment{handle, parameter};
 
         attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
         attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
@@ -162,14 +136,11 @@ namespace vzt
         m_textureInputs.emplace_back(attachment);
     }
 
-    void Pass::addDepthTextureInput(uint32_t binding, const Handle& handle, std::string name)
+    void Pass::addDepthTextureInput(std::string parameter, const Handle& handle)
     {
         assert(handle.type == HandleType::Attachment);
 
-        PassAttachment attachment{handle, name};
-        attachment.binding = binding;
-        if (attachment.name.empty())
-            attachment.name = m_name + "DepthIn" + std::to_string(m_textureInputs.size());
+        PassAttachment attachment{handle, parameter};
 
         attachment.use.finalLayout = ImageLayout::ShaderReadOnlyOptimal;
         attachment.use.usedLayout  = ImageLayout::ShaderReadOnlyOptimal;
@@ -436,19 +407,30 @@ namespace vzt
     {
         View<Device> device = m_graph->getDevice();
 
-        for (PassUniform& uniform : m_uniforms)
-        {
-            uniform.binding = ~0u;
+        // Resolve shader parameter names to bindings
+        const auto findBinding = [&](const std::string& parameter) -> uint32_t {
             for (const ShaderModule& module : program.getModules())
             {
                 const auto& names = module.getShader().bindingNames;
-                if (const auto it = names.find(uniform.name); it != names.end())
-                    uniform.binding = it->second;
+                if (const auto it = names.find(parameter); it != names.end())
+                    return it->second;
             }
 
-            if (uniform.binding == ~0u)
-                throw std::runtime_error(
-                    fmt::format("Pass \"{}\": the shader has no parameter \"{}\".", m_name, uniform.name));
+            throw std::runtime_error(
+                fmt::format("Pass \"{}\": the shader has no parameter \"{}\".", m_name, parameter));
+        };
+
+        for (PassUniform& uniform : m_uniforms)
+            uniform.binding = findBinding(uniform.name);
+        for (auto* storages : {&m_storageInputs, &m_storageOutputs})
+        {
+            for (PassStorage& storage : *storages)
+                storage.binding = storage.name.empty() ? ~0u : findBinding(storage.name);
+        }
+        for (auto* attachments : {&m_textureInputs, &m_storageImageOutputs})
+        {
+            for (PassAttachment& attachment : *attachments)
+                attachment.binding = findBinding(attachment.name);
         }
 
         // Every binding of the pipeline layout must be provided by the graph or by a bind()
