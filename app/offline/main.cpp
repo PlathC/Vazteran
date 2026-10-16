@@ -111,17 +111,14 @@ int main(int /* argc */, char** /* argv */)
         },
     };
 
+    vzt::UniformBuffer ubo = {device, sizeof(vzt::Mat4) * 3, 1, true};
+    geometry.bind("Model", ubo);
+
     graph.setBackbuffer(output, vzt::ImageLayout::General, color);
     graph.compile();
 
-    // Assign buffer parts to their respective image
-    vzt::UniformBuffer ubo = {device, sizeof(vzt::Mat4) * 3, 1, true};
-
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue);
-
-    auto& descriptorPool = geometry.getDescriptorPool();
-    descriptorPool.update(0, {{0, ubo.getDescriptor(0)}});
 
     // Compute AABB to place camera in front of the model
     vzt::Camera camera{};

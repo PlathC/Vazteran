@@ -8,6 +8,7 @@
 #include "vzt/core/assert.hpp"
 #include "vzt/core/logger.hpp"
 #include "vzt/vulkan/swapchain.hpp"
+#include "vzt/vulkan/uniform.hpp"
 
 namespace vzt
 {
@@ -427,9 +428,26 @@ namespace vzt
             m_recordCallback->record(i, m_pool[i], commands);
     }
 
-    void Pass::compileDescriptors(const DescriptorLayout& layout)
+    void Pass::bind(std::string name, const UniformBuffer& buffer) { m_uniforms.push_back({std::move(name), buffer}); }
+
+    void Pass::compileDescriptors(const Program& program, const DescriptorLayout& layout)
     {
         View<Device> device = m_graph->getDevice();
+
+        for (PassUniform& uniform : m_uniforms)
+        {
+            uniform.binding = ~0u;
+            for (const ShaderModule& module : program.getModules())
+            {
+                const auto& names = module.getShader().bindingNames;
+                if (const auto it = names.find(uniform.name); it != names.end())
+                    uniform.binding = it->second;
+            }
+
+            if (uniform.binding == ~0u)
+                throw std::runtime_error(
+                    fmt::format("Pass \"{}\": the shader has no parameter \"{}\".", m_name, uniform.name));
+        }
 
         for (auto& input : m_textureInputs)
         {
@@ -543,6 +561,9 @@ namespace vzt
                     DescriptorImage{DescriptorType::StorageImage, imageView, {}, output.use.usedLayout};
             }
 
+            for (const PassUniform& uniform : m_uniforms)
+                descriptors[uniform.binding] = uniform.buffer->getDescriptor(i);
+
             // SSBO
             for (auto& input : m_storageInputs)
             {
@@ -575,7 +596,7 @@ namespace vzt
     void ComputePass::compile()
     {
         m_pipeline = ComputePipeline({m_program});
-        compileDescriptors(m_pipeline.getDescriptorLayout());
+        compileDescriptors(m_program, m_pipeline.getDescriptorLayout());
     }
 
     void GraphicsPass::setDepthInput(const Handle& handle, std::string name)
@@ -699,7 +720,7 @@ namespace vzt
         }
 
         m_pipeline = GraphicsPipeline(m_graphicsPipelineBuilder);
-        compileDescriptors(m_pipeline.getDescriptorLayout());
+        compileDescriptors(m_program, m_pipeline.getDescriptorLayout());
     }
 
     void GraphicsPass::resize() { Pass::resize(); }

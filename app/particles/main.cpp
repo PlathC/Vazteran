@@ -122,6 +122,13 @@ int main(int /* argc */, char** /* argv */)
             });
     }
 
+    // Initialize buffer with default values
+    const uint32_t     frameNb       = swapchain.getImageNb();
+    vzt::UniformBuffer modelsUbo     = vzt::UniformBuffer(device, sizeof(vzt::Mat4) * 3, frameNb, true);
+    vzt::UniformBuffer generationUbo = vzt::UniformBuffer(device, sizeof(GenerationInput), frameNb, true);
+    instanceGeneration.bind("uniforms", generationUbo);
+    geometry.bind("Model", modelsUbo);
+
     graph.setBackbuffer(swapchain, color);
     graph.compile();
 
@@ -131,22 +138,8 @@ int main(int /* argc */, char** /* argv */)
         swapchain.getImageNb() * (graph.size() + 1) * 2,
     };
 
-    // Initialize buffer with default values
-    const uint32_t     frameNb       = swapchain.getImageNb();
-    vzt::UniformBuffer modelsUbo     = vzt::UniformBuffer(device, sizeof(vzt::Mat4) * 3, frameNb, true);
-    vzt::UniformBuffer generationUbo = vzt::UniformBuffer(device, sizeof(GenerationInput), frameNb, true);
-
-    // Assign buffer parts to their respective image
-    vzt::DescriptorPool& generationDescriptorPool = instanceGeneration.getDescriptorPool();
-    vzt::DescriptorPool& geometryDescriptorPool   = geometry.getDescriptorPool();
-
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getImageNb());
-    for (uint32_t i = 0; i < swapchain.getImageNb(); i++)
-    {
-        generationDescriptorPool.update(i, {{0, generationUbo.getDescriptor(i)}});
-        geometryDescriptorPool.update(i, {{0, modelsUbo.getDescriptor(i)}});
-    }
 
     // Compute AABB to place camera in front of the model
     vzt::Vec3 minimum{-1.f, -1.f, -1.f};

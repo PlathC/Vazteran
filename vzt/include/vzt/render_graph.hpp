@@ -17,6 +17,7 @@ namespace vzt
 {
     enum class QueueType : uint8_t;
     class Swapchain;
+    class UniformBuffer;
 
     struct AttachmentUse
     {
@@ -133,6 +134,8 @@ namespace vzt
         void addColorTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
         void addDepthTextureInput(uint32_t binding, const Handle& handle, std::string name = "");
 
+        void bind(std::string name, const UniformBuffer& buffer);
+
         template <class DerivedHandler, class... Args>
         void setRecordFunction(Args&&... args);
         void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
@@ -154,7 +157,7 @@ namespace vzt
         virtual void resize();
 
         // Creates the descriptor sets of the pass from its pipeline's layout
-        void compileDescriptors(const DescriptorLayout& layout);
+        void compileDescriptors(const Program& program, const DescriptorLayout& layout);
         void createDescriptors();
 
         RenderGraph* m_graph;
@@ -162,6 +165,14 @@ namespace vzt
         PassType     m_type;
 
         std::unique_ptr<RecordHandler> m_recordCallback;
+
+        struct PassUniform
+        {
+            std::string         name;
+            View<UniformBuffer> buffer;
+            uint32_t            binding = ~0u;
+        };
+        std::vector<PassUniform> m_uniforms;
 
         struct PassAttachment
         {
