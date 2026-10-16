@@ -149,6 +149,7 @@ namespace vzt
         void pushConstants(const Pipeline& pipeline, ShaderStage stages, const Type& data);
 
         void dispatch(uint32_t x, uint32_t y = 1, uint32_t z = 1);
+        void dispatch(const Vec3u& groups);
         void draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t vertexOffset = 0,
                   uint32_t instanceOffset = 0);
         void drawIndexed(const Buffer& indexBuffer, const Range<>& range, uint32_t instanceCount = 1,

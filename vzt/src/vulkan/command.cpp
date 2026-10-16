@@ -311,6 +311,8 @@ namespace vzt
         table.vkCmdBindIndexBuffer(m_handle, buffer.getHandle(), index * sizeof(uint32_t), VK_INDEX_TYPE_UINT32);
     }
 
+    void CommandBuffer::dispatch(const Vec3u& groups) { dispatch(groups.x, groups.y, groups.z); }
+
     void CommandBuffer::dispatch(uint32_t x, uint32_t y, uint32_t z)
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();

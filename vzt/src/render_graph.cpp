@@ -55,9 +55,20 @@ namespace vzt
     {
         m_recordCallback = [this, record = std::move(record)](uint32_t frame, CommandBuffer& commands) {
             commands.bind(m_pipeline, m_pool[frame]);
-            ComputeContext context{{commands, *m_graph, m_pool[frame], frame}};
+            ComputeContext context{{commands, *m_graph, m_pool[frame], frame}, *this};
             record(context);
         };
+    }
+
+    std::array<uint32_t, 3> ComputePass::getGroupSize() const
+    {
+        return m_program.getModules().front().getShader().groupSize;
+    }
+
+    Vec3u ComputeContext::groups(uint32_t x, uint32_t y, uint32_t z) const
+    {
+        const auto size = pass.getGroupSize();
+        return {(x + size[0] - 1) / size[0], (y + size[1] - 1) / size[1], (z + size[2] - 1) / size[2]};
     }
 
     void GraphicsPass::setRecordFunction(std::function<void(GraphicsContext&)> record)
@@ -152,8 +163,22 @@ namespace vzt
         return false;
     }
 
+    float Pass::getDuration(uint32_t frame) const
+    {
+        std::array<uint64_t, 2> ticks{};
+        m_graph->m_queries.getResults((frame * m_graph->size() + m_index) * 2, 2, Span<uint64_t>(ticks.data(), 2),
+                                      sizeof(uint64_t), QueryResultFlag::N64 | QueryResultFlag::Wait);
+
+        const float period = m_graph->m_device->getHardware().getProperties().limits.timestampPeriod; // ns per tick
+        return static_cast<float>(ticks[1] - ticks[0]) * period / 1e6f;
+    }
+
     void Pass::record(uint32_t i, CommandBuffer& commands) const
     {
+        const uint32_t query = (i * m_graph->size() + m_index) * 2;
+        if (m_graph->m_profiling)
+            commands.writeTimeStamp(m_graph->m_queries, query, PipelineStage::BottomOfPipe);
+
         PipelineBarrier barrier{};
         for (const PassBarrier& passBarrier : m_barriers)
         {
@@ -209,6 +234,9 @@ namespace vzt
 
             commands.barrier(final);
         }
+
+        if (m_graph->m_profiling)
+            commands.writeTimeStamp(m_graph->m_queries, query + 1, PipelineStage::BottomOfPipe);
     }
 
     void Pass::bind(const UniformBuffer& buffer, std::string name) { m_uniforms.push_back({std::move(name), buffer}); }
@@ -549,7 +577,7 @@ namespace vzt
                 const auto previous = tracked.find(use.handle);
                 if (previous == tracked.end())
                 {
-                    // First use of the frame: the contents of an image are discarded, unless it was imported.
+                    // First use of the frame: the contents of an image are discarded, unless it was external.
                     // Buffers shared by every frame must also wait for the previous execution
                     Tracked first{state, use.write};
                     first.lastPass = pass.get();
@@ -557,10 +585,10 @@ namespace vzt
                     first.aspect   = use.aspect;
                     if (isImage || !isPerFrame(use.handle))
                     {
-                        const auto          imported = m_importedImages.find(use.handle);
+                        const auto          external = m_externalImages.find(use.handle);
                         Pass::ResourceState initial{};
-                        if (imported != m_importedImages.end())
-                            initial.layout = imported->second.layout;
+                        if (external != m_externalImages.end())
+                            initial.layout = external->second.layout;
 
                         pass->m_barriers.push_back({use.handle, use.use, use.aspect, initial, state});
                         first.firstPass    = pass.get();
@@ -603,14 +631,14 @@ namespace vzt
             src.access               = last.written ? last.state.access : Access::None;
         }
 
-        // Backbuffer and imported images end in their expected layout
+        // Backbuffer and external images end in their expected layout
         for (const auto& [handle, last] : tracked)
         {
-            const auto imported = m_importedImages.find(handle);
-            if (!isBackBuffer(handle) && imported == m_importedImages.end())
+            const auto external = m_externalImages.find(handle);
+            if (!isBackBuffer(handle) && external == m_externalImages.end())
                 continue;
 
-            const ImageLayout layout = isBackBuffer(handle) ? m_backbufferLayout : imported->second.layout;
+            const ImageLayout layout = isBackBuffer(handle) ? m_backbufferLayout : external->second.layout;
             last.lastPass->m_finalBarriers.push_back(
                 {handle, last.use, last.aspect, last.state, {layout, PipelineStage::BottomOfPipe, Access::None}});
         }
@@ -658,14 +686,14 @@ namespace vzt
 
     Handle TaskGraph::writeVersion(const Handle& handle) { return {handle.id, handle.type, ++m_versions[handle.id]}; }
 
-    Handle TaskGraph::import(View<Buffer> buffer)
+    Handle TaskGraph::external(View<Buffer> buffer)
     {
         const Handle handle = generateStorageHandle();
-        m_importedBuffers.emplace(handle, buffer);
+        m_externalBuffers.emplace(handle, buffer);
         return handle;
     }
 
-    Handle TaskGraph::import(View<DeviceImage> image, ImageLayout layout)
+    Handle TaskGraph::external(View<DeviceImage> image, ImageLayout layout)
     {
         const Handle handle          = generateAttachmentHandle();
         m_attachmentBuilders[handle] = {
@@ -676,7 +704,7 @@ namespace vzt
             .sampleCount = image->getSampleCount(),
             .type        = image->getImageType(),
         };
-        m_importedImages.emplace(handle, ImportedImage{image, layout});
+        m_externalImages.emplace(handle, ExternalImage{image, layout});
         return handle;
     }
 
@@ -747,10 +775,19 @@ namespace vzt
         // Traverse pass in execution order to fit their id with their ressources
         for (auto& pass : m_passes)
             pass->compile();
+
+        for (uint32_t i = 0; i < size(); i++)
+            m_passes[i]->m_index = i;
+
+        if (m_profiling)
+            m_queries = QueryPool(m_device, QueryType::Timestamp, m_frameNb * size() * 2);
     }
 
     void TaskGraph::record(uint32_t frame, CommandBuffer& commands)
     {
+        if (m_profiling)
+            commands.reset(m_queries, frame * size() * 2, size() * 2);
+
         for (auto& pass : m_passes)
             pass->record(frame, commands);
     }
@@ -792,7 +829,7 @@ namespace vzt
         if (isBackBuffer(handle))
             return m_externalBackbuffers[m_frameImages[backbufferId]];
 
-        if (const auto it = m_importedImages.find(handle); it != m_importedImages.end())
+        if (const auto it = m_externalImages.find(handle); it != m_externalImages.end())
             return it->second.image;
 
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
@@ -801,7 +838,7 @@ namespace vzt
 
     View<Buffer> TaskGraph::getStorage(uint32_t backbufferId, Handle handle) const
     {
-        if (const auto it = m_importedBuffers.find(handle); it != m_importedBuffers.end())
+        if (const auto it = m_externalBuffers.find(handle); it != m_externalBuffers.end())
             return it->second;
 
         const std::vector<Buffer>& copies = m_storages[m_handleToPhysical.find(handle)->second];
@@ -932,7 +969,7 @@ namespace vzt
             AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[handle];
 
             // Swapchain images does not need to be created
-            if (!isBackBuffer(handle) && !m_importedImages.contains(handle))
+            if (!isBackBuffer(handle) && !m_externalImages.contains(handle))
             {
                 if (!attachmentBuilder.format && any(attachmentBuilder.usage & ImageUsage::DepthStencilAttachment))
                     attachmentBuilder.format = depthFormat;

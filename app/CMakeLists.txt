@@ -4,6 +4,7 @@ add_subdirectory(extern)
 add_subdirectory(common)
 
 add_subdirectory(blank)
+add_subdirectory(compute)
 add_subdirectory(base)
 add_subdirectory(deferred)
 add_subdirectory(offline)

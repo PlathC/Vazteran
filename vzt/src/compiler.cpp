@@ -55,6 +55,17 @@ namespace vzt
         return ShaderStage::All;
     }
 
+    void reflectGroupSize(slang::EntryPointReflection* entryPoint, Shader& shader)
+    {
+        if (entryPoint->getStage() != SLANG_STAGE_COMPUTE)
+            return;
+
+        SlangUInt size[3];
+        entryPoint->getComputeThreadGroupSize(3, size);
+        shader.groupSize = {static_cast<uint32_t>(size[0]), static_cast<uint32_t>(size[1]),
+                            static_cast<uint32_t>(size[2])};
+    }
+
     DescriptorType toDescriptorType(slang::VariableLayoutReflection* variable)
     {
         slang::TypeLayoutReflection* type = variable->getTypeLayout();
@@ -243,6 +254,7 @@ namespace vzt
         slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());
 
         Shader shader = Shader(entryPoint, toShaderStage(reflection->getStage()), {});
+        reflectGroupSize(reflection, shader);
         shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
         std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
 
@@ -324,6 +336,7 @@ namespace vzt
             slang::EntryPointReflection* reflection    = programLayout->findEntryPointByName(entryPoint.c_str());
 
             Shader shader = Shader(entryPoint, toShaderStage(reflection->getStage()), {});
+            reflectGroupSize(reflection, shader);
             shader.compiledSource.resize(kernelBlob->getBufferSize() / sizeof(uint32_t));
             std::memcpy(shader.compiledSource.data(), kernelBlob->getBufferPointer(), kernelBlob->getBufferSize());
 

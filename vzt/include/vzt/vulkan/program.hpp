@@ -1,6 +1,7 @@
 #ifndef VZT_VULKAN_PROGRAM_HPP
 #define VZT_VULKAN_PROGRAM_HPP
 
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -17,7 +18,8 @@ namespace vzt
         ShaderStage                               stage;
         std::vector<uint32_t>                     compiledSource;
         DescriptorLayout::Bindings                bindings;
-        std::unordered_map<std::string, uint32_t> bindingNames; // Shader parameter name -> binding
+        std::unordered_map<std::string, uint32_t> bindingNames;          // Shader parameter name -> binding
+        std::array<uint32_t, 3>                   groupSize = {1, 1, 1}; // Compute workgroup size
 
         struct hash
         {

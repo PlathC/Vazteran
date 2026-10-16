@@ -12,6 +12,7 @@
 #include "vzt/vulkan/device.hpp"
 #include "vzt/vulkan/pipeline.hpp"
 #include "vzt/vulkan/program.hpp"
+#include "vzt/vulkan/query_pool.hpp"
 
 namespace vzt
 {
@@ -92,8 +93,12 @@ namespace vzt
         inline View<Buffer> buffer(Handle storage) const;
     };
 
+    class ComputePass;
     struct ComputeContext : PassContext
     {
+        const ComputePass& pass;
+
+        Vec3u groups(uint32_t x, uint32_t y = 1, uint32_t z = 1) const;
     };
 
     class GraphicsPass;
@@ -148,6 +153,9 @@ namespace vzt
 
         inline std::string_view getName() const;
 
+        // Duration of the pass in milliseconds, once the execution of `frame` is over. Needs setProfiling(true)
+        float getDuration(uint32_t frame) const;
+
         inline DescriptorPool&        getDescriptorPool();
         inline CSpan<View<ImageView>> getColorOutputs(uint32_t frame) const;
         inline View<ImageView>        getDepth(uint32_t b) const;
@@ -170,6 +178,7 @@ namespace vzt
         TaskGraph*  m_graph;
         std::string m_name;
         PassType    m_type;
+        uint32_t    m_index = 0; // In execution order
 
         std::function<void(uint32_t frame, CommandBuffer&)> m_recordCallback;
 
@@ -240,6 +249,8 @@ namespace vzt
         ~ComputePass() override = default;
 
         void setRecordFunction(std::function<void(ComputeContext&)> record);
+
+        std::array<uint32_t, 3> getGroupSize() const;
 
         inline ComputePipeline& getPipeline();
 
@@ -315,10 +326,10 @@ namespace vzt
         void setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle);
         void setBackbufferImage(uint32_t frame, uint32_t image);
 
-        // Resources owned by the user. An imported image is returned to `layout` after its last use,
+        // Resources owned by the user. An external image is returned to `layout` after its last use,
         // so that the graph can be executed again. Synchronisation outside of the graph is up to the user.
-        Handle import(View<Buffer> buffer);
-        Handle import(View<DeviceImage> image, ImageLayout layout);
+        Handle external(View<Buffer> buffer);
+        Handle external(View<DeviceImage> image, ImageLayout layout);
 
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
@@ -333,6 +344,7 @@ namespace vzt
         View<Buffer>      getStorage(uint32_t backbufferId, Handle handle) const;
 
         bool isBackBuffer(Handle handle) const;
+        void setProfiling(bool profiling) { m_profiling = profiling; }
 
         // User information check
         void compile();
@@ -389,13 +401,13 @@ namespace vzt
         HandleMap<AttachmentBuilder> m_attachmentBuilders;
         HandleMap<StorageBuilder>    m_storageBuilders;
 
-        struct ImportedImage
+        struct ExternalImage
         {
             View<DeviceImage> image;
             ImageLayout       layout;
         };
-        HandleMap<ImportedImage> m_importedImages;
-        HandleMap<View<Buffer>>  m_importedBuffers;
+        HandleMap<ExternalImage> m_externalImages;
+        HandleMap<View<Buffer>>  m_externalBuffers;
 
         std::hash<std::size_t>                       m_hash{};
         HandleMap<std::size_t>                       m_handleToPhysical;
@@ -413,6 +425,9 @@ namespace vzt
         ImageLayout           m_backbufferLayout;
 
         std::vector<View<DeviceImage>> m_externalBackbuffers;
+
+        bool      m_profiling = false;
+        QueryPool m_queries; // [frame][pass][begin, end]
 
         View<Queue> m_queue;
         CommandPool m_commandPool; // One buffer per frame, created by the first execute
