@@ -78,24 +78,24 @@ namespace vzt
     template <class Type>
     using HandleMap = std::unordered_map<Handle, Type, Handle::hash>;
 
-    class RecordHandler
+    class TaskGraph;
+
+    struct PassContext
     {
-      public:
-        virtual ~RecordHandler()                                                           = default;
-        virtual void record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands) = 0;
+        CommandBuffer&       commands;
+        const TaskGraph&     graph;
+        const DescriptorSet& set;
+        uint32_t             frame;
+
+        inline View<Buffer> buffer(Handle storage) const;
     };
 
-    using RecordCallback = std::function<void(uint32_t i, const DescriptorSet& set, CommandBuffer& commands)>;
-    class LambdaRecorder : public RecordHandler
+    struct ComputeContext : PassContext
     {
-      public:
-        LambdaRecorder(RecordCallback callback);
-        ~LambdaRecorder() override = default;
+    };
 
-        void record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands) override;
-
-      private:
-        RecordCallback m_callback;
+    struct GraphicsContext : PassContext
+    {
     };
 
     enum class PassType : uint8_t
@@ -115,7 +115,6 @@ namespace vzt
         Indirect,
     };
 
-    class RenderGraph;
     class Pass
     {
       public:
@@ -137,10 +136,6 @@ namespace vzt
 
         void bind(std::string name, const UniformBuffer& buffer);
 
-        template <class DerivedHandler, class... Args>
-        void setRecordFunction(Args&&... args);
-        void setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback);
-
         virtual bool isDependingOn(const Pass& other) const;
         void         record(uint32_t i, CommandBuffer& commands) const;
 
@@ -150,10 +145,10 @@ namespace vzt
         inline CSpan<View<ImageView>> getColorOutputs(uint32_t frame) const;
         inline View<ImageView>        getDepth(uint32_t b) const;
 
-        friend RenderGraph;
+        friend TaskGraph;
 
       protected:
-        Pass(RenderGraph& graph, std::string name, PassType type);
+        Pass(TaskGraph& graph, std::string name, PassType type);
         virtual void compile() = 0;
         virtual void resize();
 
@@ -163,11 +158,11 @@ namespace vzt
         void compileDescriptors(const Program& program, const DescriptorLayout& layout);
         void createDescriptors();
 
-        RenderGraph* m_graph;
-        std::string  m_name;
-        PassType     m_type;
+        TaskGraph*  m_graph;
+        std::string m_name;
+        PassType    m_type;
 
-        std::unique_ptr<RecordHandler> m_recordCallback;
+        std::function<void(uint32_t frame, CommandBuffer&)> m_recordCallback;
 
         struct PassUniform
         {
@@ -234,12 +229,14 @@ namespace vzt
 
         ~ComputePass() override = default;
 
+        void setRecordFunction(std::function<void(ComputeContext&)> record);
+
         inline ComputePipeline& getPipeline();
 
-        friend RenderGraph;
+        friend TaskGraph;
 
       private:
-        ComputePass(RenderGraph& graph, std::string name, Program&& program);
+        ComputePass(TaskGraph& graph, std::string name, Program&& program);
         void compile() override;
 
         Program         m_program;
@@ -266,13 +263,15 @@ namespace vzt
         void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "",
                                  ColorBlend blend = {.blendEnable = false});
 
+        void setRecordFunction(std::function<void(GraphicsContext&)> record);
+
         inline GraphicsPipeline&        getPipeline();
         inline GraphicsPipelineBuilder& getBuilder();
 
-        friend RenderGraph;
+        friend TaskGraph;
 
       private:
-        GraphicsPass(RenderGraph& graph, std::string name, Program&& program);
+        GraphicsPass(TaskGraph& graph, std::string name, Program&& program);
         void compile() override;
         void resize() override;
 
@@ -281,16 +280,15 @@ namespace vzt
         GraphicsPipeline        m_pipeline;
     };
 
-    class RenderGraph
+    class TaskGraph
     {
       public:
-        RenderGraph() = default;
-        RenderGraph(View<Device> device);
+        TaskGraph() = default;
+        TaskGraph(View<Device> device);
 
         // User configuration
+        void setBackbuffer(CSpan<View<DeviceImage>> images, uint32_t frameNb, ImageLayout finalLayout, Handle handle);
         void setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle);
-        void setBackbuffer(View<Swapchain> swapchain, Handle handle);
-        // The swapchain image the given frame renders to
         void setBackbufferImage(uint32_t frame, uint32_t image);
 
         Handle addAttachment(AttachmentBuilder builder);
@@ -371,6 +369,17 @@ namespace vzt
         std::vector<View<DeviceImage>> m_externalBackbuffers;
 
         void* m_userData = nullptr;
+    };
+
+    // TaskGraph presenting to a swapchain
+    class RenderGraph : public TaskGraph
+    {
+      public:
+        RenderGraph() = default;
+        RenderGraph(View<Device> device) : TaskGraph(device) {}
+
+        using TaskGraph::setBackbuffer;
+        void setBackbuffer(View<Swapchain> swapchain, Handle handle);
     };
 } // namespace vzt
 

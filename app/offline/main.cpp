@@ -67,39 +67,36 @@ int main(int /* argc */, char** /* argv */)
         builder.set(vertexDescription);
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
-        geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                const auto extent = graph.getBackbufferExtent();
+        geometry.setRecordFunction([&](vzt::GraphicsContext& ctx) {
+            const auto extent = graph.getBackbufferExtent();
 
-                auto colorViews = geometry.getColorOutputs(frame);
-                auto depthView  = geometry.getDepth(frame);
-                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
-                commands.setScissor(vzt::Scissor{.extent = extent});
+            auto colorViews = geometry.getColorOutputs(ctx.frame);
+            auto depthView  = geometry.getDepth(ctx.frame);
+            ctx.commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+            ctx.commands.setScissor(vzt::Scissor{.extent = extent});
 
-                commands.beginRendering({
-                    .renderArea       = {0, 0, extent.width, extent.height},
-                    .colorAttachments = {{
-                        .view       = colorViews[0],
-                        .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                        .loadOp     = vzt::LoadOp::Clear,
-                        .storeOp    = vzt::StoreOp::Store,
-                        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-                    }},
-                    .depthAttachment =
-                        vzt::RenderingInfo::RenderingAttachment{
-                            .view       = depthView,
-                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
-                        },
-                });
-
-                commands.bind(geometry.getPipeline(), set);
-                commands.bindVertexBuffer(vertexBuffer);
-                for (const auto& subMesh : mesh.subMeshes)
-                    commands.drawIndexed(indexBuffer, subMesh.indices);
-
-                commands.endRendering();
+            ctx.commands.beginRendering({
+                .renderArea       = {0, 0, extent.width, extent.height},
+                .colorAttachments = {{
+                    .view       = colorViews[0],
+                    .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                    .loadOp     = vzt::LoadOp::Clear,
+                    .storeOp    = vzt::StoreOp::Store,
+                    .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                }},
+                .depthAttachment =
+                    vzt::RenderingInfo::RenderingAttachment{
+                        .view       = depthView,
+                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                    },
             });
+            ctx.commands.bindVertexBuffer(vertexBuffer);
+            for (const auto& subMesh : mesh.subMeshes)
+                ctx.commands.drawIndexed(indexBuffer, subMesh.indices);
+
+            ctx.commands.endRendering();
+        });
     }
 
     vzt::DeviceImage output = {

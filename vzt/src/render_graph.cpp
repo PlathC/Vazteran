@@ -14,15 +14,7 @@
 
 namespace vzt
 {
-    LambdaRecorder::LambdaRecorder(RecordCallback callback) : m_callback(std::move(callback)) {}
-
-    void LambdaRecorder::record(uint32_t i, const DescriptorSet& set, CommandBuffer& commands)
-    {
-        if (m_callback)
-            m_callback(i, set, commands);
-    }
-
-    Pass::Pass(RenderGraph& graph, std::string name, PassType type)
+    Pass::Pass(TaskGraph& graph, std::string name, PassType type)
         : m_graph(&graph), m_name(std::move(name)), m_type(type)
     {
     }
@@ -102,8 +94,23 @@ namespace vzt
         });
     }
 
-    void Pass::setRecordFunction(std::unique_ptr<RecordHandler>&& recordCallback)
-    { m_recordCallback = std::move(recordCallback); }
+    void ComputePass::setRecordFunction(std::function<void(ComputeContext&)> record)
+    {
+        m_recordCallback = [this, record = std::move(record)](uint32_t frame, CommandBuffer& commands) {
+            commands.bind(m_pipeline, m_pool[frame]);
+            ComputeContext context{{commands, *m_graph, m_pool[frame], frame}};
+            record(context);
+        };
+    }
+
+    void GraphicsPass::setRecordFunction(std::function<void(GraphicsContext&)> record)
+    {
+        m_recordCallback = [this, record = std::move(record)](uint32_t frame, CommandBuffer& commands) {
+            commands.bind(m_pipeline, m_pool[frame]);
+            GraphicsContext context{{commands, *m_graph, m_pool[frame], frame}};
+            record(context);
+        };
+    }
 
     bool Pass::isDependingOn(const Pass& other) const
     {
@@ -160,7 +167,7 @@ namespace vzt
         }
 
         if (m_recordCallback)
-            m_recordCallback->record(i, m_pool[i], commands);
+            m_recordCallback(i, commands);
 
         if (m_finalBarrier)
         {
@@ -352,7 +359,7 @@ namespace vzt
         }
     }
 
-    ComputePass::ComputePass(RenderGraph& graph, std::string name, Program&& program)
+    ComputePass::ComputePass(TaskGraph& graph, std::string name, Program&& program)
         : Pass(graph, std::move(name), PassType::Compute), m_program(std::move(program))
     {
     }
@@ -428,7 +435,7 @@ namespace vzt
         });
     }
 
-    GraphicsPass::GraphicsPass(RenderGraph& graph, std::string name, Program&& program)
+    GraphicsPass::GraphicsPass(TaskGraph& graph, std::string name, Program&& program)
         : Pass(graph, std::move(name), PassType::Graphics), m_program(std::move(program)),
           m_graphicsPipelineBuilder(m_program)
     {
@@ -440,8 +447,9 @@ namespace vzt
         {
             if (use.use == Use::ColorAttachment)
             {
-                const auto format = m_graph->isBackBuffer(use.handle) ? m_graph->getBackbufferFormat()
-                                                                      : *m_graph->m_attachmentBuilders[use.handle].format;
+                const auto format = m_graph->isBackBuffer(use.handle)
+                                        ? m_graph->getBackbufferFormat()
+                                        : *m_graph->m_attachmentBuilders[use.handle].format;
                 m_graphicsPipelineBuilder.addColor(format, use.blend);
             }
             else if (use.use == Use::DepthAttachment)
@@ -456,7 +464,7 @@ namespace vzt
 
     void GraphicsPass::resize() { Pass::resize(); }
 
-    Pass::ResourceState RenderGraph::getState(const Pass::ResourceUse& use, PassType type)
+    Pass::ResourceState TaskGraph::getState(const Pass::ResourceUse& use, PassType type)
     {
         const PipelineStage shaders = //
             type == PassType::Compute ? PipelineStage::ComputeShader
@@ -494,9 +502,9 @@ namespace vzt
         return {};
     }
 
-    RenderGraph::RenderGraph(View<Device> device) : m_device(device) {}
+    TaskGraph::TaskGraph(View<Device> device) : m_device(device) {}
 
-    void RenderGraph::computeBarriers()
+    void TaskGraph::computeBarriers()
     {
         struct Tracked
         {
@@ -591,43 +599,49 @@ namespace vzt
         {
             const Pass::ResourceState& last = tracked.find(*m_backbuffer)->second.state;
             lastBackbufferPass->m_finalBarrier =
-                Pass::PassBarrier{*m_backbuffer, Use::ColorAttachment, ImageAspect::Color, last,
+                Pass::PassBarrier{*m_backbuffer,
+                                  Use::ColorAttachment,
+                                  ImageAspect::Color,
+                                  last,
                                   {m_backbufferLayout, PipelineStage::BottomOfPipe, Access::None}};
         }
     }
 
-    void RenderGraph::setBackbufferImage(uint32_t frame, uint32_t image)
+    void TaskGraph::setBackbufferImage(uint32_t frame, uint32_t image)
     {
         m_frameImages[frame] = image;
         for (auto& pass : m_passes)
             pass->bindBackbuffer(frame, image);
     }
 
-    void RenderGraph::setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle)
+    void TaskGraph::setBackbuffer(CSpan<View<DeviceImage>> images, uint32_t frameNb, ImageLayout finalLayout,
+                                  Handle handle)
     {
-        m_frameNb     = 1;
-        m_backbufferFormat = image->getFormat();
-        m_backbufferExtent = image->getSize();
+        m_frameNb          = frameNb;
+        m_backbufferFormat = images[0]->getFormat();
+        m_backbufferExtent = images[0]->getSize();
         m_backbufferLayout = finalLayout;
-
-        m_backbuffer = handle;
-        m_externalBackbuffers.emplace_back(image);
-    }
-
-    void RenderGraph::setBackbuffer(View<Swapchain> swapchain, const Handle handle)
-    {
-        m_frameNb     = swapchain->getFrameNb();
-        m_backbufferFormat = swapchain->getFormat();
-        m_backbufferExtent = swapchain->getExtent();
-        m_backbufferLayout = ImageLayout::PresentSrcKHR;
         m_backbuffer       = handle;
 
-        m_frameImages.assign(m_frameNb, 0);
-        for (uint32_t i = 0; i < swapchain->getImageNb(); ++i)
-            m_externalBackbuffers.emplace_back(swapchain->getImage(i));
+        m_frameImages.assign(frameNb, 0);
+        m_externalBackbuffers.assign(images.begin(), images.end());
     }
 
-    Handle RenderGraph::addAttachment(AttachmentBuilder builder)
+    void TaskGraph::setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle)
+    {
+        setBackbuffer(CSpan<View<DeviceImage>>{&image, 1}, 1, finalLayout, handle);
+    }
+
+    void RenderGraph::setBackbuffer(View<Swapchain> swapchain, Handle handle)
+    {
+        std::vector<View<DeviceImage>> images;
+        for (uint32_t i = 0; i < swapchain->getImageNb(); ++i)
+            images.emplace_back(swapchain->getImage(i));
+
+        setBackbuffer(images, swapchain->getFrameNb(), ImageLayout::PresentSrcKHR, handle);
+    }
+
+    Handle TaskGraph::addAttachment(AttachmentBuilder builder)
     {
         const Handle handle          = generateAttachmentHandle();
         m_attachmentBuilders[handle] = std::move(builder);
@@ -635,7 +649,7 @@ namespace vzt
         return handle;
     }
 
-    Handle RenderGraph::addStorage(StorageBuilder builder)
+    Handle TaskGraph::addStorage(StorageBuilder builder)
     {
         const Handle handle       = generateStorageHandle();
         m_storageBuilders[handle] = std::move(builder);
@@ -643,31 +657,31 @@ namespace vzt
         return handle;
     }
 
-    ComputePass& RenderGraph::addCompute(std::string name, Program&& program)
+    ComputePass& TaskGraph::addCompute(std::string name, Program&& program)
     {
         ComputePass* pass = new ComputePass(*this, name, std::move(program));
         m_passes.emplace_back(pass);
         return *pass;
     }
 
-    ComputePass& RenderGraph::addCompute(std::string name, std::vector<Shader> shaders)
+    ComputePass& TaskGraph::addCompute(std::string name, std::vector<Shader> shaders)
     {
         ComputePass* pass = new ComputePass(*this, name, Program(m_device, shaders));
         m_passes.emplace_back(pass);
         return *pass;
     }
 
-    ComputePass& RenderGraph::addCompute(std::string name, Shader shader)
+    ComputePass& TaskGraph::addCompute(std::string name, Shader shader)
     { return addCompute(name, std::vector<Shader>{shader}); }
 
-    GraphicsPass& RenderGraph::addGraphics(std::string name, Program&& program)
+    GraphicsPass& TaskGraph::addGraphics(std::string name, Program&& program)
     {
         GraphicsPass* pass = new GraphicsPass(*this, name, std::move(program));
         m_passes.emplace_back(pass);
         return *pass;
     }
 
-    GraphicsPass& RenderGraph::addGraphics(std::string name, std::vector<Shader> shaders)
+    GraphicsPass& TaskGraph::addGraphics(std::string name, std::vector<Shader> shaders)
     {
         GraphicsPass* pass = new GraphicsPass(*this, name, Program(m_device, shaders));
         m_passes.emplace_back(pass);
@@ -675,9 +689,9 @@ namespace vzt
     }
 
     // Versions of a handle all refer to the same resource
-    bool RenderGraph::isBackBuffer(const Handle handle) const { return m_backbuffer && m_backbuffer->id == handle.id; }
+    bool TaskGraph::isBackBuffer(const Handle handle) const { return m_backbuffer && m_backbuffer->id == handle.id; }
 
-    void RenderGraph::compile()
+    void TaskGraph::compile()
     {
         // Back buffer must be set before compiling render graph
         VZT_ASSERT(m_backbuffer);
@@ -699,13 +713,13 @@ namespace vzt
             pass->compile();
     }
 
-    void RenderGraph::record(uint32_t i, CommandBuffer& commands)
+    void TaskGraph::record(uint32_t i, CommandBuffer& commands)
     {
         for (auto& pass : m_passes)
             pass->record(i, commands);
     }
 
-    void RenderGraph::resize(const Extent2D&)
+    void TaskGraph::resize(const Extent2D&)
     {
         createRenderTarget();
 
@@ -713,12 +727,14 @@ namespace vzt
             pass->resize();
     }
 
-    Handle RenderGraph::generateAttachmentHandle() const
-    { return {m_hash(m_handleCounter++), HandleType::Attachment, 0}; }
+    Handle TaskGraph::generateAttachmentHandle() const
+    {
+        return {m_hash(m_handleCounter++), HandleType::Attachment, 0};
+    }
 
-    Handle RenderGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), HandleType::Storage, 0}; }
+    Handle TaskGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), HandleType::Storage, 0}; }
 
-    View<DeviceImage> RenderGraph::getImage(uint32_t backbufferId, Handle handle) const
+    View<DeviceImage> TaskGraph::getImage(uint32_t backbufferId, Handle handle) const
     {
         if (isBackBuffer(handle))
             return m_externalBackbuffers[m_frameImages[backbufferId]];
@@ -727,17 +743,17 @@ namespace vzt
         return m_images[handlePhysicalId];
     }
 
-    View<Buffer> RenderGraph::getStorage(uint32_t backbufferId, Handle handle) const
+    View<Buffer> TaskGraph::getStorage(uint32_t backbufferId, Handle handle) const
     {
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
         return m_storages[handlePhysicalId * m_frameNb + backbufferId];
     }
 
-    const AttachmentBuilder& RenderGraph::getConfiguration(Handle handle) { return m_attachmentBuilders[handle]; }
+    const AttachmentBuilder& TaskGraph::getConfiguration(Handle handle) { return m_attachmentBuilders[handle]; }
 
-    std::vector<std::size_t> RenderGraph::sort()
+    std::vector<std::size_t> TaskGraph::sort()
     {
-        // Graph sorting based on its topology
+        // TaskGraph sorting based on its topology
         // https://en.wikipedia.org/wiki/Topological_sorting
         std::vector<std::size_t> executionOrder{};
         executionOrder.reserve(m_passes.size());
@@ -838,7 +854,7 @@ namespace vzt
         return executionOrder;
     }
 
-    void RenderGraph::createRenderTarget()
+    void TaskGraph::createRenderTarget()
     {
         m_images.clear();
         m_storages.clear();

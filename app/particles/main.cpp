@@ -56,22 +56,19 @@ int main(int /* argc */, char** /* argv */)
         instanceGeneration.addStorageOutput("instances", instancesPosition);
         instanceGeneration.addStorageOutput("draw", drawCommands);
 
-        instanceGeneration.setRecordFunction<vzt::LambdaRecorder>( //
-            [&](uint32_t i, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                vzt::View<vzt::Buffer> buffer = graph.getStorage(i, drawCommands);
+        instanceGeneration.setRecordFunction([&](vzt::ComputeContext& ctx) {
+            vzt::View<vzt::Buffer> buffer = ctx.buffer(drawCommands);
 
-                uint8_t*                           data           = buffer->map();
-                const VkDrawIndexedIndirectCommand defaultCommand = {6, 0, 0, 0, 0};
-                std::memcpy(data, &defaultCommand, sizeof(VkDrawIndexedIndirectCommand));
-                buffer->unMap();
+            uint8_t*                           data           = buffer->map();
+            const VkDrawIndexedIndirectCommand defaultCommand = {6, 0, 0, 0, 0};
+            std::memcpy(data, &defaultCommand, sizeof(VkDrawIndexedIndirectCommand));
+            buffer->unMap();
 
-                vzt::BufferBarrier barrier{*buffer, vzt::Access::TransferWrite, vzt::Access::ShaderWrite};
-                commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
-
-                commands.bind(instanceGeneration.getPipeline(), set);
-                commands.dispatch(
-                    static_cast<uint32_t>(std::ceil(MaxInstanceCount / static_cast<float>(WorkGroupSize))));
-            });
+            vzt::BufferBarrier barrier{*buffer, vzt::Access::TransferWrite, vzt::Access::ShaderWrite};
+            ctx.commands.barrier(vzt::PipelineStage::Transfer, vzt::PipelineStage::VertexShader, barrier);
+            ctx.commands.dispatch(
+                static_cast<uint32_t>(std::ceil(MaxInstanceCount / static_cast<float>(WorkGroupSize))));
+        });
     }
 
     // Draw geometry pass
@@ -88,38 +85,35 @@ int main(int /* argc */, char** /* argv */)
         auto& builder = geometry.getBuilder();
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
-        geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                const auto extent = graph.getBackbufferExtent();
-                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
-                commands.setScissor(vzt::Scissor{.extent = extent});
+        geometry.setRecordFunction([&](vzt::GraphicsContext& ctx) {
+            const auto extent = graph.getBackbufferExtent();
+            ctx.commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+            ctx.commands.setScissor(vzt::Scissor{.extent = extent});
 
-                auto colorViews = geometry.getColorOutputs(frame);
-                auto depthView  = geometry.getDepth(frame);
-                commands.beginRendering({
-                    .renderArea       = {0, 0, extent.width, extent.height},
-                    .colorAttachments = {{
-                        .view       = colorViews[0],
-                        .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                        .loadOp     = vzt::LoadOp::Clear,
-                        .storeOp    = vzt::StoreOp::Store,
-                        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-                    }},
-                    .depthAttachment =
-                        vzt::RenderingInfo::RenderingAttachment{
-                            .view       = depthView,
-                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
-                        },
-                });
-
-                const vzt::View<vzt::Buffer> buffer = graph.getStorage(frame, drawCommands);
-
-                commands.bind(geometry.getPipeline(), set);
-                commands.drawIndirect(*buffer, 1, 0);
-
-                commands.endRendering();
+            auto colorViews = geometry.getColorOutputs(ctx.frame);
+            auto depthView  = geometry.getDepth(ctx.frame);
+            ctx.commands.beginRendering({
+                .renderArea       = {0, 0, extent.width, extent.height},
+                .colorAttachments = {{
+                    .view       = colorViews[0],
+                    .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                    .loadOp     = vzt::LoadOp::Clear,
+                    .storeOp    = vzt::StoreOp::Store,
+                    .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                }},
+                .depthAttachment =
+                    vzt::RenderingInfo::RenderingAttachment{
+                        .view       = depthView,
+                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                    },
             });
+
+            const vzt::View<vzt::Buffer> buffer = ctx.buffer(drawCommands);
+            ctx.commands.drawIndirect(*buffer, 1, 0);
+
+            ctx.commands.endRendering();
+        });
     }
 
     // Initialize buffer with default values

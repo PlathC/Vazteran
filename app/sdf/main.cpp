@@ -71,11 +71,9 @@ int main(int /* argc */, char** /* argv */)
     auto& sdfGeneration = graph.addCompute("SDF generation", compiler("shaders/sdf/grid.slang", "main"));
     {
         sdfGeneration.addStorageOutput("sdf", sdfTexture);
-        sdfGeneration.setRecordFunction<vzt::LambdaRecorder>( //
-            [&](uint32_t, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                commands.bind(sdfGeneration.getPipeline(), set);
-                commands.dispatch(GridWidth / WorkGroupSize, GridWidth / WorkGroupSize, GridWidth / WorkGroupSize);
-            });
+        sdfGeneration.setRecordFunction([&](vzt::ComputeContext& ctx) {
+            ctx.commands.dispatch(GridWidth / WorkGroupSize, GridWidth / WorkGroupSize, GridWidth / WorkGroupSize);
+        });
     }
 
     // Draw geometry pass
@@ -91,35 +89,33 @@ int main(int /* argc */, char** /* argv */)
         auto& builder = geometry.getBuilder();
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
-        geometry.setRecordFunction<vzt::LambdaRecorder>(
-            [&](uint32_t frame, const vzt::DescriptorSet& set, vzt::CommandBuffer& commands) {
-                const auto extent = graph.getBackbufferExtent();
-                commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
-                commands.setScissor(vzt::Scissor{.extent = extent});
+        geometry.setRecordFunction([&](vzt::GraphicsContext& ctx) {
+            const auto extent = graph.getBackbufferExtent();
+            ctx.commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
+            ctx.commands.setScissor(vzt::Scissor{.extent = extent});
 
-                auto colorViews = geometry.getColorOutputs(frame);
-                auto depthView  = geometry.getDepth(frame);
-                commands.beginRendering({
-                    .renderArea       = {0, 0, extent.width, extent.height},
-                    .colorAttachments = {{
-                        .view       = colorViews[0],
-                        .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                        .loadOp     = vzt::LoadOp::Clear,
-                        .storeOp    = vzt::StoreOp::Store,
-                        .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-                    }},
-                    .depthAttachment =
-                        vzt::RenderingInfo::RenderingAttachment{
-                            .view       = depthView,
-                            .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-                            .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
-                        },
-                });
-                commands.bind(geometry.getPipeline(), set);
-                commands.drawIndexed(indexBuffer, {0, 3 * 6 * 2});
-
-                commands.endRendering();
+            auto colorViews = geometry.getColorOutputs(ctx.frame);
+            auto depthView  = geometry.getDepth(ctx.frame);
+            ctx.commands.beginRendering({
+                .renderArea       = {0, 0, extent.width, extent.height},
+                .colorAttachments = {{
+                    .view       = colorViews[0],
+                    .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
+                    .loadOp     = vzt::LoadOp::Clear,
+                    .storeOp    = vzt::StoreOp::Store,
+                    .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                }},
+                .depthAttachment =
+                    vzt::RenderingInfo::RenderingAttachment{
+                        .view       = depthView,
+                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
+                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
+                    },
             });
+            ctx.commands.drawIndexed(indexBuffer, {0, 3 * 6 * 2});
+
+            ctx.commands.endRendering();
+        });
     }
 
     // Initialize buffer with default values
