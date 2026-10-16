@@ -2,7 +2,6 @@
 #include <vzt/compiler.hpp>
 #include <vzt/core/logger.hpp>
 #include <vzt/render_graph.hpp>
-#include <vzt/vulkan/query_pool.hpp>
 #include <vzt/vulkan/surface.hpp>
 #include <vzt/vulkan/swapchain.hpp>
 #include <vzt/vulkan/uniform.hpp>
@@ -41,9 +40,6 @@ int main(int /* argc */, char** /* argv */)
         deviceBuilder.getDeviceFeatures().core.shaderInt64 = true;
     }
     auto device = instance.getDevice(deviceBuilder, surface);
-
-    auto        hardware = device.getHardware();
-    const float period   = hardware.getProperties().limits.timestampPeriod;
 
     std::vector<uint32_t> indices = {
         0, 2, 1, 2, 3, 1, //
@@ -101,13 +97,8 @@ int main(int /* argc */, char** /* argv */)
     geometry.bind(raycastUbo, "Uniforms");
 
     graph.setBackbuffer(swapchain, color);
+    graph.setProfiling(true);
     graph.compile();
-
-    const vzt::QueryPool queryPool = {
-        device,
-        vzt::QueryType::Timestamp,
-        swapchain.getFrameNb() * (graph.size() + 1) * 2,
-    };
 
     auto graphicsQueue = device.getQueue(vzt::QueueType::Graphics);
     auto commandPool   = vzt::CommandPool(device, graphicsQueue, swapchain.getFrameNb());
@@ -126,8 +117,6 @@ int main(int /* argc */, char** /* argv */)
     const vzt::Vec3 target   = (minimum + maximum) * .5f;
     const float     bbRadius = glm::compMax(glm::abs(maximum - target));
 
-    std::vector<uint64_t> times{};
-    times.resize((graph.size() + 1) * swapchain.getFrameNb() * 2);
     bool hasBenchmark = false;
 
     // Actual rendering
@@ -141,29 +130,9 @@ int main(int /* argc */, char** /* argv */)
         if (!submission)
             continue;
 
-        const uint32_t startId = submission->frameId * (graph.size() + 1) * 2;
         if (hasBenchmark)
-        {
-            queryPool.getResults(startId, (graph.size() + 1) * 2,
-                                 vzt::Span(times.data() + startId, (graph.size() + 1) * 2), sizeof(uint64_t),
-                                 vzt::QueryResultFlag::N64 | vzt::QueryResultFlag::Wait);
-
             for (uint32_t i = 0; i < graph.size(); i++)
-            {
-                auto& pass = graph[i];
-
-                const float ms =
-                    (static_cast<float>(times[startId + i * 2 + 1] - times[startId + i * 2 + 0]) * period) / 1000000.f;
-
-                vzt::logger::info("{}: {}ms", pass->getName(), ms);
-            }
-
-            const float ms =
-                (static_cast<float>(times[startId + graph.size() * 2 + 1] - times[startId + graph.size() * 2 + 0]) *
-                 period) /
-                1000000.f;
-            vzt::logger::info("Total: {}ms", ms);
-        }
+                vzt::logger::info("{}: {}ms", graph[i]->getName(), graph[i]->getDuration(submission->frameId));
         hasBenchmark |= submission->frameId == (swapchain.getFrameNb() - 1);
 
         // Per frame update
@@ -208,16 +177,7 @@ int main(int /* argc */, char** /* argv */)
         raycastUbo.write(commands, raycastInput, submission->frameId);
 
         graph.setBackbufferImage(submission->frameId, submission->imageId);
-        commands.reset(queryPool, submission->frameId * (graph.size() + 1) * 2, (graph.size() + 1) * 2);
-        commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 0, vzt::PipelineStage::BottomOfPipe);
-        for (uint32_t i = 0; i < graph.size(); i++)
-        {
-            auto& pass = graph[i];
-            commands.writeTimeStamp(queryPool, startId + i * 2 + 0, vzt::PipelineStage::BottomOfPipe);
-            pass->record(submission->frameId, commands);
-            commands.writeTimeStamp(queryPool, startId + i * 2 + 1, vzt::PipelineStage::BottomOfPipe);
-        }
-        commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 1, vzt::PipelineStage::BottomOfPipe);
+        graph.record(submission->frameId, commands);
 
         commands.end();
 

@@ -5,7 +5,6 @@
 #include <vzt/compiler.hpp>
 #include <vzt/core/logger.hpp>
 #include <vzt/render_graph.hpp>
-#include <vzt/vulkan/query_pool.hpp>
 #include <vzt/vulkan/surface.hpp>
 #include <vzt/vulkan/swapchain.hpp>
 #include <vzt/vulkan/uniform.hpp>
