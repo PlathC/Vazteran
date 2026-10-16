@@ -54,7 +54,7 @@ function(determine_target_architecture VAR)
 endfunction()
 
 function(fetch_slang)
-    set(VZT_FETCH_SLANG_VERSION "2025.6.3")
+    set(VZT_FETCH_SLANG_VERSION "2026.19")
     set(SLANG_VERSION ${VZT_FETCH_SLANG_VERSION})
     set(SLANG_URL "https://github.com/shader-slang/slang/releases/download/v${SLANG_VERSION}/slang-${SLANG_VERSION}")
 
