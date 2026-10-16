@@ -207,6 +207,7 @@ namespace vzt
             ResourceState dst;
         };
         std::vector<PassBarrier> m_barriers;
+        Optional<PassBarrier>    m_finalBarrier; // Backbuffer to its final layout, after the last pass using it
 
         // Descriptor data
         DescriptorPool         m_pool;

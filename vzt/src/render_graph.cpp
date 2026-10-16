@@ -161,6 +161,19 @@ namespace vzt
 
         if (m_recordCallback)
             m_recordCallback->record(i, m_pool[i], commands);
+
+        if (m_finalBarrier)
+        {
+            const PassBarrier& final = *m_finalBarrier;
+            commands.barrier(PipelineBarrier{final.src.stages,
+                                             final.dst.stages,
+                                             {{.image     = m_graph->getImage(i, final.handle),
+                                               .oldLayout = final.src.layout,
+                                               .newLayout = final.dst.layout,
+                                               .src       = final.src.access,
+                                               .dst       = final.dst.access,
+                                               .aspect    = final.aspect}}});
+        }
     }
 
     void Pass::bind(std::string name, const UniformBuffer& buffer) { m_uniforms.push_back({std::move(name), buffer}); }
@@ -221,7 +234,7 @@ namespace vzt
 
         for (const ResourceUse& use : m_uses)
         {
-            if (use.use == Use::Sampled && !m_graph->m_attachmentBuilders[use.handle].format)
+            if (use.use == Use::Sampled && m_graph->isBackBuffer(use.handle))
                 throw std::runtime_error(fmt::format("Pass \"{}\": swapchain images cannot be sampled.", m_name));
         }
 
@@ -387,8 +400,9 @@ namespace vzt
         {
             if (use.use == Use::ColorAttachment)
             {
-                const auto format = m_graph->m_attachmentBuilders[use.handle].format;
-                m_graphicsPipelineBuilder.addColor(format.value_or(m_graph->getBackbufferFormat()), use.blend);
+                const auto format = m_graph->isBackBuffer(use.handle) ? m_graph->getBackbufferFormat()
+                                                                      : *m_graph->m_attachmentBuilders[use.handle].format;
+                m_graphicsPipelineBuilder.addColor(format, use.blend);
             }
             else if (use.use == Use::DepthAttachment)
             {
@@ -450,10 +464,12 @@ namespace vzt
             bool                written;
         };
         HandleMap<Tracked> tracked{};
+        Pass*              lastBackbufferPass = nullptr;
 
         for (auto& pass : m_passes)
         {
             pass->m_barriers.clear();
+            pass->m_finalBarrier.reset();
 
             HandleMap<ImageLayout> passLayouts{};
             for (Pass::ResourceUse& use : pass->m_uses)
@@ -481,6 +497,9 @@ namespace vzt
                     }
                 }
 
+                if (m_backbuffer && use.handle.id == m_backbuffer->id)
+                    lastBackbufferPass = pass.get();
+
                 const auto previous = tracked.find(use.handle);
                 if (previous == tracked.end())
                 {
@@ -507,6 +526,14 @@ namespace vzt
                 pass->m_barriers.push_back({use.handle, use.use, use.aspect, src, state});
                 last = {state, use.write};
             }
+        }
+
+        if (lastBackbufferPass)
+        {
+            const Pass::ResourceState& last = tracked.find(*m_backbuffer)->second.state;
+            lastBackbufferPass->m_finalBarrier =
+                Pass::PassBarrier{*m_backbuffer, Use::ColorAttachment, ImageAspect::Color, last,
+                                  {m_backbufferLayout, PipelineStage::BottomOfPipe, Access::None}};
         }
     }
 
@@ -768,7 +795,7 @@ namespace vzt
             AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[handle];
 
             // Swapchain images does not need to be created
-            if (attachmentBuilder.format || attachmentBuilder.usage != ImageUsage::ColorAttachment)
+            if (!isBackBuffer(handle))
             {
                 if (!attachmentBuilder.format && any(attachmentBuilder.usage & ImageUsage::DepthStencilAttachment))
                     attachmentBuilder.format = depthFormat;

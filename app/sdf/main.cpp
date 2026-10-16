@@ -247,14 +247,6 @@ int main(int /* argc */, char** /* argv */)
         }
         commands.writeTimeStamp(queryPool, startId + graph.size() * 2 + 1, vzt::PipelineStage::BottomOfPipe);
 
-        {
-            vzt::ImageBarrier imageBarrier{};
-            imageBarrier.image     = swapchain.getImage(submission->imageId);
-            imageBarrier.oldLayout = vzt::ImageLayout::ColorAttachmentOptimal;
-            imageBarrier.newLayout = vzt::ImageLayout::PresentSrcKHR;
-            commands.barrier(vzt::PipelineStage::TopOfPipe, vzt::PipelineStage::BottomOfPipe, imageBarrier);
-        }
-
         commands.end();
 
         graphicsQueue->submit(commands, *submission);
