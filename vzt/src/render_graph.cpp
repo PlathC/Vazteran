@@ -31,15 +31,11 @@ namespace vzt
     {
         VZT_ASSERT(handle.type == HandleType::Storage);
         m_uses.push_back({
-            .handle       = handle,
-            .use          = Use::StorageBuffer,
-            .read         = true,
-            .parameter    = std::move(parameter),
-            .range        = range,
-            .waitStage    = PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::VertexShader,
-            .waitAccess   = Access::ShaderWrite,
-            .targetAccess = Access::ShaderRead,
+            .handle    = handle,
+            .use       = Use::StorageBuffer,
+            .read      = true,
+            .parameter = std::move(parameter),
+            .range     = range,
         });
     }
 
@@ -47,14 +43,10 @@ namespace vzt
     {
         VZT_ASSERT(handle.type == HandleType::Storage);
         m_uses.push_back({
-            .handle       = handle,
-            .use          = Use::Indirect,
-            .read         = true,
-            .range        = range,
-            .waitStage    = PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::DrawIndirect,
-            .waitAccess   = Access::ShaderWrite,
-            .targetAccess = Access::IndirectCommandRead,
+            .handle = handle,
+            .use    = Use::Indirect,
+            .read   = true,
+            .range  = range,
         });
     }
 
@@ -64,16 +56,11 @@ namespace vzt
 
         const bool isImage = handle.type == HandleType::Attachment;
         m_uses.push_back({
-            .handle       = handle,
-            .use          = isImage ? Use::StorageImage : Use::StorageBuffer,
-            .write        = true,
-            .parameter    = std::move(parameter),
-            .range        = range,
-            .layout       = isImage ? ImageLayout::General : ImageLayout::Undefined,
-            .waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader,
-            .waitAccess   = Access::ShaderRead,
-            .targetAccess = Access::ShaderWrite,
+            .handle    = handle,
+            .use       = isImage ? Use::StorageImage : Use::StorageBuffer,
+            .write     = true,
+            .parameter = std::move(parameter),
+            .range     = range,
         });
     }
 
@@ -83,17 +70,12 @@ namespace vzt
 
         const bool isImage = handle.type == HandleType::Attachment;
         m_uses.push_back({
-            .handle       = handle,
-            .use          = isImage ? Use::StorageImage : Use::StorageBuffer,
-            .read         = true,
-            .write        = true,
-            .parameter    = std::move(parameter),
-            .range        = range,
-            .layout       = isImage ? ImageLayout::General : ImageLayout::Undefined,
-            .waitStage    = PipelineStage::VertexInput | PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::VertexShader | PipelineStage::ComputeShader,
-            .waitAccess   = isImage ? Access::ShaderRead : Access::ShaderRead | Access::ShaderWrite,
-            .targetAccess = isImage ? Access::ShaderWrite : Access::ShaderRead | Access::ShaderWrite,
+            .handle    = handle,
+            .use       = isImage ? Use::StorageImage : Use::StorageBuffer,
+            .read      = true,
+            .write     = true,
+            .parameter = std::move(parameter),
+            .range     = range,
         });
     }
 
@@ -101,15 +83,10 @@ namespace vzt
     {
         assert(handle.type == HandleType::Attachment);
         m_uses.push_back({
-            .handle       = handle,
-            .use          = Use::Sampled,
-            .read         = true,
-            .parameter    = std::move(parameter),
-            .layout       = ImageLayout::ShaderReadOnlyOptimal,
-            .waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::ComputeShader,
-            .waitAccess   = Access::ShaderWrite,
-            .targetAccess = Access::ShaderRead,
+            .handle    = handle,
+            .use       = Use::Sampled,
+            .read      = true,
+            .parameter = std::move(parameter),
         });
     }
 
@@ -117,16 +94,11 @@ namespace vzt
     {
         assert(handle.type == HandleType::Attachment);
         m_uses.push_back({
-            .handle       = handle,
-            .use          = Use::Sampled,
-            .read         = true,
-            .parameter    = std::move(parameter),
-            .aspect       = ImageAspect::Depth,
-            .layout       = ImageLayout::ShaderReadOnlyOptimal,
-            .waitStage    = PipelineStage::LateFragmentTests | PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::ComputeShader,
-            .waitAccess   = Access::DepthStencilAttachmentWrite | Access::ShaderWrite,
-            .targetAccess = Access::ShaderRead,
+            .handle    = handle,
+            .use       = Use::Sampled,
+            .read      = true,
+            .parameter = std::move(parameter),
+            .aspect    = ImageAspect::Depth,
         });
     }
 
@@ -154,31 +126,37 @@ namespace vzt
 
     void Pass::record(uint32_t i, CommandBuffer& commands) const
     {
-        for (const ResourceUse& use : m_uses)
+        PipelineBarrier barrier{};
+        for (const PassBarrier& passBarrier : m_barriers)
         {
-            // Depth attachments transitions are not handled yet
-            if (use.use == Use::DepthAttachment)
-                continue;
+            barrier.src |= passBarrier.src.stages;
+            barrier.dst |= passBarrier.dst.stages;
 
-            if (use.use == Use::StorageBuffer || use.use == Use::Indirect)
+            if (passBarrier.use == Use::StorageBuffer || passBarrier.use == Use::Indirect)
             {
-                const View<Buffer> buffer = m_graph->getStorage(i, use.handle);
-                commands.barrier(use.waitStage, use.targetStage,
-                                 BufferBarrier{{buffer, buffer->size()}, use.waitAccess, use.targetAccess});
+                const View<Buffer> buffer = m_graph->getStorage(i, passBarrier.handle);
+                barrier.bufferBarriers.push_back(
+                    {{buffer, buffer->size()}, passBarrier.src.access, passBarrier.dst.access});
                 continue;
             }
 
-            ImageBarrier barrier;
-            barrier.image     = m_graph->getImage(i, use.handle);
-            barrier.oldLayout = use.initialLayout;
-            barrier.newLayout = use.layout;
-            barrier.src       = use.waitAccess;
-            barrier.dst       = use.targetAccess;
-            barrier.aspect    = use.aspect;
-            if (use.use == Use::Sampled || use.use == Use::StorageImage)
-                barrier.levelCount = m_graph->getConfiguration(use.handle).mipLevels;
+            barrier.imageBarriers.push_back({
+                .image      = m_graph->getImage(i, passBarrier.handle),
+                .oldLayout  = passBarrier.src.layout,
+                .newLayout  = passBarrier.dst.layout,
+                .src        = passBarrier.src.access,
+                .dst        = passBarrier.dst.access,
+                .levelCount = m_graph->getConfiguration(passBarrier.handle).mipLevels,
+                .aspect     = passBarrier.aspect,
+            });
+        }
 
-            commands.barrier(use.waitStage, use.targetStage, barrier);
+        if (!m_barriers.empty())
+        {
+            // First uses of a frame have no previous stage to wait for
+            if (barrier.src == PipelineStage::None)
+                barrier.src = PipelineStage::TopOfPipe;
+            commands.barrier(barrier);
         }
 
         if (m_recordCallback)
@@ -235,17 +213,10 @@ namespace vzt
                                                  m_name, name, binding, string_VkDescriptorType(toVulkan(type))));
         }
 
-        for (ResourceUse& use : m_uses)
+        for (const ResourceUse& use : m_uses)
         {
-            if (use.use != Use::Sampled)
-                continue;
-
-            const AttachmentBuilder& attachmentBuilder = m_graph->m_attachmentBuilders[use.handle];
-            if (!attachmentBuilder.format)
+            if (use.use == Use::Sampled && !m_graph->m_attachmentBuilders[use.handle].format)
                 throw std::runtime_error(fmt::format("Pass \"{}\": swapchain images cannot be sampled.", m_name));
-
-            const bool isDepth = any(attachmentBuilder.usage & ImageUsage::DepthStencilAttachment);
-            use.aspect         = isDepth ? ImageAspect::Depth : ImageAspect::Color;
         }
 
         const uint32_t backbufferNb = m_graph->getBackbufferNb();
@@ -302,7 +273,8 @@ namespace vzt
                 case Use::StorageImage: {
                     const ImageView& view =
                         m_storageImageViews.emplace_back(device, m_graph->getImage(i, use.handle), ImageAspect::Color);
-                    descriptors[use.binding] = DescriptorImage{DescriptorType::StorageImage, view, {}, use.layout};
+                    descriptors[use.binding] =
+                        DescriptorImage{DescriptorType::StorageImage, view, {}, ImageLayout::General};
                     break;
                 }
                 case Use::StorageBuffer: {
@@ -340,7 +312,6 @@ namespace vzt
             .use    = Use::DepthAttachment,
             .read   = true,
             .aspect = ImageAspect::Depth,
-            .layout = ImageLayout::DepthStencilAttachmentOptimal,
         });
     }
 
@@ -354,7 +325,6 @@ namespace vzt
             .use    = Use::DepthAttachment,
             .write  = true,
             .aspect = ImageAspect::Depth,
-            .layout = ImageLayout::DepthStencilAttachmentOptimal,
         });
     }
 
@@ -369,7 +339,6 @@ namespace vzt
             .read   = true,
             .write  = true,
             .aspect = ImageAspect::Depth,
-            .layout = ImageLayout::DepthStencilAttachmentOptimal,
         });
     }
 
@@ -379,15 +348,10 @@ namespace vzt
 
         handle.state++;
         m_uses.push_back({
-            .handle       = handle,
-            .use          = Use::ColorAttachment,
-            .write        = true,
-            .blend        = blend,
-            .layout       = ImageLayout::ColorAttachmentOptimal,
-            .waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader,
-            .waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite,
-            .targetAccess = Access::ShaderRead | Access::ColorAttachmentRead,
+            .handle = handle,
+            .use    = Use::ColorAttachment,
+            .write  = true,
+            .blend  = blend,
         });
     }
 
@@ -397,16 +361,11 @@ namespace vzt
 
         handle.state++;
         m_uses.push_back({
-            .handle       = handle,
-            .use          = Use::ColorAttachment,
-            .read         = true,
-            .write        = true,
-            .blend        = blend,
-            .layout       = ImageLayout::ColorAttachmentOptimal,
-            .waitStage    = PipelineStage::ColorAttachmentOutput | PipelineStage::ComputeShader,
-            .targetStage  = PipelineStage::FragmentShader | PipelineStage::ComputeShader,
-            .waitAccess   = Access::ColorAttachmentWrite | Access::ShaderWrite,
-            .targetAccess = Access::ShaderRead,
+            .handle = handle,
+            .use    = Use::ColorAttachment,
+            .read   = true,
+            .write  = true,
+            .blend  = blend,
         });
     }
 
@@ -437,7 +396,113 @@ namespace vzt
 
     void GraphicsPass::resize() { Pass::resize(); }
 
+    Pass::ResourceState RenderGraph::getState(const Pass::ResourceUse& use, PassType type)
+    {
+        const PipelineStage shaders = //
+            type == PassType::Compute ? PipelineStage::ComputeShader
+                                      : PipelineStage::VertexShader | PipelineStage::FragmentShader;
+
+        const Access shaderAccess =
+            (use.read ? Access::ShaderRead : Access::None) | (use.write ? Access::ShaderWrite : Access::None);
+
+        switch (use.use)
+        {
+        case Use::ColorAttachment:
+            return {
+                ImageLayout::ColorAttachmentOptimal,
+                PipelineStage::ColorAttachmentOutput,
+                Access::ColorAttachmentRead | Access::ColorAttachmentWrite,
+            };
+        case Use::DepthAttachment:
+            return {
+                use.write ? ImageLayout::DepthStencilAttachmentOptimal : ImageLayout::DepthStencilReadOnlyOptimal,
+                PipelineStage::EarlyFragmentTests | PipelineStage::LateFragmentTests,
+                Access::DepthStencilAttachmentRead | (use.write ? Access::DepthStencilAttachmentWrite : Access::None),
+            };
+        case Use::Sampled:
+            return {
+                any(use.aspect & ImageAspect::Depth) ? ImageLayout::DepthStencilReadOnlyOptimal
+                                                     : ImageLayout::ShaderReadOnlyOptimal,
+                shaders,
+                Access::ShaderRead,
+            };
+        case Use::StorageImage: return {ImageLayout::General, shaders, shaderAccess};
+        case Use::StorageBuffer: return {ImageLayout::Undefined, shaders, shaderAccess};
+        case Use::Indirect: return {ImageLayout::Undefined, PipelineStage::DrawIndirect, Access::IndirectCommandRead};
+        }
+
+        return {};
+    }
+
     RenderGraph::RenderGraph(View<Device> device) : m_device(device) {}
+
+    void RenderGraph::computeBarriers()
+    {
+        struct Tracked
+        {
+            Pass::ResourceState state;
+            bool                written;
+        };
+        HandleMap<Tracked> tracked{};
+
+        for (auto& pass : m_passes)
+        {
+            pass->m_barriers.clear();
+
+            HandleMap<ImageLayout> passLayouts{};
+            for (Pass::ResourceUse& use : pass->m_uses)
+            {
+                const bool               isImage = use.use != Use::StorageBuffer && use.use != Use::Indirect;
+                const AttachmentBuilder& builder = m_attachmentBuilders[use.handle];
+                if (isImage && any(builder.usage & ImageUsage::DepthStencilAttachment))
+                {
+                    const bool hasStencilAspect = builder.format && hasStencil(*builder.format);
+                    use.aspect = hasStencilAspect ? ImageAspect::Depth | ImageAspect::Stencil : ImageAspect::Depth;
+                }
+
+                const Pass::ResourceState state = getState(use, pass->m_type);
+
+                // An image has a single layout during a pass
+                if (isImage)
+                {
+                    const auto [layout, inserted] = passLayouts.emplace(use.handle, state.layout);
+                    if (!inserted && layout->second != state.layout)
+                    {
+                        throw std::runtime_error(
+                            fmt::format("Pass \"{}\": an image is used with two different layouts ({} and {}).",
+                                        pass->m_name, string_VkImageLayout(toVulkan(layout->second)),
+                                        string_VkImageLayout(toVulkan(state.layout))));
+                    }
+                }
+
+                const auto previous = tracked.find(use.handle);
+                if (previous == tracked.end())
+                {
+                    // First use of the frame: image contents are discarded
+                    if (isImage)
+                        pass->m_barriers.push_back({use.handle, use.use, use.aspect, {}, state});
+
+                    tracked[use.handle] = {state, use.write};
+                    continue;
+                }
+
+                Tracked& last = previous->second;
+                if (!last.written && !use.write && last.state.layout == state.layout)
+                {
+                    // Read after read: a later write will have to wait for every reader
+                    last.state.stages |= state.stages;
+                    continue;
+                }
+
+                Pass::ResourceState src = last.state;
+                if (!last.written)
+                    src.access = Access::None; // Write after read only needs an execution dependency
+
+                pass->m_barriers.push_back({use.handle, use.use, use.aspect, src, state});
+                last = {state, use.write};
+            }
+        }
+    }
 
     void RenderGraph::setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle)
     {
@@ -530,22 +595,8 @@ namespace vzt
             sortedPasses.emplace_back(std::move(m_passes[executionOrder[i]]));
         m_passes = std::move(sortedPasses);
 
-        // Each image use starts from the layout of its previous use in execution order
-        HandleMap<ImageLayout> lastLayouts{};
-        for (auto& pass : m_passes)
-        {
-            for (Pass::ResourceUse& use : pass->m_uses)
-            {
-                if (use.use == Use::StorageBuffer || use.use == Use::Indirect)
-                    continue;
-
-                if (const auto last = lastLayouts.find(use.handle); last != lastLayouts.end())
-                    use.initialLayout = last->second;
-                lastLayouts[use.handle] = use.layout;
-            }
-        }
-
         createRenderTarget();
+        computeBarriers();
 
         // Create render passes and their corresponding data such as the FrameBuffer
         // Traverse pass in execution order to fit their id with their ressources

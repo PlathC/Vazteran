@@ -185,17 +185,28 @@ namespace vzt
             uint32_t          binding   = ~0u;
             Optional<Range<>> range     = {};
             ColorBlend        blend     = {.blendEnable = false};
-            ImageAspect       aspect    = ImageAspect::Color;
-
-            // Barrier, set by the add functions
-            ImageLayout   initialLayout = ImageLayout::Undefined;
-            ImageLayout   layout        = ImageLayout::Undefined;
-            PipelineStage waitStage     = PipelineStage::None;
-            PipelineStage targetStage   = PipelineStage::None;
-            Access        waitAccess    = Access::None;
-            Access        targetAccess  = Access::None;
+            ImageAspect       aspect    = ImageAspect::Color; // Resolved at compile for images
         };
         std::vector<ResourceUse> m_uses;
+
+        // State of a resource required by a use, or reached after it
+        struct ResourceState
+        {
+            ImageLayout   layout = ImageLayout::Undefined;
+            PipelineStage stages = PipelineStage::None;
+            Access        access = Access::None;
+        };
+
+        // Computed at compile from the previous use of each resource
+        struct PassBarrier
+        {
+            Handle        handle;
+            Use           use;
+            ImageAspect   aspect;
+            ResourceState src;
+            ResourceState dst;
+        };
+        std::vector<PassBarrier> m_barriers;
 
         // Descriptor data
         DescriptorPool         m_pool;
@@ -322,7 +333,11 @@ namespace vzt
         const AttachmentBuilder& getConfiguration(Handle handle);
 
         std::vector<std::size_t> sort();
-        void                     createRenderTarget();
+        void                     computeBarriers();
+
+        // Layout, stages and accesses required by a use
+        static Pass::ResourceState getState(const Pass::ResourceUse& use, PassType type);
+        void                       createRenderTarget();
 
         static inline std::atomic<std::size_t> m_handleCounter = 0;
 
