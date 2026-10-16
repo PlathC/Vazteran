@@ -366,14 +366,7 @@ namespace vzt
         const auto& extensions             = configuration.getExtensions();
         createInfo.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
-
-        createInfo.enabledLayerCount = 0;
-        if (instance->isValidationEnable())
-        {
-            const std::vector<const char*>& validationLayers = instance->getValidationLayers();
-            createInfo.enabledLayerCount                     = static_cast<uint32_t>(validationLayers.size());
-            createInfo.ppEnabledLayerNames                   = validationLayers.data();
-        }
+        createInfo.enabledLayerCount       = 0;
 
         vkCheck(vkCreateDevice(m_device.getHandle(), &createInfo, nullptr, &m_handle),
                 "Failed to create logical device.");
