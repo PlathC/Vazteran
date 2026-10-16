@@ -79,40 +79,16 @@ int main(int /* argc */, char** /* argv */)
     {
         geometry.addStorageInput("instances", instancesPosition);
         geometry.addStorageInputIndirect(drawCommands);
-        geometry.addColorOutput(color, "", vzt::ColorBlend{.blendEnable = true, .colorBlendOp = vzt::BlendOp::Add});
+        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                                vzt::ColorBlend{.blendEnable = true, .colorBlendOp = vzt::BlendOp::Add});
         geometry.setDepthOutput(depth);
 
         auto& builder = geometry.getBuilder();
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
         geometry.setRecordFunction([&](vzt::GraphicsContext& ctx) {
-            const auto extent = graph.getBackbufferExtent();
-            ctx.commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
-            ctx.commands.setScissor(vzt::Scissor{.extent = extent});
-
-            auto colorViews = geometry.getColorOutputs(ctx.frame);
-            auto depthView  = geometry.getDepth(ctx.frame);
-            ctx.commands.beginRendering({
-                .renderArea       = {0, 0, extent.width, extent.height},
-                .colorAttachments = {{
-                    .view       = colorViews[0],
-                    .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                    .loadOp     = vzt::LoadOp::Clear,
-                    .storeOp    = vzt::StoreOp::Store,
-                    .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-                }},
-                .depthAttachment =
-                    vzt::RenderingInfo::RenderingAttachment{
-                        .view       = depthView,
-                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
-                    },
-            });
-
             const vzt::View<vzt::Buffer> buffer = ctx.buffer(drawCommands);
             ctx.commands.drawIndirect(*buffer, 1, 0);
-
-            ctx.commands.endRendering();
         });
     }
 

@@ -107,9 +107,70 @@ namespace vzt
     {
         m_recordCallback = [this, record = std::move(record)](uint32_t frame, CommandBuffer& commands) {
             commands.bind(m_pipeline, m_pool[frame]);
-            GraphicsContext context{{commands, *m_graph, m_pool[frame], frame}};
+            GraphicsContext context{{commands, *m_graph, m_pool[frame], frame}, *this};
+            if (!m_manualRendering)
+                context.begin();
             record(context);
+            if (!m_manualRendering)
+                context.end();
         };
+    }
+
+    Extent2D GraphicsPass::getExtent() const
+    {
+        for (const ResourceUse& use : m_uses)
+        {
+            if (use.use != Use::ColorAttachment && use.use != Use::DepthAttachment)
+                continue;
+
+            const Extent3D size = m_graph->m_attachmentBuilders[use.handle].size.value_or(m_graph->getBackbufferExtent());
+            return {size.width, size.height};
+        }
+
+        return m_graph->getBackbufferExtent();
+    }
+
+    RenderingInfo GraphicsPass::getRenderingInfo(uint32_t frame, Rect2D renderArea) const
+    {
+        RenderingInfo info{.renderArea = renderArea};
+
+        const CSpan<View<ImageView>> colors = getColorOutputs(frame);
+        uint32_t                     color  = 0;
+        for (const ResourceUse& use : m_uses)
+        {
+            if (use.use != Use::ColorAttachment && use.use != Use::DepthAttachment)
+                continue;
+
+            const bool isColor = use.use == Use::ColorAttachment;
+            const auto layout  = isColor     ? ImageLayout::ColorAttachmentOptimal
+                                 : use.write ? ImageLayout::DepthStencilAttachmentOptimal
+                                             : ImageLayout::DepthStencilReadOnlyOptimal;
+
+            const RenderingInfo::RenderingAttachment attachment{
+                .view       = isColor ? colors[color++] : getDepth(frame),
+                .layout     = layout,
+                .loadOp     = use.read ? LoadOp::Load : use.clear ? LoadOp::Clear : LoadOp::DontCare,
+                .clearValue = use.clear.value_or(Vec4(0.f)),
+            };
+
+            if (isColor)
+                info.colorAttachments.push_back(attachment);
+            else
+                info.depthAttachment = attachment;
+        }
+
+        return info;
+    }
+
+    void GraphicsContext::begin(Optional<Rect2D> area) const
+    {
+        const Extent2D extent = pass.getExtent();
+        const Rect2D   r      = area.value_or(Rect2D{0, 0, extent.width, extent.height});
+
+        commands.setViewport({.upperLeftCorner = {static_cast<float>(r.offsetX), static_cast<float>(r.offsetY)},
+                              .size            = {static_cast<float>(r.width), static_cast<float>(r.height)}});
+        commands.setScissor({.extent = {r.width, r.height}, .offset = {r.offsetX, r.offsetY}});
+        commands.beginRendering(pass.getRenderingInfo(frame, r));
     }
 
     bool Pass::isDependingOn(const Pass& other) const
@@ -381,7 +442,7 @@ namespace vzt
         });
     }
 
-    void GraphicsPass::setDepthOutput(Handle& handle, std::string)
+    void GraphicsPass::setDepthOutput(Handle& handle, std::string, Optional<float> clear)
     {
         assert(handle.type == HandleType::Attachment);
 
@@ -390,6 +451,7 @@ namespace vzt
             .handle = handle,
             .use    = Use::DepthAttachment,
             .write  = true,
+            .clear  = clear ? Optional<Vec4>{Vec4(*clear, 0.f, 0.f, 0.f)} : Optional<Vec4>{},
             .aspect = ImageAspect::Depth,
         });
     }
@@ -408,7 +470,7 @@ namespace vzt
         });
     }
 
-    void GraphicsPass::addColorOutput(Handle& handle, std::string, ColorBlend blend)
+    void GraphicsPass::addColorOutput(Handle& handle, std::string, Optional<Vec4> clear, ColorBlend blend)
     {
         assert(handle.type == HandleType::Attachment);
 
@@ -418,6 +480,7 @@ namespace vzt
             .use    = Use::ColorAttachment,
             .write  = true,
             .blend  = blend,
+            .clear  = clear,
         });
     }
 

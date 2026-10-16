@@ -94,8 +94,14 @@ namespace vzt
     {
     };
 
+    class GraphicsPass;
     struct GraphicsContext : PassContext
     {
+        const GraphicsPass& pass;
+
+        // Begins rendering on the attachments of the pass. The viewport and scissor cover `area` (full extent by default)
+        void begin(Optional<Rect2D> area = {}) const;
+        void end() const { commands.endRendering(); }
     };
 
     enum class PassType : uint8_t
@@ -182,6 +188,7 @@ namespace vzt
             uint32_t          binding   = ~0u;
             Optional<Range<>> range     = {};
             ColorBlend        blend     = {.blendEnable = false};
+            Optional<Vec4>    clear     = {}; // Attachments only, loaded when read, cleared with this value or discarded
             ImageAspect       aspect    = ImageAspect::Color; // Resolved at compile for images
         };
         std::vector<ResourceUse> m_uses;
@@ -255,15 +262,20 @@ namespace vzt
         ~GraphicsPass() override = default;
 
         void setDepthInput(const Handle& depthStencil, std::string attachmentName = "");
-        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "");
+        void setDepthOutput(Handle& depthStencil, std::string attachmentName = "", Optional<float> clear = 1.f);
         void setDepthInputOutput(Handle& depthStencil, std::string attachmentName = "");
 
-        void addColorOutput(Handle& attachment, std::string attachmentName = "",
+        void addColorOutput(Handle& attachment, std::string attachmentName = "", Optional<Vec4> clear = Vec4(0.f),
                             ColorBlend blend = {.blendEnable = false});
         void addColorInputOutput(Handle& attachment, std::string inName = "", std::string outName = "",
                                  ColorBlend blend = {.blendEnable = false});
 
+        // The pass begins and ends rendering around the record function, unless it is manual (see GraphicsContext)
         void setRecordFunction(std::function<void(GraphicsContext&)> record);
+        void setManualRendering(bool manual = true) { m_manualRendering = manual; }
+
+        Extent2D      getExtent() const;
+        RenderingInfo getRenderingInfo(uint32_t frame, Rect2D renderArea) const;
 
         inline GraphicsPipeline&        getPipeline();
         inline GraphicsPipelineBuilder& getBuilder();
@@ -278,6 +290,7 @@ namespace vzt
         Program                 m_program;
         GraphicsPipelineBuilder m_graphicsPipelineBuilder;
         GraphicsPipeline        m_pipeline;
+        bool                    m_manualRendering = false;
     };
 
     class TaskGraph

@@ -112,42 +112,11 @@ int main(int /* argc */, char** /* argv */)
         pipelineBuilder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
         geometry.setRecordFunction([&](vzt::GraphicsContext& ctx) {
-            const auto extent = graph.getBackbufferExtent();
-            ctx.commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
-            ctx.commands.setScissor(vzt::Scissor{.extent = extent});
-
-            auto colorViews = geometry.getColorOutputs(ctx.frame);
-            auto depthView  = geometry.getDepth(ctx.frame);
-            ctx.commands.beginRendering({
-                .renderArea       = {0, 0, extent.width, extent.height},
-                .colorAttachments = {{
-                                         .view       = colorViews[0],
-                                         .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                                         .loadOp     = vzt::LoadOp::Clear,
-                                         .storeOp    = vzt::StoreOp::Store,
-                                         .clearValue = vzt::Vec4(0.f),
-                                     },
-                                     {
-                                         .view       = colorViews[1],
-                                         .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                                         .loadOp     = vzt::LoadOp::Clear,
-                                         .storeOp    = vzt::StoreOp::Store,
-                                         .clearValue = vzt::Vec4(0.f),
-                                     }},
-                .depthAttachment =
-                    vzt::RenderingInfo::RenderingAttachment{
-                        .view       = depthView,
-                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
-                    },
-            });
             ctx.commands.bindVertexBuffer(vertexBuffer);
             ctx.commands.bindIndexBuffer(indexBuffer, 0);
 
             const vzt::View<vzt::Buffer> buffer = ctx.buffer(drawCommands);
             ctx.commands.drawIndexedIndirect(*buffer, 1, 0);
-
-            ctx.commands.endRendering();
         });
     }
 
@@ -158,40 +127,14 @@ int main(int /* argc */, char** /* argv */)
     {
         shading.addColorTextureInput("texturePosition", position);
         shading.addColorTextureInput("textureNormal", normal);
-        shading.addColorOutput(composed, "");
+        shading.addColorOutput(composed, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
         shading.setDepthOutput(composedDepth);
 
         auto& builder = shading.getBuilder();
         builder.set(
             vzt::Rasterization{.cullMode = vzt::CullMode::Front, .frontFace = vzt::FrontFace::CounterClockwise});
 
-        shading.setRecordFunction([&](vzt::GraphicsContext& ctx) {
-            const auto extent = graph.getBackbufferExtent();
-            ctx.commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
-            ctx.commands.setScissor(vzt::Scissor{.extent = extent});
-
-            auto colorViews = shading.getColorOutputs(ctx.frame);
-            auto depthView  = shading.getDepth(ctx.frame);
-            ctx.commands.beginRendering({
-                .renderArea       = {0, 0, extent.width, extent.height},
-                .colorAttachments = {{
-                    .view       = colorViews[0],
-                    .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                    .loadOp     = vzt::LoadOp::Clear,
-                    .storeOp    = vzt::StoreOp::Store,
-                    .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-                }},
-                .depthAttachment =
-                    vzt::RenderingInfo::RenderingAttachment{
-                        .view       = depthView,
-                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
-                    },
-            });
-            ctx.commands.draw(3);
-
-            ctx.commands.endRendering();
-        });
+        shading.setRecordFunction([&](vzt::GraphicsContext& ctx) { ctx.commands.draw(3); });
     }
 
     // Initialize buffer with default values

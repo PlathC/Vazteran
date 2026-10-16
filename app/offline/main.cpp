@@ -60,7 +60,7 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/offline/offline.slang"));
     {
-        geometry.addColorOutput(color, "");
+        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
         geometry.setDepthOutput(depth);
 
         auto& builder = geometry.getBuilder();
@@ -68,34 +68,9 @@ int main(int /* argc */, char** /* argv */)
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
 
         geometry.setRecordFunction([&](vzt::GraphicsContext& ctx) {
-            const auto extent = graph.getBackbufferExtent();
-
-            auto colorViews = geometry.getColorOutputs(ctx.frame);
-            auto depthView  = geometry.getDepth(ctx.frame);
-            ctx.commands.setViewport(vzt::Viewport{.size = {extent.width, extent.height}});
-            ctx.commands.setScissor(vzt::Scissor{.extent = extent});
-
-            ctx.commands.beginRendering({
-                .renderArea       = {0, 0, extent.width, extent.height},
-                .colorAttachments = {{
-                    .view       = colorViews[0],
-                    .layout     = vzt::ImageLayout::ColorAttachmentOptimal,
-                    .loadOp     = vzt::LoadOp::Clear,
-                    .storeOp    = vzt::StoreOp::Store,
-                    .clearValue = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-                }},
-                .depthAttachment =
-                    vzt::RenderingInfo::RenderingAttachment{
-                        .view       = depthView,
-                        .layout     = vzt::ImageLayout::DepthStencilAttachmentOptimal,
-                        .clearValue = vzt::Vec4(1.f, 0.f, 0.f, 0.f),
-                    },
-            });
             ctx.commands.bindVertexBuffer(vertexBuffer);
             for (const auto& subMesh : mesh.subMeshes)
                 ctx.commands.drawIndexed(indexBuffer, subMesh.indices);
-
-            ctx.commands.endRendering();
         });
     }
 
