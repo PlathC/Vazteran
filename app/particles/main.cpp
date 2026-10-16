@@ -53,8 +53,8 @@ int main(int /* argc */, char** /* argv */)
     auto& instanceGeneration = graph.addCompute( //
         "InstanceGeneration", compiler("shaders/particles/instance_generation.slang", "main"));
     {
-        instanceGeneration.addStorageOutput("instances", instancesPosition);
-        instanceGeneration.addStorageOutput("draw", drawCommands);
+        instanceGeneration.write(instancesPosition, vzt::Use::StorageBuffer, "instances");
+        instanceGeneration.write(drawCommands, vzt::Use::StorageBuffer, "draw");
 
         instanceGeneration.setRecordFunction([&](vzt::ComputeContext& ctx) {
             vzt::View<vzt::Buffer> buffer = ctx.buffer(drawCommands);
@@ -77,11 +77,11 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/particles/circle.slang"));
     {
-        geometry.addStorageInput("instances", instancesPosition);
-        geometry.addStorageInputIndirect(drawCommands);
-        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
-                                vzt::ColorBlend{.blendEnable = true, .colorBlendOp = vzt::BlendOp::Add});
-        geometry.setDepthOutput(depth);
+        geometry.read(instancesPosition, vzt::Use::StorageBuffer, "instances");
+        geometry.read(drawCommands, vzt::Use::Indirect);
+        geometry.color(color, {.clear = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f),
+                               .blend = {.blendEnable = true, .colorBlendOp = vzt::BlendOp::Add}});
+        geometry.depth(depth);
 
         auto& builder = geometry.getBuilder();
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
@@ -96,8 +96,8 @@ int main(int /* argc */, char** /* argv */)
     const uint32_t     frameNb       = swapchain.getFrameNb();
     vzt::UniformBuffer modelsUbo     = vzt::UniformBuffer(device, sizeof(vzt::Mat4) * 3, frameNb, true);
     vzt::UniformBuffer generationUbo = vzt::UniformBuffer(device, sizeof(GenerationInput), frameNb, true);
-    instanceGeneration.bind("uniforms", generationUbo);
-    geometry.bind("Model", modelsUbo);
+    instanceGeneration.bind(generationUbo, "uniforms");
+    geometry.bind(modelsUbo, "Model");
 
     graph.setBackbuffer(swapchain, color);
     graph.compile();

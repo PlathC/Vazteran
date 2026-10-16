@@ -74,8 +74,8 @@ int main(int /* argc */, char** /* argv */)
     auto& instanceGeneration = graph.addCompute( //
         "InstanceGeneration", compiler("shaders/deferred/instance_generation.slang", "main"));
     {
-        instanceGeneration.addStorageOutput("instances", instancesPosition);
-        instanceGeneration.addStorageOutput("draw", drawCommands);
+        instanceGeneration.write(instancesPosition, vzt::Use::StorageBuffer, "instances");
+        instanceGeneration.write(drawCommands, vzt::Use::StorageBuffer, "draw");
 
         instanceGeneration.setRecordFunction([&](vzt::ComputeContext& ctx) {
             vzt::View<vzt::Buffer> buffer = ctx.buffer(drawCommands);
@@ -101,11 +101,11 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/deferred/triangle.slang"));
     {
-        geometry.addStorageInput("instances", instancesPosition);
-        geometry.addStorageInputIndirect(drawCommands);
-        geometry.addColorOutput(position);
-        geometry.addColorOutput(normal);
-        geometry.setDepthOutput(depth);
+        geometry.read(instancesPosition, vzt::Use::StorageBuffer, "instances");
+        geometry.read(drawCommands, vzt::Use::Indirect);
+        geometry.color(position);
+        geometry.color(normal);
+        geometry.depth(depth);
 
         auto& pipelineBuilder = geometry.getBuilder();
         pipelineBuilder.set(vertexDescription);
@@ -125,10 +125,10 @@ int main(int /* argc */, char** /* argv */)
 
     auto& shading = graph.addGraphics("Shading", compiler("shaders/deferred/deferred_blinn_phong.slang"));
     {
-        shading.addColorTextureInput("texturePosition", position);
-        shading.addColorTextureInput("textureNormal", normal);
-        shading.addColorOutput(composed, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
-        shading.setDepthOutput(composedDepth);
+        shading.read(position, vzt::Use::Sampled, "texturePosition");
+        shading.read(normal, vzt::Use::Sampled, "textureNormal");
+        shading.color(composed, {.clear = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f)});
+        shading.depth(composedDepth);
 
         auto& builder = shading.getBuilder();
         builder.set(
@@ -141,8 +141,8 @@ int main(int /* argc */, char** /* argv */)
     const uint32_t     frameNb       = swapchain.getFrameNb();
     vzt::UniformBuffer modelsUbo     = vzt::UniformBuffer(device, sizeof(vzt::Mat4) * 3, frameNb, true);
     vzt::UniformBuffer generationUbo = vzt::UniformBuffer(device, sizeof(GenerationInput), frameNb, true);
-    instanceGeneration.bind("uniforms", generationUbo);
-    geometry.bind("Model", modelsUbo);
+    instanceGeneration.bind(generationUbo, "uniforms");
+    geometry.bind(modelsUbo, "Model");
 
     graph.setBackbuffer(swapchain, composed);
     graph.compile();

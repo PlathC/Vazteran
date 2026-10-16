@@ -19,74 +19,35 @@ namespace vzt
     {
     }
 
-    void Pass::addStorageInput(std::string parameter, const Handle& handle, Optional<Range<std::size_t>> range)
+    void Pass::read(const Handle& handle, Use use, std::string parameter, Optional<Range<>> range)
     {
-        VZT_ASSERT(handle.type == HandleType::Storage);
+        declare(handle, use, true, false, std::move(parameter), range);
+    }
+
+    void Pass::write(const Handle& handle, Use use, std::string parameter, Optional<Range<>> range)
+    {
+        declare(handle, use, false, true, std::move(parameter), range);
+    }
+
+    void Pass::readWrite(const Handle& handle, Use use, std::string parameter, Optional<Range<>> range)
+    {
+        declare(handle, use, true, true, std::move(parameter), range);
+    }
+
+    void Pass::declare(const Handle& handle, Use use, bool read, bool write, std::string parameter,
+                       Optional<Range<>> range)
+    {
+        const bool isBuffer = use == Use::StorageBuffer || use == Use::Indirect;
+        VZT_ASSERT(use != Use::ColorAttachment && use != Use::DepthAttachment); // See GraphicsPass::color / depth
+        VZT_ASSERT(isBuffer == (handle.type == HandleType::Storage));
+
         m_uses.push_back({
-            .handle    = m_graph->readVersion(handle),
-            .use       = Use::StorageBuffer,
-            .read      = true,
+            .handle    = write ? m_graph->writeVersion(handle) : m_graph->readVersion(handle),
+            .use       = use,
+            .read      = read,
+            .write     = write,
             .parameter = std::move(parameter),
             .range     = range,
-        });
-    }
-
-    void Pass::addStorageInputIndirect(const Handle& handle, Optional<Range<std::size_t>> range)
-    {
-        VZT_ASSERT(handle.type == HandleType::Storage);
-        m_uses.push_back({
-            .handle = m_graph->readVersion(handle),
-            .use    = Use::Indirect,
-            .read   = true,
-            .range  = range,
-        });
-    }
-
-    void Pass::addStorageOutput(std::string parameter, const Handle& handle, Optional<Range<std::size_t>> range)
-    {
-        const bool isImage = handle.type == HandleType::Attachment;
-        m_uses.push_back({
-            .handle    = m_graph->writeVersion(handle),
-            .use       = isImage ? Use::StorageImage : Use::StorageBuffer,
-            .write     = true,
-            .parameter = std::move(parameter),
-            .range     = range,
-        });
-    }
-
-    void Pass::addStorageInputOutput(std::string parameter, const Handle& handle, Optional<Range<std::size_t>> range)
-    {
-        const bool isImage = handle.type == HandleType::Attachment;
-        m_uses.push_back({
-            .handle    = m_graph->writeVersion(handle),
-            .use       = isImage ? Use::StorageImage : Use::StorageBuffer,
-            .read      = true,
-            .write     = true,
-            .parameter = std::move(parameter),
-            .range     = range,
-        });
-    }
-
-    void Pass::addColorTextureInput(std::string parameter, const Handle& handle)
-    {
-        assert(handle.type == HandleType::Attachment);
-        m_uses.push_back({
-            .handle    = m_graph->readVersion(handle),
-            .use       = Use::Sampled,
-            .read      = true,
-            .parameter = std::move(parameter),
-        });
-    }
-
-    void Pass::addDepthTextureInput(std::string parameter, const Handle& handle)
-    {
-        assert(handle.type == HandleType::Attachment);
-        m_uses.push_back({
-            .handle    = m_graph->readVersion(handle),
-            .use       = Use::Sampled,
-            .read      = true,
-            .parameter = std::move(parameter),
-            .aspect    = ImageAspect::Depth,
         });
     }
 
@@ -243,7 +204,7 @@ namespace vzt
         }
     }
 
-    void Pass::bind(std::string name, const UniformBuffer& buffer) { m_uniforms.push_back({std::move(name), buffer}); }
+    void Pass::bind(const UniformBuffer& buffer, std::string name) { m_uniforms.push_back({std::move(name), buffer}); }
 
     void Pass::compileDescriptors(const Program& program, const DescriptorLayout& layout)
     {
@@ -430,66 +391,29 @@ namespace vzt
         compileDescriptors(m_program, m_pipeline.getDescriptorLayout());
     }
 
-    void GraphicsPass::setDepthInput(const Handle& handle, std::string)
+    void GraphicsPass::color(const Handle& handle, ColorOptions options)
     {
-        assert(handle.type == HandleType::Attachment);
-        m_uses.push_back({
-            .handle = m_graph->readVersion(handle),
-            .use    = Use::DepthAttachment,
-            .read   = true,
-            .aspect = ImageAspect::Depth,
-        });
-    }
-
-    void GraphicsPass::setDepthOutput(const Handle& handle, std::string, Optional<float> clear)
-    {
-        assert(handle.type == HandleType::Attachment);
-
-        m_uses.push_back({
-            .handle = m_graph->writeVersion(handle),
-            .use    = Use::DepthAttachment,
-            .write  = true,
-            .clear  = clear ? Optional<Vec4>{Vec4(*clear, 0.f, 0.f, 0.f)} : Optional<Vec4>{},
-            .aspect = ImageAspect::Depth,
-        });
-    }
-
-    void GraphicsPass::setDepthInputOutput(const Handle& handle, std::string)
-    {
-        assert(handle.type == HandleType::Attachment);
-
-        m_uses.push_back({
-            .handle = m_graph->writeVersion(handle),
-            .use    = Use::DepthAttachment,
-            .read   = true,
-            .write  = true,
-            .aspect = ImageAspect::Depth,
-        });
-    }
-
-    void GraphicsPass::addColorOutput(const Handle& handle, std::string, Optional<Vec4> clear, ColorBlend blend)
-    {
-        assert(handle.type == HandleType::Attachment);
-
+        VZT_ASSERT(handle.type == HandleType::Attachment);
         m_uses.push_back({
             .handle = m_graph->writeVersion(handle),
             .use    = Use::ColorAttachment,
+            .read   = options.load,
             .write  = true,
-            .blend  = blend,
-            .clear  = clear,
+            .blend  = options.blend,
+            .clear  = options.clear,
         });
     }
 
-    void GraphicsPass::addColorInputOutput(const Handle& handle, std::string, std::string, ColorBlend blend)
+    void GraphicsPass::depth(const Handle& handle, DepthOptions options)
     {
-        assert(handle.type == HandleType::Attachment);
-
+        VZT_ASSERT(handle.type == HandleType::Attachment);
         m_uses.push_back({
-            .handle = m_graph->writeVersion(handle),
-            .use    = Use::ColorAttachment,
-            .read   = true,
-            .write  = true,
-            .blend  = blend,
+            .handle = options.readOnly ? m_graph->readVersion(handle) : m_graph->writeVersion(handle),
+            .use    = Use::DepthAttachment,
+            .read   = options.load || options.readOnly,
+            .write  = !options.readOnly,
+            .clear  = options.clear ? Optional<Vec4>{Vec4(*options.clear, 0.f, 0.f, 0.f)} : Optional<Vec4>{},
+            .aspect = ImageAspect::Depth,
         });
     }
 

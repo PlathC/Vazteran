@@ -70,7 +70,7 @@ int main(int /* argc */, char** /* argv */)
     // Instance generation pass
     auto& sdfGeneration = graph.addCompute("SDF generation", compiler("shaders/sdf/grid.slang", "main"));
     {
-        sdfGeneration.addStorageOutput("sdf", sdfTexture);
+        sdfGeneration.write(sdfTexture, vzt::Use::StorageImage, "sdf");
         sdfGeneration.setRecordFunction([&](vzt::ComputeContext& ctx) {
             ctx.commands.dispatch(GridWidth / WorkGroupSize, GridWidth / WorkGroupSize, GridWidth / WorkGroupSize);
         });
@@ -82,9 +82,9 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/sdf/raycast.slang"));
     {
-        geometry.addColorTextureInput("sdf", sdfTexture);
-        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
-        geometry.setDepthOutput(depth);
+        geometry.read(sdfTexture, vzt::Use::Sampled, "sdf");
+        geometry.color(color, {.clear = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f)});
+        geometry.depth(depth);
 
         auto& builder = geometry.getBuilder();
         builder.set(vzt::Rasterization{.cullMode = vzt::CullMode::None});
@@ -97,8 +97,8 @@ int main(int /* argc */, char** /* argv */)
     const uint32_t     frameNb       = swapchain.getFrameNb();
     vzt::UniformBuffer generationUbo = vzt::UniformBuffer::Typed<GenerationInput>(device, frameNb, true);
     vzt::UniformBuffer raycastUbo    = vzt::UniformBuffer::Typed<RaycastInput>(device, frameNb, true);
-    sdfGeneration.bind("Model", generationUbo);
-    geometry.bind("Uniforms", raycastUbo);
+    sdfGeneration.bind(generationUbo, "Model");
+    geometry.bind(raycastUbo, "Uniforms");
 
     graph.setBackbuffer(swapchain, color);
     graph.compile();

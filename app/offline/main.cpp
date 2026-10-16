@@ -60,8 +60,8 @@ int main(int /* argc */, char** /* argv */)
 
     auto& geometry = graph.addGraphics("Geometry", compiler("shaders/offline/offline.slang"));
     {
-        geometry.addColorOutput(color, "", vzt::Vec4(1.f, 0.91f, 0.69f, 1.f));
-        geometry.setDepthOutput(depth);
+        geometry.color(color, {.clear = vzt::Vec4(1.f, 0.91f, 0.69f, 1.f)});
+        geometry.depth(depth);
 
         auto& builder = geometry.getBuilder();
         builder.set(vertexDescription);
@@ -84,7 +84,7 @@ int main(int /* argc */, char** /* argv */)
     };
 
     vzt::UniformBuffer ubo = {device, sizeof(vzt::Mat4) * 3, 1, true};
-    geometry.bind("Model", ubo);
+    geometry.bind(ubo, "Model");
 
     graph.setBackbuffer(output, vzt::ImageLayout::General, color);
     graph.compile();
