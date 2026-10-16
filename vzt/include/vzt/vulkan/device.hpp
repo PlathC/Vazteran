@@ -93,6 +93,11 @@ namespace vzt
         inline const Capability PortabilitySubset = {.name       = "PortabilitySubset",
                                                      .extensions = {dext::PortabilitySubset}};
 
+        inline const Capability ShaderDrawParameters = {
+            .name   = "ShaderDrawParameters",
+            .enable = [](DeviceFeatures& features) { features.v11.shaderDrawParameters = VK_TRUE; },
+        };
+
         inline const Capability BufferDeviceAddress = {
             .name   = "BufferDeviceAddress",
             .enable = [](DeviceFeatures& features) { features.v12.bufferDeviceAddress = VK_TRUE; },
@@ -133,6 +138,7 @@ namespace vzt
     class DeviceBuilder
     {
       public:
+        static DeviceBuilder compute();
         static DeviceBuilder offline();
         static DeviceBuilder standard();
         static DeviceBuilder rt();

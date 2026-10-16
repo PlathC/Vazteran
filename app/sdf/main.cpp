@@ -39,7 +39,6 @@ int main(int /* argc */, char** /* argv */)
     {
         deviceBuilder.add(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
         deviceBuilder.getDeviceFeatures().core.shaderInt64 = true;
-        deviceBuilder.getDeviceFeatures().v11.shaderDrawParameters = VK_TRUE;
     }
     auto device = instance.getDevice(deviceBuilder, surface);
 

@@ -86,6 +86,16 @@ namespace vzt
         return m_head;
     }
 
+    DeviceBuilder DeviceBuilder::compute()
+    {
+        DeviceBuilder builder{};
+        builder.m_queueTypes = QueueType::Compute | QueueType::Transfer;
+
+        builder.require(cap::BufferDeviceAddress).request(cap::ShaderDebugInfo).request(cap::PortabilitySubset);
+
+        return builder;
+    }
+
     DeviceBuilder DeviceBuilder::offline()
     {
         DeviceBuilder builder{};
@@ -99,7 +109,10 @@ namespace vzt
         return builder;
     }
 
-    DeviceBuilder DeviceBuilder::standard() { return offline().require(cap::Swapchain); }
+    DeviceBuilder DeviceBuilder::standard()
+    {
+        return offline().require(cap::Swapchain).require(cap::ShaderDrawParameters);
+    }
 
     DeviceBuilder DeviceBuilder::rt()
     {

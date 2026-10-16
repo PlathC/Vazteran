@@ -12,7 +12,7 @@ int main(int /* argc */, char** /* argv */)
     constexpr uint32_t SampleNb = 1000;
 
     auto instance = vzt::Instance{"Vazteran Compute"};
-    auto device   = instance.getDevice(vzt::DeviceBuilder::offline());
+    auto device   = instance.getDevice(vzt::DeviceBuilder::compute());
     auto compiler = vzt::Compiler(instance);
     auto queue    = device.getQueue(vzt::QueueType::Compute);
 
