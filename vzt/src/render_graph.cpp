@@ -183,7 +183,13 @@ namespace vzt
         };
 
         for (PassUniform& uniform : m_uniforms)
+        {
+            if (uniform.buffer->getFrameNb() != m_graph->getBackbufferNb())
+                throw std::runtime_error(
+                    fmt::format("Pass \"{}\": uniform buffer \"{}\" has {} regions, the graph has {} frames.", m_name,
+                                uniform.name, uniform.buffer->getFrameNb(), m_graph->getBackbufferNb()));
             uniform.binding = findBinding(uniform.name);
+        }
         for (ResourceUse& use : m_uses)
             use.binding = use.parameter.empty() ? ~0u : findBinding(use.parameter);
 

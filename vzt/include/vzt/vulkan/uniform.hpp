@@ -39,6 +39,7 @@ namespace vzt
         template <class Type>
         void write(CommandBuffer& commands, const Type& data, uint32_t frame);
 
+        [[nodiscard]] uint32_t         getFrameNb() const { return static_cast<uint32_t>(m_frameNb); }
         [[nodiscard]] BufferSpan       getSpan(uint32_t frame = 0);
         [[nodiscard]] BufferCSpan      getSpan(uint32_t frame = 0) const;
         [[nodiscard]] DescriptorBuffer getDescriptor(uint32_t frame = 0) const;
