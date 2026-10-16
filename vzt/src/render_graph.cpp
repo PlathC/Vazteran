@@ -190,17 +190,24 @@ namespace vzt
         if (m_recordCallback)
             m_recordCallback(i, commands);
 
-        if (m_finalBarrier)
+        if (!m_finalBarriers.empty())
         {
-            const PassBarrier& final = *m_finalBarrier;
-            commands.barrier(PipelineBarrier{final.src.stages,
-                                             final.dst.stages,
-                                             {{.image     = m_graph->getImage(i, final.handle),
-                                               .oldLayout = final.src.layout,
-                                               .newLayout = final.dst.layout,
-                                               .src       = final.src.access,
-                                               .dst       = final.dst.access,
-                                               .aspect    = final.aspect}}});
+            PipelineBarrier final{};
+            for (const PassBarrier& passBarrier : m_finalBarriers)
+            {
+                final.src |= passBarrier.src.stages;
+                final.dst |= passBarrier.dst.stages;
+                final.imageBarriers.push_back({
+                    .image     = m_graph->getImage(i, passBarrier.handle),
+                    .oldLayout = passBarrier.src.layout,
+                    .newLayout = passBarrier.dst.layout,
+                    .src       = passBarrier.src.access,
+                    .dst       = passBarrier.dst.access,
+                    .aspect    = passBarrier.aspect,
+                });
+            }
+
+            commands.barrier(final);
         }
     }
 
@@ -492,16 +499,23 @@ namespace vzt
         {
             Pass::ResourceState state;
             bool                written;
-            Pass*               firstPass    = nullptr; // Barrier of the first use of an image
+            Pass*               firstPass    = nullptr; // Barrier of the first use of a shared resource
             std::size_t         firstBarrier = 0;
+            Pass*               lastPass     = nullptr;
+            Use                 use          = Use::Sampled; // Last use
+            ImageAspect         aspect       = ImageAspect::Color;
         };
         HandleMap<Tracked> tracked{};
-        Pass*              lastBackbufferPass = nullptr;
+
+        const auto isPerFrame = [&](Handle handle) {
+            const auto it = m_storageBuilders.find(handle);
+            return it != m_storageBuilders.end() && it->second.perFrame;
+        };
 
         for (auto& pass : m_passes)
         {
             pass->m_barriers.clear();
-            pass->m_finalBarrier.reset();
+            pass->m_finalBarriers.clear();
 
             HandleMap<ImageLayout> passLayouts{};
             for (Pass::ResourceUse& use : pass->m_uses)
@@ -529,18 +543,23 @@ namespace vzt
                     }
                 }
 
-                if (isBackBuffer(use.handle))
-                    lastBackbufferPass = pass.get();
-
                 const auto previous = tracked.find(use.handle);
                 if (previous == tracked.end())
                 {
-                    // First use of the frame: image contents are discarded
+                    // First use of the frame: the contents of an image are discarded, unless it was imported.
                     // Buffers shared by every frame must also wait for the previous execution
                     Tracked first{state, use.write};
-                    if (isImage || !m_storageBuilders.at(use.handle).perFrame)
+                    first.lastPass = pass.get();
+                    first.use      = use.use;
+                    first.aspect   = use.aspect;
+                    if (isImage || !isPerFrame(use.handle))
                     {
-                        pass->m_barriers.push_back({use.handle, use.use, use.aspect, {}, state});
+                        const auto          imported = m_importedImages.find(use.handle);
+                        Pass::ResourceState initial{};
+                        if (imported != m_importedImages.end())
+                            initial.layout = imported->second.layout;
+
+                        pass->m_barriers.push_back({use.handle, use.use, use.aspect, initial, state});
                         first.firstPass    = pass.get();
                         first.firstBarrier = pass->m_barriers.size() - 1;
                     }
@@ -550,6 +569,9 @@ namespace vzt
                 }
 
                 Tracked& last = previous->second;
+                last.lastPass = pass.get();
+                last.use      = use.use;
+                last.aspect   = use.aspect;
                 if (!last.written && !use.write && last.state.layout == state.layout)
                 {
                     // Read after read: a later write will have to wait for every reader
@@ -578,15 +600,16 @@ namespace vzt
             src.access               = last.written ? last.state.access : Access::None;
         }
 
-        if (lastBackbufferPass)
+        // Backbuffer and imported images end in their expected layout
+        for (const auto& [handle, last] : tracked)
         {
-            const Pass::ResourceState& last = tracked.find(*m_backbuffer)->second.state;
-            lastBackbufferPass->m_finalBarrier =
-                Pass::PassBarrier{*m_backbuffer,
-                                  Use::ColorAttachment,
-                                  ImageAspect::Color,
-                                  last,
-                                  {m_backbufferLayout, PipelineStage::BottomOfPipe, Access::None}};
+            const auto imported = m_importedImages.find(handle);
+            if (!isBackBuffer(handle) && imported == m_importedImages.end())
+                continue;
+
+            const ImageLayout layout = isBackBuffer(handle) ? m_backbufferLayout : imported->second.layout;
+            last.lastPass->m_finalBarriers.push_back(
+                {handle, last.use, last.aspect, last.state, {layout, PipelineStage::BottomOfPipe, Access::None}});
         }
     }
 
@@ -631,6 +654,28 @@ namespace vzt
     }
 
     Handle TaskGraph::writeVersion(const Handle& handle) { return {handle.id, handle.type, ++m_versions[handle.id]}; }
+
+    Handle TaskGraph::import(View<Buffer> buffer)
+    {
+        const Handle handle = generateStorageHandle();
+        m_importedBuffers.emplace(handle, buffer);
+        return handle;
+    }
+
+    Handle TaskGraph::import(View<DeviceImage> image, ImageLayout layout)
+    {
+        const Handle handle          = generateAttachmentHandle();
+        m_attachmentBuilders[handle] = {
+            .usage       = image->getUsage(),
+            .size        = image->getSize(),
+            .format      = image->getFormat(),
+            .mipLevels   = image->getMipLevels(),
+            .sampleCount = image->getSampleCount(),
+            .type        = image->getImageType(),
+        };
+        m_importedImages.emplace(handle, ImportedImage{image, layout});
+        return handle;
+    }
 
     Handle TaskGraph::addAttachment(AttachmentBuilder builder)
     {
@@ -730,12 +775,18 @@ namespace vzt
         if (isBackBuffer(handle))
             return m_externalBackbuffers[m_frameImages[backbufferId]];
 
+        if (const auto it = m_importedImages.find(handle); it != m_importedImages.end())
+            return it->second.image;
+
         const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
         return m_images[handlePhysicalId];
     }
 
     View<Buffer> TaskGraph::getStorage(uint32_t backbufferId, Handle handle) const
     {
+        if (const auto it = m_importedBuffers.find(handle); it != m_importedBuffers.end())
+            return it->second;
+
         const std::vector<Buffer>& copies = m_storages[m_handleToPhysical.find(handle)->second];
         return copies[copies.size() == 1 ? 0 : backbufferId];
     }
@@ -864,7 +915,7 @@ namespace vzt
             AttachmentBuilder& attachmentBuilder = m_attachmentBuilders[handle];
 
             // Swapchain images does not need to be created
-            if (!isBackBuffer(handle))
+            if (!isBackBuffer(handle) && !m_importedImages.contains(handle))
             {
                 if (!attachmentBuilder.format && any(attachmentBuilder.usage & ImageUsage::DepthStencilAttachment))
                     attachmentBuilder.format = depthFormat;

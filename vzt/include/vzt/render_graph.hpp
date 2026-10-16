@@ -214,7 +214,7 @@ namespace vzt
             ResourceState dst;
         };
         std::vector<PassBarrier> m_barriers;
-        Optional<PassBarrier>    m_finalBarrier; // Backbuffer to its final layout, after the last pass using it
+        std::vector<PassBarrier> m_finalBarriers;
 
         // Descriptor data
         DescriptorPool               m_pool;
@@ -315,6 +315,11 @@ namespace vzt
         void setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle);
         void setBackbufferImage(uint32_t frame, uint32_t image);
 
+        // Resources owned by the user. An imported image is returned to `layout` after its last use,
+        // so that the graph can be executed again. Synchronisation outside of the graph is up to the user.
+        Handle import(View<Buffer> buffer);
+        Handle import(View<DeviceImage> image, ImageLayout layout);
+
         Handle addAttachment(AttachmentBuilder builder);
         Handle addStorage(StorageBuilder builder);
 
@@ -379,6 +384,14 @@ namespace vzt
 
         HandleMap<AttachmentBuilder> m_attachmentBuilders;
         HandleMap<StorageBuilder>    m_storageBuilders;
+
+        struct ImportedImage
+        {
+            View<DeviceImage> image;
+            ImageLayout       layout;
+        };
+        HandleMap<ImportedImage> m_importedImages;
+        HandleMap<View<Buffer>>  m_importedBuffers;
 
         std::hash<std::size_t>                       m_hash{};
         HandleMap<std::size_t>                       m_handleToPhysical;
