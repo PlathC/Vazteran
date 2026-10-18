@@ -809,8 +809,9 @@ namespace vzt
         queue->submit(commands);
     }
 
-    void TaskGraph::resize(const Extent2D&)
+    void TaskGraph::resize(const Extent2D& extent)
     {
+        m_backbufferExtent = extent;
         createRenderTarget();
 
         for (auto& pass : m_passes)

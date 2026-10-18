@@ -191,6 +191,7 @@ int main(int /* argc */, char** /* argv */)
             vzt::Extent2D extent = swapchain.getExtent();
             camera.aspectRatio   = static_cast<float>(extent.width) / static_cast<float>(extent.height);
 
+            graph.setBackbuffer(swapchain, color); // New swapchain images
             graph.resize(extent);
         }
     }
