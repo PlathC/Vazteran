@@ -460,6 +460,7 @@ namespace vzt
 
     void GraphicsPass::compile()
     {
+        m_graphicsPipelineBuilder.colors.clear(); // compile() can run again
         for (const ResourceUse& use : m_uses)
         {
             if (use.use == Use::ColorAttachment)
