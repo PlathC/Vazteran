@@ -632,14 +632,20 @@ namespace vzt
             src.access               = last.written ? last.state.access : Access::None;
         }
 
-        // Backbuffer and external images end in their expected layout
+        // Backbuffer, external and final layout images end in their expected layout
         for (const auto& [handle, last] : tracked)
         {
-            const auto external = m_externalImages.find(handle);
-            if (!isBackBuffer(handle) && external == m_externalImages.end())
-                continue;
+            const auto  external = m_externalImages.find(handle);
+            ImageLayout layout   = ImageLayout::Undefined;
+            if (isBackBuffer(handle))
+                layout = m_backbufferLayout;
+            else if (external != m_externalImages.end())
+                layout = external->second.layout;
+            else if (const auto it = m_attachmentBuilders.find(handle); it != m_attachmentBuilders.end())
+                layout = it->second.finalLayout;
 
-            const ImageLayout layout = isBackBuffer(handle) ? m_backbufferLayout : external->second.layout;
+            if (layout == ImageLayout::Undefined)
+                continue;
             last.lastPass->m_finalBarriers.push_back(
                 {handle, last.use, last.aspect, last.state, {layout, PipelineStage::BottomOfPipe, Access::None}});
         }
@@ -834,8 +840,8 @@ namespace vzt
         if (const auto it = m_externalImages.find(handle); it != m_externalImages.end())
             return it->second.image;
 
-        const std::size_t handlePhysicalId = m_handleToPhysical.find(handle)->second;
-        return m_images[handlePhysicalId];
+        const std::vector<DeviceImage>& copies = m_images[m_handleToPhysical.find(handle)->second];
+        return copies[copies.size() == 1 ? 0 : backbufferId];
     }
 
     View<Buffer> TaskGraph::getStorage(uint32_t backbufferId, Handle handle) const
@@ -994,7 +1000,9 @@ namespace vzt
                 imageBuilder.sampleCount = attachmentBuilder.sampleCount;
                 imageBuilder.sharingMode = SharingMode::Exclusive;
 
-                m_images.emplace_back(m_device, imageBuilder);
+                auto& copies = m_images.emplace_back();
+                for (uint32_t i = 0; i < (attachmentBuilder.perFrame ? m_frameNb : 1); i++)
+                    copies.emplace_back(m_device, imageBuilder);
             }
         }
 
