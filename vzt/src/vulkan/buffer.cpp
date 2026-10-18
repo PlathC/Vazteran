@@ -110,13 +110,13 @@ namespace vzt
 
     void Buffer::unMap() const { vmaUnmapMemory(m_device->getAllocator(), m_allocation); }
 
-    uint64_t Buffer::getDeviceAddress() const
+    DeviceAddress Buffer::getDeviceAddress() const
     {
         VkBufferDeviceAddressInfoKHR info{};
         info.sType  = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         info.buffer = m_handle;
 
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        return table.vkGetBufferDeviceAddress(m_device->getHandle(), &info);
+        return {table.vkGetBufferDeviceAddress(m_device->getHandle(), &info)};
     }
 } // namespace vzt

@@ -256,6 +256,7 @@ namespace vzt
         std::array<uint32_t, 3> getGroupSize() const;
 
         inline ComputePipeline& getPipeline();
+                                operator const ComputePipeline&() const { return m_pipeline; }
 
         friend TaskGraph;
 
@@ -303,6 +304,7 @@ namespace vzt
         RenderingInfo getRenderingInfo(uint32_t frame, Rect2D renderArea) const;
 
         inline GraphicsPipeline&        getPipeline();
+                                        operator const GraphicsPipeline&() const { return m_pipeline; }
         inline GraphicsPipelineBuilder& getBuilder();
 
         friend TaskGraph;

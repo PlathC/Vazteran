@@ -21,17 +21,17 @@ namespace vzt
 
     void Pass::read(const Handle& handle, Use use, std::string parameter, Optional<Range<>> range)
     {
-        declare(handle, use, true, false, std::move(parameter), range);
+        declare(handle, use, true, false, std::move(parameter), range); //
     }
 
     void Pass::write(const Handle& handle, Use use, std::string parameter, Optional<Range<>> range)
     {
-        declare(handle, use, false, true, std::move(parameter), range);
+        declare(handle, use, false, true, std::move(parameter), range); //
     }
 
     void Pass::readWrite(const Handle& handle, Use use, std::string parameter, Optional<Range<>> range)
     {
-        declare(handle, use, true, true, std::move(parameter), range);
+        declare(handle, use, true, true, std::move(parameter), range); //
     }
 
     void Pass::declare(const Handle& handle, Use use, bool read, bool write, std::string parameter,
@@ -61,9 +61,7 @@ namespace vzt
     }
 
     std::array<uint32_t, 3> ComputePass::getGroupSize() const
-    {
-        return m_program.getModules().front().getShader().groupSize;
-    }
+    { return m_program.getModules().front().getShader().groupSize; }
 
     Vec3u ComputeContext::groups(uint32_t x, uint32_t y, uint32_t z) const
     {
@@ -173,9 +171,10 @@ namespace vzt
             throw std::runtime_error(fmt::format("Pass \"{}\": profiling is not enabled.", m_name));
 
         std::array<uint64_t, 2> ticks{};
-        if (!m_graph->m_queries.getResults((frame * m_graph->size() + m_index) * 2, 2,
-                                           Span<uint64_t>(ticks.data(), 2), sizeof(uint64_t),
-                                           QueryResultFlag::N64 | flags))
+        const bool              hasResult = m_graph->m_queries.getResults( //
+            (frame * m_graph->size() + m_index) * 2, 2, Span<uint64_t>(ticks.data(), 2), sizeof(uint64_t),
+            QueryResultFlag::N64 | flags);
+        if (!hasResult)
             return {};
 
         const float period = m_graph->m_device->getHardware().getProperties().limits.timestampPeriod; // ns per tick
@@ -682,7 +681,7 @@ namespace vzt
 
     void TaskGraph::setBackbuffer(View<DeviceImage> image, ImageLayout finalLayout, Handle handle)
     {
-        setBackbuffer(CSpan<View<DeviceImage>>{&image, 1}, 1, finalLayout, handle);
+        setBackbuffer(CSpan<View<DeviceImage>>{&image, 1}, 1, finalLayout, handle); //
     }
 
     void RenderGraph::setBackbuffer(View<Swapchain> swapchain, Handle handle)
@@ -836,7 +835,7 @@ namespace vzt
 
     Handle TaskGraph::generateAttachmentHandle() const
     {
-        return {m_hash(m_handleCounter++), HandleType::Attachment, 0};
+        return {m_hash(m_handleCounter++), HandleType::Attachment, 0}; //
     }
 
     Handle TaskGraph::generateStorageHandle() const { return {m_hash(m_handleCounter++), HandleType::Storage, 0}; }

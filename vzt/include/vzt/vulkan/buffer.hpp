@@ -16,6 +16,13 @@ namespace vzt
         Device
     };
 
+    struct DeviceAddress
+    {
+        operator uint64_t() const { return value; }
+
+        uint64_t value = 0;
+    };
+
     class Buffer : public DeviceObject<VkBuffer>
     {
       public:
@@ -41,7 +48,8 @@ namespace vzt
         void     unMap() const;
 
         // Requires dext::BufferDeviceAddress
-        uint64_t getDeviceAddress() const;
+        DeviceAddress getDeviceAddress() const;
+                      operator DeviceAddress() const { return getDeviceAddress(); }
 
         inline bool           isMappable() const;
         inline std::size_t    size() const;
