@@ -25,12 +25,16 @@ namespace vzt
         table.vkDestroyQueryPool(m_device->getHandle(), m_handle, nullptr);
     }
 
-    void QueryPool::getResults(uint32_t firstQuery, uint32_t queryCount, Span<uint8_t> results, std::size_t stride,
+    bool QueryPool::getResults(uint32_t firstQuery, uint32_t queryCount, Span<uint8_t> results, std::size_t stride,
                                QueryResultFlag flags) const
     {
         const VolkDeviceTable& table = m_device->getFunctionTable();
-        vkCheck(table.vkGetQueryPoolResults(m_device->getHandle(), m_handle, firstQuery, queryCount, results.size,
-                                            results.data, stride, toVulkan(flags)),
-                "Failed to obtain QueryPool results!");
+        const VkResult result = table.vkGetQueryPoolResults(m_device->getHandle(), m_handle, firstQuery, queryCount,
+                                                            results.size, results.data, stride, toVulkan(flags));
+        if (result == VK_NOT_READY)
+            return false;
+
+        vkCheck(result, "Failed to obtain QueryPool results!");
+        return true;
     }
 } // namespace vzt

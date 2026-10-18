@@ -3,7 +3,7 @@
 namespace vzt
 {
     template <typename ResultsType>
-    void QueryPool::getResults(uint32_t firstQuery, uint32_t queryCount, Span<ResultsType> results, std::size_t stride,
+    bool QueryPool::getResults(uint32_t firstQuery, uint32_t queryCount, Span<ResultsType> results, std::size_t stride,
                                QueryResultFlag flags) const
     {
         const Span<uint8_t> data = {
@@ -11,7 +11,7 @@ namespace vzt
             results.size * sizeof(ResultsType),
         };
 
-        getResults(firstQuery, queryCount, data, stride, flags);
+        return getResults(firstQuery, queryCount, data, stride, flags);
     }
 
     inline VkQueryPool QueryPool::getHandle() const { return m_handle; }

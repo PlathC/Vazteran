@@ -150,13 +150,14 @@ namespace vzt
 
         void bind(const UniformBuffer& buffer, std::string name);
 
-        virtual bool isDependingOn(const Pass& other) const;
-        void         record(uint32_t i, CommandBuffer& commands) const;
+        virtual bool    isDependingOn(const Pass& other) const;
+        void            record(uint32_t i, CommandBuffer& commands) const;
+        Optional<float> readDuration(uint32_t frame, QueryResultFlag flags) const;
 
         inline std::string_view getName() const;
 
-        // Duration of the pass in milliseconds, once the execution of `frame` is over. Needs setProfiling(true)
-        float getDuration(uint32_t frame) const;
+        float           getDuration(uint32_t frame) const;
+        Optional<float> tryGetDuration(uint32_t frame) const;
 
         inline DescriptorPool&        getDescriptorPool();
         inline CSpan<View<ImageView>> getColorOutputs(uint32_t frame) const;

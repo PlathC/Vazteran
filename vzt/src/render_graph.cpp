@@ -163,11 +163,20 @@ namespace vzt
         return false;
     }
 
-    float Pass::getDuration(uint32_t frame) const
+    float Pass::getDuration(uint32_t frame) const { return *readDuration(frame, QueryResultFlag::Wait); }
+
+    Optional<float> Pass::tryGetDuration(uint32_t frame) const { return readDuration(frame, {}); }
+
+    Optional<float> Pass::readDuration(uint32_t frame, QueryResultFlag flags) const
     {
+        if (!m_graph->m_profiling)
+            throw std::runtime_error(fmt::format("Pass \"{}\": profiling is not enabled.", m_name));
+
         std::array<uint64_t, 2> ticks{};
-        m_graph->m_queries.getResults((frame * m_graph->size() + m_index) * 2, 2, Span<uint64_t>(ticks.data(), 2),
-                                      sizeof(uint64_t), QueryResultFlag::N64 | QueryResultFlag::Wait);
+        if (!m_graph->m_queries.getResults((frame * m_graph->size() + m_index) * 2, 2,
+                                           Span<uint64_t>(ticks.data(), 2), sizeof(uint64_t),
+                                           QueryResultFlag::N64 | flags))
+            return {};
 
         const float period = m_graph->m_device->getHardware().getProperties().limits.timestampPeriod; // ns per tick
         return static_cast<float>(ticks[1] - ticks[0]) * period / 1e6f;

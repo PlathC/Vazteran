@@ -23,9 +23,11 @@ namespace vzt
         ~QueryPool() override;
 
         template <typename ResultsType>
-        void getResults(uint32_t firstQuery, uint32_t queryCount, Span<ResultsType> results, std::size_t stride,
+
+        // False when the results are not ready (flag Wait not set)
+        bool getResults(uint32_t firstQuery, uint32_t queryCount, Span<ResultsType> results, std::size_t stride,
                         QueryResultFlag flags) const;
-        void getResults(uint32_t firstQuery, uint32_t queryCount, Span<uint8_t> results, std::size_t stride,
+        bool getResults(uint32_t firstQuery, uint32_t queryCount, Span<uint8_t> results, std::size_t stride,
                         QueryResultFlag flags) const;
         inline VkQueryPool getHandle() const;
     };
